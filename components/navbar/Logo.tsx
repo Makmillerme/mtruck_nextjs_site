@@ -4,7 +4,7 @@ function Logo() {
   return (
     <Link href="/" className="flex shrink-0 items-center">
       <img
-        src="/logo_mtruck.svg?v=gunmetal5"
+        src="/logo_mtruck.svg?v=flatsteel7"
         alt="M-TRUCK"
         width={223}
         height={88}

@@ -1,5 +1,5 @@
 Branding assets (2026-09-08):
-- Header: `Logo.tsx` → `/logo_mtruck.svg?v=silver4` (cache-bust). Favicon: `public/favicon_mtruck.svg` + `app/icon.svg`.
-- Silver chrome: `gradientUnits="objectBoundingBox"` vertical gradient so every glyph gets full metal banding at header size.
-- Stops (gunmetal5): `#F4F5F7` → `#D2D5DB` → `#9A9EA6` → `#5C6068` → `#C2C5CC` → `#E8EAEE` → `#8E929A` → `#555960`. Header cache `?v=gunmetal5`.
-- Avoid global `userSpaceOnUse` diagonals — they leave TRUCK in a dark muddy slice.
+- Header: `Logo.tsx` → `/logo_mtruck.svg?v=flatsteel7`. Favicon + `app/icon.svg` synced.
+- Flat brushed steel (no chrome bounce / no bevel): `objectBoundingBox` vertical `#E4E6EA` → `#B0B3BA` → `#858991` → `#6F737B`.
+- Why objectBoundingBox: shared `userSpaceOnUse` diagonals left TRUCK in a dark muddy slice while M stayed light.
+- Avoid multi-stop chrome with near-black mid bands (reads as dirty 3D).
