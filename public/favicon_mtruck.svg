@@ -3,10 +3,11 @@
   <path d="M55.1223 38.3887H54.9262L51.5924 45.0562L42.7023 61.2022L34.0083 45.1216L30.5438 37.9311H30.3477V63.2002H21V22.7002H31.5243L42.7023 44.0757H42.833L53.8803 22.7002H64.47V63.2002H55.1223V38.3887Z" fill="url(#fvSteel)"/>
   <defs>
     <linearGradient id="fvSteel" x1="8" y1="2" x2="78" y2="82" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#C8CAD0"/>
-      <stop offset="0.35" stop-color="#8E9096"/>
-      <stop offset="0.7" stop-color="#55575C"/>
-      <stop offset="1" stop-color="#2F3136"/>
+      <stop offset="0" stop-color="#E4E6EA"/>
+      <stop offset="0.22" stop-color="#C2C4CA"/>
+      <stop offset="0.48" stop-color="#8E9198"/>
+      <stop offset="0.72" stop-color="#6A6D74"/>
+      <stop offset="1" stop-color="#555860"/>
     </linearGradient>
   </defs>
 </svg>
