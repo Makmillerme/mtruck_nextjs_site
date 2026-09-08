@@ -1,0 +1,16 @@
+---
+description: GitHub MCP — public за замовчуванням. Не створювати ремоут без запиту
+alwaysApply: false
+---
+
+# GitHub MCP
+
+Токен **user-github** тут має лише `create_repository` + **read**. Немає: visibility private→public, delete repo, запис у `.github/workflows/`.
+
+## Політика
+
+1. **Не** створюй GitHub-репо і не push, поки користувач явно не попросить.
+2. Якщо створюєш — `private: false`, якщо користувач не просить інакше.
+3. Workflow-файли — локальний git, не MCP `create_or_update_file`.
+4. Canonical локальний проєкт: `d:\Project\mtruck\mtruck_nextjs_site`.
+5. Canonical remote: `https://github.com/Makmillerme/mtruck_nextjs_site.git` (не шаблон Ecommerce).

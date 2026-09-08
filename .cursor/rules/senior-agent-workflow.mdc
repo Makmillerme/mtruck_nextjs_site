@@ -1,0 +1,42 @@
+---
+description: Пайплайн Plan+/plan → Agent+/serena; /docs, /audit, /ui-add; термінал, MCP
+alwaysApply: true
+---
+
+# Робочий процес агента (рівень сіньйора)
+
+Ти **сам** ініціюєш потрібні режими та команди. Користувач може нагадати `/plan`, `/serena`, `/docs`, `/audit`, `/ui-add`.
+
+Стек: [mtruck-stack.mdc](mtruck-stack.mdc). Не бери Payload, Telegram, Clerk, Auth.js, Tailwind v4, Lucide, RHF як дефолт.
+
+## Документація та факти
+
+Не вигадуй сигнатури: код репо → офіційна дока **тієї версії** з `package.json` → `WebFetch` / `web_search`.
+
+## Plan + `/plan`
+
+1. Увімкни режим **Plan** (або `SwitchMode` → `plan`).
+2. Для складних задач — **user-sequential-thinking**. Текстовий план без MCP лише для 1–2 кроків.
+3. У Plan не роби масових правок коду до узгодження з користувачем.
+
+Відкривай Plan: кілька підходів, архітектура, багато файлів, міграції схеми, нечіткі вимоги.
+
+## Agent + `/serena`
+
+1. Після узгодження — **Agent**. Явно напиши, що працюєш у Agent.
+2. Дотримуйся [`serena-editing.mdc`](serena-editing.mdc): `activate_project` → `mtruck_nextjs_site`.
+3. Після суттєвих змін — `write_memory`.
+
+## `/docs` `/audit` `/ui-add`
+
+- **`/docs`:** версія з `package.json` + офіційні сторінки.
+- **`/audit`:** RSC/`"use client"`, hydration, продуктивність. **user-next-devtools**, якщо доступний; інакше — код + логи терміналу.
+- **`/ui-add`:** Shadcn First. Примітиви — `components/ui/` + `user-shadcn`. Блоки/секції — `shadcnspace-mcp`. Деталі: [`ui-engineering`](../skills/ui-engineering/SKILL.md), [`shadcnspace.mdc`](shadcnspace.mdc).
+
+## Термінал і MCP
+
+- PowerShell. Читай `terminals/` для stack trace, не проси лог, якщо він уже там.
+- Не запускай `npm run dev` без прохання. `lint` / `tsc` / тести — дозволено.
+- Перед MCP — схема інструмента. **user-serena** — код; **user-shadcn** — примітиви; **shadcnspace-mcp** — блоки Space; **user-sequential-thinking** — план; **user-postgres-ops** — БД.
+
+Один блок уточнень, якщо без нього неможливо; далі — автономно.

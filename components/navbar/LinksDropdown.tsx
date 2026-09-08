@@ -5,43 +5,59 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { LuAlignLeft, LuUser } from 'react-icons/lu';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { SignedIn, SignedOut } from '@clerk/nextjs';
+import { Link } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
+import type { SessionUser } from '@/utils/session';
+import { useTranslations } from 'next-intl';
+import { AccountTrigger } from './AccountTrigger';
+import UserAccountSheet from './UserAccountSheet';
 import UserProfileDropdown from './UserProfileDropdown';
 
-export default function LinksDropdown() {
+function GuestDesktopMenu() {
+  const t = useTranslations('Navbar');
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <AccountTrigger user={null} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-44" align="end" sideOffset={8}>
+        <DropdownMenuItem asChild>
+          <Link href="/sign-in" className="w-full cursor-pointer">
+            {t('login')}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/sign-up" className="w-full cursor-pointer">
+            {t('register')}
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export default function LinksDropdown({
+  initialUser,
+}: {
+  initialUser: SessionUser | null;
+}) {
+  const { data: session, isPending } = authClient.useSession();
+  const user = isPending ? initialUser : session?.user ?? null;
+
   return (
     <>
-      <SignedOut>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex gap-4 max-w-[100px]">
-              <LuAlignLeft className="w-6 h-6" />
-              <LuUser className="w-6 h-6" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40" align="start" sideOffset={10}>
-            <DropdownMenuItem asChild>
-              <Link href="/sign-in" className="w-full cursor-pointer">
-                Login
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/sign-up" className="w-full cursor-pointer">
-                Register
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SignedOut>
-      <SignedIn>
-        <UserProfileDropdown />
-      </SignedIn>
+      <div className="lg:hidden">
+        <UserAccountSheet user={user} />
+      </div>
+      <div className="hidden lg:block">
+        {user ? (
+          <UserProfileDropdown initialUser={user} />
+        ) : (
+          <GuestDesktopMenu />
+        )}
+      </div>
     </>
   );
 }

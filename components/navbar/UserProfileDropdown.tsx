@@ -1,9 +1,6 @@
 'use client';
 
-import { useUser, useClerk, useAuth } from '@clerk/nextjs';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
+import { Link, useRouter } from '@/i18n/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,106 +9,69 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { LuSettings, LuLogOut } from 'react-icons/lu';
-import { links } from '@/utils/links';
+import { LuLogOut, LuSettings } from 'react-icons/lu';
+import { authClient } from '@/lib/auth-client';
+import type { SessionUser } from '@/utils/session';
+import { useTranslations } from 'next-intl';
+import { AccountTrigger, isClientAdmin } from './AccountTrigger';
+import { ThemeMenuItems } from './ThemeMenuItems';
 
-function getAvatarUrl(
-  imageUrl: string | undefined,
-  name: string | undefined,
-  email: string | undefined,
-  avatarError: boolean,
-  hasImage: boolean
-): string | null {
-  if (avatarError || !imageUrl || imageUrl.trim() === '') {
-    if (hasImage) return null;
-    const seed = name || email || 'user';
-    return `https://robohash.org/${encodeURIComponent(seed)}.png?size=80x80`;
-  }
-  return imageUrl;
-}
+export default function UserProfileDropdown({
+  initialUser,
+}: {
+  initialUser: SessionUser;
+}) {
+  const tNav = useTranslations('Navbar');
+  const tLinks = useTranslations('NavLinks');
+  const { data: session } = authClient.useSession();
+  const router = useRouter();
+  const user = session?.user ?? initialUser;
+  const isAdmin = isClientAdmin(user?.email);
+  const name = user?.name || 'User';
+  const email = user?.email || '';
 
-export default function UserProfileDropdown() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
-  const { userId } = useAuth();
-  const [avatarError, setAvatarError] = useState(false);
-
-  const adminIds = [
-    process.env.NEXT_PUBLIC_ADMIN_USER_ID,
-    process.env.NEXT_PUBLIC_ADMIN_TEST_USER_ID,
-  ].filter(Boolean) as string[];
-  const isAdmin = userId ? adminIds.includes(userId) : false;
-  const name =
-    [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
-    user?.username ||
-    'User';
-  const email = user?.primaryEmailAddress?.emailAddress || '';
-  const hasImage = user?.hasImage ?? false;
-  const avatarUrl = getAvatarUrl(
-    user?.imageUrl,
-    name,
-    email,
-    avatarError,
-    hasImage
-  );
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-          <div className="relative h-9 w-9 rounded-full border-2 overflow-hidden">
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={name}
-                fill
-                className="object-cover"
-                onError={() => setAvatarError(true)}
-                referrerPolicy="no-referrer"
-                sizes="36px"
-              />
-            ) : (
-              <Skeleton className="h-full w-full rounded-none" />
-            )}
-          </div>
-        </Button>
+        <AccountTrigger user={user} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <p className="font-medium">{name}</p>
-          <p className="text-xs text-muted-foreground truncate">{email}</p>
+          <p className="truncate text-xs text-muted-foreground">{email}</p>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {links.map((link) => {
-          if (link.href === '/admin/sales' && !isAdmin) return null;
-          return (
-            <DropdownMenuItem key={link.href} asChild>
-              <Link href={link.href} className="capitalize cursor-pointer">
-                {link.label}
+        {isAdmin ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin/sales" className="cursor-pointer">
+                {tLinks('admin')}
               </Link>
             </DropdownMenuItem>
-          );
-        })}
+          </>
+        ) : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+          {tNav('theme')}
+        </DropdownMenuLabel>
+        <ThemeMenuItems />
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/user-profile" className="flex items-center cursor-pointer">
+          <Link href="/user-profile" className="flex cursor-pointer items-center">
             <LuSettings className="mr-2 h-4 w-4" />
-            Manage account
+            {tNav('manageAccount')}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => signOut({ redirectUrl: '/' })}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LuLogOut className="mr-2 h-4 w-4" />
-          Sign out
+          {tNav('signOut')}
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <div className="px-2 py-1.5 text-xs text-muted-foreground">
-          Secured by Clerk
-        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

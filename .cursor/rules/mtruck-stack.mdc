@@ -1,0 +1,28 @@
+---
+description: Якірний стек та зафіксовані рішення MTruck Next.js site
+alwaysApply: true
+---
+
+# MTruck — якірний стек
+
+Перевіряй версії в [`package.json`](package.json). Не підмінюй стек на «типовий Next 15 з user rules».
+
+## Застосунок
+
+- Next.js **16.3** App Router, React **19**, TypeScript strict, `proxy.ts` (не `middleware.ts`)
+- Tailwind CSS **v3** (flex/grid). Не мігрувати на v4 без явного запиту
+- shadcn/ui у `components/ui/` (не `src/components/ui/`). Іконки: **react-icons**, не Lucide
+- Форми: Zod + `useActionState` / server actions. Не додавати RHF, Zustand, Nuqs, TanStack Query без запиту
+- Auth: **Better-Auth** (email/password + Google). Не Clerk, не Auth.js, не GitHub OAuth
+- Дані: **Prisma 5 + PostgreSQL** через PostgressOps PgBouncer `:6432`. Не Payload CMS
+- Зображення: локально `public/uploads/products/` (`utils/images.ts`)
+- Оплата: **без Stripe**. Авто не продаємо checkout-ом. Не додавати платіжні провайдери без запиту
+- Telegram — **не в цьому репо**, поки користувач явно не попросить
+
+## Продукт
+
+Сайт продажу авто на базі e-commerce шаблону. Модель `Product` ще furniture — адаптація до авто окремим завданням.
+
+## Безпека
+
+Не запускати `npm run dev` без прохання. Не світити паролі й секрети з `.env`.

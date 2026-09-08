@@ -7,11 +7,14 @@ import RatingInput from '@/components/reviews/RatingInput';
 import TextAreaInput from '@/components/form/TextAreaInput';
 import { Button } from '@/components/ui/button';
 import { createReviewAction } from '@/utils/actions';
-import { useUser } from '@clerk/nextjs';
+import { authClient } from '@/lib/auth-client';
+import { useTranslations } from 'next-intl';
 
 function SubmitReview({ productId }: { productId: string }) {
+  const t = useTranslations('Reviews');
   const [isReviewFormVisible, setIsReviewFormVisible] = useState(false);
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
   return (
     <div>
       <Button
@@ -19,7 +22,7 @@ function SubmitReview({ productId }: { productId: string }) {
         className='capitalize'
         onClick={() => setIsReviewFormVisible((prev) => !prev)}
       >
-        leave review
+        {t('leaveReview')}
       </Button>
       {isReviewFormVisible && (
         <Card className='p-8 mt-8'>
@@ -28,14 +31,13 @@ function SubmitReview({ productId }: { productId: string }) {
             <input
               type='hidden'
               name='authorName'
-              value={user?.firstName || 'user'}
+              value={user?.name || 'user'}
             />
-            <input type='hidden' name='authorImageUrl' value={user?.imageUrl} />
-            <RatingInput name='rating' />
+            <input type='hidden' name='authorImageUrl' value={user?.image || ''} />
+            <RatingInput name='rating' labelText={t('rating')} />
             <TextAreaInput
               name='comment'
-              labelText='feedback'
-              defaultValue='Outstanding product!!!'
+              labelText={t('feedback')}
             />
             <SubmitButton className='mt-4' />
           </FormContainer>

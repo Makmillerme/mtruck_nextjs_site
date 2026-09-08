@@ -1,0 +1,14 @@
+---
+description: Phone preview — лише /phone-dev, не у package.json і не в app/
+alwaysApply: true
+---
+
+# Phone preview — не в застосунку
+
+Тест на Android до релізу — **поза** продуктом.
+
+- Не додавати `dev:lan` / `adb:reverse` у `package.json`
+- Не змінювати `next.config.mjs` чи `app/` заради LAN/ADB (це не `next.config.ts` і не `src/`)
+- Інструмент: `/phone-dev` і `.cursor/scripts/phone-dev.ps1`
+- Не створювати MCP для `adb reverse`
+- Не запускати `npm run dev` без явного прохання

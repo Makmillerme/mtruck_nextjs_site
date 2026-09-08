@@ -1,45 +1,73 @@
-import { formatCurrency } from '@/utils/format';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Product } from '@prisma/client';
-import Image from 'next/image';
-import FavoriteToggleButton from './FavoriteToggleButton';
+import { formatCurrency } from "@/utils/format";
+import { Link } from "@/i18n/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Product } from "@prisma/client";
+import Image from "next/image";
+import FavoriteToggleButton from "./FavoriteToggleButton";
+import { LuTag } from "react-icons/lu";
 
-function ProductsList({ products }: { products: Product[] }) {
+async function ProductsList({ products }: { products: Product[] }) {
+  const locale = await getLocale();
+  const t = await getTranslations("Product");
+
   return (
-    <div className='mt-12 grid gap-y-8'>
+    <div className="mt-8 grid gap-6">
       {products.map((product) => {
-        const { name, price, image, company } = product;
-        const dollarsAmount = formatCurrency(price);
-        const productId = product.id;
+        const href = `/products/${product.id}`;
+        const price = formatCurrency(product.price, locale);
         return (
-          <article key={productId} className='group relative'>
-            <Link href={`/products/${productId}`}>
-              <Card className='transform group-hover:shadow-xl transition-shadow duration-500'>
-                <CardContent className='p-8 gap-y-4 grid md:grid-cols-3'>
-                  <div className='relative h-64 md:h-48 md:w-48'>
+          <article key={product.id} className="group">
+            <Card className="overflow-hidden border-border/80 shadow-sm transition-all duration-300 hover:shadow-lg">
+              <CardContent className="grid gap-6 p-4 md:grid-cols-[minmax(0,16rem)_1fr_auto] md:items-center md:p-5">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-[#1a1a2e] md:aspect-auto md:h-36">
+                  <Link href={href} className="absolute inset-0">
                     <Image
-                      src={image}
-                      alt={name}
+                      src={product.image}
+                      alt={product.name}
                       fill
-                      sizes='(max-width:768px) 100vw,(max-width:1200px) 50vw, 33vw '
-                      priority
-                      className='w-full rounded object-cover'
+                      sizes="(max-width: 768px) 100vw, 256px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  <Link href={href} className="space-y-1">
+                    <h3 className="text-lg font-semibold tracking-tight">
+                      {product.name}
+                    </h3>
+                    <p className="font-mono text-2xl font-black text-primary">
+                      {price}
+                    </p>
+                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+                    >
+                      <LuTag className="mr-1 size-3.5" aria-hidden />
+                      {product.company}
+                    </Badge>
+                    {product.featured ? (
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+                      >
+                        {t("featuredBadge")}
+                      </Badge>
+                    ) : null}
                   </div>
-                  <div>
-                    <h2 className='text-xl font-semibold capitalize'>{name}</h2>
-                    <h4 className='text-muted-foreground'>{company}</h4>
-                  </div>
-                  <p className='text-muted-foreground text-lg md:ml-auto'>
-                    {dollarsAmount}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-            <div className='absolute bottom-8 right-8 z-5'>
-              <FavoriteToggleButton productId={productId} />
-            </div>
+                </div>
+                <div className="flex items-center gap-3 md:flex-col md:items-end">
+                  <FavoriteToggleButton productId={product.id} />
+                  <Button asChild className="h-10 font-semibold md:w-40">
+                    <Link href={href}>{t("details")}</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </article>
         );
       })}

@@ -6,20 +6,24 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Link } from '@/i18n/navigation';
+import { getTranslations } from 'next-intl/server';
 
-function BreadCrumbs({ name }: { name: string }) {
+async function BreadCrumbs({ name }: { name: string }) {
+  const t = await getTranslations('Product');
+
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href='/' className='capitalize text-lg'>
-            home
+          <BreadcrumbLink asChild className='capitalize text-lg'>
+            <Link href='/'>{t('home')}</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href='/products' className='capitalize text-lg'>
-            products
+          <BreadcrumbLink asChild className='capitalize text-lg'>
+            <Link href='/products'>{t('catalog')}</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />

@@ -1,0 +1,20 @@
+---
+description: Shadcn Space MCP — блоки/сторінки з реєстру, не вигадувати UI з голови
+globs: "{components/**/*.tsx,app/**/*.tsx,components.json}"
+alwaysApply: false
+---
+
+# Shadcn Space MCP
+
+Сервер: `shadcnspace-mcp` (після рестарту Cursor — `user-shadcnspace-mcp`). Примітиви (Button, Input, Dialog) як і раніше — **офіційний `user-shadcn`**. Space — для **блоків і сторінок** (hero, gallery, pricing).
+
+Цей репо: `components.json` style **new-york**, пакетний менеджер **npm** (`npx`). UI в `components/ui/`.
+
+## Workflow
+
+1. Перевір, чи блок уже є в проєкті (`listInstalledBlocks` / `listInstalledPages`, якщо інструмент доступний).
+2. Пошук: `searchBlocks` / `searchPages` (або `listBlocks` / `listPages`).
+3. Команда встановлення — лише з `getBlockInstall` / `getPageInstall`. Не вигадуй код блока.
+4. Став через термінал, напр. `npx shadcn@latest add @shadcn-space/...`.
+5. Якщо CLI просить email + license — це PRO. Не підбирай ключ. Користувач сам додає в `components.json` → `registries.@shadcn-space.params`.
+6. Після установки вшивай у сторінку. Текст (заголовки, кнопки) можна міняти. Внутрішню логіку блока — лише за явним запитом.

@@ -1,21 +1,38 @@
 type NavLink = {
   href: string;
-  label: string;
+  key: string;
 };
 
+export const siteNav = [
+  { href: "/products", key: "catalog" },
+  { href: "/services", key: "services" },
+  { href: "/about", key: "about" },
+  { href: "/partnership", key: "partnership" },
+  { href: "/faq", key: "faq" },
+  { href: "/contact", key: "contacts" },
+] as const;
+
+export const accountNav: NavLink[] = [
+  { href: "/favorites", key: "favorites" },
+  { href: "/reviews", key: "reviews" },
+  { href: "/cart", key: "cart" },
+  { href: "/orders", key: "orders" },
+  { href: "/admin/sales", key: "admin" },
+];
+
 export const links: NavLink[] = [
-  { href: '/', label: 'home' },
-  { href: '/about', label: 'about' },
-  { href: '/products', label: 'products' },
-  { href: '/favorites', label: 'favorites' },
-  { href: '/reviews', label: 'reviews' },
-  { href: '/cart', label: 'cart' },
-  { href: '/orders', label: 'orders' },
-  { href: '/admin/sales', label: 'Admin Dashboard' },
+  { href: "/", key: "home" },
+  { href: "/about", key: "about" },
+  { href: "/products", key: "products" },
+  { href: "/favorites", key: "favorites" },
+  { href: "/reviews", key: "reviews" },
+  { href: "/cart", key: "cart" },
+  { href: "/orders", key: "orders" },
+  { href: "/admin/sales", key: "admin" },
 ];
 
 export const adminLinks: NavLink[] = [
-  { href: '/admin/sales', label: 'sales' },
-  { href: '/admin/products', label: 'my products' },
-  { href: '/admin/products/create', label: 'create product' },
+  { href: "/admin/sales", key: "sales" },
+  { href: "/admin/products", key: "myProducts" },
+  { href: "/admin/products/create", key: "createProduct" },
 ];

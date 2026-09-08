@@ -1,19 +1,19 @@
 'use client';
 
-import { SignOutButton } from '@clerk/nextjs';
 import { useToast } from '../ui/use-toast';
 import Link from 'next/link';
+import { authClient } from '@/lib/auth-client';
+
 function SignOutLink() {
   const { toast } = useToast();
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authClient.signOut();
     toast({ description: 'Logout Successful' });
   };
   return (
-    <SignOutButton>
-      <Link href='/' className='w-full text-left' onClick={handleLogout}>
-        Logout
-      </Link>
-    </SignOutButton>
+    <Link href="/" className="w-full text-left" onClick={handleLogout}>
+      Logout
+    </Link>
   );
 }
 export default SignOutLink;

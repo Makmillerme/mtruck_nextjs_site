@@ -1,3 +1,4 @@
+'use client';
 import {
   Select,
   SelectContent,
@@ -5,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from 'next-intl';
 
 export enum Mode {
   SingleProduct = 'singleProduct',
@@ -27,13 +29,13 @@ type SelectCartItemAmountProps = {
 function SelectProductAmount(
   props: SelectProductAmountProps | SelectCartItemAmountProps
 ) {
+  const t = useTranslations('Product');
   const { mode, amount, setAmount } = props;
-
   const cartItem = mode === Mode.CartItem;
 
   return (
     <>
-      <h4 className='mb-2'>Amount : </h4>
+      <h4 className='mb-2'>{t('amount')}</h4>
       <Select
         defaultValue={amount.toString()}
         onValueChange={(value) => setAmount(Number(value))}

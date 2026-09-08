@@ -1,0 +1,397 @@
+{
+  "Navbar": {
+    "catalog": "Katalog",
+    "services": "Leistungen",
+    "about": "Über uns",
+    "partnership": "Partnerschaft",
+    "faq": "FAQ",
+    "contacts": "Kontakt",
+    "contactCta": "Kontakt",
+    "phone": "+380 44 123 45 67",
+    "phoneHref": "tel:+380441234567",
+    "call": "Anrufen",
+    "shop": "Shop",
+    "allTrucks": "Alle Lkw",
+    "featured": "Empfohlen",
+    "onSale": "Angebote",
+    "newArrivals": "Neuheiten",
+    "brands": "Marken",
+    "searchPlaceholder": "Lkw suchen...",
+    "menu": "Menü",
+    "cart": "Warenkorb",
+    "favorites": "Favoriten",
+    "account": "Konto",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "theme": "Design",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System",
+    "manageAccount": "Konto verwalten",
+    "signOut": "Abmelden"
+  },
+  "NavLinks": {
+    "home": "Startseite",
+    "about": "Über uns",
+    "products": "Katalog",
+    "favorites": "Favoriten",
+    "reviews": "Bewertungen",
+    "cart": "Warenkorb",
+    "orders": "Bestellungen",
+    "admin": "Admin"
+  },
+  "LocaleSwitcher": {
+    "label": "Sprache",
+    "uk": "UA",
+    "en": "EN",
+    "de": "DE"
+  },
+  "HomePage": {
+    "watermark": "M TRUCK",
+    "heroAria": "Startbereich",
+    "heroEyebrow": "Europäische Lkw",
+    "heroTitle": "Zuverlässige Nutzfahrzeuge aus Europa",
+    "heroSubtitle": "Premium-Lkw führender europäischer Hersteller. Qualität, Zuverlässigkeit und faire Preise für Ihre Flotte.",
+    "heroCta": "Katalog ansehen",
+    "heroSecondary": "Partnerschaft",
+    "catalogEyebrow": "Katalog",
+    "featuredTitle": "Neueingänge",
+    "viewCatalog": "Zum Katalog"
+  },
+  "TrustStrip": {
+    "aria": "Warum man uns vertraut",
+    "title": "Warum man uns vertraut",
+    "brandsAria": "Partnermarken",
+    "stats": {
+      "years": { "value": "15+", "label": "Jahre am Markt" },
+      "sold": { "value": "3,500+", "label": "Fahrzeuge verkauft" },
+      "clients": { "value": "1,200+", "label": "Zufriedene Kunden" },
+      "import": { "value": "100%", "label": "Offizieller Import" }
+    }
+  },
+  "ServicesSection": {
+    "eyebrow": "Unsere Leistungen",
+    "title": "Der komplette Importzyklus",
+    "subtitle": "Von der Suche bis zur Lieferung — wir übernehmen jeden Schritt beim Import hochwertiger europäischer Lkw nach Ukraine.",
+    "items": {
+      "customs": {
+        "title": "Zollabfertigung",
+        "description": "Vollständige Zolldokumentation für einen reibungslosen Import aus EU-Ländern."
+      },
+      "maintenance": {
+        "title": "Technischer Service",
+        "description": "Verkaufsvorbereitung und Wartung durch zertifizierte Techniker."
+      },
+      "leasing": {
+        "title": "Leasing und Finanzierung",
+        "description": "Flexible Leasing- und Finanzierungslösungen, angepasst an Ihr Unternehmen."
+      },
+      "delivery": {
+        "title": "Lieferung",
+        "description": "Lieferung von europäischen Händlern direkt an Ihren Standort in der Ukraine."
+      }
+    }
+  },
+  "FaqSection": {
+    "eyebrow": "FAQ",
+    "title": "Häufige Fragen",
+    "subtitle": "Antworten zu Import, Zoll und Lieferung von Nutzfahrzeugen aus Europa.",
+    "items": {
+      "customs": {
+        "question": "Übernehmen Sie die Zollabfertigung?",
+        "answer": "Ja. Wir übernehmen die vollständige Zollabfertigung: Dokumente, Zertifikate und Begleitung an der Grenze, damit das Fahrzeug legal in der Ukraine ankommt."
+      },
+      "vat": {
+        "question": "Ist die MwSt. in den angegebenen Preisen enthalten?",
+        "answer": "Nein. Katalogpreise sind der Fahrzeugpreis ohne MwSt. und Zollabgaben. Die Endsumme mit Steuern berechnen wir individuell für jedes Modell."
+      },
+      "delivery": {
+        "question": "Wie lange dauert die Lieferung?",
+        "answer": "Das hängt vom Land, der Verfügbarkeit und der Logistik ab. Die Lieferung aus der EU dauert in der Regel 7 bis 21 Tage nach Bestätigung des Deals. Den genauen Termin stimmen wir vor der Zahlung ab."
+      },
+      "inspection": {
+        "question": "Kann ich das Fahrzeug vor dem Kauf besichtigen?",
+        "answer": "Ja. Wir organisieren eine Besichtigung auf einem Hof in der EU oder stellen einen detaillierten Foto- und Videobericht, ein technisches Gutachten und die Servicehistorie bereit."
+      }
+    }
+  },
+  "PartnershipSection": {
+    "eyebrow": "B2B Partnerschaft",
+    "title": "Zuverlässiger Partner für europäische Lieferanten",
+    "subtitle": "Für Händler, Spediteure und Flotten — ein stabiler Kanal europäischer Technik mit Deal-Begleitung.",
+    "formTitle": "Partner werden",
+    "name": "Name",
+    "email": "E-Mail",
+    "company": "Firmenname",
+    "message": "Nachricht",
+    "namePlaceholder": "Max Mustermann",
+    "emailPlaceholder": "name@firma.com",
+    "companyPlaceholder": "Firmenname",
+    "messagePlaceholder": "Beschreiben Sie kurz Ihre Anfrage",
+    "submit": "Anfrage senden",
+    "benefits": {
+      "network": {
+        "title": "Europäisches Netzwerk",
+        "description": "Lieferanten und Höfe in EU-Ländern."
+      },
+      "quality": {
+        "title": "Geprüfte Qualität",
+        "description": "Technik mit Prüfung vor dem Versand."
+      },
+      "logistics": {
+        "title": "Komplette Logistik",
+        "description": "Vom Einkauf bis zur Lieferung in die Ukraine."
+      },
+      "cooperation": {
+        "title": "Langfristige Zusammenarbeit",
+        "description": "Stabile Konditionen für Händler und Flotten."
+      }
+    }
+  },
+  "ContactSection": {
+    "eyebrow": "Kontakt",
+    "title": "Rückruf anfordern",
+    "subtitle": "Hinterlassen Sie Ihre Nummer — ein Manager ruft während der Geschäftszeiten zurück und hilft bei der Auswahl.",
+    "phonePlaceholder": "+380 XX XXX XX XX",
+    "submit": "Anrufen",
+    "privacy": "Mit dem Klick stimmen Sie der <privacy>Datenschutzerklärung</privacy> zu.",
+    "infoTitle": "Kontaktinformationen",
+    "mapPlaceholder": "Kartenintegration",
+    "phone": {
+      "label": "Telefon",
+      "value": "+380 44 123 45 67",
+      "href": "tel:+380441234567"
+    },
+    "email": {
+      "label": "E-Mail",
+      "value": "info@m-truck.ua",
+      "href": "mailto:info@m-truck.ua"
+    },
+    "address": {
+      "label": "Adresse",
+      "value": "Kiew, Ukraine\nPeremohy-Prospekt, 1"
+    },
+    "hours": {
+      "label": "Öffnungszeiten",
+      "value": "Mo–Fr: 09:00–18:00\nSa: 10:00–15:00"
+    }
+  },
+  "Pages": {
+    "services": {
+      "title": "Leistungen",
+      "body": "Fahrzeugauswahl, Beratung und Begleitung des Kaufs. Eine vollständige Leistungsseite folgt."
+    },
+    "partnership": {
+      "title": "Partnerschaft",
+      "body": "Zusammenarbeit für Händler, Spediteure und Unternehmenskunden. Konditionen folgen."
+    },
+    "faq": {
+      "title": "FAQ",
+      "body": "Antworten auf häufige Fragen folgen hier."
+    },
+    "contacts": {
+      "title": "Kontakt",
+      "body": "Kontaktieren Sie uns zur Auswahl eines Nutzfahrzeugs."
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "body": "Der Text der Datenschutzerklärung folgt hier."
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "body": "Der Text der Nutzungsbedingungen folgt hier."
+    }
+  },
+  "Footer": {
+    "aria": "Seitenfuß",
+    "tagline": "Zuverlässiger Import von Nutzfahrzeugen aus Europa für Unternehmen und Flotten.",
+    "phone": {
+      "value": "+380 44 123 45 67",
+      "href": "tel:+380441234567"
+    },
+    "email": {
+      "value": "info@m-truck.ua",
+      "href": "mailto:info@m-truck.ua"
+    },
+    "address": "Kiew, Ukraine\nPeremohy-Prospekt, 1",
+    "hours": "Mo–Fr: 9:00–18:00",
+    "catalogTitle": "Katalog",
+    "catalog": {
+      "tractors": "Zugmaschinen",
+      "vans": "Transporter",
+      "reefers": "Kühlfahrzeuge",
+      "all": "Alle Fahrzeuge"
+    },
+    "companyTitle": "Unternehmen",
+    "company": {
+      "about": "Über uns",
+      "services": "Leistungen",
+      "partnership": "Partnerschaft",
+      "contacts": "Kontakt"
+    },
+    "socialTitle": "Folgen Sie uns",
+    "socialText": "Neue Zugänge und Angebote — im Telegram-Kanal des Vertriebs.",
+    "telegramCta": "Telegram",
+    "copyright": "© {year} M-TRUCK. Alle Rechte vorbehalten.",
+    "legal": {
+      "privacy": "Datenschutzerklärung",
+      "terms": "Nutzungsbedingungen"
+    }
+  },
+  "About": {
+    "titleBefore": "Wir lieben",
+    "titleHighlight": "MTruck",
+    "body": "Verkauf von Nutzfahrzeugen: Auswahl, Beratung und Begleitung des Kaufs. Der Katalog wird regelmäßig aktualisiert."
+  },
+  "Products": {
+    "count": "{count, plural, one {# Produkt} other {# Produkte}}",
+    "emptySearch": "Keine Produkte zu Ihrer Suche gefunden.",
+    "empty": "Noch keine Produkte.",
+    "layoutGrid": "Kacheln",
+    "layoutList": "Liste",
+    "searchPlaceholder": "Lkw suchen...",
+    "filter": "Filter",
+    "sort": "Sortierung",
+    "sortNewest": "Neueste zuerst",
+    "sortPriceAsc": "Preis: aufsteigend",
+    "sortPriceDesc": "Preis: absteigend",
+    "sortName": "Name",
+    "filterBrand": "Marke",
+    "filterFeatured": "Nur Highlights",
+    "filterClear": "Filter zurücksetzen",
+    "filterEmpty": "Noch keine Marken."
+  },
+  "Product": {
+    "home": "Startseite",
+    "catalog": "Katalog",
+    "details": "Details",
+    "featuredBadge": "Neu",
+    "addToCart": "In den Warenkorb",
+    "signIn": "Anmelden",
+    "amount": "Menge",
+    "reviewsCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "reviewsTitle": "Bewertungen"
+  },
+  "VehicleCard": {
+    "details": "Details",
+    "euroFallback": "Euro 5",
+    "year": "{year}",
+    "status": {
+      "PUBLISHED": "Verfügbar",
+      "RESERVED": "Reserviert",
+      "DRAFT": "Entwurf",
+      "PREPARING": "Vorbereitung",
+      "SOLD": "Verkauft"
+    }
+  },
+  "Cart": {
+    "empty": "Warenkorb ist leer",
+    "title": "Warenkorb",
+    "subtotal": "Zwischensumme",
+    "shipping": "Versand",
+    "tax": "Steuer",
+    "orderTotal": "Gesamt",
+    "noOnlinePayment": "Online-Zahlung ist nicht verfügbar. Kontaktieren Sie einen Manager.",
+    "remove": "Entfernen",
+    "calculating": "Aktualisierung..."
+  },
+  "Auth": {
+    "welcomeBack": "Willkommen zurück",
+    "signInSubtitle": "Melden Sie sich an",
+    "testAccount": "Testkonto",
+    "selectTestAccount": "Testkonto wählen",
+    "testUser": "Testbenutzer",
+    "guestAdmin": "Test-Admin",
+    "clearSelection": "Auswahl löschen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "signIn": "Anmelden",
+    "signingIn": "Anmeldung...",
+    "or": "oder",
+    "continueGoogle": "Weiter mit Google",
+    "noAccount": "Noch kein Konto?",
+    "signUp": "Registrieren",
+    "createAccount": "Konto erstellen",
+    "signUpSubtitle": "Registrierung mit E-Mail und Passwort",
+    "name": "Name",
+    "passwordHint": "Mindestens 8 Zeichen",
+    "creatingAccount": "Konto wird erstellt...",
+    "haveAccount": "Bereits ein Konto?",
+    "googleNotConfigured": "Google-Anmeldung ist noch nicht eingerichtet.",
+    "invalidCredentials": "Ungültige E-Mail oder Passwort.",
+    "couldNotCreate": "Konto konnte nicht erstellt werden."
+  },
+  "Account": {
+    "backToStore": "Zurück zum Katalog",
+    "title": "Konto"
+  },
+  "Favorites": {
+    "title": "Favoriten",
+    "empty": "Sie haben noch keine Favoriten."
+  },
+  "Reviews": {
+    "title": "Ihre Bewertungen",
+    "empty": "Sie haben noch keine Bewertungen.",
+    "leaveReview": "Bewertung hinterlassen",
+    "feedback": "Feedback",
+    "rating": "Bewertung",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen"
+  },
+  "Orders": {
+    "title": "Ihre Bestellungen",
+    "total": "Bestellungen gesamt: {count}",
+    "products": "Produkte",
+    "orderTotal": "Summe",
+    "tax": "Steuer",
+    "shipping": "Versand",
+    "date": "Datum"
+  },
+  "Admin": {
+    "dashboard": "Admin",
+    "sales": "Verkäufe",
+    "myProducts": "Meine Produkte",
+    "createProduct": "Produkt erstellen",
+    "updateProduct": "Produkt aktualisieren",
+    "productName": "Name",
+    "company": "Unternehmen",
+    "price": "Preis ($)",
+    "image": "Bild",
+    "description": "Beschreibung",
+    "featured": "Empfohlen",
+    "actions": "Aktionen",
+    "totalProducts": "Produkte gesamt: {count}",
+    "totalOrders": "Bestellungen gesamt: {count}",
+    "email": "E-Mail",
+    "updateImage": "Bild aktualisieren",
+    "submitCreate": "Produkt erstellen",
+    "submitUpdate": "Speichern"
+  },
+  "Common": {
+    "submit": "Senden",
+    "pleaseWait": "Bitte warten...",
+    "emptyList": "Keine Einträge gefunden."
+  },
+  "Actions": {
+    "error": "Ein Fehler ist aufgetreten",
+    "productRemoved": "Produkt entfernt",
+    "productUpdated": "Produkt aktualisiert",
+    "imageUpdated": "Bild aktualisiert",
+    "addedToFavorites": "Zu Favoriten hinzugefügt",
+    "removedFromFavorites": "Aus Favoriten entfernt",
+    "reviewSubmitted": "Bewertung gesendet",
+    "partnershipSubmitted": "Anfrage gesendet",
+    "callbackSubmitted": "Rückrufanfrage gesendet",
+    "reviewDeleted": "Bewertung gelöscht",
+    "itemRemoved": "Artikel entfernt",
+    "cartUpdated": "Warenkorb aktualisiert"
+  },
+  "NotFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Prüfen Sie die Adresse oder kehren Sie zur Startseite zurück."
+  },
+  "Metadata": {
+    "title": "MTruck — Nutzfahrzeugverkauf",
+    "description": "Katalog von Lkw und Nutzfahrzeugen. Auswahl, Beratung und Kaufbegleitung."
+  }
+}

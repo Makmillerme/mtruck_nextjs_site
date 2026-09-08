@@ -80,3 +80,24 @@ export const reviewSchema = z.object({
     .min(10, { message: "Comment must be at least 10 characters long" })
     .max(1000, { message: "Comment must be at most 1000 characters long" }),
 });
+
+export const callbackInquirySchema = z.object({
+  phone: z
+    .string()
+    .trim()
+    .min(1, { message: "Enter a phone number." })
+    .refine((value) => /^\+?[\d\s()-]{10,20}$/.test(value), {
+      message: "Enter a valid phone number.",
+    }),
+});
+
+export const partnershipInquirySchema = z.object({
+  name: z.string().trim().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().trim().email({ message: "Enter a valid email." }),
+  company: z.string().trim().min(2, { message: "Company must be at least 2 characters." }),
+  message: z
+    .string()
+    .trim()
+    .min(10, { message: "Message must be at least 10 characters." })
+    .max(2000, { message: "Message must be at most 2000 characters." }),
+});

@@ -1,0 +1,25 @@
+---
+description: Prisma + PostgressOps для цього додатку. Без Payload
+globs: "{prisma/**,utils/db.ts,utils/actions.ts,.env.example}"
+alwaysApply: false
+---
+
+# Prisma і PostgreSQL
+
+Додаток: бД/роль **`mtruck_nextjs`**. Host `173.242.62.135:6432` (PgBouncer). Postgres **5432 не опублікований**.
+
+## URL
+
+Обидва `DATABASE_URL` і `DIRECT_URL` мають `?pgbouncer=true`. Інакше schema engine падає на `prepared statement "s3"`.
+
+Пароль у URL: `+` → `%2B`. Не виводи пароль у чат.
+
+## Операції
+
+- Зміни схеми — у `prisma/schema.prisma`. Shop-FK: `userId` → `User` (Better-Auth).
+- `npx prisma generate` — безпечно.
+- `npx prisma db push` — лише зі згодою або коли це частина узгодженого завдання на схему. При `prepared statement` — **повтори** push, не крути стек.
+- `--force-reset` / `drop_database` — лише після **явного** підтвердження.
+- Сід: `npm run db:seed` (`tsx --env-file=.env`). Створює тест-юзерів Better-Auth; продукти — лише якщо таблиця порожня.
+
+Не Payload, не `payload-guru`, не локальний Postgres на Windows, поки користувач не скаже інакше.

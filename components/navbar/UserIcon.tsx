@@ -1,11 +1,10 @@
 import { LuUser } from "react-icons/lu";
-import { currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
+import { getSession } from "@/utils/session";
 
 async function UserIcon() {
-  const user = await currentUser();
-
-  const profileImage = user?.imageUrl;
+  const session = await getSession();
+  const profileImage = session?.user.image;
 
   if (profileImage) {
     return (

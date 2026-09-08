@@ -1,0 +1,13 @@
+---
+description: Зображення товарів, uploads і Embla carousel
+globs: "{utils/images.ts,next.config.mjs,components/ui/carousel.tsx,components/**/*carousel*,public/uploads/**}"
+alwaysApply: false
+---
+
+# Зображення і каруселі
+
+- Адмін-аплоад: `utils/images.ts` → `public/uploads/products/` (публічний шлях `/uploads/products/...`).
+- `deleteImage` терає **лише** локальні `/uploads/products/` файли. Pexels URL не чіпати.
+- Remote images: `next.config.mjs` — `images.pexels.com`, `robohash.org`, `*.googleusercontent.com` (Google avatar). Не повертати `img.clerk.com` / Vercel Blob.
+- Карусель: shadcn Embla у `components/ui/carousel.tsx`. Не ламати ширину слайдів `minmax(0, ...)` на мобільному.
+- Перевіряй файли на диску, не лише Glob. Не додавай `public/brands_img` / `lib/catalog-brands.ts` — це не цей шаблон.

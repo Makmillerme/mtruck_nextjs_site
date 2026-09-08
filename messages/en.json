@@ -1,0 +1,397 @@
+{
+  "Navbar": {
+    "catalog": "Catalog",
+    "services": "Services",
+    "about": "About us",
+    "partnership": "Partnership",
+    "faq": "FAQ",
+    "contacts": "Contacts",
+    "contactCta": "Contact us",
+    "phone": "+380 44 123 45 67",
+    "phoneHref": "tel:+380441234567",
+    "call": "Call",
+    "shop": "Shop",
+    "allTrucks": "All trucks",
+    "featured": "Featured",
+    "onSale": "On Sale",
+    "newArrivals": "New Arrivals",
+    "brands": "Brands",
+    "searchPlaceholder": "Search for trucks...",
+    "menu": "Menu",
+    "cart": "Cart",
+    "favorites": "Favorites",
+    "account": "Account",
+    "login": "Login",
+    "register": "Register",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "manageAccount": "Manage account",
+    "signOut": "Sign out"
+  },
+  "NavLinks": {
+    "home": "Home",
+    "about": "About",
+    "products": "Products",
+    "favorites": "Favorites",
+    "reviews": "Reviews",
+    "cart": "Cart",
+    "orders": "Orders",
+    "admin": "Admin dashboard"
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "uk": "UA",
+    "en": "EN",
+    "de": "DE"
+  },
+  "HomePage": {
+    "watermark": "M TRUCK",
+    "heroAria": "Hero",
+    "heroEyebrow": "European trucks",
+    "heroTitle": "Reliable commercial transport from Europe",
+    "heroSubtitle": "Premium trucks from leading European manufacturers. Quality, reliability, and fair prices for your fleet.",
+    "heroCta": "Browse catalog",
+    "heroSecondary": "Partnership",
+    "catalogEyebrow": "Catalog",
+    "featuredTitle": "New arrivals",
+    "viewCatalog": "Full catalog"
+  },
+  "TrustStrip": {
+    "aria": "Why people trust us",
+    "title": "Why people trust us",
+    "brandsAria": "Partner brands",
+    "stats": {
+      "years": { "value": "15+", "label": "Years on the market" },
+      "sold": { "value": "3,500+", "label": "Vehicles sold" },
+      "clients": { "value": "1,200+", "label": "Satisfied clients" },
+      "import": { "value": "100%", "label": "Official import" }
+    }
+  },
+  "ServicesSection": {
+    "eyebrow": "Our services",
+    "title": "A full import cycle",
+    "subtitle": "From sourcing to delivery — we handle every stage of importing quality European trucks to Ukraine.",
+    "items": {
+      "customs": {
+        "title": "Customs clearance",
+        "description": "Complete customs documentation for smooth import from EU countries."
+      },
+      "maintenance": {
+        "title": "Technical maintenance",
+        "description": "Pre-sale inspection and servicing by certified technicians."
+      },
+      "leasing": {
+        "title": "Leasing and financing",
+        "description": "Flexible leasing and financing solutions tailored to your business."
+      },
+      "delivery": {
+        "title": "Delivery",
+        "description": "Delivery from European dealers directly to your location in Ukraine."
+      }
+    }
+  },
+  "FaqSection": {
+    "eyebrow": "FAQ",
+    "title": "Frequently asked questions",
+    "subtitle": "Answers about importing, customs, and delivering commercial vehicles from Europe.",
+    "items": {
+      "customs": {
+        "question": "Do you handle customs clearance?",
+        "answer": "Yes. We take care of full customs clearance: documents, certificates, and border support so the vehicle arrives in Ukraine legally."
+      },
+      "vat": {
+        "question": "Is VAT included in the listed prices?",
+        "answer": "No. Catalog prices are the vehicle cost without VAT or customs fees. The final amount with taxes is calculated individually for each model."
+      },
+      "delivery": {
+        "question": "What are the delivery times?",
+        "answer": "It depends on the country, availability, and logistics. Delivery from the EU usually takes 7 to 21 days after the deal is confirmed. We agree the exact timeline before payment."
+      },
+      "inspection": {
+        "question": "Can I inspect the vehicle before purchase?",
+        "answer": "Yes. We can arrange an inspection at an EU yard or provide a detailed photo and video report, a technical inspection report, and service history."
+      }
+    }
+  },
+  "PartnershipSection": {
+    "eyebrow": "B2B Partnership",
+    "title": "A reliable partner for European suppliers",
+    "subtitle": "For dealers, carriers and fleet operators — a stable channel of European trucks with deal support.",
+    "formTitle": "Become a partner",
+    "name": "Name",
+    "email": "Email",
+    "company": "Company name",
+    "message": "Message",
+    "namePlaceholder": "Jane Smith",
+    "emailPlaceholder": "name@company.com",
+    "companyPlaceholder": "Company name",
+    "messagePlaceholder": "Briefly describe your request",
+    "submit": "Send inquiry",
+    "benefits": {
+      "network": {
+        "title": "European network",
+        "description": "Suppliers and yards across EU countries."
+      },
+      "quality": {
+        "title": "Verified quality",
+        "description": "Vehicles inspected before dispatch."
+      },
+      "logistics": {
+        "title": "Full logistics",
+        "description": "From purchase to delivery in Ukraine."
+      },
+      "cooperation": {
+        "title": "Long-term cooperation",
+        "description": "Stable terms for dealers and fleets."
+      }
+    }
+  },
+  "ContactSection": {
+    "eyebrow": "Get in touch",
+    "title": "Request a callback",
+    "subtitle": "Leave your number — a manager will call back during business hours and help you choose a truck.",
+    "phonePlaceholder": "+380 XX XXX XX XX",
+    "submit": "Call me",
+    "privacy": "By tapping the button, you agree to the <privacy>Privacy Policy</privacy>.",
+    "infoTitle": "Contact information",
+    "mapPlaceholder": "Map integration",
+    "phone": {
+      "label": "Phone",
+      "value": "+380 44 123 45 67",
+      "href": "tel:+380441234567"
+    },
+    "email": {
+      "label": "Email",
+      "value": "info@m-truck.ua",
+      "href": "mailto:info@m-truck.ua"
+    },
+    "address": {
+      "label": "Address",
+      "value": "Kyiv, Ukraine\nPeremohy Avenue, 1"
+    },
+    "hours": {
+      "label": "Working hours",
+      "value": "Mon–Fri: 09:00–18:00\nSat: 10:00–15:00"
+    }
+  },
+  "Pages": {
+    "services": {
+      "title": "Services",
+      "body": "Vehicle selection, consulting, and deal support. A full services page will appear here."
+    },
+    "partnership": {
+      "title": "Partnership",
+      "body": "Cooperation for dealers, carriers, and corporate clients. Partnership terms will appear here."
+    },
+    "faq": {
+      "title": "FAQ",
+      "body": "Answers to common questions will appear here."
+    },
+    "contacts": {
+      "title": "Contacts",
+      "body": "Get in touch to select a commercial vehicle."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "body": "The privacy policy text will appear here."
+    },
+    "terms": {
+      "title": "Terms of Use",
+      "body": "The terms of use text will appear here."
+    }
+  },
+  "Footer": {
+    "aria": "Site footer",
+    "tagline": "Reliable import of commercial vehicles from Europe for businesses and fleets.",
+    "phone": {
+      "value": "+380 44 123 45 67",
+      "href": "tel:+380441234567"
+    },
+    "email": {
+      "value": "info@m-truck.ua",
+      "href": "mailto:info@m-truck.ua"
+    },
+    "address": "Kyiv, Ukraine\nPeremohy Avenue, 1",
+    "hours": "Mon–Fri: 9:00–18:00",
+    "catalogTitle": "Catalog",
+    "catalog": {
+      "tractors": "Tractors",
+      "vans": "Vans",
+      "reefers": "Reefers",
+      "all": "All vehicles"
+    },
+    "companyTitle": "Company",
+    "company": {
+      "about": "About us",
+      "services": "Services",
+      "partnership": "Partnership",
+      "contacts": "Contacts"
+    },
+    "socialTitle": "Follow us",
+    "socialText": "New arrivals and offers — in our sales Telegram channel.",
+    "telegramCta": "Telegram",
+    "copyright": "© {year} M-TRUCK. All rights reserved.",
+    "legal": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use"
+    }
+  },
+  "About": {
+    "titleBefore": "We love",
+    "titleHighlight": "MTruck",
+    "body": "Commercial vehicle sales: truck selection, consulting, and deal support. The catalog is updated regularly; model details live on each product card."
+  },
+  "Products": {
+    "count": "{count, plural, one {# product} other {# products}}",
+    "emptySearch": "Sorry, no products matched your search.",
+    "empty": "No products yet.",
+    "layoutGrid": "Grid",
+    "layoutList": "List",
+    "searchPlaceholder": "Search trucks...",
+    "filter": "Filter",
+    "sort": "Sort",
+    "sortNewest": "Newest first",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "sortName": "Name",
+    "filterBrand": "Brand",
+    "filterFeatured": "Featured only",
+    "filterClear": "Clear filters",
+    "filterEmpty": "No brands yet."
+  },
+  "Product": {
+    "home": "Home",
+    "catalog": "Products",
+    "details": "Details",
+    "featuredBadge": "New",
+    "addToCart": "Add to cart",
+    "signIn": "Sign in",
+    "amount": "Amount",
+    "reviewsCount": "{count, plural, one {# review} other {# reviews}}",
+    "reviewsTitle": "Product reviews"
+  },
+  "VehicleCard": {
+    "details": "Details",
+    "euroFallback": "Euro 5",
+    "year": "{year}",
+    "status": {
+      "PUBLISHED": "Available",
+      "RESERVED": "Reserved",
+      "DRAFT": "Draft",
+      "PREPARING": "Preparing",
+      "SOLD": "Sold"
+    }
+  },
+  "Cart": {
+    "empty": "Empty cart",
+    "title": "Shopping cart",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "orderTotal": "Order total",
+    "noOnlinePayment": "Online payment is not available. Contact a manager to buy a vehicle.",
+    "remove": "Remove",
+    "calculating": "Updating..."
+  },
+  "Auth": {
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to your account",
+    "testAccount": "Login with test account",
+    "selectTestAccount": "Select a test account",
+    "testUser": "Test user",
+    "guestAdmin": "Test admin",
+    "clearSelection": "Clear selection",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "or": "or",
+    "continueGoogle": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "createAccount": "Create an account",
+    "signUpSubtitle": "Sign up with email and password",
+    "name": "Name",
+    "passwordHint": "At least 8 characters",
+    "creatingAccount": "Creating account...",
+    "haveAccount": "Already have an account?",
+    "googleNotConfigured": "Google sign-in is not configured yet.",
+    "invalidCredentials": "Invalid email or password.",
+    "couldNotCreate": "Could not create account."
+  },
+  "Account": {
+    "backToStore": "Back to catalog",
+    "title": "Account"
+  },
+  "Favorites": {
+    "title": "Favorites",
+    "empty": "You have no favorites yet."
+  },
+  "Reviews": {
+    "title": "Your reviews",
+    "empty": "You have no reviews yet.",
+    "leaveReview": "Leave review",
+    "feedback": "Feedback",
+    "rating": "Rating",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "Orders": {
+    "title": "Your orders",
+    "total": "Total orders: {count}",
+    "products": "Products",
+    "orderTotal": "Order total",
+    "tax": "Tax",
+    "shipping": "Shipping",
+    "date": "Date"
+  },
+  "Admin": {
+    "dashboard": "Admin dashboard",
+    "sales": "Sales",
+    "myProducts": "My products",
+    "createProduct": "Create product",
+    "updateProduct": "Update product",
+    "productName": "Product name",
+    "company": "Company",
+    "price": "Price ($)",
+    "image": "Image",
+    "description": "Description",
+    "featured": "Featured",
+    "actions": "Actions",
+    "totalProducts": "Total products: {count}",
+    "totalOrders": "Total orders: {count}",
+    "email": "Email",
+    "updateImage": "Update image",
+    "submitCreate": "Create product",
+    "submitUpdate": "Save"
+  },
+  "Common": {
+    "submit": "Submit",
+    "pleaseWait": "Please wait...",
+    "emptyList": "No items found."
+  },
+  "Actions": {
+    "error": "An error occurred",
+    "productRemoved": "Product removed",
+    "productUpdated": "Product updated",
+    "imageUpdated": "Product image updated",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "reviewSubmitted": "Review submitted",
+    "partnershipSubmitted": "Inquiry sent",
+    "callbackSubmitted": "Callback request sent",
+    "reviewDeleted": "Review deleted",
+    "itemRemoved": "Item removed from cart",
+    "cartUpdated": "Cart updated"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "Check the URL or return to the home page."
+  },
+  "Metadata": {
+    "title": "MTruck — commercial truck sales",
+    "description": "Catalog of trucks and commercial vehicles. Selection, consulting, and deal support."
+  }
+}

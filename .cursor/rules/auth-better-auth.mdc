@@ -1,0 +1,24 @@
+---
+description: Better-Auth — сесії, адмін, OAuth. Без Clerk і GitHub
+globs: "{lib/auth.ts,lib/auth-client.ts,utils/session.ts,proxy.ts,app/api/auth/**,app/sign-in/**,app/sign-up/**,app/user-profile/**,components/auth/**,components/navbar/**}"
+alwaysApply: false
+---
+
+# Better-Auth
+
+Джерело правди: `lib/auth.ts` + `utils/session.ts`. Документація: Better Auth **1.7** (див. `package.json`).
+
+## Правила
+
+- Сервер: `auth.api.getSession({ headers })` через `getSession` / `getAuthUser` / `getAdminUser`.
+- Клієнт: `authClient` з `lib/auth-client.ts` (`useSession`, `signIn.email`, `signUp.email`, `signIn.social`, `signOut`).
+- Хендлер: `app/api/auth/[...all]/route.ts` — `toNextJsHandler(auth)`.
+- `proxy.ts` — лише перевірка cookie (`getSessionCookie`). Захищені: `/admin`, `/orders`, `/user-profile`.
+- Адмін = email у `ADMIN_EMAIL` / `ADMIN_TEST_EMAIL` (навігація: `NEXT_PUBLIC_ADMIN_*`). Не Clerk `userId`.
+- Google: додавати в `socialProviders` лише якщо є **обидва** `GOOGLE_CLIENT_ID` і `GOOGLE_CLIENT_SECRET`. UI: `NEXT_PUBLIC_GOOGLE_AUTH=true`. Redirect: `{BETTER_AUTH_URL}/api/auth/callback/google`.
+- **Не** додавати GitHub provider, `@clerk/nextjs`, `middleware.ts`.
+- Prisma `Account.issuer` обов’язковий; unique `[issuer, accountId]`.
+
+## Тест
+
+`test@admin.com` / `12345678`, `test@user.com` / `12345678` — сід `npm run db:seed`.

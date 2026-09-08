@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '../ui/button';
+import { useTranslations } from 'next-intl';
 
 function Comment({ comment }: { comment: string }) {
+  const t = useTranslations('Reviews');
   const [isExpanded, setIsExpanded] = useState(false);
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -22,7 +24,7 @@ function Comment({ comment }: { comment: string }) {
           className='pl-0 text-muted-foreground'
           onClick={toggleExpanded}
         >
-          {isExpanded ? 'Show Less' : 'Show More'}
+          {isExpanded ? t('showLess') : t('showMore')}
         </Button>
       )}
     </div>

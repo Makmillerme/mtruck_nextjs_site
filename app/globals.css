@@ -5,36 +5,38 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 215 100% 33.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 215 100% 33.5%;
     --radius: 0.5rem;
+    --font-sans: var(--font-geist-sans, ui-sans-serif), system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, Menlo, monospace;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 215 100% 33.5%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -43,18 +45,69 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    /* Lighter borders for visibility on dark backgrounds */
     --border: 217.2 20% 35%;
     --input: 217.2 20% 35%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 215 100% 45%;
   }
-}
 
-@layer base {
+  html {
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    overflow-x: clip;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply max-w-full overflow-x-clip bg-background font-sans text-foreground antialiased;
   }
+
+  .site-header {
+    --foreground: 222 47% 11%;
+    --muted-foreground: 215 16% 47%;
+    --muted: 210 40% 96%;
+    --primary: 215 100% 33.5%;
+    --primary-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --background: 0 0% 100%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+  }
+}
+
+@layer components {
+  .page-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 5vw, 2rem);
+    padding-right: clamp(1rem, 5vw, 2rem);
+  }
+
+  .section-spacing-tight {
+    padding-top: clamp(2rem, 4vw, 3rem);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .section-spacing {
+    padding-top: clamp(3rem, 6vw, 5rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  .full-bleed {
+    width: 100%;
+  }
+}
+
+/*
+  Radix (react-remove-scroll) injects body[data-scroll-locked] { margin-right: scrollbar !important }.
+  html already reserves that width with scrollbar-gutter: stable, so the extra margin shifts the layout left.
+  Unlayered + higher specificity so this wins over the injected stylesheet.
+*/
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
 }

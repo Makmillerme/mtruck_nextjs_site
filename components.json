@@ -13,5 +13,8 @@
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils"
+  },
+  "registries": {
+    "@shadcn-space": "https://shadcnspace.com/r/{name}.json"
   }
 }

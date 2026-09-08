@@ -1,0 +1,39 @@
+---
+description: Serena MCP — единий спосіб редагування коду цього репо
+alwaysApply: true
+---
+
+# Serena-first editing
+
+Усі зміни коду в цьому репозиторії — через **Serena MCP** (`user-serena`), не через search_replace/write, крім fallback.
+
+Це **один** проєкт Serena, не монорепо.
+
+## Обов’язковий крок
+
+Перед редагуванням:
+
+`activate_project` → `{"project": "d:\\Project\\mtruck\\mtruck_nextjs_site"}`
+
+## Проєкт
+
+- **Назва:** `mtruck_nextjs_site`
+- **Шлях:** `d:\Project\mtruck\mtruck_nextjs_site`
+- **relative_path:** від кореня репо (`app/layout.tsx`, `lib/auth.ts`, `.cursor/rules/...`)
+- App Router живе в `app/`, не в `src/app/`
+
+## Інструменти
+
+| Задача | Інструмент |
+|--------|-----------|
+| Активація | `activate_project` |
+| Символи | `find_symbol`, `get_symbols_overview`, `replace_symbol_body`, `insert_after_symbol`, `insert_before_symbol`, `rename_symbol` |
+| Текст | `replace_content`, `read_file`, `create_text_file` |
+| Пошук | `search_for_pattern`, `find_referencing_symbols` |
+| Пам’ять | `write_memory`, `read_memory`, `edit_memory` |
+
+**name_path:** `AddToCart`, `User/sessions`, `/ExactMatch`.
+
+## Fallback
+
+Якщо Serena недоступна — search_replace, запиши зміни в `.serena/memories/` вручну.

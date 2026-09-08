@@ -2,12 +2,13 @@
 
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { useFormStatus } from "react-dom";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SignInButton } from "@clerk/nextjs";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { LuTrash2, LuPen } from "react-icons/lu";
+import { useTranslations } from "next-intl";
 
 type btnSize = "default" | "lg" | "sm";
 
@@ -19,10 +20,12 @@ type SubmitButtonProps = {
 
 export function SubmitButton({
   className = "",
-  text = "submit",
+  text,
   size = "lg",
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
+  const t = useTranslations("Common");
+  const label = text ?? t("submit");
   return (
     <Button
       type="submit"
@@ -33,10 +36,10 @@ export function SubmitButton({
       {pending ? (
         <>
           <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
-          Please wait...
+          {t("pleaseWait")}
         </>
       ) : (
-        text
+        label
       )}
     </Button>
   );
@@ -72,18 +75,19 @@ export const IconButton = ({ actionType }: { actionType: actionType }) => {
 
 export const CardSignInButton = () => {
   const pathname = usePathname();
+  const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <SignInButton mode="redirect" forceRedirectUrl={pathname || "/products"}>
-      <Button
-        type="button"
-        size="icon"
-        variant="outline"
-        className="p-2 cursor-pointer"
-        asChild
-      >
+    <Button
+      type="button"
+      size="icon"
+      variant="outline"
+      className="p-2 cursor-pointer"
+      asChild
+    >
+      <Link href={href}>
         <FaRegHeart />
-      </Button>
-    </SignInButton>
+      </Link>
+    </Button>
   );
 };
 
@@ -109,11 +113,11 @@ export const CardSubmitButton = ({ isFavorite }: { isFavorite: boolean }) => {
 
 export const ProductSignInButton = () => {
   const pathname = usePathname();
+  const t = useTranslations("Product");
+  const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <SignInButton mode="redirect" forceRedirectUrl={pathname || "/products"}>
-      <Button type="button" className="mt-8 capitalize">
-        sign in
-      </Button>
-    </SignInButton>
+    <Button type="button" className="mt-8 capitalize" asChild>
+      <Link href={href}>{t("signIn")}</Link>
+    </Button>
   );
 };

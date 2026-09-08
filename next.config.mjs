@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -8,18 +12,14 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
-      },
-      {
-        protocol: "https",
-        hostname: "img.clerk.com",
-      },
-      {
-        protocol: "https",
         hostname: "robohash.org",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
       },
     ],
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
