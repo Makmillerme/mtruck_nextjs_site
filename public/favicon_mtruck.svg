@@ -3,14 +3,14 @@
   <path d="M55.1223 38.3887H54.9262L51.5924 45.0562L42.7023 61.2022L34.0083 45.1216L30.5438 37.9311H30.3477V63.2002H21V22.7002H31.5243L42.7023 44.0757H42.833L53.8803 22.7002H64.47V63.2002H55.1223V38.3887Z" fill="url(#fvChrome)"/>
   <defs>
     <linearGradient id="fvChrome" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.12" stop-color="#E9EBEF"/>
-      <stop offset="0.28" stop-color="#C5C8D0"/>
-      <stop offset="0.42" stop-color="#9EA2AB"/>
-      <stop offset="0.55" stop-color="#D8DBE1"/>
-      <stop offset="0.68" stop-color="#F2F3F5"/>
-      <stop offset="0.82" stop-color="#B8BBC3"/>
-      <stop offset="1" stop-color="#8A8E97"/>
+      <stop offset="0" stop-color="#F4F5F7"/>
+      <stop offset="0.14" stop-color="#D2D5DB"/>
+      <stop offset="0.3" stop-color="#9A9EA6"/>
+      <stop offset="0.45" stop-color="#5C6068"/>
+      <stop offset="0.56" stop-color="#C2C5CC"/>
+      <stop offset="0.68" stop-color="#E8EAEE"/>
+      <stop offset="0.84" stop-color="#8E929A"/>
+      <stop offset="1" stop-color="#555960"/>
     </linearGradient>
   </defs>
 </svg>
