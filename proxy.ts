@@ -5,7 +5,7 @@ import { routing } from "./i18n/routing";
 
 const handleI18nRouting = createIntlMiddleware(routing);
 
-const protectedPaths = ["/admin", "/orders", "/user-profile"];
+const protectedPaths = ["/admin", "/account", "/orders", "/user-profile", "/favorites"];
 const prefixedLocales = new Set(
   routing.locales.filter((locale) => locale !== routing.defaultLocale)
 );

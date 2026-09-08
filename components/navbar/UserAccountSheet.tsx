@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { LuLogOut, LuMenu, LuSettings } from "react-icons/lu";
-import { useTheme } from "@teispace/next-themes";
 import { isClientAdmin, UserAvatar } from "./AccountTrigger";
 
 function sheetLinkClass(active: boolean) {
@@ -38,7 +37,6 @@ export default function UserAccountSheet({
   const tLinks = useTranslations("NavLinks");
   const pathname = usePathname();
   const router = useRouter();
-  const { setTheme, theme } = useTheme();
   const [open, setOpen] = useState(false);
   const isAdmin = isClientAdmin(user?.email);
 
@@ -143,22 +141,9 @@ export default function UserAccountSheet({
         {user ? (
           <>
             <Separator />
-            <div className="flex flex-col gap-1">
-              <p className="px-3 text-xs font-medium text-muted-foreground">{t("theme")}</p>
-              <button type="button" className={sheetLinkClass(theme === "light")} onClick={() => setTheme("light")}>
-                {t("light")}
-              </button>
-              <button type="button" className={sheetLinkClass(theme === "dark")} onClick={() => setTheme("dark")}>
-                {t("dark")}
-              </button>
-              <button type="button" className={sheetLinkClass(theme === "system")} onClick={() => setTheme("system")}>
-                {t("system")}
-              </button>
-            </div>
-            <Separator />
             <nav className="flex flex-col gap-1">
               <Link
-                href="/user-profile"
+                href="/account"
                 className={cn(sheetLinkClass(false), "inline-flex items-center")}
                 onClick={close}
               >

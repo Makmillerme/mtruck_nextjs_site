@@ -24,8 +24,16 @@
     --input: 214 32% 91%;
     --ring: 215 100% 33.5%;
     --radius: 0.5rem;
-    --font-sans: var(--font-geist-sans, ui-sans-serif), system-ui, sans-serif;
+    --font-sans: var(--font-plus-jakarta, ui-sans-serif), system-ui, sans-serif;
     --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, Menlo, monospace;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 215 100% 33.5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 215 100% 33.5%;
   }
 
   .dark {
@@ -48,6 +56,14 @@
     --border: 217.2 20% 35%;
     --input: 217.2 20% 35%;
     --ring: 215 100% 45%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 215 100% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 20% 35%;
+    --sidebar-ring: 215 100% 45%;
   }
 
   html {
@@ -80,11 +96,17 @@
 @layer components {
   .page-container {
     width: 100%;
-    max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
-    padding-left: clamp(1rem, 5vw, 2rem);
-    padding-right: clamp(1rem, 5vw, 2rem);
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 40rem) {
+    .page-container {
+      padding-left: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
+      padding-right: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
+    }
   }
 
   .section-spacing-tight {
@@ -103,13 +125,19 @@
 
   .page-content {
     width: 100%;
-    max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
-    padding-left: clamp(1rem, 5vw, 2rem);
-    padding-right: clamp(1rem, 5vw, 2rem);
+    padding-left: 1rem;
+    padding-right: 1rem;
     padding-top: clamp(1.5rem, 3vw, 2.5rem);
     padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  @media (min-width: 40rem) {
+    .page-content {
+      padding-left: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
+      padding-right: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
+    }
   }
 }
 

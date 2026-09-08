@@ -1,0 +1,12 @@
+<svg width="89" height="89" viewBox="2 2 85 85" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
+  <path d="M87 44C87 67.196 67.9721 86 44.5 86C21.0279 86 2 67.196 2 44C2 20.804 21.0279 2 44.5 2C67.9721 2 87 20.804 87 44ZM9.65 44C9.65 63.0207 25.2529 78.44 44.5 78.44C63.7471 78.44 79.35 63.0207 79.35 44C79.35 24.9793 63.7471 9.56 44.5 9.56C25.2529 9.56 9.65 24.9793 9.65 44Z" fill="url(#mtSteelAvatar)"/>
+  <path d="M57.1223 39.6885H56.9262L53.5924 46.356L44.7023 62.502L36.0083 46.4214L32.5438 39.2309H32.3477L32.3477 64.5H23L23 24H33.5243L44.7023 45.3755H44.833L55.8803 24H66.47L66.47 64.5H57.1223L57.1223 39.6885Z" fill="url(#mtSteelAvatar)"/>
+  <defs>
+    <linearGradient id="mtSteelAvatar" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#E4E6EA"/>
+      <stop offset="0.4" stop-color="#B0B3BA"/>
+      <stop offset="0.75" stop-color="#858991"/>
+      <stop offset="1" stop-color="#6F737B"/>
+    </linearGradient>
+  </defs>
+</svg>

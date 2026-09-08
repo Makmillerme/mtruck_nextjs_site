@@ -53,10 +53,31 @@
     "heroTitle": "Надійний комерційний транспорт з Європи",
     "heroSubtitle": "Преміальні вантажівки від провідних європейських виробників. Якість, надійність та вигідні ціни для вашого автопарку.",
     "heroCta": "Переглянути каталог",
-    "heroSecondary": "Партнерство",
+    "heroSecondary": "Нові надходження",
     "catalogEyebrow": "Каталог",
     "featuredTitle": "Нові надходження",
     "viewCatalog": "Весь каталог"
+  },
+  "CategoryFinder": {
+    "aria": "Підбір техніки за категорією",
+    "eyebrow": "Каталог техніки",
+    "title": "Оберіть категорію під задачі вашого бізнесу",
+    "brandsLabel": "Марка",
+    "allBrands": "Всі марки",
+    "statusLabel": "Наявність",
+    "status": {
+      "all": "Всі",
+      "in_stock": "В наявності в Україні",
+      "transit": "В дорозі з Європи"
+    },
+    "categories": {
+      "tractors": "Сідельні тягачі",
+      "semitrailers": "Напівпричепи",
+      "containers": "Контейнеровози",
+      "vans": "Малотоннажні буси",
+      "special": "Спецтехніка / Шасі"
+    },
+    "cta": "Показати {count} пропозицій"
   },
   "TrustStrip": {
     "aria": "Чому нам довіряють",
@@ -274,6 +295,7 @@
   },
   "Footer": {
     "aria": "Підвал сайту",
+    "navAria": "Навігація в підвалі",
     "tagline": "Надійний імпорт комерційного транспорту з Європи для бізнесу та автопарків.",
     "phone": {
       "value": "+380 44 123 45 67",
@@ -283,24 +305,8 @@
       "value": "info@m-truck.ua",
       "href": "mailto:info@m-truck.ua"
     },
-    "address": "Київ, Україна\nПроспект Перемоги, 1",
+    "address": "Київ, Проспект Перемоги, 1",
     "hours": "Пн–Пт: 9:00–18:00",
-    "catalogTitle": "Каталог",
-    "catalog": {
-      "tractors": "Тягачі",
-      "vans": "Фургони",
-      "reefers": "Рефрижератори",
-      "all": "Всі авто"
-    },
-    "companyTitle": "Компанія",
-    "company": {
-      "about": "Про нас",
-      "services": "Послуги",
-      "partnership": "Партнерство",
-      "contacts": "Контакти"
-    },
-    "socialTitle": "Слідкуйте за нами",
-    "socialText": "Нові надходження та пропозиції — у Telegram-каналі продажів.",
     "telegramCta": "Telegram",
     "copyright": "© {year} M-TRUCK. Всі права захищені.",
     "legal": {
@@ -345,9 +351,14 @@
   "VehicleCard": {
     "details": "Детальніше",
     "euroFallback": "Euro 5",
-    "year": "{year} р.",
+    "year": "{year}",
+    "categoryFallback": "Комерційний транспорт",
+    "mileageFallback": "Пробіг уточнюється",
+    "transmissionFallback": "КПП уточнюється",
+    "featureFallback": "Перевірено",
+    "priceHint": "ціна з ПДВ",
     "status": {
-      "PUBLISHED": "Наявне",
+      "PUBLISHED": "В наявності",
       "RESERVED": "Заброньовано",
       "DRAFT": "Чернетка",
       "PREPARING": "Підготовка",
@@ -394,6 +405,61 @@
   "Account": {
     "backToStore": "Назад до каталогу",
     "title": "Акаунт"
+  },
+  "AccountCabinet": {
+    "home": "Головна",
+    "title": "Акаунт",
+    "navLabel": "Кабінет",
+    "overview": "Огляд",
+    "orders": "Замовлення",
+    "favorites": "Обране",
+    "settings": "Налаштування",
+    "signOut": "Вийти",
+    "signOutHint": "Завершити сесію на цьому пристрої.",
+    "signOutPending": "Вихід...",
+    "userFallback": "Користувач",
+    "welcome": "Вітаємо, {name}",
+    "welcomeHint": "Керуйте замовленнями, обраним і профілем в одному місці.",
+    "viewOrders": "Переглянути замовлення",
+    "viewFavorites": "Переглянути обране",
+    "openSettings": "Відкрити налаштування",
+    "settingsHint": "Імʼя, пароль та аватар",
+    "settingsPageHint": "Оновіть дані профілю та безпеку входу.",
+    "recentOrders": "Останні замовлення",
+    "recentOrdersHint": "Короткий огляд ваших останніх угод.",
+    "orderProducts": "Позицій: {count}",
+    "paid": "Оплачено",
+    "unpaid": "Не оплачено",
+    "ordersEmptyTitle": "Замовлень ще немає",
+    "ordersEmptyDesc": "Коли ви оформите замовлення, воно зʼявиться тут.",
+    "ordersTotal": "Усього замовлень: {count}",
+    "productsCount": "Кількість",
+    "orderTotal": "Сума",
+    "tax": "Податок",
+    "shipping": "Доставка",
+    "status": "Статус",
+    "date": "Дата",
+    "favoritesEmptyTitle": "Обране порожнє",
+    "favoritesEmptyDesc": "Додайте техніку з каталогу, щоб швидко повертатися до цікавих пропозицій.",
+    "favoritesTotal": "У обраному: {count}",
+    "browseCatalog": "До каталогу",
+    "profileTitle": "Профіль",
+    "profileDescription": "Email змінити тут не можна. Імʼя оновлюється одразу в акаунті.",
+    "emailLabel": "Email",
+    "nameLabel": "Імʼя",
+    "saveName": "Зберегти імʼя",
+    "passwordTitle": "Пароль",
+    "passwordDescription": "Мінімум 8 символів. Після зміни увійдіть із новим паролем.",
+    "passwordUnavailable": "Зміна пароля доступна лише для акаунтів з входом через email і пароль.",
+    "currentPassword": "Поточний пароль",
+    "newPassword": "Новий пароль",
+    "confirmPassword": "Підтвердіть пароль",
+    "savePassword": "Змінити пароль",
+    "avatarTitle": "Аватар",
+    "avatarDescription": "Завантажте зображення до 1 МБ (JPG, PNG, WebP).",
+    "changeAvatar": "Змінити аватар",
+    "cancelAvatar": "Скасувати",
+    "saveAvatar": "Зберегти аватар"
   },
   "Favorites": {
     "title": "Обране",
@@ -454,7 +520,10 @@
     "callbackSubmitted": "Заявку на дзвінок надіслано",
     "reviewDeleted": "Відгук видалено",
     "itemRemoved": "Позицію видалено з кошика",
-    "cartUpdated": "Кошик оновлено"
+    "cartUpdated": "Кошик оновлено",
+    "profileNameUpdated": "Імʼя оновлено",
+    "passwordUpdated": "Пароль змінено",
+    "avatarUpdated": "Аватар оновлено"
   },
   "NotFound": {
     "title": "Сторінку не знайдено",

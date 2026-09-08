@@ -1,13 +1,12 @@
 import { headers } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@teispace/next-themes";
-import { getTheme, getThemeScript } from "@teispace/next-themes/server";
 import { routing } from "@/i18n/routing";
 
-const geistSans = Geist({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  variable: "--font-plus-jakarta",
   display: "swap",
 });
 
@@ -34,35 +33,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [initialTheme, htmlLang] = await Promise.all([
-    getTheme(),
-    getHtmlLang(),
-  ]);
-  const themeScript = getThemeScript({
-    attribute: "class",
-    defaultTheme: "system",
-    enableSystem: true,
-    initialTheme: initialTheme ?? undefined,
-  });
+  const htmlLang = await getHtmlLang();
 
   return (
     <html
       lang={htmlLang}
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${plusJakarta.variable} ${geistMono.variable} light`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          forcedTheme="light"
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
-          initialTheme={initialTheme ?? undefined}
-          noScript
         >
           {children}
         </ThemeProvider>

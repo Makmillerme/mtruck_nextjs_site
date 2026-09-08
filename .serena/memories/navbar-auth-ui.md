@@ -1,7 +1,11 @@
-Account UI: `LinksDropdown` splits mobile Sheet vs desktop dropdown.
-- Mobile (`<lg`): header trigger is `LuMenu` (3 horizontal lines), `aria-label` = `Navbar.menu`. Avatar is inside `UserAccountSheet` header (`UserAvatar`: photo or first letter of name).
-- Desktop logged-in: slim `UserProfileDropdown` with `AccountTrigger` — real `user.image` or first letter of name. No Robohash fallback. Theme Light/Dark/System lives here (`ThemeMenuItems`), not in the header.
-- Desktop guest: `LuUser` + login/register dropdown, no theme.
-- Mobile logged-in sheet: theme + manage account + logout. Guest sheet: no theme.
-`AccountTrigger` must forwardRef and `{...props}` so DropdownMenuTrigger asChild works.
-Admin check on client: `isClientAdmin` via NEXT_PUBLIC_ADMIN_EMAIL and NEXT_PUBLIC_ADMIN_TEST_EMAIL.
+## Avatar (2026-09-08)
+- Dedicated square avatar asset: `public/avatar_mtruck.svg` (viewBox `2 2 85 85`, emblem from logo — ring + M centered)
+- Admin default: `lib/admin.ts` → `DEFAULT_ADMIN_AVATAR = "/avatar_mtruck.svg"`
+- `UserAvatar` in `AccountTrigger.tsx`: SVG uses `object-contain object-center bg-muted p-0.5`; photos use `object-cover`
+- Seed migrates legacy `/favicon_mtruck.svg` admin image to new avatar on re-seed
+
+## Theme (2026-09-08)
+- Light-only: `app/layout.tsx` — `forcedTheme="light"`, `enableSystem={false}`, no theme flash script
+- Removed theme picker from `UserProfileDropdown` and `UserAccountSheet`
+- Deleted `ThemeMenuItems.tsx`, `DarkMode.tsx`
+- Viewport: `colorScheme: "light"`, `themeColor: "#ffffff"`

@@ -53,10 +53,31 @@
     "heroTitle": "Reliable commercial transport from Europe",
     "heroSubtitle": "Premium trucks from leading European manufacturers. Quality, reliability, and fair prices for your fleet.",
     "heroCta": "Browse catalog",
-    "heroSecondary": "Partnership",
+    "heroSecondary": "New arrivals",
     "catalogEyebrow": "Catalog",
     "featuredTitle": "New arrivals",
     "viewCatalog": "Full catalog"
+  },
+  "CategoryFinder": {
+    "aria": "Browse vehicles by category",
+    "eyebrow": "Vehicle catalog",
+    "title": "Choose a category for your business needs",
+    "brandsLabel": "Make",
+    "allBrands": "All makes",
+    "statusLabel": "Availability",
+    "status": {
+      "all": "All",
+      "in_stock": "In stock in Ukraine",
+      "transit": "In transit from Europe"
+    },
+    "categories": {
+      "tractors": "Tractor units",
+      "semitrailers": "Semi-trailers",
+      "containers": "Container chassis",
+      "vans": "Light commercial vans",
+      "special": "Special / Chassis"
+    },
+    "cta": "Show {count} offers"
   },
   "TrustStrip": {
     "aria": "Why people trust us",
@@ -274,6 +295,7 @@
   },
   "Footer": {
     "aria": "Site footer",
+    "navAria": "Footer navigation",
     "tagline": "Reliable import of commercial vehicles from Europe for businesses and fleets.",
     "phone": {
       "value": "+380 44 123 45 67",
@@ -283,24 +305,8 @@
       "value": "info@m-truck.ua",
       "href": "mailto:info@m-truck.ua"
     },
-    "address": "Kyiv, Ukraine\nPeremohy Avenue, 1",
+    "address": "Kyiv, Peremohy Avenue, 1",
     "hours": "Mon–Fri: 9:00–18:00",
-    "catalogTitle": "Catalog",
-    "catalog": {
-      "tractors": "Tractors",
-      "vans": "Vans",
-      "reefers": "Reefers",
-      "all": "All vehicles"
-    },
-    "companyTitle": "Company",
-    "company": {
-      "about": "About us",
-      "services": "Services",
-      "partnership": "Partnership",
-      "contacts": "Contacts"
-    },
-    "socialTitle": "Follow us",
-    "socialText": "New arrivals and offers — in our sales Telegram channel.",
     "telegramCta": "Telegram",
     "copyright": "© {year} M-TRUCK. All rights reserved.",
     "legal": {
@@ -346,8 +352,13 @@
     "details": "Details",
     "euroFallback": "Euro 5",
     "year": "{year}",
+    "categoryFallback": "Commercial vehicle",
+    "mileageFallback": "Mileage TBD",
+    "transmissionFallback": "Gearbox TBD",
+    "featureFallback": "Inspected",
+    "priceHint": "incl. VAT",
     "status": {
-      "PUBLISHED": "Available",
+      "PUBLISHED": "In stock",
       "RESERVED": "Reserved",
       "DRAFT": "Draft",
       "PREPARING": "Preparing",
@@ -394,6 +405,61 @@
   "Account": {
     "backToStore": "Back to catalog",
     "title": "Account"
+  },
+  "AccountCabinet": {
+    "home": "Home",
+    "title": "Account",
+    "navLabel": "Cabinet",
+    "overview": "Overview",
+    "orders": "Orders",
+    "favorites": "Favorites",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "signOutHint": "End your session on this device.",
+    "signOutPending": "Signing out...",
+    "userFallback": "User",
+    "welcome": "Welcome, {name}",
+    "welcomeHint": "Manage orders, favorites, and profile in one place.",
+    "viewOrders": "View orders",
+    "viewFavorites": "View favorites",
+    "openSettings": "Open settings",
+    "settingsHint": "Name, password, and avatar",
+    "settingsPageHint": "Update your profile details and sign-in security.",
+    "recentOrders": "Recent orders",
+    "recentOrdersHint": "A quick look at your latest purchases.",
+    "orderProducts": "Items: {count}",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "ordersEmptyTitle": "No orders yet",
+    "ordersEmptyDesc": "When you place an order, it will show up here.",
+    "ordersTotal": "Total orders: {count}",
+    "productsCount": "Items",
+    "orderTotal": "Total",
+    "tax": "Tax",
+    "shipping": "Shipping",
+    "status": "Status",
+    "date": "Date",
+    "favoritesEmptyTitle": "No favorites yet",
+    "favoritesEmptyDesc": "Save trucks from the catalog to revisit them quickly.",
+    "favoritesTotal": "Favorites: {count}",
+    "browseCatalog": "Browse catalog",
+    "profileTitle": "Profile",
+    "profileDescription": "Email cannot be changed here. Your name updates across the account.",
+    "emailLabel": "Email",
+    "nameLabel": "Name",
+    "saveName": "Save name",
+    "passwordTitle": "Password",
+    "passwordDescription": "Minimum 8 characters. Use the new password next time you sign in.",
+    "passwordUnavailable": "Password changes are available only for email/password accounts.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "savePassword": "Change password",
+    "avatarTitle": "Avatar",
+    "avatarDescription": "Upload an image up to 1 MB (JPG, PNG, WebP).",
+    "changeAvatar": "Change avatar",
+    "cancelAvatar": "Cancel",
+    "saveAvatar": "Save avatar"
   },
   "Favorites": {
     "title": "Favorites",
@@ -454,7 +520,10 @@
     "callbackSubmitted": "Callback request sent",
     "reviewDeleted": "Review deleted",
     "itemRemoved": "Item removed from cart",
-    "cartUpdated": "Cart updated"
+    "cartUpdated": "Cart updated",
+    "profileNameUpdated": "Name updated",
+    "passwordUpdated": "Password updated",
+    "avatarUpdated": "Avatar updated"
   },
   "NotFound": {
     "title": "Page not found",

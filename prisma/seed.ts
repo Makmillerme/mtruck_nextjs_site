@@ -19,7 +19,8 @@ async function ensureUser(
     (account) => account.providerId === "credential" && account.password
   );
   if (existing && hasPassword) {
-    if (image && !existing.image) {
+    const legacyAvatar = "/favicon_mtruck.svg";
+    if (image && (!existing.image || existing.image === legacyAvatar)) {
       return prisma.user.update({
         where: { id: existing.id },
         data: { image },

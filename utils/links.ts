@@ -12,11 +12,18 @@ export const siteNav = [
   { href: "/contact", key: "contacts" },
 ] as const;
 
+export const accountCabinetNav = [
+  { href: "/account", key: "overview", match: "exact" },
+  { href: "/account/orders", key: "orders", match: "prefix" },
+  { href: "/account/favorites", key: "favorites", match: "prefix" },
+  { href: "/account/settings", key: "settings", match: "prefix" },
+] as const;
+
 export const accountNav: NavLink[] = [
-  { href: "/favorites", key: "favorites" },
+  { href: "/account/favorites", key: "favorites" },
   { href: "/reviews", key: "reviews" },
   { href: "/cart", key: "cart" },
-  { href: "/orders", key: "orders" },
+  { href: "/account/orders", key: "orders" },
   { href: "/admin/sales", key: "admin" },
 ];
 
@@ -24,10 +31,10 @@ export const links: NavLink[] = [
   { href: "/", key: "home" },
   { href: "/about", key: "about" },
   { href: "/products", key: "products" },
-  { href: "/favorites", key: "favorites" },
+  { href: "/account/favorites", key: "favorites" },
   { href: "/reviews", key: "reviews" },
   { href: "/cart", key: "cart" },
-  { href: "/orders", key: "orders" },
+  { href: "/account/orders", key: "orders" },
   { href: "/admin/sales", key: "admin" },
 ];
 

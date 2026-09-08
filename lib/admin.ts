@@ -1,4 +1,4 @@
-export const DEFAULT_ADMIN_AVATAR = "/favicon_mtruck.svg";
+export const DEFAULT_ADMIN_AVATAR = "/avatar_mtruck.svg";
 
 function uniqueEmails(values: Array<string | undefined>) {
   return [...new Set(values.map((value) => value?.trim()).filter(Boolean))] as string[];

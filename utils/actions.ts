@@ -7,12 +7,21 @@ import { getTranslations } from 'next-intl/server';
 import {
   imageSchema,
   callbackInquirySchema,
+  changePasswordSchema,
   partnershipInquirySchema,
   productSchema,
   reviewSchema,
+  updateProfileNameSchema,
   validateWithZodSchema,
 } from './schemas';
-import { deleteImage, uploadImage } from './images';
+import {
+  deleteAvatarImage,
+  deleteImage,
+  uploadAvatarImage,
+  uploadImage,
+} from './images';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { Cart } from '@prisma/client';
 import type { CatalogSort } from '@/utils/catalog-query';
@@ -631,4 +640,94 @@ export const fetchAdminOrders = async () => {
     },
   });
   return orders;
+};
+
+export const userHasCredentialAccount = async () => {
+  const user = await getAuthUser();
+  const account = await db.account.findFirst({
+    where: {
+      userId: user.id,
+      providerId: 'credential',
+    },
+    select: { id: true },
+  });
+  return Boolean(account);
+};
+
+export const updateProfileNameAction = async (
+  prevState: { message: string },
+  formData: FormData
+) => {
+  await getAuthUser();
+  try {
+    const raw = Object.fromEntries(formData);
+    const { name } = validateWithZodSchema(updateProfileNameSchema, raw);
+    await auth.api.updateUser({
+      body: { name },
+      headers: await headers(),
+    });
+    revalidatePath('/account');
+    revalidatePath('/account/settings');
+    const t = await getTranslations('Actions');
+    return { message: t('profileNameUpdated') };
+  } catch (error) {
+    return renderError(error);
+  }
+};
+
+export const changePasswordAction = async (
+  prevState: { message: string },
+  formData: FormData
+) => {
+  await getAuthUser();
+  try {
+    const hasCredential = await userHasCredentialAccount();
+    if (!hasCredential) {
+      const t = await getTranslations('AccountCabinet');
+      return { message: t('passwordUnavailable') };
+    }
+    const raw = Object.fromEntries(formData);
+    const { currentPassword, newPassword } = validateWithZodSchema(
+      changePasswordSchema,
+      raw
+    );
+    await auth.api.changePassword({
+      body: {
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: false,
+      },
+      headers: await headers(),
+    });
+    const t = await getTranslations('Actions');
+    return { message: t('passwordUpdated') };
+  } catch (error) {
+    return renderError(error);
+  }
+};
+
+export const updateAvatarAction = async (
+  prevState: { message: string },
+  formData: FormData
+) => {
+  const user = await getAuthUser();
+  try {
+    const file = formData.get('image') as File;
+    const validatedFile = validateWithZodSchema(imageSchema, { image: file });
+    const fullPath = await uploadAvatarImage(validatedFile.image);
+    const previousImage = user.image;
+    await auth.api.updateUser({
+      body: { image: fullPath },
+      headers: await headers(),
+    });
+    if (previousImage) {
+      await deleteAvatarImage(previousImage);
+    }
+    revalidatePath('/account');
+    revalidatePath('/account/settings');
+    const t = await getTranslations('Actions');
+    return { message: t('avatarUpdated') };
+  } catch (error) {
+    return renderError(error);
+  }
 };

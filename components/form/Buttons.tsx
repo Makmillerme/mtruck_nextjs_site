@@ -73,7 +73,14 @@ export const IconButton = ({ actionType }: { actionType: actionType }) => {
   );
 };
 
-export const CardSignInButton = () => {
+const favoriteIdleClass =
+  "text-muted-foreground hover:bg-white hover:text-primary";
+const favoriteActiveClass =
+  "text-emerald-500 hover:bg-white hover:text-emerald-500";
+const favoriteIconGlowClass =
+  "drop-shadow-[0_0_0.45rem_rgb(16_185_129_/_0.85)]";
+
+export const CardSignInButton = ({ className }: { className?: string } = {}) => {
   const pathname = usePathname();
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
@@ -81,7 +88,7 @@ export const CardSignInButton = () => {
       type="button"
       size="icon"
       variant="outline"
-      className="p-2 cursor-pointer"
+      className={cn("cursor-pointer p-2", className, favoriteIdleClass)}
       asChild
     >
       <Link href={href}>
@@ -91,19 +98,29 @@ export const CardSignInButton = () => {
   );
 };
 
-export const CardSubmitButton = ({ isFavorite }: { isFavorite: boolean }) => {
+export const CardSubmitButton = ({
+  isFavorite,
+  className,
+}: {
+  isFavorite: boolean;
+  className?: string;
+}) => {
   const { pending } = useFormStatus();
   return (
     <Button
       type="submit"
       size="icon"
       variant="outline"
-      className="p-2 cursor-pointer"
+      className={cn(
+        "cursor-pointer p-2",
+        className,
+        isFavorite ? favoriteActiveClass : favoriteIdleClass
+      )}
     >
       {pending ? (
         <ReloadIcon className="animate-spin" />
       ) : isFavorite ? (
-        <FaHeart />
+        <FaHeart className={favoriteIconGlowClass} />
       ) : (
         <FaRegHeart />
       )}

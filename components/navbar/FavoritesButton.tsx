@@ -10,7 +10,7 @@ export default function FavoritesButton() {
 
   return (
     <Button asChild variant="ghost" size="icon" className="hidden size-9 shrink-0 lg:inline-flex">
-      <Link href="/favorites">
+      <Link href="/account/favorites">
         <LuHeart className="size-5" />
         <span className="sr-only">{t("favorites")}</span>
       </Link>

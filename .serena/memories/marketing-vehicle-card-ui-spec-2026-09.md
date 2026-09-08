@@ -1,19 +1,15 @@
-## VehicleCard (catalog) — implemented 2026-09-07
+## VehicleCard (premium redesign 2026-09-08)
 
 Component: `components/vehicles/vehicle-card.tsx`
-Mapper: `productToVehicle(product)` — href `/products/${id}` (live route; `/catalog/[slug]` does not exist yet).
-Grid: `components/products/ProductsGrid.tsx` — `sm:grid-cols-2 xl:grid-cols-3 gap-6`.
-`ProductCard` is a thin wrapper over VehicleCard.
+- Anatomy: 4/3 image; overlay flex: shadcn `Badge` status (no truncate) + glass favorite; `whitespace-nowrap`
+- Subtitle: year • categoryLabel (company until taxonomy)
+- Specs 2x2: mileage / transmission / euro / feature (i18n fallbacks while Product is furniture)
+- Footer: price + priceHint + compact Details CTA with ChevronRight
+- Tokens: border/background/primary (not raw slate/blue from Gemini TZ)
 
-Defaults while Product is still furniture:
-- status `PUBLISHED` → badge «Наявне»
-- euro fallback «Euro 5» (Fuel always rendered)
-- year / mileage / location omitted until Prisma fields exist
-- favorite heart stays top-left; status pill top-right
+Grid: `ProductsGrid` → `1 / sm:2 / min-[900px]:3`, gap `gap-4 md:gap-5` (3-up earlier for tablet landscape)
+Card denser mid-width: `p-4`, title `text-lg`→`lg:text-xl`, price `text-xl`→`lg:text-2xl`, compact specs/CTA
+Homepage inventory: inside `CatalogBlock` via `CatalogFeaturedGrid` (no titles above grid); shared `bg-secondary`
+Favorite glass: chrome only in VehicleCard (`bg-white/50`); colors in `CardSubmitButton` — idle muted, hover `text-primary`, active filled `FaHeart` + `text-emerald-500` glow (same as status dot). State classes merge after `className` so they win.
 
-i18n: `messages/{uk,en,de}.json` → `VehicleCard`.
-Mileage helper: `formatMileage` in `utils/format.ts`.
-
-Count difference homepage vs catalog is data, not a grid bug:
-- preview `fetchFeaturedProducts()` → `featured: true` (3 seed items)
-- `/products` `fetchAllProducts()` → all 4 seed items (sofa is featured:false)
+i18n VehicleCard: categoryFallback, mileageFallback, transmissionFallback, featureFallback, priceHint; UK status PUBLISHED = «В наявності»

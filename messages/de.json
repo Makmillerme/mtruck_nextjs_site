@@ -53,10 +53,31 @@
     "heroTitle": "Zuverlässige Nutzfahrzeuge aus Europa",
     "heroSubtitle": "Premium-Lkw führender europäischer Hersteller. Qualität, Zuverlässigkeit und faire Preise für Ihre Flotte.",
     "heroCta": "Katalog ansehen",
-    "heroSecondary": "Partnerschaft",
+    "heroSecondary": "Neueingänge",
     "catalogEyebrow": "Katalog",
     "featuredTitle": "Neueingänge",
     "viewCatalog": "Zum Katalog"
+  },
+  "CategoryFinder": {
+    "aria": "Fahrzeuge nach Kategorie auswählen",
+    "eyebrow": "Fahrzeugkatalog",
+    "title": "Wählen Sie die Kategorie für Ihre Geschäftsaufgaben",
+    "brandsLabel": "Marke",
+    "allBrands": "Alle Marken",
+    "statusLabel": "Verfügbarkeit",
+    "status": {
+      "all": "Alle",
+      "in_stock": "Auf Lager in der Ukraine",
+      "transit": "Unterwegs aus Europa"
+    },
+    "categories": {
+      "tractors": "Sattelzugmaschinen",
+      "semitrailers": "Auflieger",
+      "containers": "Containerchassis",
+      "vans": "Leichte Nutzfahrzeuge",
+      "special": "Spezial / Fahrgestell"
+    },
+    "cta": "{count} Angebote zeigen"
   },
   "TrustStrip": {
     "aria": "Warum man uns vertraut",
@@ -274,6 +295,7 @@
   },
   "Footer": {
     "aria": "Seitenfuß",
+    "navAria": "Fußzeilen-Navigation",
     "tagline": "Zuverlässiger Import von Nutzfahrzeugen aus Europa für Unternehmen und Flotten.",
     "phone": {
       "value": "+380 44 123 45 67",
@@ -283,24 +305,8 @@
       "value": "info@m-truck.ua",
       "href": "mailto:info@m-truck.ua"
     },
-    "address": "Kiew, Ukraine\nPeremohy-Prospekt, 1",
+    "address": "Kiew, Peremohy-Prospekt, 1",
     "hours": "Mo–Fr: 9:00–18:00",
-    "catalogTitle": "Katalog",
-    "catalog": {
-      "tractors": "Zugmaschinen",
-      "vans": "Transporter",
-      "reefers": "Kühlfahrzeuge",
-      "all": "Alle Fahrzeuge"
-    },
-    "companyTitle": "Unternehmen",
-    "company": {
-      "about": "Über uns",
-      "services": "Leistungen",
-      "partnership": "Partnerschaft",
-      "contacts": "Kontakt"
-    },
-    "socialTitle": "Folgen Sie uns",
-    "socialText": "Neue Zugänge und Angebote — im Telegram-Kanal des Vertriebs.",
     "telegramCta": "Telegram",
     "copyright": "© {year} M-TRUCK. Alle Rechte vorbehalten.",
     "legal": {
@@ -346,8 +352,13 @@
     "details": "Details",
     "euroFallback": "Euro 5",
     "year": "{year}",
+    "categoryFallback": "Nutzfahrzeug",
+    "mileageFallback": "Laufleistung folgt",
+    "transmissionFallback": "Getriebe folgt",
+    "featureFallback": "Geprüft",
+    "priceHint": "inkl. MwSt.",
     "status": {
-      "PUBLISHED": "Verfügbar",
+      "PUBLISHED": "Auf Lager",
       "RESERVED": "Reserviert",
       "DRAFT": "Entwurf",
       "PREPARING": "Vorbereitung",
@@ -394,6 +405,61 @@
   "Account": {
     "backToStore": "Zurück zum Katalog",
     "title": "Konto"
+  },
+  "AccountCabinet": {
+    "home": "Startseite",
+    "title": "Konto",
+    "navLabel": "Bereich",
+    "overview": "Übersicht",
+    "orders": "Bestellungen",
+    "favorites": "Favoriten",
+    "settings": "Einstellungen",
+    "signOut": "Abmelden",
+    "signOutHint": "Beenden Sie die Sitzung auf diesem Gerät.",
+    "signOutPending": "Abmelden...",
+    "userFallback": "Benutzer",
+    "welcome": "Willkommen, {name}",
+    "welcomeHint": "Bestellungen, Favoriten und Profil an einem Ort verwalten.",
+    "viewOrders": "Bestellungen anzeigen",
+    "viewFavorites": "Favoriten anzeigen",
+    "openSettings": "Einstellungen öffnen",
+    "settingsHint": "Name, Passwort und Avatar",
+    "settingsPageHint": "Profildaten und Anmeldungssicherheit aktualisieren.",
+    "recentOrders": "Letzte Bestellungen",
+    "recentOrdersHint": "Kurzer Überblick Ihrer letzten Käufe.",
+    "orderProducts": "Positionen: {count}",
+    "paid": "Bezahlt",
+    "unpaid": "Unbezahlt",
+    "ordersEmptyTitle": "Noch keine Bestellungen",
+    "ordersEmptyDesc": "Sobald Sie bestellen, erscheint die Bestellung hier.",
+    "ordersTotal": "Bestellungen gesamt: {count}",
+    "productsCount": "Anzahl",
+    "orderTotal": "Summe",
+    "tax": "Steuer",
+    "shipping": "Versand",
+    "status": "Status",
+    "date": "Datum",
+    "favoritesEmptyTitle": "Noch keine Favoriten",
+    "favoritesEmptyDesc": "Speichern Sie Fahrzeuge aus dem Katalog für späteren Zugriff.",
+    "favoritesTotal": "Favoriten: {count}",
+    "browseCatalog": "Zum Katalog",
+    "profileTitle": "Profil",
+    "profileDescription": "E-Mail kann hier nicht geändert werden. Der Name wird im Konto aktualisiert.",
+    "emailLabel": "E-Mail",
+    "nameLabel": "Name",
+    "saveName": "Name speichern",
+    "passwordTitle": "Passwort",
+    "passwordDescription": "Mindestens 8 Zeichen. Melden Sie sich danach mit dem neuen Passwort an.",
+    "passwordUnavailable": "Passwortänderung ist nur für E-Mail/Passwort-Konten verfügbar.",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "savePassword": "Passwort ändern",
+    "avatarTitle": "Avatar",
+    "avatarDescription": "Bild bis 1 MB hochladen (JPG, PNG, WebP).",
+    "changeAvatar": "Avatar ändern",
+    "cancelAvatar": "Abbrechen",
+    "saveAvatar": "Avatar speichern"
   },
   "Favorites": {
     "title": "Favoriten",
@@ -454,7 +520,10 @@
     "callbackSubmitted": "Rückrufanfrage gesendet",
     "reviewDeleted": "Bewertung gelöscht",
     "itemRemoved": "Artikel entfernt",
-    "cartUpdated": "Warenkorb aktualisiert"
+    "cartUpdated": "Warenkorb aktualisiert",
+    "profileNameUpdated": "Name aktualisiert",
+    "passwordUpdated": "Passwort geändert",
+    "avatarUpdated": "Avatar aktualisiert"
   },
   "NotFound": {
     "title": "Seite nicht gefunden",

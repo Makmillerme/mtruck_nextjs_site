@@ -14,7 +14,6 @@ import { authClient } from '@/lib/auth-client';
 import type { SessionUser } from '@/utils/session';
 import { useTranslations } from 'next-intl';
 import { AccountTrigger, isClientAdmin } from './AccountTrigger';
-import { ThemeMenuItems } from './ThemeMenuItems';
 
 export default function UserProfileDropdown({
   initialUser,
@@ -57,13 +56,8 @@ export default function UserProfileDropdown({
           </>
         ) : null}
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-          {tNav('theme')}
-        </DropdownMenuLabel>
-        <ThemeMenuItems />
-        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/user-profile" className="flex cursor-pointer items-center">
+          <Link href="/account" className="flex cursor-pointer items-center">
             <LuSettings className="mr-2 h-4 w-4" />
             {tNav('manageAccount')}
           </Link>

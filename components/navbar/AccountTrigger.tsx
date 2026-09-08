@@ -39,6 +39,8 @@ export function UserAvatar({
   const imageUrl = !avatarError && user.image?.trim() ? user.image : null;
 
   if (imageUrl) {
+    const isSvg = imageUrl.endsWith(".svg");
+
     return (
       <Image
         src={imageUrl}
@@ -46,7 +48,8 @@ export function UserAvatar({
         width={32}
         height={32}
         className={cn(
-          "h-8 w-8 max-h-8 max-w-8 shrink-0 rounded-full object-cover",
+          "h-8 w-8 max-h-8 max-w-8 shrink-0 rounded-full",
+          isSvg ? "object-contain object-center bg-muted p-0.5" : "object-cover",
           className
         )}
         style={{ height: 32, width: 32 }}

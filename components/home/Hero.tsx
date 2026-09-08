@@ -41,14 +41,14 @@ async function Hero() {
               asChild
               className="h-12 px-8 text-base font-semibold"
             >
-              <a href="#inventory">{t("heroCta")}</a>
+              <a href="#catalog">{t("heroCta")}</a>
             </Button>
             <Button
               asChild
               variant="outline"
               className="h-12 border-white/50 bg-transparent px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
             >
-              <a href="#partners">{t("heroSecondary")}</a>
+              <a href="#inventory">{t("heroSecondary")}</a>
             </Button>
           </div>
         </div>

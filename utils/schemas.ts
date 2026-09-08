@@ -91,6 +91,27 @@ export const callbackInquirySchema = z.object({
     }),
 });
 
+export const updateProfileNameSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters." })
+    .max(80, { message: "Name must be less than 80 characters." }),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { message: "Current password is required." }),
+    newPassword: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters." }),
+    confirmPassword: z.string().min(1, { message: "Confirm your new password." }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export const partnershipInquirySchema = z.object({
   name: z.string().trim().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().trim().email({ message: "Enter a valid email." }),

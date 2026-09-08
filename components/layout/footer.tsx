@@ -1,23 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
+import { siteNav } from "@/utils/links";
 import { getTranslations } from "next-intl/server";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
-
-const CATALOG_LINKS = [
-  { key: "tractors", href: "/products" },
-  { key: "vans", href: "/products" },
-  { key: "reefers", href: "/products" },
-  { key: "all", href: "/products" },
-] as const;
-
-const COMPANY_LINKS = [
-  { key: "about", href: "/about" },
-  { key: "services", href: "/services" },
-  { key: "partnership", href: "/partnership" },
-  { key: "contacts", href: "/contact" },
-] as const;
+import { LuClock, LuMail, LuMapPin, LuPhone } from "react-icons/lu";
 
 const LEGAL_LINKS = [
   { key: "privacy", href: "/privacy" },
@@ -28,131 +13,89 @@ const TELEGRAM_URL = "https://t.me/mtruck_sales";
 
 export default async function Footer() {
   const t = await getTranslations("Footer");
+  const tNav = await getTranslations("Navbar");
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-foreground text-background">
-      <section
-        aria-label={t("aria")}
-        className="page-container section-spacing"
-      >
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-12">
-          <div className="space-y-6">
-            <Link
-              href="/"
-              className="inline-block text-2xl font-black tracking-tight"
-            >
-              <span className="text-background">M-</span>
-              <span className="text-primary">TRUCK</span>
+    <footer className="border-t border-background/10 bg-foreground text-background">
+      <section aria-label={t("aria")} className="page-container py-8 md:py-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+          <div className="max-w-sm space-y-3">
+            <Link href="/" className="inline-flex shrink-0 items-center">
+              <img
+                src="/logo_mtruck.svg?v=flatsteel7"
+                alt="M-TRUCK"
+                width={223}
+                height={88}
+                className="h-8 w-auto max-w-[10rem]"
+                decoding="async"
+              />
             </Link>
-            <p className="text-sm text-background/70">{t("tagline")}</p>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3 text-sm">
-                <Phone className="size-4 shrink-0 text-primary" aria-hidden />
+            <p className="text-sm leading-relaxed text-background/65">{t("tagline")}</p>
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-5 lg:max-w-2xl lg:items-end">
+            <nav aria-label={t("navAria")} className="flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
+              {siteNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm font-medium text-background/80 transition-colors hover:text-primary"
+                >
+                  {tNav(item.key)}
+                </Link>
+              ))}
+            </nav>
+
+            <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2 lg:justify-end">
+              <li>
                 <a
                   href={t("phone.href")}
-                  className="text-background/70 hover:text-primary"
+                  className="inline-flex items-center gap-2 text-sm text-background/65 transition-colors hover:text-primary"
                 >
+                  <LuPhone className="size-3.5 shrink-0 text-primary" aria-hidden />
                   {t("phone.value")}
                 </a>
               </li>
-              <li className="flex items-center gap-3 text-sm">
-                <Mail className="size-4 shrink-0 text-primary" aria-hidden />
+              <li>
                 <a
                   href={t("email.href")}
-                  className="text-background/70 hover:text-primary"
+                  className="inline-flex items-center gap-2 text-sm text-background/65 transition-colors hover:text-primary"
                 >
+                  <LuMail className="size-3.5 shrink-0 text-primary" aria-hidden />
                   {t("email.value")}
                 </a>
               </li>
-              <li className="flex items-start gap-3 text-sm">
-                <MapPin
-                  className="mt-0.5 size-4 shrink-0 text-primary"
-                  aria-hidden
-                />
-                <span className="whitespace-pre-line text-background/70">
-                  {t("address")}
-                </span>
+              <li className="inline-flex items-start gap-2 text-sm text-background/65 sm:items-center">
+                <LuMapPin className="mt-0.5 size-3.5 shrink-0 text-primary sm:mt-0" aria-hidden />
+                <span className="whitespace-pre-line sm:whitespace-normal">{t("address")}</span>
               </li>
-              <li className="flex items-center gap-3 text-sm">
-                <Clock className="size-4 shrink-0 text-primary" aria-hidden />
-                <span className="text-background/70">{t("hours")}</span>
+              <li className="inline-flex items-center gap-2 text-sm text-background/65">
+                <LuClock className="size-3.5 shrink-0 text-primary" aria-hidden />
+                {t("hours")}
               </li>
             </ul>
-          </div>
 
-          <nav aria-labelledby="footer-catalog-heading">
-            <h3
-              id="footer-catalog-heading"
-              className="mb-4 font-bold text-background"
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-md border border-background/20 px-3 py-1.5 text-sm font-medium text-background/90 transition-colors hover:border-primary hover:text-primary"
             >
-              {t("catalogTitle")}
-            </h3>
-            <ul className="space-y-2">
-              {CATALOG_LINKS.map(({ key, href }) => (
-                <li key={key}>
-                  <Link
-                    href={href}
-                    className="text-sm text-background/70 hover:text-primary"
-                  >
-                    {t(`catalog.${key}`)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <nav aria-labelledby="footer-company-heading">
-            <h3
-              id="footer-company-heading"
-              className="mb-4 font-bold text-background"
-            >
-              {t("companyTitle")}
-            </h3>
-            <ul className="space-y-2">
-              {COMPANY_LINKS.map(({ key, href }) => (
-                <li key={key}>
-                  <Link
-                    href={href}
-                    className="text-sm text-background/70 hover:text-primary"
-                  >
-                    {t(`company.${key}`)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div>
-            <h3 className="mb-4 font-bold text-background">
-              {t("socialTitle")}
-            </h3>
-            <p className="mb-4 text-sm text-background/70">{t("socialText")}</p>
-            <Button asChild>
-              <a
-                href={TELEGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaTelegram className="mr-2 size-5" aria-hidden />
-                {t("telegramCta")}
-              </a>
-            </Button>
+              <FaTelegram className="size-4" aria-hidden />
+              {t("telegramCta")}
+            </a>
           </div>
         </div>
 
-        <Separator className="my-12 bg-background/10" />
-
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:items-center">
-          <p className="text-sm text-background/50">
-            {t("copyright", { year })}
-          </p>
-          <ul className="flex flex-wrap items-center justify-center gap-6">
+        <div className="mt-8 flex flex-col items-start gap-3 border-t border-background/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-background/45">{t("copyright", { year })}</p>
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {LEGAL_LINKS.map(({ key, href }) => (
               <li key={key}>
                 <Link
                   href={href}
-                  className="text-sm text-background/50 hover:text-primary"
+                  className="text-xs text-background/45 transition-colors hover:text-primary"
                 >
                   {t(`legal.${key}`)}
                 </Link>
