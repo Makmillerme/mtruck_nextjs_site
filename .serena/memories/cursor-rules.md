@@ -4,6 +4,7 @@
 
 ## Always-apply
 - `mtruck-stack.mdc` — Next 16.3, Tailwind v3, shadcn `components/ui`, react-icons, Zod+useActionState, Better-Auth, Prisma/PostgressOps, no Payload/Telegram/Clerk/GitHub OAuth
+- `git-checkpoints.mdc` — local commit after every logical change; restore on request; origin = Makmillerme/mtruck_nextjs_site
 - `senior-agent-workflow.mdc`, `serena-editing.mdc` — activate `d:\\Project\\mtruck\\mtruck_nextjs_site`, paths `app/` not `src/app/`
 - PostgressOps operator + phone-dev + UK layout decode from **this** repo
 
