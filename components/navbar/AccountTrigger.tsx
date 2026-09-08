@@ -21,7 +21,9 @@ export function isClientAdmin(email: string | undefined) {
   const adminEmails = [
     process.env.NEXT_PUBLIC_ADMIN_EMAIL,
     process.env.NEXT_PUBLIC_ADMIN_TEST_EMAIL,
-  ].filter(Boolean) as string[];
+  ]
+    .map((value) => value?.trim())
+    .filter(Boolean) as string[];
   return email ? adminEmails.includes(email) : false;
 }
 
@@ -48,6 +50,7 @@ export function UserAvatar({
           className
         )}
         style={{ height: 32, width: 32 }}
+        unoptimized={imageUrl.endsWith(".svg")}
         onError={() => setAvatarError(true)}
         referrerPolicy="no-referrer"
       />

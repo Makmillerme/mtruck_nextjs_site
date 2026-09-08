@@ -14,11 +14,12 @@ alwaysApply: false
 - Клієнт: `authClient` з `lib/auth-client.ts` (`useSession`, `signIn.email`, `signUp.email`, `signIn.social`, `signOut`).
 - Хендлер: `app/api/auth/[...all]/route.ts` — `toNextJsHandler(auth)`.
 - `proxy.ts` — лише перевірка cookie (`getSessionCookie`). Захищені: `/admin`, `/orders`, `/user-profile`.
-- Адмін = email у `ADMIN_EMAIL` / `ADMIN_TEST_EMAIL` (навігація: `NEXT_PUBLIC_ADMIN_*`). Не Clerk `userId`.
+- Адмін = email у `ADMIN_EMAIL` (опційно `ADMIN_TEST_EMAIL`). Навігація: `NEXT_PUBLIC_ADMIN_*`. Не Clerk `userId`.
+- Bootstrap юзера: `lib/admin.ts` + `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`. Сід створює запис у БД (аватар `/favicon_mtruck.svg`) і **не** перезаписує пароль/імʼя/фото якщо юзер уже є.
 - Google: додавати в `socialProviders` лише якщо є **обидва** `GOOGLE_CLIENT_ID` і `GOOGLE_CLIENT_SECRET`. UI: `NEXT_PUBLIC_GOOGLE_AUTH=true`. Redirect: `{BETTER_AUTH_URL}/api/auth/callback/google`.
 - **Не** додавати GitHub provider, `@clerk/nextjs`, `middleware.ts`.
 - Prisma `Account.issuer` обов’язковий; unique `[issuer, accountId]`.
 
 ## Тест
 
-`test@admin.com` / `12345678`, `test@user.com` / `12345678` — сід `npm run db:seed`.
+Адмін: `ADMIN_EMAIL` / `ADMIN_PASSWORD` з `.env`. Тест-юзер сіда: `test@user.com` / `12345678`. Команда: `npm run db:seed`.

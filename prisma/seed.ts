@@ -1,10 +1,16 @@
 import { PrismaClient } from "@prisma/client";
+import { getAdminBootstrap } from "../lib/admin";
 import { auth } from "../lib/auth";
 import products from "./products.json";
 
 const prisma = new PrismaClient();
 
-async function ensureUser(name: string, email: string, password: string) {
+async function ensureUser(
+  name: string,
+  email: string,
+  password: string,
+  image?: string
+) {
   const existing = await prisma.user.findUnique({
     where: { email },
     include: { accounts: true },
@@ -12,20 +18,41 @@ async function ensureUser(name: string, email: string, password: string) {
   const hasPassword = existing?.accounts.some(
     (account) => account.providerId === "credential" && account.password
   );
-  if (existing && hasPassword) return existing;
+  if (existing && hasPassword) {
+    if (image && !existing.image) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: { image },
+      });
+    }
+    return existing;
+  }
   if (existing) {
     await prisma.user.delete({ where: { id: existing.id } });
   }
 
   await auth.api.signUpEmail({
-    body: { name, email, password },
+    body: { name, email, password, image },
   });
 
-  return prisma.user.findUniqueOrThrow({ where: { email } });
+  const created = await prisma.user.findUniqueOrThrow({ where: { email } });
+  if (image && created.image !== image) {
+    return prisma.user.update({
+      where: { id: created.id },
+      data: { image },
+    });
+  }
+  return created;
 }
 
 async function main() {
-  const admin = await ensureUser("Test Admin", "test@admin.com", "12345678");
+  const adminBootstrap = getAdminBootstrap();
+  const admin = await ensureUser(
+    adminBootstrap.name,
+    adminBootstrap.email,
+    adminBootstrap.password,
+    adminBootstrap.image
+  );
   await ensureUser("Test User", "test@user.com", "12345678");
 
   const productCount = await prisma.product.count();

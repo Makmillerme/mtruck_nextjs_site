@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -28,16 +29,7 @@ export async function getAuthUser() {
   return session.user;
 }
 
-function getAdminEmails() {
-  return [process.env.ADMIN_EMAIL, process.env.ADMIN_TEST_EMAIL].filter(
-    Boolean
-  ) as string[];
-}
-
-export function isAdminEmail(email: string | null | undefined) {
-  if (!email) return false;
-  return getAdminEmails().includes(email);
-}
+export { isAdminEmail } from "@/lib/admin";
 
 export async function getAdminUser() {
   const user = await getAuthUser();
