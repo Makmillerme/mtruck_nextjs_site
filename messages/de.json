@@ -92,6 +92,76 @@
       }
     }
   },
+  "ServicesPage": {
+    "metaTitle": "Leistungen",
+    "title": "Unsere Leistungen",
+    "subtitle": "Das volle Spektrum beim Import von Nutzfahrzeugen aus Europa — von der Zollabfertigung bis zur Lieferung.",
+    "services": {
+      "customs": {
+        "title": "Zollabfertigung",
+        "description": "Vollständige Zolldokumentation für einen reibungslosen Import aus EU-Ländern.",
+        "features": {
+          "f1": "Vorbereitung und Einreichung der Dokumente",
+          "f2": "Zollabgaben und Verbrauchsteuer",
+          "f3": "Begleitung an der Grenze",
+          "f4": "Zulassungsbescheinigung"
+        }
+      },
+      "maintenance": {
+        "title": "Technischer Service",
+        "description": "Verkaufsvorbereitung und Wartung durch zertifizierte Techniker.",
+        "features": {
+          "f1": "Umfassende Diagnose",
+          "f2": "Wechsel der Betriebsstoffe",
+          "f3": "Fahrwerksprüfung",
+          "f4": "Vorbereitung auf die HU"
+        }
+      },
+      "leasing": {
+        "title": "Leasing und Finanzierung",
+        "description": "Flexible Leasing- und Finanzierungslösungen, angepasst an Ihr Unternehmen.",
+        "features": {
+          "f1": "Anzahlung ab 20%",
+          "f2": "Laufzeit bis 60 Monate",
+          "f3": "Minimaler Papierkram",
+          "f4": "Entscheidung in 1 Tag"
+        }
+      },
+      "delivery": {
+        "title": "Lieferung",
+        "description": "Lieferung von europäischen Händlern direkt an Ihren Standort in der Ukraine.",
+        "features": {
+          "f1": "Unter eigener Kraft",
+          "f2": "Abschlepper / Autotransporter",
+          "f3": "Transportversicherung",
+          "f4": "Sendungsverfolgung"
+        }
+      }
+    },
+    "advantagesTitle": "Warum man uns wählt",
+    "advantages": {
+      "guarantee": {
+        "title": "Garantie",
+        "description": "Rechtliche Sauberkeit des Geschäfts und geprüfte Fahrzeughistorie."
+      },
+      "speed": {
+        "title": "Geschwindigkeit",
+        "description": "Typische Importzeiten — 7–14 Tage nach Bestätigung."
+      },
+      "support": {
+        "title": "Support",
+        "description": "Persönlicher Manager in jeder Phase des Geschäfts."
+      },
+      "europe": {
+        "title": "Europa",
+        "description": "Partner in Deutschland, den Niederlanden und Belgien."
+      }
+    },
+    "ctaTitle": "Bereit zur Zusammenarbeit?",
+    "ctaSubtitle": "Wählen Sie Fahrzeuge im Katalog oder kontaktieren Sie uns — wir finden die passende Lösung für Ihre Flotte.",
+    "ctaCatalog": "Katalog ansehen",
+    "ctaContact": "Kontakt aufnehmen"
+  },
   "FaqSection": {
     "eyebrow": "FAQ",
     "title": "Häufige Fragen",

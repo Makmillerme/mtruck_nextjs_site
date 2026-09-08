@@ -92,6 +92,76 @@
       }
     }
   },
+  "ServicesPage": {
+    "metaTitle": "Services",
+    "title": "Our services",
+    "subtitle": "A full range of commercial vehicle import services from Europe — from customs clearance to delivery.",
+    "services": {
+      "customs": {
+        "title": "Customs clearance",
+        "description": "Complete customs documentation for smooth import from EU countries.",
+        "features": {
+          "f1": "Document preparation and filing",
+          "f2": "Customs duties and excise",
+          "f3": "Border escort support",
+          "f4": "Registration certificate"
+        }
+      },
+      "maintenance": {
+        "title": "Technical service",
+        "description": "Pre-sale inspection and servicing by certified technicians.",
+        "features": {
+          "f1": "Full diagnostics",
+          "f2": "Fluids replacement",
+          "f3": "Chassis inspection",
+          "f4": "Roadworthiness prep"
+        }
+      },
+      "leasing": {
+        "title": "Leasing and financing",
+        "description": "Flexible leasing and financing solutions tailored to your business.",
+        "features": {
+          "f1": "Down payment from 20%",
+          "f2": "Terms up to 60 months",
+          "f3": "Minimal paperwork",
+          "f4": "Decision in 1 day"
+        }
+      },
+      "delivery": {
+        "title": "Delivery",
+        "description": "Delivery from European dealers directly to your location in Ukraine.",
+        "features": {
+          "f1": "Driven under own power",
+          "f2": "Tow truck / car carrier",
+          "f3": "Cargo insurance",
+          "f4": "Delivery tracking"
+        }
+      }
+    },
+    "advantagesTitle": "Why choose us",
+    "advantages": {
+      "guarantee": {
+        "title": "Guarantee",
+        "description": "Legal clarity of the deal and verified vehicle history."
+      },
+      "speed": {
+        "title": "Speed",
+        "description": "Typical import timelines — 7–14 days after confirmation."
+      },
+      "support": {
+        "title": "Support",
+        "description": "A personal manager at every stage of the deal."
+      },
+      "europe": {
+        "title": "Europe",
+        "description": "Partners in Germany, the Netherlands, and Belgium."
+      }
+    },
+    "ctaTitle": "Ready to work together?",
+    "ctaSubtitle": "Browse the catalog or contact us — we will match a solution to your fleet.",
+    "ctaCatalog": "Browse catalog",
+    "ctaContact": "Contact us"
+  },
   "FaqSection": {
     "eyebrow": "FAQ",
     "title": "Frequently asked questions",

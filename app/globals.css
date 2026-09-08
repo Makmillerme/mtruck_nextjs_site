@@ -100,6 +100,17 @@
   .full-bleed {
     width: 100%;
   }
+
+  .page-content {
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 5vw, 2rem);
+    padding-right: clamp(1rem, 5vw, 2rem);
+    padding-top: clamp(1.5rem, 3vw, 2.5rem);
+    padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  }
 }
 
 /*

@@ -64,7 +64,7 @@ export default async function LocaleLayout({
       <Providers>
         <Navbar />
         <main className="min-w-0 overflow-x-clip pb-16 [&:not(:has(#hero))]:pt-10">
-          <div className="page-container min-w-0 has-[.full-bleed]:contents">
+          <div className="page-container min-w-0 has-[.full-bleed]:contents has-[.page-content]:contents">
             {children}
           </div>
         </main>
