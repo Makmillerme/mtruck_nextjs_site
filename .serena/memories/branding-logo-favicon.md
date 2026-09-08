@@ -1,3 +1,5 @@
 Branding assets (2026-09-08):
-- Header logo: `components/navbar/Logo.tsx` → `/logo_mtruck.svg` (`h-8` / `sm:h-9` / `lg:h-10`). Favicon: `public/favicon_mtruck.svg` + `app/icon.svg`.
-- Flat metallic (no bevel / drop-shadow): shared linear steel `#E4E6EA` → `#C2C4CA` → `#8E9198` → `#6A6D74` → `#555860`. Darkest stop is cool gray, not near-black (was muddy `#1A1C20` / `#2A2C31`).
+- Header: `Logo.tsx` → `/logo_mtruck.svg?v=silver4` (cache-bust). Favicon: `public/favicon_mtruck.svg` + `app/icon.svg`.
+- Silver chrome: `gradientUnits="objectBoundingBox"` vertical gradient so every glyph gets full metal banding at header size.
+- Stops: `#FFFFFF` → `#E9EBEF` → `#C5C8D0` → `#9EA2AB` → `#D8DBE1` → `#F2F3F5` → `#B8BBC3` → `#8A8E97` (no near-black).
+- Avoid global `userSpaceOnUse` diagonals — they leave TRUCK in a dark muddy slice.
