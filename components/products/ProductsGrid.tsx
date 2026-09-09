@@ -1,5 +1,5 @@
 import VehicleCard, { productToVehicle } from "@/components/vehicles/vehicle-card";
-import type { ProductListItem } from "@/utils/actions";
+import type { ProductListItem } from "@/utils/product-list";
 
 async function ProductsGrid({
   products,

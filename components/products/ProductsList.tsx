@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { ProductListItem } from "@/utils/actions";
+import type { ProductListItem } from "@/utils/product-list";
 import Image from "next/image";
 import FavoriteToggleButton from "./FavoriteToggleButton";
 import { LuTag } from "react-icons/lu";

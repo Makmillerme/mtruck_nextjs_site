@@ -25,6 +25,7 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { Cart } from '@prisma/client';
 import type { CatalogSort } from '@/utils/catalog-query';
+import { productListSelect } from '@/utils/product-list';
 const renderError = async (error: unknown): Promise<{ message: string }> => {
   console.error(error);
   const t = await getTranslations('Actions');
@@ -40,26 +41,6 @@ async function redirectLocalized(
   redirect({ href, locale });
   throw new Error("Redirect failed");
 }
-
-export const productListSelect = {
-  id: true,
-  name: true,
-  company: true,
-  featured: true,
-  image: true,
-  price: true,
-  createdAt: true,
-} as const;
-
-export type ProductListItem = {
-  id: string;
-  name: string;
-  company: string;
-  featured: boolean;
-  image: string;
-  price: number;
-  createdAt: Date;
-};
 
 export const fetchFeaturedProducts = async (take = 6) => {
   return db.product.findMany({
