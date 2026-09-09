@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { LuPhone } from "react-icons/lu";
 
 function isNavActive(href: string, pathname: string) {
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -79,8 +80,7 @@ export default function ShopNavbar({
       {pathname === "/" ? (
         <div
           aria-hidden
-          data-header-surface="dark"
-          className="pointer-events-none h-14 bg-[#061020] lg:h-16"
+          className="pointer-events-none h-14 lg:h-16"
         />
       ) : null}
       <header

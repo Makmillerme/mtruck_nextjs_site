@@ -85,7 +85,9 @@ export default function UserAccountSheet({
         <nav className="flex flex-col">
           {siteNav.map((item) => {
             const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}

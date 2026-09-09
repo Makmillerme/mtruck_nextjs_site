@@ -4,6 +4,7 @@ type NavLink = {
 };
 
 export const siteNav = [
+  { href: "/", key: "home" },
   { href: "/products", key: "catalog" },
   { href: "/services", key: "services" },
   { href: "/about", key: "about" },
