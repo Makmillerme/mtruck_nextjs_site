@@ -28,17 +28,6 @@ export const accountNav: NavLink[] = [
   { href: "/admin/sales", key: "admin" },
 ];
 
-export const links: NavLink[] = [
-  { href: "/", key: "home" },
-  { href: "/about", key: "about" },
-  { href: "/products", key: "products" },
-  { href: "/account/favorites", key: "favorites" },
-  { href: "/reviews", key: "reviews" },
-  { href: "/cart", key: "cart" },
-  { href: "/account/orders", key: "orders" },
-  { href: "/admin/sales", key: "admin" },
-];
-
 export const adminLinks: NavLink[] = [
   { href: "/admin/sales", key: "sales" },
   { href: "/admin/products", key: "myProducts" },
