@@ -2,8 +2,8 @@
 
 import db from '@/utils/db';
 import { getAdminUser, getAuthUser, getSession } from '@/utils/session';
-import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from '@/i18n/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
 import {
   imageSchema,
   callbackInquirySchema,
@@ -25,12 +25,21 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { Cart } from '@prisma/client';
 import type { CatalogSort } from '@/utils/catalog-query';
-const renderError = (error: unknown): { message: string } => {
-  console.log(error);
+const renderError = async (error: unknown): Promise<{ message: string }> => {
+  console.error(error);
+  const t = await getTranslations('Actions');
   return {
-    message: error instanceof Error ? error.message : 'An error occurred',
+    message: t('error'),
   };
 };
+
+async function redirectLocalized(
+  href: "/" | "/products" | "/admin/products" | "/cart"
+): Promise<never> {
+  const locale = await getLocale();
+  redirect({ href, locale });
+  throw new Error("Redirect failed");
+}
 
 export const productListSelect = {
   id: true,
@@ -135,7 +144,7 @@ export const fetchSingleProduct = async (productId: string) => {
     },
   });
   if (!product) {
-    redirect('/products');
+    return redirectLocalized('/products');
   }
   return product;
 };
@@ -162,7 +171,7 @@ export const createProductAction = async (
   } catch (error) {
     return renderError(error);
   }
-  redirect('/admin/products');
+  return redirectLocalized('/admin/products');
 };
 
 export const fetchAdminProducts = async () => {
@@ -200,7 +209,7 @@ export const fetchAdminProductDetails = async (productId: string) => {
       id: productId,
     },
   });
-  if (!product) redirect('/admin/products');
+  if (!product) return redirectLocalized('/admin/products');
   return product;
 };
 
@@ -334,9 +343,21 @@ export const createReviewAction = async (
   try {
     const rawData = Object.fromEntries(formData);
     const validatedFields = validateWithZodSchema(reviewSchema, rawData);
+    const existing = await db.review.findFirst({
+      where: {
+        userId: user.id,
+        productId: validatedFields.productId,
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      const t = await getTranslations('Actions');
+      return { message: t('reviewAlreadyExists') };
+    }
     await db.review.create({
       data: {
         ...validatedFields,
+        authorImageUrl: validatedFields.authorImageUrl || user.image || '',
         userId: user.id,
       },
     });
@@ -600,7 +621,7 @@ export const addToCartAction = async (prevState: { message: string }, formData: 
   } catch (error) {
     return renderError(error);
   }
-  redirect('/cart');
+  return redirectLocalized('/cart');
 };
 
 export const removeCartItemAction = async (

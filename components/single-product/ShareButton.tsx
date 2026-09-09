@@ -17,8 +17,11 @@ import {
 } from 'react-share';
 
 function ShareButton({ productId, name }: { productId: string; name: string }) {
-  const url = process.env.NEXT_PUBLIC_WEBSITE_URL;
-  const shareLink = `${url}/products/${productId}`;
+  const configuredUrl = process.env.NEXT_PUBLIC_WEBSITE_URL?.replace(/\/$/, '');
+  const origin =
+    configuredUrl ||
+    (typeof window !== 'undefined' ? window.location.origin : '');
+  const shareLink = `${origin}/products/${productId}`;
 
   return (
     <Popover>

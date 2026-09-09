@@ -511,6 +511,7 @@
   },
   "Actions": {
     "error": "An error occurred",
+    "reviewAlreadyExists": "You already reviewed this product",
     "productRemoved": "Product removed",
     "productUpdated": "Product updated",
     "imageUpdated": "Product image updated",

@@ -1,8 +1,7 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -58,6 +57,7 @@ export default function SignInForm({
   const [password, setPassword] = useState(defaults.password);
   const [isLoading, setIsLoading] = useState(false);
   const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "true";
+  const showTestAccounts = process.env.NODE_ENV === "development";
 
   const handleRoleSelect = (value: string) => {
     if (value === "clear") {
@@ -125,44 +125,46 @@ export default function SignInForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="guest-select">{t("testAccount")}</Label>
-            <Select
-              key={`select-${selectedRole || "empty"}`}
-              value={selectedRole || undefined}
-              onValueChange={handleRoleSelect}
-            >
-              <SelectTrigger id="guest-select">
-                <SelectValue placeholder={t("selectTestAccount")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="guest-user">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">{t("testUser")}</span>
-                    <span className="text-xs text-muted-foreground">
-                      test@user.com
-                    </span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="guest-admin">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">{t("guestAdmin")}</span>
-                    <span className="text-xs text-muted-foreground">
-                      test@admin.com
-                    </span>
-                  </div>
-                </SelectItem>
-                {selectedRole && (
-                  <SelectItem
-                    value="clear"
-                    className="opacity-60 focus:opacity-100"
-                  >
-                    {t("clearSelection")}
+          {showTestAccounts ? (
+            <div className="space-y-2">
+              <Label htmlFor="guest-select">{t("testAccount")}</Label>
+              <Select
+                key={`select-${selectedRole || "empty"}`}
+                value={selectedRole || undefined}
+                onValueChange={handleRoleSelect}
+              >
+                <SelectTrigger id="guest-select">
+                  <SelectValue placeholder={t("selectTestAccount")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="guest-user">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{t("testUser")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        test@user.com
+                      </span>
+                    </div>
                   </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+                  <SelectItem value="guest-admin">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{t("guestAdmin")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        test@admin.com
+                      </span>
+                    </div>
+                  </SelectItem>
+                  {selectedRole && (
+                    <SelectItem
+                      value="clear"
+                      className="opacity-60 focus:opacity-100"
+                    >
+                      {t("clearSelection")}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="email">{t("email")}</Label>

@@ -1,5 +1,7 @@
-import ContactSection from "@/components/contact-section";
+import { redirect } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
 
-export default function ContactsPage() {
-  return <ContactSection />;
+export default async function ContactsRedirectPage() {
+  const locale = await getLocale();
+  redirect({ href: "/contact", locale });
 }

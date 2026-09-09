@@ -3,14 +3,17 @@ import CartTotals from '@/components/cart/CartTotals';
 import SectionTitle from '@/components/global/SectionTitle';
 import { fetchOrCreateCart, updateCart } from '@/utils/actions';
 import { getSession } from '@/utils/session';
-import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from '@/i18n/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 async function CartPage() {
   const t = await getTranslations('Cart');
+  const locale = await getLocale();
   const session = await getSession();
   const userId = session?.user.id;
-  if (!userId) redirect('/');
+  if (!userId) {
+    return redirect({ href: '/', locale });
+  }
   const previousCart = await fetchOrCreateCart({ userId });
   const { currentCart, cartItems } = await updateCart(previousCart);
   if (cartItems.length === 0) return <SectionTitle text={t('empty')} />;

@@ -511,6 +511,7 @@
   },
   "Actions": {
     "error": "Сталася помилка",
+    "reviewAlreadyExists": "Ви вже залишили відгук для цього товару",
     "productRemoved": "Товар видалено",
     "productUpdated": "Товар оновлено",
     "imageUpdated": "Зображення оновлено",

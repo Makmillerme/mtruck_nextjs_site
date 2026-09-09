@@ -511,6 +511,7 @@
   },
   "Actions": {
     "error": "Ein Fehler ist aufgetreten",
+    "reviewAlreadyExists": "Sie haben dieses Produkt bereits bewertet",
     "productRemoved": "Produkt entfernt",
     "productUpdated": "Produkt aktualisiert",
     "imageUpdated": "Bild aktualisiert",

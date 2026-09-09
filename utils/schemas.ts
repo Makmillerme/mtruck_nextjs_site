@@ -61,9 +61,7 @@ export const reviewSchema = z.object({
   authorName: z.string().refine((value) => value !== "", {
     message: "Author name cannot be empty",
   }),
-  authorImageUrl: z.string().refine((value) => value !== "", {
-    message: "Author image URL cannot be empty",
-  }),
+  authorImageUrl: z.string().optional().default(""),
   rating: z.coerce
     .number()
     .int()
