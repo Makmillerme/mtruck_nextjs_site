@@ -45,6 +45,7 @@ export function UserAvatar({
         alt={name}
         width={36}
         height={36}
+        priority
         className={cn(
           "block size-8 shrink-0 rounded-full object-cover",
           className

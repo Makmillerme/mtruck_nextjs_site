@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@/i18n/navigation';
-import { authClient } from '@/lib/auth-client';
 import type { SessionUser } from '@/utils/session';
 import { useTranslations } from 'next-intl';
 import { AccountTrigger } from './AccountTrigger';
@@ -43,8 +42,7 @@ export default function LinksDropdown({
 }: {
   initialUser: SessionUser | null;
 }) {
-  const { data: session, isPending } = authClient.useSession();
-  const user = isPending ? initialUser : session?.user ?? null;
+  const user = initialUser;
 
   return (
     <>

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LuLogOut, LuSettings } from 'react-icons/lu';
-import { authClient } from '@/lib/auth-client';
+import { signOutAndRefresh } from '@/lib/sign-out';
 import type { SessionUser } from '@/utils/session';
 import { useTranslations } from 'next-intl';
 import { AccountTrigger, isClientAdmin } from './AccountTrigger';
@@ -22,17 +22,14 @@ export default function UserProfileDropdown({
 }) {
   const tNav = useTranslations('Navbar');
   const tLinks = useTranslations('NavLinks');
-  const { data: session } = authClient.useSession();
   const router = useRouter();
-  const user = session?.user ?? initialUser;
+  const user = initialUser;
   const isAdmin = isClientAdmin(user?.email);
   const name = user?.name || 'User';
   const email = user?.email || '';
 
   const handleSignOut = async () => {
-    await authClient.signOut();
-    router.push('/');
-    router.refresh();
+    await signOutAndRefresh(router);
   };
 
   return (

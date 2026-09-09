@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { accountNav, siteNav } from "@/utils/links";
-import { authClient } from "@/lib/auth-client";
+import { signOutAndRefresh } from "@/lib/sign-out";
 import type { SessionUser } from "@/utils/session";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -41,10 +41,8 @@ export default function UserAccountSheet({
   const isAdmin = isClientAdmin(user?.email);
 
   async function handleSignOut() {
-    await authClient.signOut();
     setOpen(false);
-    router.push("/");
-    router.refresh();
+    await signOutAndRefresh(router);
   }
 
   function close() {

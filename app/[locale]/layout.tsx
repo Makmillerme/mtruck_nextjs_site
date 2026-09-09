@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Footer from "@/components/layout/footer";
 import Navbar from "@/components/navbar/Navbar";
-import HtmlLang from "@/components/global/HtmlLang";
 import Providers from "../providers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
@@ -57,7 +56,6 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <HtmlLang />
       <Providers>
         <Navbar />
         <main className="min-w-0 overflow-x-clip pb-16">
