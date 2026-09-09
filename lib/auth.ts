@@ -17,6 +17,16 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "USER",
+        input: false,
+      },
+    },
+  },
   socialProviders: {
     ...(googleClientId && googleClientSecret
       ? {

@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { getAdminBootstrap } from "../lib/admin";
+import { PrismaClient, UserRole } from "@prisma/client";
+import { getAdminBootstrap, getAdminEmails } from "../lib/admin";
 import { auth } from "../lib/auth";
 import products from "./products.json";
 
@@ -55,6 +55,14 @@ async function main() {
     adminBootstrap.image
   );
   await ensureUser("Test User", "test@user.com", "12345678");
+
+  const adminEmails = getAdminEmails();
+  if (adminEmails.length > 0) {
+    await prisma.user.updateMany({
+      where: { email: { in: adminEmails } },
+      data: { role: UserRole.ADMIN },
+    });
+  }
 
   const productCount = await prisma.product.count();
   if (productCount > 0) {

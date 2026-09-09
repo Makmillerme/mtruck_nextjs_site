@@ -39,19 +39,21 @@ function GuestDesktopMenu() {
 
 export default function LinksDropdown({
   initialUser,
+  isAdmin = false,
 }: {
   initialUser: SessionUser | null;
+  isAdmin?: boolean;
 }) {
   const user = initialUser;
 
   return (
     <>
       <div className="lg:hidden">
-        <UserAccountSheet user={user} />
+        <UserAccountSheet user={user} isAdmin={isAdmin} />
       </div>
       <div className="hidden lg:block">
         {user ? (
-          <UserProfileDropdown initialUser={user} />
+          <UserProfileDropdown initialUser={user} isAdmin={isAdmin} />
         ) : (
           <GuestDesktopMenu />
         )}

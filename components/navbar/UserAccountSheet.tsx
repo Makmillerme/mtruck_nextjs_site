@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { LuLogOut, LuMenu, LuSettings } from "react-icons/lu";
-import { isClientAdmin, UserAvatar } from "./AccountTrigger";
+import { UserAvatar } from "./AccountTrigger";
 
 function sheetLinkClass(active: boolean) {
   return cn(
@@ -30,15 +30,16 @@ function sheetLinkClass(active: boolean) {
 
 export default function UserAccountSheet({
   user,
+  isAdmin = false,
 }: {
   user: SessionUser | null;
+  isAdmin?: boolean;
 }) {
   const t = useTranslations("Navbar");
   const tLinks = useTranslations("NavLinks");
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const isAdmin = isClientAdmin(user?.email);
 
   async function handleSignOut() {
     setOpen(false);

@@ -1,8 +1,10 @@
 import { Separator } from '@/components/ui/separator';
 import Sidebar from './Sidebar';
+import { getAdminUser } from '@/utils/session';
 import { getTranslations } from 'next-intl/server';
 
 async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  await getAdminUser();
   const t = await getTranslations('Admin');
   return (
     <>

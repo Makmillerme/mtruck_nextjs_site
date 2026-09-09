@@ -17,16 +17,6 @@ export function getUserInitial(
   return first ? first.toUpperCase() : "?";
 }
 
-export function isClientAdmin(email: string | undefined) {
-  const adminEmails = [
-    process.env.NEXT_PUBLIC_ADMIN_EMAIL,
-    process.env.NEXT_PUBLIC_ADMIN_TEST_EMAIL,
-  ]
-    .map((value) => value?.trim())
-    .filter(Boolean) as string[];
-  return email ? adminEmails.includes(email) : false;
-}
-
 export function UserAvatar({
   user,
   className,

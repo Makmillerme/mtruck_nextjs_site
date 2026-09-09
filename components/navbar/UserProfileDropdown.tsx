@@ -13,18 +13,19 @@ import { LuLogOut, LuSettings } from 'react-icons/lu';
 import { signOutAndRefresh } from '@/lib/sign-out';
 import type { SessionUser } from '@/utils/session';
 import { useTranslations } from 'next-intl';
-import { AccountTrigger, isClientAdmin } from './AccountTrigger';
+import { AccountTrigger } from './AccountTrigger';
 
 export default function UserProfileDropdown({
   initialUser,
+  isAdmin = false,
 }: {
   initialUser: SessionUser;
+  isAdmin?: boolean;
 }) {
   const tNav = useTranslations('Navbar');
   const tLinks = useTranslations('NavLinks');
   const router = useRouter();
   const user = initialUser;
-  const isAdmin = isClientAdmin(user?.email);
   const name = user?.name || 'User';
   const email = user?.email || '';
 

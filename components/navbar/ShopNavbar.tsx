@@ -66,8 +66,10 @@ function navLinkClass(active: boolean) {
 
 export default function ShopNavbar({
   user,
+  isAdmin = false,
 }: {
   user: SessionUser | null;
+  isAdmin?: boolean;
 }) {
   const t = useTranslations("Navbar");
   const pathname = usePathname();
@@ -117,7 +119,7 @@ export default function ShopNavbar({
           </Button>
           <FavoritesButton className={headerIconClass} />
           <LocaleSwitcher className={headerControlClass} />
-          <LinksDropdown initialUser={user} />
+          <LinksDropdown initialUser={user} isAdmin={isAdmin} />
         </div>
       </div>
     </header>

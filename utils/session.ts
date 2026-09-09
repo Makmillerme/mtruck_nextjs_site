@@ -1,4 +1,3 @@
-import { isAdminEmail } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -8,6 +7,7 @@ export type SessionUser = {
   name: string;
   email: string;
   image?: string | null;
+  role?: string | null;
 };
 
 export async function getSession() {
@@ -29,11 +29,15 @@ export async function getAuthUser() {
   return session.user;
 }
 
-export { isAdminEmail } from "@/lib/admin";
+export function isAdminRole(role: string | null | undefined) {
+  return role === "ADMIN";
+}
 
 export async function getAdminUser() {
   const user = await getAuthUser();
-  if (!isAdminEmail(user.email)) {
+  const role =
+    "role" in user && typeof user.role === "string" ? user.role : null;
+  if (!isAdminRole(role)) {
     redirect("/");
   }
   return user;

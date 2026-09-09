@@ -144,7 +144,7 @@ export const createProductAction = async (
   prevState: { message: string },
   formData: FormData
 ): Promise<{ message: string }> => {
-  const user = await getAuthUser();
+  const user = await getAdminUser();
   try {
     const rawData = Object.fromEntries(formData);
     const file = formData.get('image') as File;
@@ -233,11 +233,19 @@ export const updateProductImageAction = async (
   prevState: { message: string },
   formData: FormData
 ) => {
-  await getAuthUser();
+  const user = await getAdminUser();
   try {
     const image = formData.get('image') as File;
     const productId = formData.get('id') as string;
     const oldImageUrl = formData.get('url') as string;
+
+    const product = await db.product.findUnique({
+      where: { id: productId },
+      select: { id: true, userId: true },
+    });
+    if (!product || product.userId !== user.id) {
+      throw new Error('Product not found');
+    }
 
     const validatedFile = validateWithZodSchema(imageSchema, { image });
     const fullPath = await uploadImage(validatedFile.image);

@@ -30,22 +30,16 @@ export const imageSchema = z.object({
 
 function validateImageFile() {
   const maxUploadSize = 1024 * 1024;
-  const acceptedFileTypes = ["image/"];
-  if (typeof window !== "undefined" && typeof File !== "undefined") {
-    return z
-      .instanceof(File)
-      .refine((file) => {
-        return !file || file.size <= maxUploadSize;
-      }, "File size must be less than 1MB")
-      .refine((file) => {
-        return (
-          !file || acceptedFileTypes.some((type) => file.type.startsWith(type))
-        );
-      }, "File must be an image");
-  } else {
-    // Server-side: fallback to a generic object validation
-    return z.any();
-  }
+  return z
+    .custom<File>((value) => typeof File !== "undefined" && value instanceof File, {
+      message: "Image file is required",
+    })
+    .refine((file) => file.size > 0 && file.size <= maxUploadSize, {
+      message: "File size must be less than 1MB",
+    })
+    .refine((file) => file.type.startsWith("image/"), {
+      message: "File must be an image",
+    });
 }
 
 export function validateWithZodSchema<T>(
