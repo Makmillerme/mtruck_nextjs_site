@@ -17,7 +17,10 @@ export default async function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-background/10 bg-foreground text-background">
+    <footer
+      data-header-surface="dark"
+      className="border-t border-background/10 bg-foreground text-background"
+    >
       <section aria-label={t("aria")} className="page-container py-8 md:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
           <div className="max-w-sm space-y-3">

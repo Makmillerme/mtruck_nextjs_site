@@ -10,6 +10,6 @@ Component: `components/vehicles/vehicle-card.tsx`
 Grid: `ProductsGrid` → `1 / sm:2 / min-[900px]:3`, gap `gap-4 md:gap-5` (3-up earlier for tablet landscape)
 Card denser mid-width: `p-4`, title `text-lg`→`lg:text-xl`, price `text-xl`→`lg:text-2xl`, compact specs/CTA
 Homepage inventory: inside `CatalogBlock` via `CatalogFeaturedGrid` (no titles above grid); shared `bg-secondary`
-Favorite glass: chrome only in VehicleCard (`bg-white/50`); colors in `CardSubmitButton` — idle muted, hover `text-primary`, active filled `FaHeart` + `text-emerald-500` glow (same as status dot). State classes merge after `className` so they win.
+Favorite: opaque `bg-white` circle `size-9 p-0`, icon `size-4` centered (same as header avatar). No glass/`bg-white/50` — hearts must not blend into photos. Idle muted, hover `text-primary`, active emerald glow.
 
 i18n VehicleCard: categoryFallback, mileageFallback, transmissionFallback, featureFallback, priceHint; UK status PUBLISHED = «В наявності»

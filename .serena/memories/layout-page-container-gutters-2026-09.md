@@ -12,3 +12,5 @@ Navbar/Footer use the same token.
 ## Nesting
 
 `app/[locale]/layout.tsx` wraps main in `page-container` with `has-[.full-bleed]:contents` / `has-[.page-content]:contents`.
+
+Inner pages without `.full-bleed` or `.page-content` get extra `padding-top: clamp(2.5rem, 5vw, 3.5rem)` on `main > .page-container` so content does not stick to the sticky header.

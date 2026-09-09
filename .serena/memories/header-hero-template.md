@@ -1,21 +1,15 @@
-# Header + Hero + Trust Strip (2026-09-07)
+# Header + Hero (2026-09-09)
 
-## Hero photo
-- Файл: `public/images/hero.jpg`
-- `components/home/Hero.tsx`: Next/Image `fill` + `priority`, `object-cover`, `object-[58%_center] lg:object-[72%_center]` (тягач справа)
-- Overlay лишається окремим шаром: `from-foreground/85 via-foreground/55 to-transparent md:from-foreground/75 md:via-foreground/35`
-- Прибрано watermark і плейсхолдер `#1a1a2e`
+## Layout
+Sticky in-flow header above `#hero`. Home slot and header dark surface are `#061020` (same as hero `bg-[#061020]`). Light `bg-white/80` over navy is forbidden — it reads dirty gray.
 
-## Trust Strip
-- Файл: `components/trust-strip.tsx`, місце: головна одразу після Hero
-- `--secondary: 214 32% 91%` (#E2E8F0), клас `.section-spacing-tight`
-- 4 shadcn Card: `bg-background/50 border-0 shadow-sm`
-- Іконки Lucide: Calendar, TruckIcon, Users, Award
-- Числа Geist Mono font-black; бренди text wordmarks
-- i18n: `TrustStrip` у uk/en/de
+Dark header: `bg-black/25 backdrop-blur-xl` (glass over navy slot / dark sections). Light: `bg-white/80 backdrop-blur-xl`. No color transition on the header (avoids hydrate flash).
 
-## Header
-- Мова: dropdown `LocaleSwitcher` (кнопка UA/EN/DE + список), світлий popover навіть у dark theme
-- Для залогінених: `FavoritesButton` (серце → `/favorites`) замість кошика; у мобільному Sheet — пункт «Вподобані»
-- Гості: без кошика і без вподобаних у хедері
-- Navbar RSC знову читає `getSession()` і передає `user` у `ShopNavbar`
+## Hero fog (`#hero::after`)
+Horizontal left→right navy wash only. No vertical top-belt. No `background-color` on the fog.
+
+## Photo
+`public/images/hero.png` via **native `<img>`** in RSC (`heroImage.src`), not `next/image`. Reason: `next/image` is a client component with empty placeholder; React Strict Mode in `next dev` remounts it twice (navy → photo → navy → photo), and `/_next/image` delays first paint.
+
+Crop: 52% / sm 58% / md 64% / lg 78%. `#hero` has `data-header-surface="dark"`. Preload: `<link rel="preload" as="image">`.
+Do not wrap the LCP photo in `next/image` without an explicit need.

@@ -18,6 +18,7 @@ export default async function PartnershipSection() {
     <section
       id="partners"
       aria-labelledby="partners-heading"
+      data-header-surface="dark"
       className="full-bleed section-spacing scroll-mt-16 bg-foreground"
     >
       <div className="page-container grid grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-20">

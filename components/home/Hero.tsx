@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
+import heroImage from "@/public/images/hero.png";
 import { getTranslations } from "next-intl/server";
-import Image from "next/image";
 
 async function Hero() {
   const t = await getTranslations("HomePage");
@@ -9,31 +9,30 @@ async function Hero() {
     <section
       id="hero"
       aria-label={t("heroAria")}
-      className="full-bleed relative flex min-h-[600px] items-center overflow-hidden lg:min-h-[700px]"
+      data-header-surface="dark"
+      className="full-bleed relative flex min-h-[600px] items-center overflow-hidden bg-[#061020] lg:min-h-[700px]"
     >
-      <div aria-hidden className="absolute inset-0 bg-[#0b1220]">
-        <Image
-          src="/images/hero.jpg"
+      <div aria-hidden className="absolute inset-0 z-0 bg-[#061020]">
+        <link rel="preload" as="image" href={heroImage.src} fetchPriority="high" />
+        <img
+          src={heroImage.src}
           alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-[58%_center] lg:object-[72%_center]"
+          width={heroImage.width}
+          height={heroImage.height}
+          fetchPriority="high"
+          decoding="async"
+          className="hero-photo absolute inset-0 size-full object-cover object-[52%_center] sm:object-[58%_center] md:object-[64%_center] lg:object-[78%_center]"
         />
       </div>
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-r from-foreground/85 via-foreground/55 to-transparent md:from-foreground/75 md:via-foreground/35"
-      />
       <div className="page-container relative z-10 w-full">
-        <div className="flex max-w-2xl flex-col gap-6 lg:gap-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-white/70">
+        <div className="relative flex max-w-2xl flex-col gap-6 lg:gap-8">
+          <p className="text-sm font-semibold uppercase tracking-widest text-white/90 [text-shadow:0_1px_18px_rgba(6,16,32,0.85)]">
             {t("heroEyebrow")}
           </p>
-          <h1 className="text-balance text-4xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+          <h1 className="text-balance text-4xl font-black leading-tight tracking-tight text-white [text-shadow:0_2px_24px_rgba(6,16,32,0.9)] md:text-5xl lg:text-6xl">
             {t("heroTitle")}
           </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
+          <p className="max-w-xl text-lg leading-relaxed text-white [text-shadow:0_1px_18px_rgba(6,16,32,0.9)] md:text-xl">
             {t("heroSubtitle")}
           </p>
           <div className="flex flex-col gap-4 pt-2 sm:flex-row">

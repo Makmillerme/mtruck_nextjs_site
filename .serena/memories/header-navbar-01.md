@@ -1,19 +1,18 @@
-Live header: RSC `Navbar` → `getSession()` → `ShopNavbar`.
-Logo: `components/navbar/Logo.tsx` uses `/logo_mtruck.svg` (header height h-8/h-9/h-10). Favicon: `/favicon_mtruck.svg` via `generateMetadata.icons` in `app/[locale]/layout.tsx`; Next convention copy at `app/icon.svg`. Default `app/favicon.ico` removed.
+Live header: RSC `Navbar` → `getSession()` → `ShopNavbar` (`components/navbar/ShopNavbar.tsx`).
 
-Breakpoints: `lg` (1024px).
-Header bar: `grid-cols-[1fr_auto]` on mobile (nav is `display:none`, so 2 items / 2 columns). `lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]` when nav is visible. Do not use 3 columns on mobile — empty third track + `gap` inset the actions by 8px vs catalog toolbar.
+## Layout
+`sticky top-0 z-50` in document flow. Do **not** wrap `<header>` in a short parent (kills sticky).
 
-Desktop (`lg+`) right cluster, left → right:
-1. Phone `tel:` icon
-2. `FavoritesButton`
-3. `LocaleSwitcher` (chevron visible)
-4. Account dropdown (`UserProfileDropdown`): avatar = `user.image` or first letter of name; name+email, Admin if `NEXT_PUBLIC_ADMIN_EMAIL` / `NEXT_PUBLIC_ADMIN_TEST_EMAIL`, theme (Light/Dark/System via `ThemeMenuItems`), «Керувати акаунтом» `/user-profile`, «Вийти». No site nav in dropdown. Guest: `LuUser` + login/register only (no theme).
-Theme is **not** in the header — only in account UI. Default theme is `system` (`app/layout.tsx`).
+Home navy slot: sibling `h-14 lg:h-16 bg-[#061020]` with `data-header-surface="dark"`; header `-mt-14 lg:-mt-16`. Slot is not sticky.
 
-Mobile (`<lg`):
-- Header trigger is hamburger (`LuMenu`), not avatar. Site nav lives in `UserAccountSheet`.
-- Right cluster: phone, locale (no chevron), menu. Favorites hidden (link is in Sheet).
-- Sheet header shows `UserAvatar` (photo or initial) + name/email, then `siteNav`, `accountNav` (admin if admin). Logged-in: theme, manage account, logout. Guest: nav + login/register, **no** theme.
+Inner pages (no `.full-bleed` / `.page-content`): `main > .page-container` gets `padding-top: clamp(2.5rem, 5vw, 3.5rem)` so catalog/about/account do not stick to the bar. Services keep `.page-content`. Partnership/FAQ/contacts keep section spacing.
 
-Nav data: `utils/links.ts` — `siteNav` (contacts href `/contact`), `accountNav`.
+`body` must not use `overflow-x-clip`.
+
+## Surfaces
+Dark (home slot, `#hero`, `#partners`, footer — including a dark block flush below the bar): `bg-black/25 backdrop-blur-xl` + `border-white/10`. Light: `bg-white/80 backdrop-blur-xl` + `border-border/50`. Navy slot behind keeps `#061020` so dark glass stays navy-tinted, not dirty gray from white glass.
+
+Initial surface on `/` is dark to avoid a white flash.
+
+## Nav
+`text-foreground`. Hover `hover:bg-foreground/10 hover:text-foreground`. Active `bg-foreground/10`.

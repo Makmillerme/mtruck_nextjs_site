@@ -23,7 +23,7 @@ Gutters: see `mem:layout-page-container-gutters-2026-09` (mobile 1rem; sm+ clamp
 
 ## Finder panel
 
-`CategoryFinderPanel`: filter card is **stable**. Brand chips stagger in (`x` + fade), clipped by `overflow-hidden` on the rounded panel and chip row (`overflow-x-auto overflow-y-hidden`, `md:overflow-hidden`) so enter/exit never paints outside the card.
+`CategoryFinderPanel`: brands fade in place on category change (`opacity` + stagger, no `x`, no AnimatePresence). Wrapper keyed by category; row `justify-start` so chips never jump to the center.
 
 ## Status pill
 

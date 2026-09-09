@@ -46,7 +46,10 @@ export default function LocaleSwitcher({
           variant="ghost"
           size="sm"
           disabled={isPending}
-          className={cn("h-9 min-w-0 shrink-0 gap-0.5 px-1.5 text-sm font-medium lg:min-w-[3.25rem] lg:gap-1 lg:px-2", className)}
+          className={cn(
+            "h-9 min-w-0 shrink-0 gap-0.5 px-1.5 text-sm font-medium text-foreground hover:bg-foreground/10 hover:text-foreground lg:min-w-[3.25rem] lg:gap-1 lg:px-2",
+            className
+          )}
           aria-label={t("label")}
         >
           {localeCodes[locale as (typeof routing.locales)[number]]}

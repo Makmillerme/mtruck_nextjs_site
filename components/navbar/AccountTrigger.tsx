@@ -39,20 +39,16 @@ export function UserAvatar({
   const imageUrl = !avatarError && user.image?.trim() ? user.image : null;
 
   if (imageUrl) {
-    const isSvg = imageUrl.endsWith(".svg");
-
     return (
       <Image
         src={imageUrl}
         alt={name}
-        width={32}
-        height={32}
+        width={36}
+        height={36}
         className={cn(
-          "h-8 w-8 max-h-8 max-w-8 shrink-0 rounded-full",
-          isSvg ? "object-contain object-center bg-muted p-0.5" : "object-cover",
+          "block size-8 shrink-0 rounded-full object-cover",
           className
         )}
-        style={{ height: 32, width: 32 }}
         unoptimized={imageUrl.endsWith(".svg")}
         onError={() => setAvatarError(true)}
         referrerPolicy="no-referrer"
@@ -89,14 +85,14 @@ export const AccountTrigger = forwardRef<HTMLButtonElement, AccountTriggerProps>
         aria-label={t("account")}
         {...props}
         className={cn(
-          "size-9 shrink-0 overflow-hidden rounded-full p-0",
+          "size-9 shrink-0 overflow-hidden rounded-full p-0 text-foreground hover:bg-foreground/10 hover:text-foreground",
           className
         )}
       >
         {user ? (
-          <UserAvatar user={user} />
+          <UserAvatar user={user} className="size-full max-h-none max-w-none" />
         ) : (
-          <LuUser className="size-5 text-foreground" />
+          <LuUser className="size-5" />
         )}
       </Button>
     );

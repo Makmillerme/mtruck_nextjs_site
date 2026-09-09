@@ -78,7 +78,9 @@ const favoriteIdleClass =
 const favoriteActiveClass =
   "text-emerald-500 hover:bg-white hover:text-emerald-500";
 const favoriteIconGlowClass =
-  "drop-shadow-[0_0_0.45rem_rgb(16_185_129_/_0.85)]";
+  "size-4 drop-shadow-[0_0_0.45rem_rgb(16_185_129_/_0.85)]";
+const favoriteChromeClass =
+  "size-9 shrink-0 overflow-hidden rounded-full border-0 bg-white p-0 shadow-sm";
 
 export const CardSignInButton = ({ className }: { className?: string } = {}) => {
   const pathname = usePathname();
@@ -88,11 +90,11 @@ export const CardSignInButton = ({ className }: { className?: string } = {}) => 
       type="button"
       size="icon"
       variant="outline"
-      className={cn("cursor-pointer p-2", className, favoriteIdleClass)}
+      className={cn("cursor-pointer", favoriteChromeClass, className, favoriteIdleClass)}
       asChild
     >
       <Link href={href}>
-        <FaRegHeart />
+        <FaRegHeart className="size-4" />
       </Link>
     </Button>
   );
@@ -112,17 +114,18 @@ export const CardSubmitButton = ({
       size="icon"
       variant="outline"
       className={cn(
-        "cursor-pointer p-2",
+        "cursor-pointer",
+        favoriteChromeClass,
         className,
         isFavorite ? favoriteActiveClass : favoriteIdleClass
       )}
     >
       {pending ? (
-        <ReloadIcon className="animate-spin" />
+        <ReloadIcon className="size-4 animate-spin" />
       ) : isFavorite ? (
         <FaHeart className={favoriteIconGlowClass} />
       ) : (
-        <FaRegHeart />
+        <FaRegHeart className="size-4" />
       )}
     </Button>
   );

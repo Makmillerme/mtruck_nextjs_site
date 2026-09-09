@@ -58,8 +58,8 @@ const STATUS_DOT: Record<VehicleStatus, string> = {
   SOLD: "bg-red-500",
 };
 
-const favoriteGlassClass =
-  "size-9 rounded-full border-0 bg-white/50 shadow-none backdrop-blur-md hover:bg-white";
+const favoriteBtnClass =
+  "size-9 overflow-hidden rounded-full border-0 bg-white p-0 shadow-sm hover:bg-white";
 
 export default async function VehicleCard({
   vehicle,
@@ -111,7 +111,7 @@ export default async function VehicleCard({
             <div className="pointer-events-auto shrink-0">
               <FavoriteToggleButton
                 productId={vehicle.id}
-                className={favoriteGlassClass}
+                className={favoriteBtnClass}
               />
             </div>
           </div>

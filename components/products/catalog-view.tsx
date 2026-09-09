@@ -172,7 +172,7 @@ function CatalogFilterSidebar({
 
   return (
     <aside className="hidden min-w-0 lg:block">
-      <Card className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto shadow-sm">
+      <Card className="sticky top-16 max-h-[calc(100vh-5rem)] lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)] overflow-y-auto shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">{t("filter")}</CardTitle>
         </CardHeader>

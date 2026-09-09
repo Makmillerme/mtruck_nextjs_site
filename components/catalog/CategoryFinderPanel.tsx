@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -25,7 +25,7 @@ const chipClass = (active: boolean) =>
   );
 
 const chipRowClass =
-  "flex gap-2 overflow-x-auto overflow-y-hidden py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-hidden [&::-webkit-scrollbar]:hidden";
+  "flex flex-nowrap items-center justify-start gap-2 overflow-x-auto overflow-y-hidden py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-hidden [&::-webkit-scrollbar]:hidden";
 
 /** Filter UI only — shell/background lives in CatalogBlock. */
 export default function CategoryFinderPanel() {
@@ -127,19 +127,27 @@ export default function CategoryFinderPanel() {
                 >
                   {t("allBrands")}
                 </button>
-                <AnimatePresence initial={false}>
-                  {FINDER_BRANDS.map((brand, index) => (
+                <motion.div
+                  key={selectedCategory}
+                  className="flex min-w-0 flex-nowrap items-center justify-start gap-2 md:flex-wrap"
+                  initial={ready ? "hidden" : false}
+                  animate="show"
+                  variants={{
+                    hidden: {},
+                    show: {
+                      transition: { staggerChildren: 0.07, delayChildren: 0.04 },
+                    },
+                  }}
+                >
+                  {FINDER_BRANDS.map((brand) => (
                     <motion.button
-                      key={`${selectedCategory}-${brand.id}`}
+                      key={brand.id}
                       type="button"
-                      initial={ready ? { opacity: 0, x: 16 } : false}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -12 }}
-                      transition={{
-                        duration: 0.22,
-                        delay: ready ? index * 0.035 : 0,
-                        ease: "easeOut",
+                      variants={{
+                        hidden: { opacity: 0 },
+                        show: { opacity: 1 },
                       }}
+                      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                       onClick={() =>
                         setSelectedBrand((prev) =>
                           prev === brand.id ? null : brand.id
@@ -150,7 +158,7 @@ export default function CategoryFinderPanel() {
                       {brand.label}
                     </motion.button>
                   ))}
-                </AnimatePresence>
+                </motion.div>
               </div>
             </div>
 
