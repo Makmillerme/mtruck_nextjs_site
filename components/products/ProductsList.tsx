@@ -4,18 +4,28 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Product } from "@prisma/client";
+import type { ProductListItem } from "@/utils/actions";
 import Image from "next/image";
 import FavoriteToggleButton from "./FavoriteToggleButton";
 import { LuTag } from "react-icons/lu";
 
-async function ProductsList({ products }: { products: Product[] }) {
+async function ProductsList({
+  products,
+  favoriteByProductId,
+  isAuthenticated,
+  priorityCount = 0,
+}: {
+  products: ProductListItem[];
+  favoriteByProductId?: Map<string, string>;
+  isAuthenticated?: boolean;
+  priorityCount?: number;
+}) {
   const locale = await getLocale();
   const t = await getTranslations("Product");
 
   return (
     <div className="mt-8 grid gap-6">
-      {products.map((product) => {
+      {products.map((product, index) => {
         const href = `/products/${product.id}`;
         const price = formatCurrency(product.price, locale);
         return (
@@ -28,6 +38,7 @@ async function ProductsList({ products }: { products: Product[] }) {
                       src={product.image}
                       alt={product.name}
                       fill
+                      priority={index < priorityCount}
                       sizes="(max-width: 768px) 100vw, 256px"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -61,7 +72,11 @@ async function ProductsList({ products }: { products: Product[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 md:flex-col md:items-end">
-                  <FavoriteToggleButton productId={product.id} />
+                  <FavoriteToggleButton
+                    productId={product.id}
+                    favoriteId={favoriteByProductId?.get(product.id) ?? null}
+                    isAuthenticated={isAuthenticated}
+                  />
                   <Button asChild className="h-10 font-semibold md:w-40">
                     <Link href={href}>{t("details")}</Link>
                   </Button>

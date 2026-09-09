@@ -6,14 +6,26 @@ import { getSession } from '@/utils/session';
 async function FavoriteToggleButton({
   productId,
   className,
+  favoriteId: favoriteIdProp,
+  isAuthenticated: isAuthenticatedProp,
 }: {
   productId: string;
   className?: string;
+  favoriteId?: string | null;
+  isAuthenticated?: boolean;
 }) {
-  const session = await getSession();
-  const userId = session?.user.id;
-  if (!userId) return <CardSignInButton className={className} />;
-  const favoriteId = await fetchFavoriteId({ productId });
+  let isAuthenticated = isAuthenticatedProp;
+  let favoriteId = favoriteIdProp ?? null;
+
+  if (isAuthenticated === undefined) {
+    const session = await getSession();
+    isAuthenticated = Boolean(session?.user.id);
+    if (isAuthenticated) {
+      favoriteId = await fetchFavoriteId({ productId });
+    }
+  }
+
+  if (!isAuthenticated) return <CardSignInButton className={className} />;
 
   return (
     <FavoriteToggleForm

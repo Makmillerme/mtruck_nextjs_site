@@ -28,7 +28,7 @@ import {
 import { parseCatalogSort, type CatalogSort } from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   LuArrowUpDown,
   LuLayoutGrid,
@@ -55,12 +55,7 @@ function CatalogSearch({
   const t = useTranslations("Products");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paramSearch = searchParams.get("search") ?? initialSearch;
-  const [search, setSearch] = useState(paramSearch);
-
-  useEffect(() => {
-    setSearch(paramSearch);
-  }, [paramSearch]);
+  const urlSearch = searchParams.get("search") ?? initialSearch;
 
   const handleSearch = useDebouncedCallback((value: string) => {
     const params = new URLSearchParams(window.location.search);
@@ -74,12 +69,12 @@ function CatalogSearch({
     <div className="relative min-w-0 flex-1">
       <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
+        key={urlSearch}
         type="search"
-        value={search}
+        defaultValue={urlSearch}
         placeholder={t("searchPlaceholder")}
         className="h-9 pl-9"
         onChange={(event) => {
-          setSearch(event.target.value);
           handleSearch(event.target.value);
         }}
         aria-label={t("searchPlaceholder")}
@@ -189,30 +184,21 @@ export default function CatalogView({
   initialSearch,
   initialSort,
   brands,
-  countLabel,
-  emptyLabel,
-  grid,
-  list,
+  children,
 }: {
   initialLayout: CatalogLayout;
   initialSearch: string;
   initialSort: CatalogSort;
   brands: string[];
-  countLabel: string;
-  emptyLabel: string | null;
-  grid: ReactNode;
-  list: ReactNode;
+  children: ReactNode;
 }) {
   const t = useTranslations("Products");
-  const [layout, setLayout] = useState<CatalogLayout>(initialLayout);
-
-  useEffect(() => {
-    setLayout(parseCatalogLayout(initialLayout));
-  }, [initialLayout]);
+  const router = useRouter();
+  const layout = parseCatalogLayout(initialLayout);
 
   function selectLayout(next: CatalogLayout) {
-    setLayout(next);
     persistLayout(next);
+    router.refresh();
   }
 
   return (
@@ -220,8 +206,9 @@ export default function CatalogView({
       <CatalogFilterSidebar brands={brands} />
       <div className="min-w-0">
         <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h4 className="text-lg font-medium">{countLabel}</h4>
+          <div className="flex min-w-0 items-center gap-2">
+            <CatalogSearch initialSearch={initialSearch} />
+            <CatalogSortButton initialSort={initialSort} />
             <div className="flex shrink-0 items-center gap-1">
               <Button
                 type="button"
@@ -246,22 +233,10 @@ export default function CatalogView({
                 <LuList />
               </Button>
             </div>
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <CatalogSearch initialSearch={initialSearch} />
-            <CatalogSortButton initialSort={initialSort} />
             <CatalogFilterSheet brands={brands} />
           </div>
         </section>
-        <div className="mt-6">
-          {emptyLabel ? (
-            <h5 className="mt-16 text-2xl">{emptyLabel}</h5>
-          ) : layout === "grid" ? (
-            grid
-          ) : (
-            list
-          )}
-        </div>
+        <div className="mt-6">{children}</div>
       </div>
     </div>
   );

@@ -19,7 +19,16 @@ export default async function AccountFavoritesPage() {
     );
   }
 
+  const favoriteByProductId = new Map(
+    favorites.map((favorite) => [favorite.productId, favorite.id])
+  );
+
   return (
-    <ProductsGrid products={favorites.map((favorite) => favorite.product)} />
+    <ProductsGrid
+      products={favorites.map((favorite) => favorite.product)}
+      favoriteByProductId={favoriteByProductId}
+      isAuthenticated
+      priorityCount={3}
+    />
   );
 }

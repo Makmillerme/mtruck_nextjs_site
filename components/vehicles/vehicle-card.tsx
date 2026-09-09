@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatMileage } from "@/utils/format";
-import type { Product } from "@prisma/client";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
@@ -38,7 +37,13 @@ export type VehicleCardModel = {
   feature?: string | null;
 };
 
-export function productToVehicle(product: Product): VehicleCardModel {
+export function productToVehicle(product: {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  company: string;
+}): VehicleCardModel {
   return {
     id: product.id,
     name: product.name,
@@ -63,8 +68,14 @@ const favoriteBtnClass =
 
 export default async function VehicleCard({
   vehicle,
+  priority = false,
+  favoriteId,
+  isAuthenticated,
 }: {
   vehicle: VehicleCardModel;
+  priority?: boolean;
+  favoriteId?: string | null;
+  isAuthenticated?: boolean;
 }) {
   const locale = await getLocale();
   const t = await getTranslations("VehicleCard");
@@ -92,6 +103,7 @@ export default async function VehicleCard({
               src={vehicle.image}
               alt={vehicle.name}
               fill
+              priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -112,6 +124,8 @@ export default async function VehicleCard({
               <FavoriteToggleButton
                 productId={vehicle.id}
                 className={favoriteBtnClass}
+                favoriteId={favoriteId}
+                isAuthenticated={isAuthenticated}
               />
             </div>
           </div>

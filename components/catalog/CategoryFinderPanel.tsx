@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -30,15 +30,15 @@ const chipRowClass =
 /** Filter UI only — shell/background lives in CatalogBlock. */
 export default function CategoryFinderPanel() {
   const t = useTranslations("CategoryFinder");
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryId>("tractors");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-
-  useEffect(() => {
-    setReady(true);
-  }, []);
 
   const count = useMemo(
     () => getMockOfferCount(selectedCategory, selectedBrand, statusFilter),

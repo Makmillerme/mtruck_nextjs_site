@@ -32,13 +32,35 @@ const renderError = (error: unknown): { message: string } => {
   };
 };
 
-export const fetchFeaturedProducts = async () => {
-  const products = await db.product.findMany({
+export const productListSelect = {
+  id: true,
+  name: true,
+  company: true,
+  featured: true,
+  image: true,
+  price: true,
+  createdAt: true,
+} as const;
+
+export type ProductListItem = {
+  id: string;
+  name: string;
+  company: string;
+  featured: boolean;
+  image: string;
+  price: number;
+  createdAt: Date;
+};
+
+export const fetchFeaturedProducts = async (take = 6) => {
+  return db.product.findMany({
     where: {
       featured: true,
     },
+    select: productListSelect,
+    orderBy: { createdAt: "desc" },
+    take,
   });
-  return products;
 };
 
 export const fetchAllProducts = async ({
@@ -76,8 +98,25 @@ export const fetchAllProducts = async ({
         featuredOnly ? { featured: true } : {},
       ],
     },
+    select: productListSelect,
     orderBy,
   });
+};
+
+export const fetchUserFavoriteIds = async () => {
+  const session = await getSession();
+  const userId = session?.user.id;
+  if (!userId) {
+    return { isAuthenticated: false as const, favoriteByProductId: new Map<string, string>() };
+  }
+  const rows = await db.favorite.findMany({
+    where: { userId },
+    select: { id: true, productId: true },
+  });
+  return {
+    isAuthenticated: true as const,
+    favoriteByProductId: new Map(rows.map((row) => [row.productId, row.id])),
+  };
 };
 
 export const fetchProductBrands = async () => {
@@ -273,7 +312,7 @@ export const fetchUserFavorites = async () => {
       userId: user.id,
     },
     include: {
-      product: true,
+      product: { select: productListSelect },
     },
   });
   return favorites;

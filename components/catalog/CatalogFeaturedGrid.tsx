@@ -2,13 +2,16 @@ import EmptyList from "@/components/global/EmptyList";
 import ProductsGrid from "@/components/products/ProductsGrid";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { fetchFeaturedProducts } from "@/utils/actions";
+import { fetchFeaturedProducts, fetchUserFavoriteIds } from "@/utils/actions";
 import { getTranslations } from "next-intl/server";
 
 /** Featured vehicles grid only — no section title (CatalogBlock owns headings). */
 export default async function CatalogFeaturedGrid() {
   const t = await getTranslations("HomePage");
-  const products = await fetchFeaturedProducts();
+  const [products, favorites] = await Promise.all([
+    fetchFeaturedProducts(),
+    fetchUserFavoriteIds(),
+  ]);
 
   if (products.length === 0) {
     return <EmptyList />;
@@ -16,7 +19,12 @@ export default async function CatalogFeaturedGrid() {
 
   return (
     <div>
-      <ProductsGrid products={products} />
+      <ProductsGrid
+        products={products}
+        favoriteByProductId={favorites.favoriteByProductId}
+        isAuthenticated={favorites.isAuthenticated}
+        priorityCount={3}
+      />
       <div className="mt-12 text-center md:mt-16">
         <Button
           asChild

@@ -530,6 +530,12 @@
     "title": "Page not found",
     "description": "Check the URL or return to the home page."
   },
+  "Error": {
+    "title": "Something went wrong",
+    "description": "Try again or return to the home page.",
+    "retry": "Try again",
+    "home": "Go home"
+  },
   "Metadata": {
     "title": "MTruck — commercial truck sales",
     "description": "Catalog of trucks and commercial vehicles. Selection, consulting, and deal support."

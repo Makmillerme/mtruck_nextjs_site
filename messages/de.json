@@ -530,6 +530,12 @@
     "title": "Seite nicht gefunden",
     "description": "Prüfen Sie die Adresse oder kehren Sie zur Startseite zurück."
   },
+  "Error": {
+    "title": "Etwas ist schiefgelaufen",
+    "description": "Versuchen Sie es erneut oder kehren Sie zur Startseite zurück.",
+    "retry": "Erneut versuchen",
+    "home": "Zur Startseite"
+  },
   "Metadata": {
     "title": "MTruck — Nutzfahrzeugverkauf",
     "description": "Katalog von Lkw und Nutzfahrzeugen. Auswahl, Beratung und Kaufbegleitung."
