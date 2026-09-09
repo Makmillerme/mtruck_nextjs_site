@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '../ui/button';
 import { LuShare2 } from 'react-icons/lu';
+import { useMemo, useState } from 'react';
 
 import {
   TwitterShareButton,
@@ -18,13 +19,21 @@ import {
 
 function ShareButton({ productId, name }: { productId: string; name: string }) {
   const configuredUrl = process.env.NEXT_PUBLIC_WEBSITE_URL?.replace(/\/$/, '');
-  const origin =
-    configuredUrl ||
-    (typeof window !== 'undefined' ? window.location.origin : '');
-  const shareLink = `${origin}/products/${productId}`;
+  const [origin, setOrigin] = useState(configuredUrl ?? '');
+
+  const shareLink = useMemo(
+    () => `${origin || configuredUrl || ''}/products/${productId}`,
+    [origin, configuredUrl, productId]
+  );
 
   return (
-    <Popover>
+    <Popover
+      onOpenChange={(open) => {
+        if (open && !origin && typeof window !== 'undefined') {
+          setOrigin(window.location.origin);
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button variant='outline' size='icon' className='p-2'>
           <LuShare2 />

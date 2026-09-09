@@ -1,5 +1,5 @@
 import BreadCrumbs from '@/components/single-product/BreadCrumbs';
-import { fetchSingleProduct, findExistingReview } from '@/utils/actions';
+import { fetchFavoriteId, fetchSingleProduct, findExistingReview } from '@/utils/actions';
 import Image from 'next/image';
 import { formatCurrency } from '@/utils/format';
 import FavoriteToggleButton from '@/components/products/FavoriteToggleButton';
@@ -18,14 +18,18 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
   const dollarsAmount = formatCurrency(price, locale);
   const session = await getSession();
-  const userId = session?.user.id;
+  const user = session?.user;
+  const userId = user?.id;
+  const isAuthenticated = Boolean(userId);
+  const favoriteId = userId
+    ? await fetchFavoriteId({ productId: product.id })
+    : null;
   const reviewDoesNotExist =
     userId && !(await findExistingReview(userId, product.id));
   return (
     <section>
       <BreadCrumbs name={product.name} />
       <div className='mt-6 grid gap-y-8 lg:grid-cols-2 lg:gap-x-16'>
-        {/* IMAGE FIRST COL */}
         <div className='relative h-full'>
           <Image
             src={image}
@@ -36,12 +40,15 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             className='w-full rounded object-cover'
           />
         </div>
-        {/* PRODUCT INFO SECOND COL */}
         <div>
           <div className='flex gap-x-8 items-center'>
             <h1 className='capitalize text-3xl font-bold'>{name} </h1>
             <div className='flex items-center gap-x-2'>
-              <FavoriteToggleButton productId={params.id} />
+              <FavoriteToggleButton
+                productId={params.id}
+                favoriteId={favoriteId}
+                isAuthenticated={isAuthenticated}
+              />
               <ShareButton name={product.name} productId={params.id} />
             </div>
           </div>
@@ -51,12 +58,18 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             {dollarsAmount}
           </p>
           <p className='mt-6 leading-8 text-muted-foreground'>{description}</p>
-          <AddToCart productId={params.id} />
+          <AddToCart productId={params.id} isAuthenticated={isAuthenticated} />
         </div>
       </div>
       <ProductReviews productId={params.id} />
 
-      {reviewDoesNotExist && <SubmitReview productId={params.id} />}
+      {reviewDoesNotExist && user ? (
+        <SubmitReview
+          productId={params.id}
+          authorName={user.name || 'user'}
+          authorImageUrl={user.image || ''}
+        />
+      ) : null}
     </section>
   );
 }

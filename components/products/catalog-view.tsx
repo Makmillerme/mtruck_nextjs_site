@@ -28,7 +28,7 @@ import {
 import { parseCatalogSort, type CatalogSort } from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   LuArrowUpDown,
   LuLayoutGrid,
@@ -56,6 +56,14 @@ function CatalogSearch({
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search") ?? initialSearch;
+  const [search, setSearch] = useState(urlSearch);
+  const [prevUrlSearch, setPrevUrlSearch] = useState(urlSearch);
+
+  // Sync from URL when it changes externally (filters/back), without useEffect.
+  if (urlSearch !== prevUrlSearch) {
+    setPrevUrlSearch(urlSearch);
+    setSearch(urlSearch);
+  }
 
   const handleSearch = useDebouncedCallback((value: string) => {
     const params = new URLSearchParams(window.location.search);
@@ -69,12 +77,12 @@ function CatalogSearch({
     <div className="relative min-w-0 flex-1">
       <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        key={urlSearch}
         type="search"
-        defaultValue={urlSearch}
+        value={search}
         placeholder={t("searchPlaceholder")}
         className="h-9 pl-9"
         onChange={(event) => {
+          setSearch(event.target.value);
           handleSearch(event.target.value);
         }}
         aria-label={t("searchPlaceholder")}

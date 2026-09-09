@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 /* eslint-disable @next/next/no-img-element -- intentional native img + preload for LCP without next/image flash */
+import { Button } from "@/components/ui/button";
 import heroImage from "@/public/images/hero.webp";
 import { getTranslations } from "next-intl/server";
 import { preload } from "react-dom";

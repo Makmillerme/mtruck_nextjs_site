@@ -6,14 +6,17 @@ import FormContainer from '../form/FormContainer';
 import { SubmitButton } from '../form/Buttons';
 import { addToCartAction } from '@/utils/actions';
 import { ProductSignInButton } from '../form/Buttons';
-import { authClient } from '@/lib/auth-client';
 import { useTranslations } from 'next-intl';
 
-function AddToCart({ productId }: { productId: string }) {
+function AddToCart({
+  productId,
+  isAuthenticated,
+}: {
+  productId: string;
+  isAuthenticated: boolean;
+}) {
   const t = useTranslations('Product');
   const [amount, setAmount] = useState(1);
-  const { data: session } = authClient.useSession();
-  const userId = session?.user.id;
   return (
     <div className='mt-4'>
       <SelectProductAmount
@@ -21,7 +24,7 @@ function AddToCart({ productId }: { productId: string }) {
         amount={amount}
         setAmount={setAmount}
       />
-      {userId ? (
+      {isAuthenticated ? (
         <FormContainer action={addToCartAction}>
           <input type='hidden' name='productId' value={productId} />
           <input type='hidden' name='amount' value={amount} />

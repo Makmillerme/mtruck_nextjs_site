@@ -242,7 +242,7 @@ export const updateProductImageAction = async (
   prevState: { message: string },
   formData: FormData
 ) => {
-  const user = await getAdminUser();
+  await getAdminUser();
   try {
     const image = formData.get('image') as File;
     const productId = formData.get('id') as string;
@@ -250,10 +250,11 @@ export const updateProductImageAction = async (
 
     const product = await db.product.findUnique({
       where: { id: productId },
-      select: { id: true, userId: true },
+      select: { id: true },
     });
-    if (!product || product.userId !== user.id) {
-      throw new Error('Product not found');
+    if (!product) {
+      const t = await getTranslations('Actions');
+      return { message: t('error') };
     }
 
     const validatedFile = validateWithZodSchema(imageSchema, { image });
@@ -276,11 +277,13 @@ export const updateProductImageAction = async (
 };
 
 export const fetchFavoriteId = async ({ productId }: { productId: string }) => {
-  const user = await getAuthUser();
+  const session = await getSession();
+  const userId = session?.user.id;
+  if (!userId) return null;
   const favorite = await db.favorite.findFirst({
     where: {
       productId,
-      userId: user.id,
+      userId,
     },
     select: {
       id: true,

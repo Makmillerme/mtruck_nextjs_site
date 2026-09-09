@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "@/i18n/navigation";
+import db from "@/utils/db";
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 
@@ -28,6 +29,15 @@ async function redirectHome(): Promise<never> {
   throw new Error("Redirect failed");
 }
 
+/** DB is source of truth for role (Better-Auth session may omit additionalFields). */
+export async function getUserRole(userId: string) {
+  const row = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  return row?.role ?? null;
+}
+
 export async function getAuthUser() {
   const session = await getSession();
   if (!session?.user) {
@@ -42,8 +52,7 @@ export function isAdminRole(role: string | null | undefined) {
 
 export async function getAdminUser() {
   const user = await getAuthUser();
-  const role =
-    "role" in user && typeof user.role === "string" ? user.role : null;
+  const role = await getUserRole(user.id);
   if (!isAdminRole(role)) {
     return redirectHome();
   }

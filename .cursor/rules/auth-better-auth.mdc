@@ -11,15 +11,15 @@ alwaysApply: false
 ## Правила
 
 - Сервер: `auth.api.getSession({ headers })` через `getSession` / `getAuthUser` / `getAdminUser`.
-- Клієнт: `authClient` з `lib/auth-client.ts` (`useSession`, `signIn.email`, `signUp.email`, `signIn.social`, `signOut`).
+- Роль: `User.role` enum `USER | ADMIN`. `getAdminUser` / navbar читають роль з **БД** (`getUserRole`), не з `NEXT_PUBLIC_*`.
+- Bootstrap emails (`ADMIN_EMAIL` / `ADMIN_TEST_EMAIL`) лише для seed (`lib/admin.ts`), який ставить `role=ADMIN`.
+- Клієнт: `authClient` з `lib/auth-client.ts` для sign-in/out. **Не** тягнути `useSession` у navbar / AddToCart / SubmitReview — передавати props із RSC.
 - Хендлер: `app/api/auth/[...all]/route.ts` — `toNextJsHandler(auth)`.
-- `proxy.ts` — лише перевірка cookie (`getSessionCookie`). Захищені: `/admin`, `/orders`, `/user-profile`.
-- Адмін = email у `ADMIN_EMAIL` (опційно `ADMIN_TEST_EMAIL`). Навігація: `NEXT_PUBLIC_ADMIN_*`. Не Clerk `userId`.
-- Bootstrap юзера: `lib/admin.ts` + `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`. Сід створює запис у БД (аватар `/favicon_mtruck.svg`) і **не** перезаписує пароль/імʼя/фото якщо юзер уже є.
+- `proxy.ts` — лише перевірка cookie (`getSessionCookie`). Захищені: `/admin`, `/account`, `/orders`, `/user-profile`, `/favorites`. Роль адміна перевіряє `app/[locale]/admin/layout.tsx`.
 - Google: додавати в `socialProviders` лише якщо є **обидва** `GOOGLE_CLIENT_ID` і `GOOGLE_CLIENT_SECRET`. UI: `NEXT_PUBLIC_GOOGLE_AUTH=true`. Redirect: `{BETTER_AUTH_URL}/api/auth/callback/google`.
 - **Не** додавати GitHub provider, `@clerk/nextjs`, `middleware.ts`.
 - Prisma `Account.issuer` обов’язковий; unique `[issuer, accountId]`.
 
 ## Тест
 
-Адмін: `ADMIN_EMAIL` / `ADMIN_PASSWORD` з `.env`. Тест-юзер сіда: `test@user.com` / `12345678`. Команда: `npm run db:seed`.
+Адмін: акаунт із `role=ADMIN` (сід з `ADMIN_EMAIL`). Тест-юзер: `test@user.com` / `12345678`. Команда: `npm run db:seed`.
