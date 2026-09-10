@@ -10,7 +10,7 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 215 100% 33.5%;
+    --primary: 222 47% 11%;
     --primary-foreground: 0 0% 100%;
     --secondary: 214 32% 91%;
     --secondary-foreground: 222 47% 11%;
@@ -22,18 +22,18 @@
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 215 100% 33.5%;
+    --ring: 222 47% 11%;
     --radius: 0.5rem;
     --font-sans: var(--font-plus-jakarta, ui-sans-serif), system-ui, sans-serif;
     --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, Menlo, monospace;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 215 100% 33.5%;
+    --sidebar-primary: 222 47% 11%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 215 100% 33.5%;
+    --sidebar-ring: 222 47% 11%;
   }
 
   .dark {
@@ -43,8 +43,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 215 100% 33.5%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 222 47% 11%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -55,21 +55,30 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 20% 35%;
     --input: 217.2 20% 35%;
-    --ring: 215 100% 45%;
+    --ring: 0 0% 100%;
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 215 100% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 222 47% 11%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 20% 35%;
-    --sidebar-ring: 215 100% 45%;
+    --sidebar-ring: 0 0% 100%;
   }
 
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     scrollbar-gutter: stable;
-    overflow-x: clip;
+  }
+
+  html[data-scroll-behavior="smooth"] {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto !important;
+    }
   }
 
   * {
@@ -80,33 +89,13 @@
     @apply max-w-full bg-background font-sans text-foreground antialiased;
   }
 
-  .site-header {
-    --foreground: 222 47% 11%;
-    --muted-foreground: 215 16% 47%;
-    --muted: 210 40% 96%;
-    --primary: 215 100% 33.5%;
-    --primary-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --background: 0 0% 100%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    color: hsl(var(--foreground));
-  }
 
-  .site-header[data-surface="dark"] {
-    --foreground: 0 0% 100%;
-    --muted-foreground: 0 0% 78%;
-    --muted: 0 0% 100%;
+
+  /* 01+03: default Button is navy on light; white plate on dark bands. */
+  [data-header-surface="dark"] {
     --primary: 0 0% 100%;
     --primary-foreground: 222 47% 11%;
-    --border: 0 0% 100%;
-    --background: 222 47% 11%;
-    --accent: 0 0% 100%;
-    --accent-foreground: 0 0% 100%;
-  }
-
-  .site-header svg {
-    color: inherit;
+    --ring: 0 0% 100%;
   }
 }
 
@@ -217,4 +206,101 @@
 html body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
+}
+
+/*
+  Glass lives on an empty sibling (.site-header-glass), not on <header>.
+  Chrome drops backdrop-filter on a sticky/fixed bar that also holds nav/buttons.
+  Unlayered: a parent overflow clip still kills blur on descendants (UI Lab).
+*/
+html:has(#hero),
+html:has(#hero) body,
+html:has(#partners),
+html:has(#partners) body {
+  background-color: #061020;
+}
+
+.site-header,
+.site-header-glass {
+  --foreground: 222 47% 11%;
+  --muted-foreground: 215 16% 47%;
+  --muted: 210 40% 96%;
+  --primary: 222 47% 11%;
+  --primary-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --background: 0 0% 100%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+}
+
+.site-header {
+  color: hsl(var(--foreground));
+  background-color: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+.site-header-glass {
+  background-color: rgb(255 255 255 / 0.72);
+  box-shadow:
+    0 -8px 0 rgb(255 255 255),
+    0 1px 0 hsl(var(--border) / 0.4);
+  --tw-backdrop-blur: blur(40px);
+  --tw-backdrop-saturate: saturate(1.6);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-saturate);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-saturate);
+}
+
+html:has(#hero) .site-header:not([data-surface="light"]),
+html:has(#partners) .site-header:not([data-surface="light"]),
+.site-header[data-surface="dark"] {
+  --foreground: 0 0% 100%;
+  --muted-foreground: 0 0% 78%;
+  --muted: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 222 47% 11%;
+  --border: 0 0% 100%;
+  --background: 222 47% 11%;
+  --accent: 0 0% 100%;
+  --accent-foreground: 0 0% 100%;
+}
+
+html:has(#hero) .site-header-glass:not([data-surface="light"]),
+html:has(#partners) .site-header-glass:not([data-surface="light"]),
+.site-header-glass[data-surface="dark"] {
+  --foreground: 0 0% 100%;
+  --muted-foreground: 0 0% 78%;
+  --muted: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 222 47% 11%;
+  --border: 0 0% 100%;
+  --background: 222 47% 11%;
+  --accent: 0 0% 100%;
+  --accent-foreground: 0 0% 100%;
+  background-color: rgb(6 16 32 / 0.34);
+  box-shadow: 0 -8px 0 #061020;
+}
+
+.site-header[data-surface="light"],
+.site-header-glass[data-surface="light"] {
+  --foreground: 222 47% 11%;
+  --muted-foreground: 215 16% 47%;
+  --muted: 210 40% 96%;
+  --primary: 222 47% 11%;
+  --primary-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --background: 0 0% 100%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+}
+
+.site-header-glass[data-surface="light"] {
+  background-color: rgb(255 255 255 / 0.72);
+  box-shadow:
+    0 -8px 0 rgb(255 255 255),
+    0 1px 0 hsl(var(--border) / 0.4);
+}
+
+.site-header svg {
+  color: inherit;
 }

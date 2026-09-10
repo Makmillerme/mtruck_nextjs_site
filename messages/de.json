@@ -53,8 +53,8 @@
     "heroEyebrow": "Europäische Lkw",
     "heroTitle": "Zuverlässige Nutzfahrzeuge aus Europa",
     "heroSubtitle": "Premium-Lkw führender europäischer Hersteller. Qualität, Zuverlässigkeit und faire Preise für Ihre Flotte.",
-    "heroCta": "Katalog ansehen",
-    "heroSecondary": "Neueingänge",
+    "heroCta": "Technik bestellen",
+    "heroSecondary": "Kontakt aufnehmen",
     "catalogEyebrow": "Katalog",
     "featuredTitle": "Neueingänge",
     "viewCatalog": "Zum Katalog"
@@ -92,27 +92,59 @@
     }
   },
   "ServicesSection": {
-    "eyebrow": "Unsere Leistungen",
-    "title": "Der komplette Importzyklus",
-    "subtitle": "Von der Suche bis zur Lieferung — wir übernehmen jeden Schritt beim Import hochwertiger europäischer Lkw nach Ukraine.",
+    "eyebrow": "Leistungen",
+    "title": "Wir bringen Nutzfahrzeuge in die Ukraine",
+    "subtitle": "Verkauf ab Hof. Spezialisten begleiten Kredit oder Leasing. Jede Einheit wird in unseren Werkstätten vorbereitet — und bei Bedarf für Ihr Geschäft umgebaut.",
+    "groups": {
+      "commerce": "Verkauf",
+      "workshop": "Vorbereitung"
+    },
+    "groupsCta": {
+      "commerce": "Mehr zum Verkauf",
+      "workshop": "Mehr zur Vorbereitung"
+    },
     "items": {
-      "customs": {
-        "title": "Zollabfertigung",
-        "description": "Vollständige Zolldokumentation für einen reibungslosen Import aus EU-Ländern."
+      "sale": {
+        "title": "Import und Verkauf",
+        "description": "Zugmaschinen, Lkw, Anhänger und weitere Nutzfahrzeuge — Import in die Ukraine und Verkauf vor Ort, ab Bestand oder auf Anfrage."
       },
-      "maintenance": {
-        "title": "Technischer Service",
-        "description": "Verkaufsvorbereitung und Wartung durch zertifizierte Techniker."
+      "finance": {
+        "title": "Kredit und Leasing",
+        "description": "Spezialisten begleiten den Kauf auf Kredit oder Leasing — wir finden das Schema für Ihre Flotte und Ihr Budget."
       },
-      "leasing": {
-        "title": "Leasing und Finanzierung",
-        "description": "Flexible Leasing- und Finanzierungslösungen, angepasst an Ihr Unternehmen."
+      "workshop": {
+        "title": "Vorbereitung in der Werkstatt",
+        "description": "Die gesamte Technik — Fahrzeuge, Anhänger und mehr — wird vor dem Verkauf in unseren Stationen vorbereitet."
       },
-      "delivery": {
-        "title": "Lieferung",
-        "description": "Lieferung von europäischen Händlern direkt an Ihren Standort in der Ukraine."
+      "refit": {
+        "title": "Umbau",
+        "description": "Wir passen Fahrzeuge an die konkrete Geschäftsart und Kundenanforderungen an: Karosserie, Aufbau, Ausstattung."
       }
     }
+  },
+  "CustomOrderSection": {
+    "eyebrow": "Individuelle Beschaffung",
+    "title": "Technik auf Bestellung",
+    "subtitle": "Das passende Modell nicht im Katalog gefunden? Wir beschaffen es in Europa nach Ihren Anforderungen.",
+    "steps": {
+      "request": {
+        "title": "Anfrage",
+        "description": "Beschreiben Sie Technik, Budget und Termin — wir leiten die Anfrage an den Manager weiter."
+      },
+      "sourcing": {
+        "title": "Suche in Europa",
+        "description": "Wir suchen auf geprüften Plattformen und bei Händlern nach passenden Angeboten."
+      },
+      "deal": {
+        "title": "Prüfung und Vertrag",
+        "description": "Technische Diagnose, Preisverhandlung und Vertragsabschluss."
+      },
+      "delivery": {
+        "title": "Lieferung und Vorbereitung",
+        "description": "Wir liefern nach Ukraine, bereiten die Technik in der Werkstatt vor und übergeben sie einsatzbereit."
+      }
+    },
+    "cta": "Anfrage stellen"
   },
   "ServicesPage": {
     "metaTitle": "Leistungen",

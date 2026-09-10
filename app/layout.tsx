@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@teispace/next-themes";
 import { routing } from "@/i18n/routing";
@@ -38,16 +39,23 @@ export default async function RootLayout({
   return (
     <html
       lang={htmlLang}
-      data-scroll-behavior="smooth"
+      data-scroll-behavior="auto"
       className={`${plusJakarta.variable} ${geistMono.variable} light`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <Script id="mtruck-boot" strategy="beforeInteractive">
+          {`try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(e){}
+document.documentElement.setAttribute("data-scroll-behavior","auto");
+window.addEventListener("pageshow",function(){requestAnimationFrame(function(){document.documentElement.setAttribute("data-scroll-behavior","smooth")})});`}
+        </Script>
         <ThemeProvider
           attribute="class"
           forcedTheme="light"
           defaultTheme="light"
           enableSystem={false}
+          enableColorScheme={false}
+          storage="none"
           disableTransitionOnChange
         >
           {children}

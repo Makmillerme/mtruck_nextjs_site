@@ -16,19 +16,19 @@ async function BreadCrumbs({ name }: { name: string }) {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink asChild className='capitalize text-lg'>
+          <BreadcrumbLink asChild>
             <Link href='/'>{t('home')}</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink asChild className='capitalize text-lg'>
+          <BreadcrumbLink asChild>
             <Link href='/products'>{t('catalog')}</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbPage className='capitalize text-lg'>{name}</BreadcrumbPage>
+          <BreadcrumbPage>{name}</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>

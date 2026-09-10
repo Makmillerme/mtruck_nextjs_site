@@ -1,29 +1,12 @@
 # Known issues
 
 ## Radix overlay layout shift (2026-09-07)
-
-Opening DropdownMenu / Select / Sheet used to shift the whole page left, then restore on close.
-
-### Cause
-- `html { scrollbar-gutter: stable }` already reserves the scrollbar (~15px).
-- Radix modal uses `react-remove-scroll`, which injects `body[data-scroll-locked] { margin-right: 15px !important }`.
-- Double compensation: header/content shrink from the right (looks like a left slide).
-
-### Fix
-- Unlayered CSS in `app/globals.css`: `html body[data-scroll-locked] { margin-right: 0 !important; padding-right: 0 !important }`.
-- `DropdownMenu` defaults to `modal={false}`.
+Opening DropdownMenu / Select / Sheet used to shift the page left. Fix: `html body[data-scroll-locked] { margin-right: 0 }` + DropdownMenu `modal={false}`.
 
 ## False hydration mismatch: `data-cursor-ref` (2026-09-08)
+Cursor IDE browser injects `data-cursor-ref`. Ignore when that is the only diff. Verify in a normal Chrome/Edge window.
 
-Console may show hydration error on `FeaturedProducts` / homepage with diffs like:
+## Reload flicker / scroll restore (fixed 2026-09-09)
+Causes were: `scroll-behavior: smooth` + browser `scrollRestoration` (page animated from top to last Y); header `data-surface` only after `useEffect` (white glass on dark); catalog Suspense skeleton→cards; finder brand chips opacity 0→1; partnership header sitting on white body.
 
-```
-- data-cursor-ref="e133"
-+ Каталог
-```
-
-### Cause
-Cursor IDE browser injects `data-cursor-ref` into the live DOM for accessibility snapshots. That is **not** in server HTML, so React reports a mismatch.
-
-### Action
-Ignore when the only mismatched attrs are `data-cursor-ref`. Verify in a normal Chrome/Edge window (not Cursor browser). No app code fix.
+Fixes: `history.scrollRestoration="manual"` (beforeInteractive); CSS-first header (`:has(#hero|#partners)` + `data-surface`); `useLayoutEffect`; no homepage catalog skeleton; no finder intro fade; partnership overlaps navy like hero.

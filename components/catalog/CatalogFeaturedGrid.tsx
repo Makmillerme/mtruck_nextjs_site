@@ -26,12 +26,7 @@ export default async function CatalogFeaturedGrid() {
         priorityCount={3}
       />
       <div className="mt-12 text-center md:mt-16">
-        <Button
-          asChild
-          variant="outline"
-          size="lg"
-          className="border-primary bg-background px-6 text-primary hover:bg-primary hover:text-primary-foreground"
-        >
+        <Button asChild variant="outline" size="lg">
           <Link href="/products">{t("viewCatalog")}</Link>
         </Button>
       </div>

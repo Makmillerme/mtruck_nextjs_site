@@ -1,30 +1,13 @@
-# Homepage IA + Category Finder (2026-09-08)
+# Homepage IA (2026-09-09, update)
 
-## Homepage section order (canonical)
+1. Hero (navy) — CTA «Замовити техніку» → `#custom-order`, secondary «Зв'язатися з нами» → `#contact`. No catalog/new-arrivals buttons (duplicate quick access already below the fold).
+2. CatalogBlock `#catalog` / `#inventory` — `bg-secondary` pastel
+3. ServicesSection `#services` — white editorial, importer offer (sale, finance, STO prep, refit) + per-group «more» pill CTA to `/services#...`
+4. CustomOrderSection `#custom-order` — navy roadmap, 4-step custom sourcing process, CTA → `#contact` (see `mem:custom-order-section-2026-09`)
+5. ContactSection `#contact` — `bg-secondary` pastel (same wash as catalog; white form/info cards)
+6. Footer — navy `bg-foreground`
 
-1. `Hero`
-2. `CatalogBlock` (`#catalog`, grid `#inventory`) — unified finder + featured grid
-3. `ServicesSection`
-4. `ContactSection`
+Color rhythm: navy→pastel→white→navy→pastel→navy. Every consecutive band differs; navy bookends + one extra navy beat mid-page for the roadmap CTA.
 
-Removed from homepage: TrustStrip (under Hero), FaqSection, PartnershipSection; separate `CategorySelectorSection` / `FeaturedProducts` shells.
-
-## CatalogBlock
-
-See `mem:marketing-catalog-block-2026-09`.
-- Finder panel: `CategoryFinderPanel` (client)
-- Grid: `CatalogFeaturedGrid` — no titles above cards
-- Shell: one `bg-secondary`, `page-container py-16 md:py-24`
-- Hero CTAs: `#catalog` / `#inventory`
-
-## Finder data
-
-- `lib/home/category-finder.ts`
-- CTA: `/products?category=&make=&status=` (use `make`, not `brand`)
-- Status chips same active style as brands
-
-## Typography
-
-- Site sans: **Plus Jakarta Sans** (`--font-plus-jakarta` in `app/layout.tsx`, `--font-sans` in `globals.css`)
-- Mono: Geist Mono for tabular/prices
-- Caveat: Plus Jakarta weak Cyrillic on Google Fonts — UA may fall back to system
+## Product principle (explicit user decision, 2026-09-09)
+Homepage sections stay short/teaser (current level is correct). Full detailed content belongs on dedicated pages (`/services`, future `/about` etc.) — not to be built yet unless asked.

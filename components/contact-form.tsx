@@ -13,12 +13,7 @@ function SubmitCallbackButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button
-      type="submit"
-      size="lg"
-      disabled={pending}
-      className="h-12 shrink-0 px-8 font-semibold"
-    >
+    <Button type="submit" disabled={pending} className="shrink-0">
       {pending ? (
         <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
       ) : null}
@@ -42,7 +37,7 @@ export default function ContactForm() {
           inputMode="tel"
           placeholder={t("phonePlaceholder")}
           aria-label={t("phone.label")}
-          className="h-12 min-w-0 flex-1 bg-background font-mono"
+          className="min-w-0 flex-1 font-mono"
         />
         <SubmitCallbackButton label={t("submit")} />
       </div>

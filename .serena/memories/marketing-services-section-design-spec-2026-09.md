@@ -1,28 +1,28 @@
-## ServicesSection design spec (2026-09-07)
+# ServicesSection (2026-09-09, update)
 
-Component: `components/services-section.tsx`
-id=#services, aria-labelledby=services-heading
-classes: section-spacing bg-background
+Homepage `#services` after CatalogBlock. White paper band in the 3-color rhythm. Nav label «Послуги» (renamed from «Сервіс», uk only — en/de eyebrow already said Services/Leistungen).
 
-### Shell
-- bg: #FFFFFF
-- padding Y: clamp(3rem, 6vw, 5rem)
-- page-container max 1280px
+## Business copy (importer model)
+Items: `sale`, `finance`, `workshop`, `refit`. Groups: `commerce` (Продаж) + `workshop` (Підготовка).
 
-### Header (centered, max-w-2xl mx-auto, mb-12/lg:mb-16)
-- eyebrow: text-sm uppercase tracking-wide font-semibold text-primary mb-2 — "Наші послуги"
-- h2: text-3xl/lg:4xl font-black tracking-tight — "Повний цикл імпорту техніки"
-- sub: mt-4 text-base/lg:text-lg text-muted-foreground
+## Group CTA «маячки» (2026-09-09)
+Each group header row now has a pill link to `/services#sale` / `/services#workshop` (i18n-aware `Link` from `@/i18n/navigation`):
+- rounded-full border-primary/25, ArrowUpRight icon, hover fills bg-primary
+- i18n key `groupsCta.{commerce|workshop}` (uk/en/de)
+- `/services` page itself NOT redesigned yet — hashes are forward-compatible, harmless with no matching anchor today
 
-### Grid: sm:2 lg:4, gap-6/lg:gap-8
-Cards (4):
-1 FileCheck — Митне оформлення
-2 Wrench — Технічне обслуговування
-3 Coins — Лізинг та фінансування
-4 Truck — Доставка
+## Design
+- `bg-background` (white), `page-container py-16 md:py-24` — matches catalog vertical rhythm
+- Editorial header: 12-col, eyebrow mono left, H2 left, lead right
+- shadcn `Separator` + 2-column hairline grid (`divide-y` / `lg:border-r`), numbered 01–04, small Lucide icons (no card shadows, no icon-circle hover)
 
-Card: text-center, hover:border-primary hover:shadow-lg transition-all group
-(default Card: rounded-xl border shadow-sm bg-card)
-Icon: 56×56 rounded-full bg-primary/10, icon 28px primary; group-hover: bg-primary + icon white
-Title: text-lg font-bold mb-2
-Desc: text-sm text-muted-foreground leading-relaxed
+## Color rhythm (homepage, full)
+1. Navy — Hero (`data-header-surface="dark"`)
+2. Pastel — Catalog (`bg-secondary`)
+3. White — Services (`bg-background`)
+4. Navy — CustomOrderSection (`bg-foreground`, `data-header-surface="dark"`) — see `mem:custom-order-section-2026-09`
+5. Pastel — Contact (`bg-secondary`)
+6. Navy — Footer (`bg-foreground`, `data-header-surface="dark"`)
+
+## Out of scope
+`/services` (`ServicesPage` / `services-page.tsx`) still lists old customs/delivery cards. Align when that route gets its detailed redesign (homepage stays short/teaser per user; full detail lives on dedicated pages, not built yet).

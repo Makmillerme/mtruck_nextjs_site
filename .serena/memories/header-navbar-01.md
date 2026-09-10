@@ -1,9 +1,7 @@
 # Header / ShopNavbar
 
-- Sticky glass header (`backdrop-blur-xl`): dark `bg-black/25 border-white/10`, light `bg-white/80`.
-- Home navy slot: empty `h-14 lg:h-16` sibling + header `-mt-14 lg:-mt-16` so hero photo goes under glass.
-- Surface via `data-header-surface="dark"` + `useHeaderSurface` (scroll/resize).
-- Session: server-only from `Navbar` → `ShopNavbar` → `LinksDropdown`. No `authClient.useSession()` in navbar (avoids guest flash).
-- Admin link: `isAdmin` prop from server (`user.role === "ADMIN"`), not `NEXT_PUBLIC_ADMIN_*`.
-- Avatar: `priority` on next/image; shared `signOutAndRefresh` in `lib/sign-out.ts`.
-- Site nav includes Home (`siteNav` key `home`).
+- Glass is NOT on `<header>`. Empty `.site-header-glass` (portaled to `document.body`) holds blur + tint; `.site-header` is transparent chrome. `backdrop-blur-2xl`, dark fill `rgb(6 16 32 / 0.34)`.
+- Header is `fixed`. Spacer `h-14 lg:h-16` always. Hero/partnership `-mt-14`.
+- Chameleon: CSS `html:has(#hero|#partners)` for first paint. JS `data-surface` must not stay stale across client navigations — `[data-surface=light|dark]` beats `:has()`. `useHeaderSurface` resets surface to `null` when `pathname` changes (before paint), then `useLayoutEffect` remeasures. Also rAF + short MutationObserver on `main` for streamed hero.
+- Do not put `overflow-x: clip` on `html`/`body`/`main` (kills glass).
+- Session server-only in navbar.

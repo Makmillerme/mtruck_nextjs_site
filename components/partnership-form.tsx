@@ -17,12 +17,7 @@ function SubmitInquiryButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button
-      type="submit"
-      size="lg"
-      disabled={pending}
-      className="h-12 w-full font-semibold"
-    >
+    <Button type="submit" size="lg" disabled={pending} className="w-full">
       {pending ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden /> : null}
       {label}
     </Button>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -30,11 +31,6 @@ const chipRowClass =
 /** Filter UI only — shell/background lives in CatalogBlock. */
 export default function CategoryFinderPanel() {
   const t = useTranslations("CategoryFinder");
-  const ready = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryId>("tractors");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
@@ -80,10 +76,11 @@ export default function CategoryFinderPanel() {
                   : "border-border/80 text-muted-foreground hover:border-primary/30 hover:text-foreground"
               )}
             >
-              {ready && active ? (
+              {active ? (
                 <motion.span
                   layoutId="activeCategoryHighlight"
                   className="pointer-events-none absolute inset-0 rounded-xl border border-primary/50 bg-primary/5"
+                  initial={false}
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               ) : null}
@@ -127,27 +124,11 @@ export default function CategoryFinderPanel() {
                 >
                   {t("allBrands")}
                 </button>
-                <motion.div
-                  key={selectedCategory}
-                  className="flex min-w-0 flex-nowrap items-center justify-start gap-2 md:flex-wrap"
-                  initial={ready ? "hidden" : false}
-                  animate="show"
-                  variants={{
-                    hidden: {},
-                    show: {
-                      transition: { staggerChildren: 0.07, delayChildren: 0.04 },
-                    },
-                  }}
-                >
+                <div className="flex min-w-0 flex-nowrap items-center justify-start gap-2 md:flex-wrap">
                   {FINDER_BRANDS.map((brand) => (
-                    <motion.button
+                    <button
                       key={brand.id}
                       type="button"
-                      variants={{
-                        hidden: { opacity: 0 },
-                        show: { opacity: 1 },
-                      }}
-                      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                       onClick={() =>
                         setSelectedBrand((prev) =>
                           prev === brand.id ? null : brand.id
@@ -156,9 +137,9 @@ export default function CategoryFinderPanel() {
                       className={chipClass(selectedBrand === brand.id)}
                     >
                       {brand.label}
-                    </motion.button>
+                    </button>
                   ))}
-                </motion.div>
+                </div>
               </div>
             </div>
 
@@ -181,13 +162,12 @@ export default function CategoryFinderPanel() {
             </div>
           </div>
 
-          <Link
-            href={href}
-            className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 lg:w-auto"
-          >
-            {t("cta", { count })}
-            <ChevronRight className="size-4" aria-hidden />
-          </Link>
+          <Button asChild size="lg" className="w-full lg:w-auto">
+            <Link href={href}>
+              {t("cta", { count })}
+              <ChevronRight aria-hidden />
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

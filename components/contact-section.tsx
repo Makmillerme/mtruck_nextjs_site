@@ -24,7 +24,7 @@ export default async function ContactSection() {
     <section
       id="contact"
       aria-labelledby="contact-heading"
-      className="full-bleed section-spacing scroll-mt-16 border-t border-border bg-background"
+      className="full-bleed section-spacing scroll-mt-16 bg-secondary"
     >
       <div className="page-container grid grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-20">
         <div className="space-y-6">
@@ -58,7 +58,7 @@ export default async function ContactSection() {
 
                 return (
                   <li key={key}>
-                    <Card className="border-0 bg-secondary/30 shadow-none">
+                    <Card className="border-0 bg-background shadow-none">
                       <CardContent className="flex items-start gap-4 p-4">
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                           <Icon className="size-5 text-primary" aria-hidden />
@@ -96,7 +96,7 @@ export default async function ContactSection() {
 
           <Card className="overflow-hidden border-0 shadow-none">
             <CardContent className="p-0">
-              <div className="flex aspect-video flex-col items-center justify-center gap-2 bg-secondary text-muted-foreground">
+              <div className="flex aspect-video flex-col items-center justify-center gap-2 bg-background text-muted-foreground">
                 <MapPin className="size-8 opacity-50" aria-hidden />
                 <p className="text-sm">{t("mapPlaceholder")}</p>
               </div>

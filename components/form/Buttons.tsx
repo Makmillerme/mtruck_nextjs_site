@@ -30,7 +30,7 @@ export function SubmitButton({
     <Button
       type="submit"
       disabled={pending}
-      className={cn("capitalize", className)}
+      className={className}
       size={size}
     >
       {pending ? (
@@ -74,13 +74,37 @@ export const IconButton = ({ actionType }: { actionType: actionType }) => {
 };
 
 const favoriteIdleClass =
-  "text-muted-foreground hover:bg-white hover:text-primary";
+  "text-muted-foreground hover:bg-background hover:text-foreground";
 const favoriteActiveClass =
-  "text-emerald-500 hover:bg-white hover:text-emerald-500";
-const favoriteIconGlowClass =
-  "size-4 drop-shadow-[0_0_0.45rem_rgb(16_185_129_/_0.85)]";
+  "text-foreground hover:bg-background hover:text-foreground";
 const favoriteChromeClass =
-  "size-9 shrink-0 overflow-hidden rounded-full border-0 bg-white p-0 shadow-sm";
+  "size-9 shrink-0 overflow-hidden rounded-full border border-border/70 bg-background p-0 shadow-none";
+
+export function FavoriteHeartPreview({
+  isFavorite,
+  className,
+}: {
+  isFavorite: boolean;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      tabIndex={-1}
+      aria-label={isFavorite ? "В обраному" : "Не в обраному"}
+      className={cn(
+        "pointer-events-none",
+        favoriteChromeClass,
+        isFavorite ? favoriteActiveClass : favoriteIdleClass,
+        className
+      )}
+    >
+      {isFavorite ? <FaHeart className="size-4" /> : <FaRegHeart className="size-4" />}
+    </Button>
+  );
+}
 
 export const CardSignInButton = ({ className }: { className?: string } = {}) => {
   const pathname = usePathname();
@@ -89,7 +113,7 @@ export const CardSignInButton = ({ className }: { className?: string } = {}) => 
     <Button
       type="button"
       size="icon"
-      variant="outline"
+      variant="ghost"
       className={cn("cursor-pointer", favoriteChromeClass, className, favoriteIdleClass)}
       asChild
     >
@@ -112,7 +136,7 @@ export const CardSubmitButton = ({
     <Button
       type="submit"
       size="icon"
-      variant="outline"
+      variant="ghost"
       className={cn(
         "cursor-pointer",
         favoriteChromeClass,
@@ -123,7 +147,7 @@ export const CardSubmitButton = ({
       {pending ? (
         <ReloadIcon className="size-4 animate-spin" />
       ) : isFavorite ? (
-        <FaHeart className={favoriteIconGlowClass} />
+        <FaHeart className="size-4" />
       ) : (
         <FaRegHeart className="size-4" />
       )}
@@ -136,7 +160,7 @@ export const ProductSignInButton = () => {
   const t = useTranslations("Product");
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <Button type="button" className="mt-8 capitalize" asChild>
+    <Button type="button" className="mt-8" asChild>
       <Link href={href}>{t("signIn")}</Link>
     </Button>
   );

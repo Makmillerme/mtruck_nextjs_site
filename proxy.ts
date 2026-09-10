@@ -41,9 +41,11 @@ function signInPath(locale: string) {
 }
 
 export async function proxy(request: NextRequest) {
-  const response = handleI18nRouting(request);
-
   const { locale, pathname } = stripLocalePrefix(request.nextUrl.pathname);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-mtruck-pathname", pathname || "/");
+  const intlRequest = new NextRequest(request, { headers: requestHeaders });
+  const response = handleI18nRouting(intlRequest);
 
   if (!isProtected(pathname)) {
     return response;

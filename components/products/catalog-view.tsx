@@ -150,7 +150,7 @@ function CatalogFilterSheet({
           <LuListFilter className="size-4" />
           <span className="hidden sm:inline">{t("filter")}</span>
           {activeCount > 0 ? (
-            <Badge className="h-5 min-w-5 px-1.5" variant="default">
+            <Badge className="h-5 min-w-5 border-0 bg-primary-foreground px-1.5 text-primary hover:bg-primary-foreground">
               {activeCount}
             </Badge>
           ) : null}

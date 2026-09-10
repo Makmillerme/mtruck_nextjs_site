@@ -1,14 +1,12 @@
 import ProductsGrid from "./ProductsGrid";
 import ProductsList from "./ProductsList";
 import CatalogView from "./catalog-view";
-import LoadingContainer from "@/components/global/LoadingContainer";
 import {
   fetchAllProducts,
   fetchProductBrands,
   fetchUserFavoriteIds,
 } from "@/utils/actions";
 import { getTranslations } from "next-intl/server";
-import { Suspense } from "react";
 import type { CatalogLayout } from "@/utils/catalog-layout";
 import type { CatalogSort } from "@/utils/catalog-query";
 
@@ -86,15 +84,13 @@ async function ProductsContainer({
       initialSort={sort}
       brands={brandOptions}
     >
-      <Suspense fallback={<LoadingContainer />}>
-        <CatalogResults
-          layout={layout}
-          search={search}
-          sort={sort}
-          brands={brands}
-          featuredOnly={featuredOnly}
-        />
-      </Suspense>
+      <CatalogResults
+        layout={layout}
+        search={search}
+        sort={sort}
+        brands={brands}
+        featuredOnly={featuredOnly}
+      />
     </CatalogView>
   );
 }

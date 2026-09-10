@@ -63,9 +63,6 @@ const STATUS_DOT: Record<VehicleStatus, string> = {
   SOLD: "bg-red-500",
 };
 
-const favoriteBtnClass =
-  "size-9 overflow-hidden rounded-full border-0 bg-white p-0 shadow-sm hover:bg-white";
-
 export default async function VehicleCard({
   vehicle,
   priority = false,
@@ -104,6 +101,7 @@ export default async function VehicleCard({
               alt={vehicle.name}
               fill
               priority={priority}
+              placeholder="empty"
               sizes="(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -112,7 +110,7 @@ export default async function VehicleCard({
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 p-2.5 sm:p-3">
             <Badge
               variant="secondary"
-              className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-white/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground shadow-sm backdrop-blur-sm hover:bg-white/90 sm:px-3 sm:py-1.5 sm:text-xs"
+              className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-background/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-background/90 sm:px-3 sm:py-1.5 sm:text-xs"
             >
               <span
                 className={cn("size-1.5 shrink-0 rounded-full", STATUS_DOT[status])}
@@ -123,7 +121,6 @@ export default async function VehicleCard({
             <div className="pointer-events-auto shrink-0">
               <FavoriteToggleButton
                 productId={vehicle.id}
-                className={favoriteBtnClass}
                 favoriteId={favoriteId}
                 isAuthenticated={isAuthenticated}
               />
@@ -167,10 +164,7 @@ export default async function VehicleCard({
               </p>
               <p className="text-xs text-muted-foreground">{t("priceHint")}</p>
             </div>
-            <Button
-              asChild
-              className="h-10 w-full shrink-0 gap-1.5 rounded-xl px-3 transition-all duration-300 xl:h-11 xl:w-auto group-hover:xl:px-4"
-            >
+            <Button asChild className="w-full xl:w-auto">
               <Link href={vehicle.href}>
                 <span className="text-sm font-medium">{t("details")}</span>
                 <ChevronRight className="size-4" aria-hidden />

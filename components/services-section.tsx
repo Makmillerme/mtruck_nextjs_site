@@ -1,14 +1,43 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
-import { Coins, FileCheck, Truck, Wrench } from "lucide-react";
+import {
+  ArrowUpRight,
+  Banknote,
+  Settings2,
+  Truck,
+  Wrench,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const SERVICES = [
-  { key: "customs", icon: FileCheck },
-  { key: "maintenance", icon: Wrench },
-  { key: "leasing", icon: Coins },
-  { key: "delivery", icon: Truck },
-] as const satisfies ReadonlyArray<{ key: string; icon: LucideIcon }>;
+const GROUPS = [
+  {
+    key: "commerce",
+    href: "/services#sale",
+    items: [
+      { key: "sale", icon: Truck, index: "01" },
+      { key: "finance", icon: Banknote, index: "02" },
+    ],
+  },
+  {
+    key: "workshop",
+    href: "/services#workshop",
+    items: [
+      { key: "workshop", icon: Wrench, index: "03" },
+      { key: "refit", icon: Settings2, index: "04" },
+    ],
+  },
+] as const satisfies ReadonlyArray<{
+  key: "commerce" | "workshop";
+  href: string;
+  items: ReadonlyArray<{
+    key: "sale" | "finance" | "workshop" | "refit";
+    icon: LucideIcon;
+    index: string;
+  }>;
+}>;
 
 export default async function ServicesSection() {
   const t = await getTranslations("ServicesSection");
@@ -17,44 +46,72 @@ export default async function ServicesSection() {
     <section
       id="services"
       aria-labelledby="services-heading"
-      className="full-bleed section-spacing scroll-mt-16 bg-background"
+      className="full-bleed scroll-mt-16 bg-background"
     >
-      <div className="page-container">
-        <header className="mx-auto mb-12 max-w-2xl text-center lg:mb-16">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            {t("eyebrow")}
-          </p>
-          <h2
-            id="services-heading"
-            className="text-3xl font-black tracking-tight text-foreground lg:text-4xl"
-          >
-            {t("title")}
-          </h2>
-          <p className="mt-4 text-base text-muted-foreground lg:text-lg">
+      <div className="page-container py-16 md:py-24">
+        <header className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <div className="lg:col-span-5">
+            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-primary">
+              {t("eyebrow")}
+            </p>
+            <h2
+              id="services-heading"
+              className="text-balance text-3xl font-black tracking-tight text-foreground md:text-4xl lg:text-[2.75rem] lg:leading-[1.12]"
+            >
+              {t("title")}
+            </h2>
+          </div>
+          <p className="max-w-xl text-base leading-relaxed text-muted-foreground lg:col-span-7 lg:justify-self-end lg:text-lg">
             {t("subtitle")}
           </p>
         </header>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          {SERVICES.map(({ key, icon: Icon }) => (
-            <Card
-              key={key}
-              className="group text-center shadow-sm transition-all hover:border-primary hover:shadow-lg"
+
+        <Separator className="my-12 bg-border lg:my-16" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {GROUPS.map((group, groupIndex) => (
+            <div
+              key={group.key}
+              className={cn(
+                "flex flex-col gap-10 py-10 lg:gap-12 lg:px-12 lg:py-4",
+                groupIndex === 0 &&
+                  "border-b border-border lg:border-b-0 lg:border-r lg:pl-0",
+                groupIndex === 1 && "lg:pr-0"
+              )}
             >
-              <CardContent className="p-6">
-                <span className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary">
-                  <Icon
-                    className="h-7 w-7 text-primary transition-colors group-hover:text-primary-foreground"
-                    aria-hidden
-                  />
-                </span>
-                <h3 className="mb-2 text-lg font-bold text-foreground">
-                  {t(`items.${key}.title`)}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t(`items.${key}.description`)}
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                  {t(`groups.${group.key}`)}
                 </p>
-              </CardContent>
-            </Card>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={group.href}>
+                    {t(`groupsCta.${group.key}`)}
+                    <ArrowUpRight aria-hidden />
+                  </Link>
+                </Button>
+              </div>
+              <ul className="flex flex-col divide-y divide-border">
+                {group.items.map(({ key, icon: Icon, index }) => (
+                  <li key={key} className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0 lg:py-12 lg:first:pt-0 lg:last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-sm tabular-nums text-primary">
+                        {index}
+                      </span>
+                      <Icon
+                        className="size-4 text-muted-foreground"
+                        aria-hidden
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight text-foreground lg:text-2xl">
+                      {t(`items.${key}.title`)}
+                    </h3>
+                    <p className="max-w-md text-sm leading-relaxed text-muted-foreground lg:text-base">
+                      {t(`items.${key}.description`)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
         </div>
       </div>

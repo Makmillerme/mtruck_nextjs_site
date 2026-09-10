@@ -53,8 +53,8 @@
     "heroEyebrow": "European trucks",
     "heroTitle": "Reliable commercial transport from Europe",
     "heroSubtitle": "Premium trucks from leading European manufacturers. Quality, reliability, and fair prices for your fleet.",
-    "heroCta": "Browse catalog",
-    "heroSecondary": "New arrivals",
+    "heroCta": "Order equipment",
+    "heroSecondary": "Contact us",
     "catalogEyebrow": "Catalog",
     "featuredTitle": "New arrivals",
     "viewCatalog": "Full catalog"
@@ -92,27 +92,59 @@
     }
   },
   "ServicesSection": {
-    "eyebrow": "Our services",
-    "title": "A full import cycle",
-    "subtitle": "From sourcing to delivery — we handle every stage of importing quality European trucks to Ukraine.",
+    "eyebrow": "Services",
+    "title": "We bring commercial vehicles to Ukraine",
+    "subtitle": "Sold from our yard. Specialists help you buy on credit or lease. Every unit is prepared at our own workshops — and converted for your business when needed.",
+    "groups": {
+      "commerce": "Sales",
+      "workshop": "Preparation"
+    },
+    "groupsCta": {
+      "commerce": "Explore sales",
+      "workshop": "Explore preparation"
+    },
     "items": {
-      "customs": {
-        "title": "Customs clearance",
-        "description": "Complete customs documentation for smooth import from EU countries."
+      "sale": {
+        "title": "Import and sales",
+        "description": "Tractors, trucks, trailers and other commercial vehicles — imported to Ukraine and sold here, from stock or on request."
       },
-      "maintenance": {
-        "title": "Technical maintenance",
-        "description": "Pre-sale inspection and servicing by certified technicians."
+      "finance": {
+        "title": "Credit and leasing",
+        "description": "Specialists guide credit or leasing purchases — we match a scheme to your fleet and budget."
       },
-      "leasing": {
-        "title": "Leasing and financing",
-        "description": "Flexible leasing and financing solutions tailored to your business."
+      "workshop": {
+        "title": "Workshop preparation",
+        "description": "Every unit — trucks, trailers and more — is prepared at our service stations before sale."
       },
-      "delivery": {
-        "title": "Delivery",
-        "description": "Delivery from European dealers directly to your location in Ukraine."
+      "refit": {
+        "title": "Conversion",
+        "description": "We adapt vehicles to a specific business type and client requirements: body, superstructure, specification."
       }
     }
+  },
+  "CustomOrderSection": {
+    "eyebrow": "Custom sourcing",
+    "title": "Equipment to order",
+    "subtitle": "Didn’t find the right model in the catalog? We’ll source it in Europe to your requirements.",
+    "steps": {
+      "request": {
+        "title": "Request",
+        "description": "Describe the equipment, budget and timeline — we pass the request to our manager."
+      },
+      "sourcing": {
+        "title": "Sourcing in Europe",
+        "description": "We search verified marketplaces and dealers for options matching your criteria."
+      },
+      "deal": {
+        "title": "Inspection and deal",
+        "description": "Technical inspection, price agreement and deal paperwork."
+      },
+      "delivery": {
+        "title": "Delivery and prep",
+        "description": "We bring it to Ukraine, prepare it at our workshop and hand it over ready to work."
+      }
+    },
+    "cta": "Leave a request"
   },
   "ServicesPage": {
     "metaTitle": "Services",

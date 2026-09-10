@@ -54,18 +54,12 @@ async function ProductsList({
                     </p>
                   </Link>
                   <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10"
-                    >
+                    <Badge variant="tag">
                       <LuTag className="mr-1 size-3.5" aria-hidden />
                       {product.company}
                     </Badge>
                     {product.featured ? (
-                      <Badge
-                        variant="secondary"
-                        className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
-                      >
+                      <Badge variant="soft">
                         {t("featuredBadge")}
                       </Badge>
                     ) : null}
@@ -77,7 +71,7 @@ async function ProductsList({
                     favoriteId={favoriteByProductId?.get(product.id) ?? null}
                     isAuthenticated={isAuthenticated}
                   />
-                  <Button asChild className="h-10 font-semibold md:w-40">
+                  <Button asChild className="md:w-40">
                     <Link href={href}>{t("details")}</Link>
                   </Button>
                 </div>
