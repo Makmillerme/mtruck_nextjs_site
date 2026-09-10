@@ -15,8 +15,9 @@ import {
 } from "@/lib/home/category-finder";
 import { LuChevronRight } from "react-icons/lu";
 
-const YEAR_MIN = 1990;
-const YEAR_MAX = new Date().getFullYear();
+function sanitizeDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
 
 const chipClass = (active: boolean) =>
   cn(
@@ -48,9 +49,7 @@ function RangeInputs({
   onTo,
   fromPlaceholder,
   toPlaceholder,
-  min,
-  max,
-  inputMode,
+  maxLength,
 }: {
   label: string;
   from: string;
@@ -59,32 +58,47 @@ function RangeInputs({
   onTo: (value: string) => void;
   fromPlaceholder: string;
   toPlaceholder: string;
-  min?: number;
-  max?: number;
-  inputMode?: "numeric" | "decimal" | "text";
+  maxLength?: number;
 }) {
+  const setDigits =
+    (setter: (value: string) => void) =>
+    (event: { target: { value: string } }) => {
+      const next = sanitizeDigits(event.target.value);
+      setter(maxLength ? next.slice(0, maxLength) : next);
+    };
+
+  const blockStepping = (event: { key: string; preventDefault: () => void }) => {
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+    }
+  };
+
   return (
     <div className="min-w-0">
       <p className={fieldLabelClass}>{label}</p>
       <div className="grid grid-cols-2 gap-2">
         <Input
-          type="number"
-          inputMode={inputMode}
-          min={min}
-          max={max}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={maxLength}
           value={from}
-          onChange={(event) => onFrom(event.target.value)}
+          onChange={setDigits(onFrom)}
+          onKeyDown={blockStepping}
           placeholder={fromPlaceholder}
           aria-label={`${label} ${fromPlaceholder}`}
           className="bg-secondary"
         />
         <Input
-          type="number"
-          inputMode={inputMode}
-          min={min}
-          max={max}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={maxLength}
           value={to}
-          onChange={(event) => onTo(event.target.value)}
+          onChange={setDigits(onTo)}
+          onKeyDown={blockStepping}
           placeholder={toPlaceholder}
           aria-label={`${label} ${toPlaceholder}`}
           className="bg-secondary"
@@ -217,9 +231,7 @@ export default function CategoryFinderPanel() {
                 onTo={setYearTo}
                 fromPlaceholder={t("rangeFrom")}
                 toPlaceholder={t("rangeTo")}
-                min={YEAR_MIN}
-                max={YEAR_MAX}
-                inputMode="numeric"
+                maxLength={4}
               />
             </div>
             <div className="lg:col-span-4">
@@ -231,12 +243,10 @@ export default function CategoryFinderPanel() {
                 onTo={setKmTo}
                 fromPlaceholder={t("rangeFrom")}
                 toPlaceholder={t("rangeTo")}
-                min={0}
-                inputMode="numeric"
               />
             </div>
             <div className="sm:col-span-2 lg:col-span-4">
-              <Button asChild size="lg" className="w-full">
+              <Button asChild className="w-full">
                 <Link href={href}>
                   {t("cta", { count })}
                   <LuChevronRight aria-hidden />

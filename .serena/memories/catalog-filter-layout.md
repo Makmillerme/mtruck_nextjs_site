@@ -3,10 +3,11 @@
 Date: 2026-09-10
 
 ## Homepage plate (`CategoryFinderPanel`)
-- White plate on pastel. **No** plate header (no «Уточніть підбір»).
+- White plate on pastel. **No** plate header. **No** availability/status (that belongs on `/products`).
 - Fields: brand chips, year from/to, mileage from/to, CTA.
-- **Do not** put availability/status on the homepage finder. That belongs on `/products` catalog filters.
-- Query: `category`, `make`, `yearFrom`, `yearTo`, `kmFrom`, `kmTo`. Never `status` from this panel.
+- CTA is `Button` default (`h-11`), same as `Input` — not `size=lg` (`h-12`).
+- Year/mileage are `type=text` + `inputMode=numeric`, digits only. No spinner, no ArrowUp/ArrowDown stepping.
+- Query: `category`, `make`, `yearFrom`, `yearTo`, `kmFrom`, `kmTo`.
 
 ## Cards
-- Same live `VehicleCard` as UI Lab: price left, `Детальніше` right (`flex items-end justify-between`).
+- Same live `VehicleCard` as UI Lab: price left, `Детальніше` right (`flex items-end justify-between`). Shadow + zoom on hover.
