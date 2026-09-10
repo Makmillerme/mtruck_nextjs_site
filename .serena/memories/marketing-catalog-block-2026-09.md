@@ -23,7 +23,7 @@ Gutters: see `mem:layout-page-container-gutters-2026-09` (mobile 1rem; sm+ clamp
 
 ## Finder panel
 
-`CategoryFinderPanel`: brands fade in place on category change (`opacity` + stagger, no `x`, no AnimatePresence). Wrapper keyed by category; row `justify-start` so chips never jump to the center.
+`CategoryFinderPanel` (2026-09-10): mono eyebrow + `font-black` title; category tiles `rounded-sm` hairline (no shadow, no framer-motion); filters as a top-rule ledger, chips stay rounded-full per UI Lab marks. CTA Button default lg + `LuChevronRight`.
 
 ## Status pill
 

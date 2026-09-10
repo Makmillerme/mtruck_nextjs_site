@@ -3,30 +3,30 @@ import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
+import type { IconType } from "react-icons";
 import {
-  ArrowUpRight,
-  Banknote,
-  Settings2,
-  Truck,
-  Wrench,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  LuArrowUpRight,
+  LuBanknote,
+  LuSettings2,
+  LuTruck,
+  LuWrench,
+} from "react-icons/lu";
 
 const GROUPS = [
   {
     key: "commerce",
     href: "/services#sale",
     items: [
-      { key: "sale", icon: Truck, index: "01" },
-      { key: "finance", icon: Banknote, index: "02" },
+      { key: "sale", icon: LuTruck, index: "01" },
+      { key: "finance", icon: LuBanknote, index: "02" },
     ],
   },
   {
     key: "workshop",
     href: "/services#workshop",
     items: [
-      { key: "workshop", icon: Wrench, index: "03" },
-      { key: "refit", icon: Settings2, index: "04" },
+      { key: "workshop", icon: LuWrench, index: "03" },
+      { key: "refit", icon: LuSettings2, index: "04" },
     ],
   },
 ] as const satisfies ReadonlyArray<{
@@ -34,7 +34,7 @@ const GROUPS = [
   href: string;
   items: ReadonlyArray<{
     key: "sale" | "finance" | "workshop" | "refit";
-    icon: LucideIcon;
+    icon: IconType;
     index: string;
   }>;
 }>;
@@ -51,7 +51,7 @@ export default async function ServicesSection() {
       <div className="page-container py-16 md:py-24">
         <header className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-16">
           <div className="lg:col-span-5">
-            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-primary">
+            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
               {t("eyebrow")}
             </p>
             <h2
@@ -86,7 +86,7 @@ export default async function ServicesSection() {
                 <Button asChild variant="outline" size="sm">
                   <Link href={group.href}>
                     {t(`groupsCta.${group.key}`)}
-                    <ArrowUpRight aria-hidden />
+                    <LuArrowUpRight aria-hidden />
                   </Link>
                 </Button>
               </div>
@@ -94,7 +94,7 @@ export default async function ServicesSection() {
                 {group.items.map(({ key, icon: Icon, index }) => (
                   <li key={key} className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0 lg:py-12 lg:first:pt-0 lg:last:pb-0">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm tabular-nums text-primary">
+                      <span className="font-mono text-sm tabular-nums text-foreground">
                         {index}
                       </span>
                       <Icon
@@ -102,7 +102,7 @@ export default async function ServicesSection() {
                         aria-hidden
                       />
                     </div>
-                    <h3 className="text-xl font-bold tracking-tight text-foreground lg:text-2xl">
+                    <h3 className="text-xl font-black tracking-tight text-foreground lg:text-2xl">
                       {t(`items.${key}.title`)}
                     </h3>
                     <p className="max-w-md text-sm leading-relaxed text-muted-foreground lg:text-base">

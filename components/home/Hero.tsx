@@ -2,8 +2,8 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/public/images/hero.webp";
 import { getTranslations } from "next-intl/server";
-import { ChevronDown } from "lucide-react";
 import { preload } from "react-dom";
+import { LuChevronDown } from "react-icons/lu";
 
 async function Hero() {
   const t = await getTranslations("HomePage");
@@ -29,7 +29,7 @@ async function Hero() {
       </div>
       <div className="page-container relative z-10 w-full">
         <div className="relative flex max-w-2xl flex-col gap-6 lg:gap-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-white/90 [text-shadow:0_1px_18px_rgba(6,16,32,0.85)]">
+          <p className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-white/70 [text-shadow:0_1px_18px_rgba(6,16,32,0.85)]">
             {t("heroEyebrow")}
           </p>
           <h1 className="text-balance text-4xl font-black leading-tight tracking-tight text-white [text-shadow:0_2px_24px_rgba(6,16,32,0.9)] md:text-5xl lg:text-6xl">
@@ -54,7 +54,7 @@ async function Hero() {
       >
         <span className="flex flex-col items-center gap-2 text-white/50">
           <span className="h-9 w-px bg-white/25" />
-          <ChevronDown className="size-4 animate-bounce" />
+          <LuChevronDown className="size-4 animate-bounce" />
         </span>
       </div>
     </section>

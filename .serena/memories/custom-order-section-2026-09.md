@@ -5,8 +5,8 @@
 ## Design
 - `id="custom-order"`, `aria-labelledby="custom-order-heading"`, `data-header-surface="dark"` (so sticky header goes translucent-dark over this band, matching Hero/Footer)
 - `bg-foreground text-background` (navy) — 4th band in the homepage color rhythm, bookending with Hero/Footer
-- Centered header (eyebrow/title/subtitle), then a 4-step «roadmap»: `<ol>` flex-col+divide-y on mobile → `lg:flex-row lg:divide-x lg:divide-y-0`, each `<li className="flex flex-1 ...">` for equal-width columns; numbered circles (`01`–`04`, computed via `String(index+1).padStart(2,"0")`) + small Lucide icon; `lg:first:pl-0 lg:last:pr-0` for edge padding (no JS branching, same trick as ServicesSection groups)
-- Icons: ClipboardList (request), Search (sourcing), ShieldCheck (deal), Truck (delivery)
+- Editorial 12-col header (same as Services/Sales). 4-step roadmap: `<ol>` divide-y / `lg:flex-row lg:divide-x`; mono `01`–`04` + `Lu*` icons (no numbered circles). `lg:first:pl-0 lg:last:pr-0`.
+- Icons: `LuClipboardList`, `LuSearch`, `LuShieldCheck`, `LuTruck`
 - CTA: shadcn `Button variant="ghost" size="lg"` (white text, not a fat fill) → `#contact`. The real close is the compact callback form.
 
 ## i18n

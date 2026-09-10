@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -16,6 +14,7 @@ import {
   type CategoryId,
   type StatusFilter,
 } from "@/lib/home/category-finder";
+import { LuChevronRight } from "react-icons/lu";
 
 const chipClass = (active: boolean) =>
   cn(
@@ -45,14 +44,14 @@ export default function CategoryFinderPanel() {
 
   return (
     <div>
-      <div className="mb-8 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+      <header className="mb-8 max-w-3xl lg:mb-10">
+        <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
           {t("eyebrow")}
         </p>
-        <h2 className="mt-3 text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+        <h2 className="text-balance text-3xl font-black tracking-tight text-foreground md:text-4xl lg:text-[2.75rem] lg:leading-[1.12]">
           {t("title")}
         </h2>
-      </div>
+      </header>
 
       <div
         className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
@@ -70,36 +69,26 @@ export default function CategoryFinderPanel() {
                 setSelectedBrand(null);
               }}
               className={cn(
-                "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2.5 rounded-xl border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:gap-3 sm:px-4 sm:py-4 md:min-w-0",
+                "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left transition-colors sm:min-w-[9.5rem] sm:gap-3 sm:px-4 sm:py-4 md:min-w-0",
                 active
-                  ? "border-primary/40 text-foreground ring-1 ring-primary/20"
-                  : "border-border/80 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                  ? "border-foreground text-foreground"
+                  : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               )}
             >
-              {active ? (
-                <motion.span
-                  layoutId="activeCategoryHighlight"
-                  className="pointer-events-none absolute inset-0 rounded-xl border border-primary/50 bg-primary/5"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-              ) : null}
               <Icon
                 className={cn(
-                  "relative size-5 shrink-0",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "size-5 shrink-0",
+                  active ? "text-foreground" : "text-muted-foreground"
                 )}
                 aria-hidden
               />
-              <span className="relative text-sm font-medium leading-snug text-foreground">
+              <span className="text-sm font-medium leading-snug text-foreground">
                 {t(`categories.${category.id}`)}
               </span>
               <span
                 className={cn(
-                  "relative rounded-md px-2 py-0.5 text-xs font-medium tabular-nums",
-                  active
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground"
+                  "font-mono text-[10px] tabular-nums tracking-wide",
+                  active ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 {category.baseCount}
@@ -109,11 +98,11 @@ export default function CategoryFinderPanel() {
         })}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background p-4 shadow-sm md:mt-8 md:p-6">
+      <div className="mt-8 border-t border-border pt-6 md:mt-10 md:pt-8">
         <div className="flex min-w-0 flex-col gap-5 overflow-hidden lg:flex-row lg:items-end lg:justify-between lg:gap-8">
           <div className="flex min-w-0 flex-1 flex-col gap-5">
             <div className="min-w-0 overflow-hidden">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 {t("brandsLabel")}
               </p>
               <div className={chipRowClass}>
@@ -144,7 +133,7 @@ export default function CategoryFinderPanel() {
             </div>
 
             <div className="min-w-0">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 {t("statusLabel")}
               </p>
               <div className={chipRowClass}>
@@ -165,7 +154,7 @@ export default function CategoryFinderPanel() {
           <Button asChild size="lg" className="w-full lg:w-auto">
             <Link href={href}>
               {t("cta", { count })}
-              <ChevronRight aria-hidden />
+              <LuChevronRight aria-hidden />
             </Link>
           </Button>
         </div>

@@ -76,7 +76,7 @@ export const AccountTrigger = forwardRef<HTMLButtonElement, AccountTriggerProps>
         aria-label={t("account")}
         {...props}
         className={cn(
-          "size-9 shrink-0 overflow-hidden rounded-full p-0 text-foreground hover:bg-foreground/10 hover:text-foreground",
+          "size-9 shrink-0 overflow-hidden rounded-full p-0 hover:bg-foreground/10 hover:text-inherit",
           className
         )}
       >

@@ -74,13 +74,13 @@ function useHeaderSurface() {
 }
 
 const headerIconClass =
-  "size-9 shrink-0 text-foreground hover:bg-foreground/10 hover:text-foreground";
+  "size-9 shrink-0 hover:bg-foreground/10 hover:text-inherit";
 const headerControlClass =
-  "text-foreground hover:bg-foreground/10 hover:text-foreground";
+  "hover:bg-foreground/10 hover:text-inherit";
 
 function navLinkClass(active: boolean) {
   return cn(
-    "rounded-md px-3 py-2 text-sm font-medium tracking-wide text-foreground hover:bg-foreground/10 hover:text-foreground",
+    "rounded-md px-3 py-2 text-sm font-medium tracking-wide hover:bg-foreground/10 hover:text-inherit",
     active && "bg-foreground/10"
   );
 }
@@ -122,7 +122,7 @@ export default function ShopNavbar({
       <header
         data-surface={surface ?? undefined}
         suppressHydrationWarning
-        className="site-header fixed inset-x-0 top-0 z-50 text-foreground"
+        className="site-header fixed inset-x-0 top-0 z-50"
       >
         <div className="page-container grid h-14 grid-cols-[1fr_auto] items-center gap-2 lg:h-16 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-3">
           <div className="min-w-0 justify-self-start">

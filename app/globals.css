@@ -212,7 +212,26 @@ html body[data-scroll-locked] {
   Glass lives on an empty sibling (.site-header-glass), not on <header>.
   Chrome drops backdrop-filter on a sticky/fixed bar that also holds nav/buttons.
   Unlayered: a parent overflow clip still kills blur on descendants (UI Lab).
+  @property lets ink/glass interpolate when data-surface flips (chameleon).
 */
+@property --header-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(222 47% 11%);
+}
+
+@property --header-glass {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 255 255 / 0.72);
+}
+
+@property --header-cap {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 255 255);
+}
+
 html:has(#hero),
 html:has(#hero) body,
 html:has(#partners),
@@ -222,6 +241,9 @@ html:has(#partners) body {
 
 .site-header,
 .site-header-glass {
+  --header-ink: hsl(222 47% 11%);
+  --header-glass: rgb(255 255 255 / 0.72);
+  --header-cap: rgb(255 255 255);
   --foreground: 222 47% 11%;
   --muted-foreground: 215 16% 47%;
   --muted: 210 40% 96%;
@@ -234,40 +256,34 @@ html:has(#partners) body {
 }
 
 .site-header {
-  color: hsl(var(--foreground));
+  color: var(--header-ink);
   background-color: transparent;
   border-bottom: 0;
   box-shadow: none;
+  transition: color 0.5s ease;
 }
 
 .site-header-glass {
-  background-color: rgb(255 255 255 / 0.72);
+  background-color: var(--header-glass);
   box-shadow:
-    0 -8px 0 rgb(255 255 255),
-    0 1px 0 hsl(var(--border) / 0.4);
+    0 -8px 0 var(--header-cap),
+    0 1px 0 rgb(226 232 240 / 0.4);
   --tw-backdrop-blur: blur(40px);
   --tw-backdrop-saturate: saturate(1.6);
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-saturate);
   -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-saturate);
+  transition: background-color 0.5s ease, box-shadow 0.5s ease;
 }
 
 html:has(#hero) .site-header:not([data-surface="light"]),
 html:has(#partners) .site-header:not([data-surface="light"]),
-.site-header[data-surface="dark"] {
-  --foreground: 0 0% 100%;
-  --muted-foreground: 0 0% 78%;
-  --muted: 0 0% 100%;
-  --primary: 0 0% 100%;
-  --primary-foreground: 222 47% 11%;
-  --border: 0 0% 100%;
-  --background: 222 47% 11%;
-  --accent: 0 0% 100%;
-  --accent-foreground: 0 0% 100%;
-}
-
+.site-header[data-surface="dark"],
 html:has(#hero) .site-header-glass:not([data-surface="light"]),
 html:has(#partners) .site-header-glass:not([data-surface="light"]),
 .site-header-glass[data-surface="dark"] {
+  --header-ink: hsl(0 0% 100%);
+  --header-glass: rgb(6 16 32 / 0.34);
+  --header-cap: #061020;
   --foreground: 0 0% 100%;
   --muted-foreground: 0 0% 78%;
   --muted: 0 0% 100%;
@@ -277,12 +293,13 @@ html:has(#partners) .site-header-glass:not([data-surface="light"]),
   --background: 222 47% 11%;
   --accent: 0 0% 100%;
   --accent-foreground: 0 0% 100%;
-  background-color: rgb(6 16 32 / 0.34);
-  box-shadow: 0 -8px 0 #061020;
 }
 
 .site-header[data-surface="light"],
 .site-header-glass[data-surface="light"] {
+  --header-ink: hsl(222 47% 11%);
+  --header-glass: rgb(255 255 255 / 0.72);
+  --header-cap: rgb(255 255 255);
   --foreground: 222 47% 11%;
   --muted-foreground: 215 16% 47%;
   --muted: 210 40% 96%;
@@ -294,13 +311,20 @@ html:has(#partners) .site-header-glass:not([data-surface="light"]),
   --accent-foreground: 222 47% 11%;
 }
 
-.site-header-glass[data-surface="light"] {
-  background-color: rgb(255 255 255 / 0.72);
+.site-header-glass[data-surface="dark"] {
   box-shadow:
-    0 -8px 0 rgb(255 255 255),
-    0 1px 0 hsl(var(--border) / 0.4);
+    0 -8px 0 var(--header-cap),
+    0 1px 0 transparent;
+}
+
+html:has(#hero) .site-header-glass:not([data-surface="light"]),
+html:has(#partners) .site-header-glass:not([data-surface="light"]) {
+  box-shadow:
+    0 -8px 0 var(--header-cap),
+    0 1px 0 transparent;
 }
 
 .site-header svg {
   color: inherit;
+  transition: color 0.5s ease;
 }

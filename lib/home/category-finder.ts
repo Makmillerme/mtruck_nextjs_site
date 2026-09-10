@@ -1,11 +1,11 @@
-import type { LucideIcon } from "lucide-react";
+import type { IconType } from "react-icons";
 import {
-  Boxes,
-  Container,
-  ShieldCheck,
-  Truck,
-  Van,
-} from "lucide-react";
+  LuBoxes,
+  LuCarFront,
+  LuContainer,
+  LuShieldCheck,
+  LuTruck,
+} from "react-icons/lu";
 
 export type CategoryId =
   | "tractors"
@@ -18,7 +18,7 @@ export type StatusFilter = "all" | "in_stock" | "transit";
 
 export type FinderCategory = {
   id: CategoryId;
-  icon: LucideIcon;
+  icon: IconType;
   baseCount: number;
 };
 
@@ -28,11 +28,11 @@ export type FinderBrand = {
 };
 
 export const FINDER_CATEGORIES: readonly FinderCategory[] = [
-  { id: "tractors", icon: Truck, baseCount: 28 },
-  { id: "semitrailers", icon: Boxes, baseCount: 16 },
-  { id: "containers", icon: Container, baseCount: 9 },
-  { id: "vans", icon: Van, baseCount: 14 },
-  { id: "special", icon: ShieldCheck, baseCount: 7 },
+  { id: "tractors", icon: LuTruck, baseCount: 28 },
+  { id: "semitrailers", icon: LuBoxes, baseCount: 16 },
+  { id: "containers", icon: LuContainer, baseCount: 9 },
+  { id: "vans", icon: LuCarFront, baseCount: 14 },
+  { id: "special", icon: LuShieldCheck, baseCount: 7 },
 ] as const;
 
 export const FINDER_BRANDS: readonly FinderBrand[] = [
