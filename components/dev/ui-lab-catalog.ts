@@ -52,9 +52,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "finder",
     category: "brand",
     title: "Підбір каталогу",
-    hint: "Живий CategoryFinder: категорії зверху, біла плитка фільтра на пастелі — марка, наявність з поясненням, підсумок і CTA.",
+    hint: "Живий CategoryFinder: біла плитка без заголовка. Марка, рік від/до, пробіг від/до, CTA. Наявність — лише в каталозі.",
     keywords:
-      "finder catalog каталог фільтр марка наявність плитка category",
+      "finder catalog каталог фільтр марка рік пробіг плитка category",
   },
   {
     id: "icons",

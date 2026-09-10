@@ -358,7 +358,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="finder"
               title="Підбір каталогу"
-              hint="Живий CategoryFinder: категорії зверху, біла плитка фільтра на пастелі."
+              hint="Живий CategoryFinder: біла плитка без заголовка. Марка, рік від/до, пробіг від/до, CTA. Наявність — лише в каталозі."
             >
               <div className="rounded-sm bg-secondary p-5 md:p-10">
                 <CategoryFinderPanel />

@@ -157,14 +157,14 @@ export default async function VehicleCard({
             </p>
           </div>
 
-          <div className="mt-auto flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div className="mt-auto flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-xl font-extrabold tracking-tight text-foreground lg:text-2xl">
                 {price}
               </p>
               <p className="text-xs text-muted-foreground">{t("priceHint")}</p>
             </div>
-            <Button asChild className="w-full xl:w-auto">
+            <Button asChild className="shrink-0">
               <Link href={vehicle.href}>
                 <span className="text-sm font-medium">{t("details")}</span>
                 <LuChevronRight className="size-4" aria-hidden />

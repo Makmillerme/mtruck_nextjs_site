@@ -3,18 +3,20 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   FINDER_BRANDS,
   FINDER_CATEGORIES,
-  FINDER_STATUS,
   buildProductsHref,
   getMockOfferCount,
   type CategoryId,
-  type StatusFilter,
 } from "@/lib/home/category-finder";
 import { LuChevronRight } from "react-icons/lu";
+
+const YEAR_MIN = 1990;
+const YEAR_MAX = new Date().getFullYear();
 
 const chipClass = (active: boolean) =>
   cn(
@@ -27,25 +29,98 @@ const chipClass = (active: boolean) =>
 const chipRowClass =
   "flex flex-nowrap items-center justify-start gap-2 overflow-x-auto overflow-y-hidden py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-hidden [&::-webkit-scrollbar]:hidden";
 
+const fieldLabelClass =
+  "mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground";
+
+function parsePositiveInt(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return Math.round(parsed);
+}
+
+function RangeInputs({
+  label,
+  from,
+  to,
+  onFrom,
+  onTo,
+  fromPlaceholder,
+  toPlaceholder,
+  min,
+  max,
+  inputMode,
+}: {
+  label: string;
+  from: string;
+  to: string;
+  onFrom: (value: string) => void;
+  onTo: (value: string) => void;
+  fromPlaceholder: string;
+  toPlaceholder: string;
+  min?: number;
+  max?: number;
+  inputMode?: "numeric" | "decimal" | "text";
+}) {
+  return (
+    <div className="min-w-0">
+      <p className={fieldLabelClass}>{label}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          type="number"
+          inputMode={inputMode}
+          min={min}
+          max={max}
+          value={from}
+          onChange={(event) => onFrom(event.target.value)}
+          placeholder={fromPlaceholder}
+          aria-label={`${label} ${fromPlaceholder}`}
+          className="bg-secondary"
+        />
+        <Input
+          type="number"
+          inputMode={inputMode}
+          min={min}
+          max={max}
+          value={to}
+          onChange={(event) => onTo(event.target.value)}
+          placeholder={toPlaceholder}
+          aria-label={`${label} ${toPlaceholder}`}
+          className="bg-secondary"
+        />
+      </div>
+    </div>
+  );
+}
+
 /** Filter UI only — shell/background lives in CatalogBlock. */
 export default function CategoryFinderPanel() {
   const t = useTranslations("CategoryFinder");
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryId>("tractors");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [yearFrom, setYearFrom] = useState("");
+  const [yearTo, setYearTo] = useState("");
+  const [kmFrom, setKmFrom] = useState("");
+  const [kmTo, setKmTo] = useState("");
 
-  const count = useMemo(
-    () => getMockOfferCount(selectedCategory, selectedBrand, statusFilter),
-    [selectedCategory, selectedBrand, statusFilter]
+  const ranges = useMemo(
+    () => ({
+      yearFrom: parsePositiveInt(yearFrom),
+      yearTo: parsePositiveInt(yearTo),
+      kmFrom: parsePositiveInt(kmFrom),
+      kmTo: parsePositiveInt(kmTo),
+    }),
+    [yearFrom, yearTo, kmFrom, kmTo]
   );
 
-  const href = buildProductsHref(selectedCategory, selectedBrand, statusFilter);
+  const count = useMemo(
+    () => getMockOfferCount(selectedCategory, selectedBrand, "all"),
+    [selectedCategory, selectedBrand]
+  );
 
-  const brandLabel = selectedBrand
-    ? (FINDER_BRANDS.find((brand) => brand.id === selectedBrand)?.label ??
-      t("allBrands"))
-    : t("allBrands");
+  const href = buildProductsHref(selectedCategory, selectedBrand, "all", ranges);
 
   return (
     <div>
@@ -103,21 +178,10 @@ export default function CategoryFinderPanel() {
         })}
       </div>
 
-      <div className="mt-8 rounded-sm border border-border bg-background p-5 shadow-sm md:mt-10 md:p-8">
-        <header className="mb-6 md:mb-8">
-          <p className="mb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            {t("filterEyebrow")}
-          </p>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            {t("filterLead")}
-          </p>
-        </header>
-
-        <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-          <div className="min-w-0 lg:col-span-7">
-            <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              {t("brandsLabel")}
-            </p>
+      <div className="mt-6 rounded-sm border border-border bg-background p-4 shadow-sm md:mt-8 md:p-5">
+        <div className="flex flex-col gap-5">
+          <div className="min-w-0">
+            <p className={fieldLabelClass}>{t("brandsLabel")}</p>
             <div className={chipRowClass}>
               <button
                 type="button"
@@ -143,57 +207,43 @@ export default function CategoryFinderPanel() {
             </div>
           </div>
 
-          <div className="min-w-0 lg:col-span-5">
-            <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              {t("statusLabel")}
-            </p>
-            <div className="flex flex-col gap-2">
-              {FINDER_STATUS.map((status) => {
-                const active = statusFilter === status;
-                return (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setStatusFilter(status)}
-                    className={cn(
-                      "flex w-full flex-col items-start gap-0.5 rounded-sm border px-4 py-3 text-left transition-colors",
-                      active
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border bg-secondary text-foreground hover:border-foreground/30"
-                    )}
-                  >
-                    <span className="text-sm font-semibold">
-                      {t(`status.${status}`)}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs leading-snug",
-                        active ? "text-background/70" : "text-muted-foreground"
-                      )}
-                    >
-                      {t(`statusHint.${status}`)}
-                    </span>
-                  </button>
-                );
-              })}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-4">
+              <RangeInputs
+                label={t("yearLabel")}
+                from={yearFrom}
+                to={yearTo}
+                onFrom={setYearFrom}
+                onTo={setYearTo}
+                fromPlaceholder={t("rangeFrom")}
+                toPlaceholder={t("rangeTo")}
+                min={YEAR_MIN}
+                max={YEAR_MAX}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="lg:col-span-4">
+              <RangeInputs
+                label={t("mileageLabel")}
+                from={kmFrom}
+                to={kmTo}
+                onFrom={setKmFrom}
+                onTo={setKmTo}
+                fromPlaceholder={t("rangeFrom")}
+                toPlaceholder={t("rangeTo")}
+                min={0}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Button asChild size="lg" className="w-full">
+                <Link href={href}>
+                  {t("cta", { count })}
+                  <LuChevronRight aria-hidden />
+                </Link>
+              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between md:mt-10">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t("summary", {
-              category: t(`categories.${selectedCategory}`),
-              brand: brandLabel,
-              status: t(`status.${statusFilter}`),
-            })}
-          </p>
-          <Button asChild size="lg" className="w-full shrink-0 sm:w-auto">
-            <Link href={href}>
-              {t("cta", { count })}
-              <LuChevronRight aria-hidden />
-            </Link>
-          </Button>
         </div>
       </div>
     </div>

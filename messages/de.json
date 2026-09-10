@@ -63,22 +63,18 @@
     "aria": "Fahrzeuge nach Kategorie auswählen",
     "eyebrow": "Fahrzeugkatalog",
     "title": "Wählen Sie die Kategorie für Ihre Geschäftsaufgaben",
-    "filterEyebrow": "Auswahl präzisieren",
-    "filterLead": "Die Kategorie ist oben gewählt. Als Nächstes Marke und ob das Fahrzeug schon auf unserem Platz in der Ukraine steht oder noch aus Europa unterwegs ist.",
     "brandsLabel": "Marke",
     "allBrands": "Alle Marken",
+    "yearLabel": "Baujahr",
+    "mileageLabel": "Laufleistung, km",
+    "rangeFrom": "Von",
+    "rangeTo": "Bis",
     "statusLabel": "Verfügbarkeit",
     "status": {
       "all": "Alle",
       "in_stock": "Auf Lager in der Ukraine",
       "transit": "Unterwegs aus Europa"
     },
-    "statusHint": {
-      "all": "Bestand in der Ukraine und Chargen unterwegs",
-      "in_stock": "Besichtigung auf dem Platz möglich",
-      "transit": "Unterwegs aus Europa, Termin stimmen wir ab"
-    },
-    "summary": "{category} · {brand} · {status}",
     "categories": {
       "tractors": "Sattelzugmaschinen",
       "semitrailers": "Auflieger",

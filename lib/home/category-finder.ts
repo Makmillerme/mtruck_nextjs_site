@@ -78,12 +78,22 @@ export function getMockOfferCount(
 export function buildProductsHref(
   categoryId: CategoryId,
   brandId: string | null,
-  status: StatusFilter
+  status: StatusFilter,
+  ranges?: {
+    yearFrom?: number;
+    yearTo?: number;
+    kmFrom?: number;
+    kmTo?: number;
+  }
 ): string {
   const params = new URLSearchParams();
   params.set("category", categoryId);
   if (brandId) params.set("make", brandId);
   if (status !== "all") params.set("status", status);
+  if (ranges?.yearFrom != null) params.set("yearFrom", String(ranges.yearFrom));
+  if (ranges?.yearTo != null) params.set("yearTo", String(ranges.yearTo));
+  if (ranges?.kmFrom != null) params.set("kmFrom", String(ranges.kmFrom));
+  if (ranges?.kmTo != null) params.set("kmTo", String(ranges.kmTo));
   const query = params.toString();
   return query ? `/products?${query}` : "/products";
 }

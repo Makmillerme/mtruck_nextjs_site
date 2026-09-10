@@ -9,8 +9,8 @@ export default async function UiLabBlocks() {
             Картка техніки
           </h2>
           <p className="text-sm text-muted-foreground">
-            Живий `VehicleCard` на пастелі. Тінь + zoom фото на hover.
-            Кнопки без drop-shadow — картки з тінню.
+            Живий `VehicleCard` на пастелі. Ціна зліва, `Детальніше` справа.
+            Тінь + zoom на hover. Кнопки без drop-shadow.
           </p>
         </header>
         <div className="max-w-sm">
