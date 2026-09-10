@@ -43,10 +43,18 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "homepage-close",
     category: "brand",
     title: "Кейси / CTA / футер",
-    hint: "Триптих-маніфест продажів, компактна форма 01+03, фрагмент футера на navy.",
+    hint: "Триптих-маніфест продажів, CustomOrder CTA по центру, компактна форма 01+03, фрагмент футера на navy.",
     keywords:
-      "sales cases кейси продажі триптих маніфест cta callback footer футер телеграм",
+      "sales cases кейси продажі триптих маніфест custom-order заявка cta callback footer футер телеграм",
     chrome: "own",
+  },
+  {
+    id: "finder",
+    category: "brand",
+    title: "Підбір каталогу",
+    hint: "Живий CategoryFinder: категорії зверху, біла плитка фільтра на пастелі — марка, наявність з поясненням, підсумок і CTA.",
+    keywords:
+      "finder catalog каталог фільтр марка наявність плитка category",
   },
   {
     id: "icons",
@@ -60,7 +68,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "buttons",
     category: "buttons",
     title: "Button",
-    hint: "01+03: default = navy fill на white/pastel, біла пластина на hero/navy. Inverse — друга дія на темному. Це те, що стоїть на сайті.",
+    hint: "01+03: default = navy fill на white/pastel, біла пластина на hero/navy. Inverse — друга дія на темному. CustomOrder: default по центру, не ghost.",
     keywords:
       "button кнопка cta default outline inverse ghost destructive link primary navy",
   },
@@ -111,9 +119,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "vehicle",
     category: "cards",
     title: "Картка техніки",
-    hint: "Живий VehicleCard на пастелі каталогу.",
+    hint: "Живий VehicleCard на пастелі. Тінь + zoom на hover — це не те саме, що кнопки без drop-shadow.",
     keywords:
-      "vehicle card картка техніки тягач man overlay статус heart сердечко",
+      "vehicle card картка техніки тягач man overlay статус heart сердечко тінь zoom hover shadow",
     chrome: "own",
   },
 ];

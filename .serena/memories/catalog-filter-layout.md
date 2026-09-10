@@ -1,17 +1,19 @@
-# Catalog filters: mobile Sheet + desktop sticky sidebar
+# Catalog finder (homepage + UI Lab)
 
-## UX
-- **Mobile / < lg:** toolbar is one row: search, sort, filter. Filter opens a Sheet. Trigger is primary (blue) `lg:hidden`.
-- **Desktop / lg+:** sticky left sidebar (`sticky top-20`, `max-h-[calc(100vh-6rem)]`, overflow-y auto). Catalog grid/list is on the right. Filter button is hidden.
-- Shared fields live in `components/products/catalog-filters.tsx` (`useCatalogFilters`, `CatalogFilterFields`). Unique checkbox ids via `idPrefix` (`catalog-mobile` vs `catalog-desktop`).
+Date: 2026-09-10
 
-## Layout (`catalog-view.tsx`)
-- Grid: `lg:grid-cols-[16rem_minmax(0,1fr)]`, `xl:grid-cols-[18rem_minmax(0,1fr)]`.
-- Do **not** use `items-start` on the catalog grid: the aside must stretch so `position: sticky` works while scrolling the page.
-- Sidebar: `hidden lg:block` + Card. Mobile sheet trigger: `lg:hidden`, `variant="default"`.
-- Mobile toolbar: `flex items-center` — `CatalogSearch`, `CatalogSortButton`, `CatalogFilterSheet`.
+## Layout
+- Category tiles sit **on pastel**, white `bg-background`, `rounded-sm`, `shadow-sm`. Not inside the filter plate.
+- Brand + availability + summary + CTA sit on a **white plate** (`rounded-sm border bg-background p-5 md:p-8 shadow-sm`) so the filter pops off pastel. Do not flatten this back to a hairline `border-t`.
 
-## URL
-- Brands: `?brand=A,B` (comma-separated).
-- Featured: `?featured=1`.
-- Search/sort unchanged (`search`, `sort`). Cookie `mtruck-catalog-layout` for grid/list.
+## Filter value
+- Plate heading: `filterEyebrow` + `filterLead`.
+- Brands: pills. Active = navy fill (`bg-primary text-primary-foreground`). Idle = `bg-secondary` (must contrast on the white plate).
+- Availability: three **choice rows** with title + `statusHint` (yard / inspect / transit timeline). Selected = navy fill.
+- Footer: selection `summary` (`{category} · {brand} · {status}`) + `Button size=lg` CTA with mock count.
+
+## i18n
+`CategoryFinder` in uk/en/de: `filterEyebrow`, `filterLead`, `statusHint.*`, `summary`.
+
+## UI Lab
+Section `finder` (brand) mounts live `CategoryFinderPanel` on pastel. Same component as the homepage.

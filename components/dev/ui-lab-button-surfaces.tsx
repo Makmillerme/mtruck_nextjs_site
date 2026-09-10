@@ -78,6 +78,12 @@ export default function UiLabButtonSurfaces() {
           navy
         </p>
         <p className="max-w-md text-lg font-bold text-background">Техніка під замовлення</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-background/50">
+          custom-order · default по центру
+        </p>
+        <div className="flex justify-center">
+          <Button size="lg">Залишити заявку</Button>
+        </div>
         <Pair dark primaryLabel="Залишити заявку" secondaryLabel="Зв'язатися з нами" />
         <div className="flex max-w-md flex-col gap-3 sm:flex-row sm:items-center">
           <Input

@@ -77,6 +77,7 @@ import UiLabIcons from "@/components/dev/ui-lab-icons";
 import UiLabHeader from "@/components/dev/ui-lab-header";
 import UiLabHomepageClose from "@/components/dev/ui-lab-homepage-close";
 import UiLabMarks from "@/components/dev/ui-lab-marks";
+import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
   LuChevronDown,
@@ -347,9 +348,21 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="homepage-close"
               title="Кейси / CTA / футер"
-              hint="Триптих-маніфест продажів, компактна форма 01+03, фрагмент футера на navy."
+              hint="Триптих-маніфест продажів, CustomOrder CTA по центру, компактна форма 01+03, фрагмент футера на navy."
             >
               <UiLabHomepageClose />
+            </Section>
+          </LabGate>
+
+          <LabGate id="finder" visibleIds={visibleIds}>
+            <Section
+              id="finder"
+              title="Підбір каталогу"
+              hint="Живий CategoryFinder: категорії зверху, біла плитка фільтра на пастелі."
+            >
+              <div className="rounded-sm bg-secondary p-5 md:p-10">
+                <CategoryFinderPanel />
+              </div>
             </Section>
           </LabGate>
 
@@ -367,7 +380,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="buttons"
               title="Button"
-              hint="01+03: default = navy fill на white/pastel, біла пластина на hero/navy. Inverse — друга дія на темному. Це те, що стоїть на сайті."
+              hint="01+03: default = navy fill на white/pastel, біла пластина на hero/navy. Inverse — друга дія на темному. CustomOrder: default по центру, не ghost."
             >
               <UiLabButtonSurfaces />
               <div className="space-y-8">

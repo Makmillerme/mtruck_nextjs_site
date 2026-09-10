@@ -34,6 +34,27 @@ const MOCK_CASES = [
 export default function UiLabHomepageClose() {
   return (
     <div className="space-y-0">
+      <section
+        data-header-surface="dark"
+        className="full-bleed bg-foreground text-background"
+      >
+        <div className="page-container py-12">
+          <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-background/60">
+            Індивідуальний підбір
+          </p>
+          <h2 className="text-2xl font-black tracking-tight text-background md:text-3xl">
+            Техніка під замовлення
+          </h2>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-background/70">
+            CTA на navy — біла пластина `default`, по центру. Не ghost і не ліва
+            вирівняна смуга тексту.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <Button size="lg">Залишити заявку</Button>
+          </div>
+        </div>
+      </section>
+
       <section className="full-bleed bg-background">
         <div className="page-container py-12">
           <header className="grid gap-4 lg:grid-cols-12 lg:items-end">

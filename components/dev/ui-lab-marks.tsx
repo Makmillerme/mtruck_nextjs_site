@@ -22,8 +22,8 @@ const chipClass = (active: boolean) =>
   cn(
     "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
     active
-      ? "border-primary/40 bg-primary/10 text-primary"
-      : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+      ? "border-primary bg-primary text-primary-foreground"
+      : "border-border bg-secondary text-muted-foreground hover:border-primary/30 hover:text-foreground"
   );
 
 const STATUS = [

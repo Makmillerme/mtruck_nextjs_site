@@ -9,8 +9,8 @@ export default async function UiLabBlocks() {
             Картка техніки
           </h2>
           <p className="text-sm text-muted-foreground">
-            Живий `VehicleCard` на пастелі каталогу. Це RSC — тому окремий блок, не
-            всередині клієнтського Lab.
+            Живий `VehicleCard` на пастелі. Тінь + zoom фото на hover.
+            Кнопки без drop-shadow — картки з тінню.
           </p>
         </header>
         <div className="max-w-sm">

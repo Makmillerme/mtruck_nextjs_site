@@ -63,6 +63,8 @@
     "aria": "Browse vehicles by category",
     "eyebrow": "Vehicle catalog",
     "title": "Choose a category for your business needs",
+    "filterEyebrow": "Refine the selection",
+    "filterLead": "The category is set above. Next — make, and whether the truck is already on our yard in Ukraine or still in transit from Europe.",
     "brandsLabel": "Make",
     "allBrands": "All makes",
     "statusLabel": "Availability",
@@ -71,6 +73,12 @@
       "in_stock": "In stock in Ukraine",
       "transit": "In transit from Europe"
     },
+    "statusHint": {
+      "all": "Yard stock and units still on the way",
+      "in_stock": "Ready to inspect on site",
+      "transit": "Coming from Europe — we agree the timeline"
+    },
+    "summary": "{category} · {brand} · {status}",
     "categories": {
       "tractors": "Tractor units",
       "semitrailers": "Semi-trailers",
