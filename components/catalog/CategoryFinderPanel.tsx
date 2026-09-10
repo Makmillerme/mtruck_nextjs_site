@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import SectionIntro from "@/components/section-intro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
@@ -138,14 +139,12 @@ export default function CategoryFinderPanel() {
 
   return (
     <div>
-      <header className="mb-8 max-w-3xl lg:mb-10">
-        <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-          {t("eyebrow")}
-        </p>
-        <h2 className="text-balance text-3xl font-black tracking-tight text-foreground md:text-4xl lg:text-[2.75rem] lg:leading-[1.12]">
-          {t("title")}
-        </h2>
-      </header>
+      <SectionIntro
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        align="start"
+        className="mb-8 lg:mb-10"
+      />
 
       <div
         className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"

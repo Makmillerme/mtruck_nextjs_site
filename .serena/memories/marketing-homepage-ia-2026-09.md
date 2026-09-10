@@ -3,8 +3,10 @@
 1. Hero (navy) — CTA «Замовити техніку» → `#custom-order`, secondary «Зв'язатися з нами» → `#contact`.
 2. CatalogBlock `#catalog` / `#inventory` — `bg-secondary` pastel
 3. ServicesSection `#services` — white editorial
-4. CustomOrderSection `#custom-order` — navy roadmap; CTA is **ghost/text** to `#contact` (close lives on the form, not a fat button)
+4. CustomOrderSection `#custom-order` — navy roadmap; centered `Button default` (white plate) to `#contact`
 5. SalesCasesSection `#sales-cases` — white editorial, 3 anonymized deliveries (see `mem:sales-cases-section-2026-09`)
+
+Section titles chessboard on lg via `mem:section-intro-chessboard-2026-09`: Catalog left, Services right, CustomOrder left, SalesCases right, Contact left+form.
 6. CallbackCtaSection `#contact` — compact pastel form (`components/callback-cta-section.tsx` + `contact-form.tsx`)
 7. Footer — navy `bg-foreground` (see `mem:marketing-footer-design-spec-2026-09`)
 

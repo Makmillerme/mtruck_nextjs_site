@@ -62,7 +62,7 @@
   "CategoryFinder": {
     "aria": "Fahrzeuge nach Kategorie auswählen",
     "eyebrow": "Fahrzeugkatalog",
-    "title": "Wählen Sie die Kategorie für Ihre Geschäftsaufgaben",
+    "title": "Fahrzeugkategorie wählen",
     "brandsLabel": "Marke",
     "allBrands": "Alle Marken",
     "yearLabel": "Baujahr",
@@ -97,8 +97,8 @@
   },
   "ServicesSection": {
     "eyebrow": "Leistungen",
-    "title": "Wir bringen Nutzfahrzeuge in die Ukraine",
-    "subtitle": "Verkauf ab Hof. Spezialisten begleiten Kredit oder Leasing. Jede Einheit wird in unseren Werkstätten vorbereitet — und bei Bedarf für Ihr Geschäft umgebaut.",
+    "title": "Wir bringen Technik in die Ukraine",
+    "subtitle": "Verkauf ab Hof, Finanzierung und eigene Werkstatt.",
     "groups": {
       "commerce": "Verkauf",
       "workshop": "Vorbereitung"
@@ -129,7 +129,7 @@
   "CustomOrderSection": {
     "eyebrow": "Individuelle Beschaffung",
     "title": "Technik auf Bestellung",
-    "subtitle": "Das passende Modell nicht im Katalog gefunden? Wir beschaffen es in Europa nach Ihren Anforderungen.",
+    "subtitle": "Nicht im Katalog — wir beschaffen in Europa.",
     "steps": {
       "request": {
         "title": "Anfrage",
@@ -152,8 +152,8 @@
   },
   "SalesCases": {
     "eyebrow": "Lieferungen",
-    "title": "An wen wir bereits geliefert haben",
-    "subtitle": "Echte Lieferungen. Käufer bleiben anonym — nur Geschäftsart und Stadt.",
+    "title": "Letzte Lieferungen",
+    "subtitle": "Aus Europa — bereits in ukrainischen Fuhrparks.",
     "cases": {
       "lviv": {
         "model": "Scania R450 · 2019",

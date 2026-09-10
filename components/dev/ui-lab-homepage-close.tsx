@@ -58,16 +58,16 @@ export default function UiLabHomepageClose() {
       <section className="full-bleed bg-background">
         <div className="page-container py-12">
           <header className="grid gap-4 lg:grid-cols-12 lg:items-end">
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-5 lg:col-start-8 lg:text-right">
               <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
                 Продажі
               </p>
               <h2 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
-                Кому вже відвантажили
+                Останні відвантаження
               </h2>
             </div>
-            <p className="text-sm text-muted-foreground lg:col-span-7 lg:justify-self-end">
-              Триптих + маніфест: великі кадри, волосина між колонами, без діагоналі.
+            <p className="text-sm text-muted-foreground lg:col-span-7 lg:col-start-1 lg:row-start-1">
+              Триптих + маніфест: різна ширина кадрів, волосина між колонами. Заголовок справа на lg.
             </p>
           </header>
           <Separator className="my-8 bg-border" />

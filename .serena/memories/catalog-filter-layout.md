@@ -2,6 +2,8 @@
 
 Date: 2026-09-10
 
+Section title uses `SectionIntro` `align=start` (12-col, title in 5 cols left): «Оберіть категорію техніки». See `mem:section-intro-chessboard-2026-09`.
+
 ## Homepage plate (`CategoryFinderPanel`)
 - White plate on pastel. **No** plate header. **No** availability/status (that belongs on `/products`).
 - Fields: brand chips, year from/to, mileage from/to, CTA.

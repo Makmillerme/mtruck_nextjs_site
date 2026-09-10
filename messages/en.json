@@ -62,7 +62,7 @@
   "CategoryFinder": {
     "aria": "Browse vehicles by category",
     "eyebrow": "Vehicle catalog",
-    "title": "Choose a category for your business needs",
+    "title": "Choose a vehicle category",
     "brandsLabel": "Make",
     "allBrands": "All makes",
     "yearLabel": "Year",
@@ -97,8 +97,8 @@
   },
   "ServicesSection": {
     "eyebrow": "Services",
-    "title": "We bring commercial vehicles to Ukraine",
-    "subtitle": "Sold from our yard. Specialists help you buy on credit or lease. Every unit is prepared at our own workshops — and converted for your business when needed.",
+    "title": "We import trucks to Ukraine",
+    "subtitle": "Yard stock, financing, and prep at our own workshop.",
     "groups": {
       "commerce": "Sales",
       "workshop": "Preparation"
@@ -129,7 +129,7 @@
   "CustomOrderSection": {
     "eyebrow": "Custom sourcing",
     "title": "Equipment to order",
-    "subtitle": "Didn’t find the right model in the catalog? We’ll source it in Europe to your requirements.",
+    "subtitle": "Not in the catalog — we source it in Europe.",
     "steps": {
       "request": {
         "title": "Request",
@@ -152,8 +152,8 @@
   },
   "SalesCases": {
     "eyebrow": "Deliveries",
-    "title": "Who we already shipped to",
-    "subtitle": "Real deliveries. Buyers stay anonymous — business type and city only.",
+    "title": "Recent deliveries",
+    "subtitle": "From Europe — already running in Ukrainian fleets.",
     "cases": {
       "lviv": {
         "model": "Scania R450 · 2019",

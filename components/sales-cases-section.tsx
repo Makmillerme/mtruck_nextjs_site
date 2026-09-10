@@ -1,3 +1,4 @@
+import SectionIntro from "@/components/section-intro";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
@@ -30,22 +31,13 @@ export default async function SalesCasesSection() {
       className="full-bleed bg-background"
     >
       <div className="page-container py-16 md:py-24">
-        <header className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-16">
-          <div className="lg:col-span-5">
-            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              {t("eyebrow")}
-            </p>
-            <h2
-              id="sales-cases-heading"
-              className="text-balance text-3xl font-black tracking-tight text-foreground md:text-4xl lg:text-[2.75rem] lg:leading-[1.12]"
-            >
-              {t("title")}
-            </h2>
-          </div>
-          <p className="max-w-xl text-base leading-relaxed text-muted-foreground lg:col-span-7 lg:justify-self-end lg:text-lg">
-            {t("subtitle")}
-          </p>
-        </header>
+        <SectionIntro
+          id="sales-cases-heading"
+          eyebrow={t("eyebrow")}
+          title={t("title")}
+          lede={t("subtitle")}
+          align="end"
+        />
 
         <Separator className="my-12 bg-border lg:my-16" />
 
