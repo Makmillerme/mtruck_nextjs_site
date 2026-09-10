@@ -347,7 +347,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="homepage-close"
               title="Кейси / CTA / футер"
-              hint="Діагональні пластини продажів, компактна форма 01+03, фрагмент футера на navy."
+              hint="Триптих-маніфест продажів, компактна форма 01+03, фрагмент футера на navy."
             >
               <UiLabHomepageClose />
             </Section>

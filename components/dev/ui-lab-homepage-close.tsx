@@ -2,15 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { FaTelegram } from "react-icons/fa";
 import { LuClock, LuMail, LuMapPin, LuPhone } from "react-icons/lu";
 
 const MOCK_CASES = [
   {
     key: "lviv",
-    object: "object-[22%_center]",
-    frame: "lg:origin-bottom-left lg:-rotate-2",
-    offset: "",
+    object: "object-[32%_center]",
     model: "Scania R450 · 2019",
     route: "NL → UA",
     buyer: "Перевізник, Львів",
@@ -18,17 +18,13 @@ const MOCK_CASES = [
   {
     key: "kyiv",
     object: "object-[58%_center]",
-    frame: "lg:rotate-1",
-    offset: "lg:ml-[16%] lg:-mt-8",
     model: "DAF XF 480 · 2021",
     route: "DE → UA",
     buyer: "Автопарк, Київ",
   },
   {
     key: "odesa",
-    object: "object-[82%_center]",
-    frame: "lg:origin-bottom-right lg:-rotate-1",
-    offset: "lg:ml-[32%] lg:-mt-8",
+    object: "object-[78%_center]",
     model: "MAN TGX 18.500 · 2020",
     route: "PL → UA",
     buyer: "Будівельна компанія, Одеса",
@@ -40,25 +36,36 @@ export default function UiLabHomepageClose() {
     <div className="space-y-0">
       <section className="full-bleed bg-background">
         <div className="page-container py-12">
-          <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-            Продажі
-          </p>
-          <h2 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
-            Кому вже відвантажили
-          </h2>
-          <ol className="mt-10 flex flex-col gap-10 lg:gap-0">
-            {MOCK_CASES.map((item) => (
-              <li key={item.key} className={`max-w-md ${item.offset}`}>
-                <figure className={`overflow-hidden rounded-sm bg-secondary ${item.frame}`}>
+          <header className="grid gap-4 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-5">
+              <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                Продажі
+              </p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+                Кому вже відвантажили
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground lg:col-span-7 lg:justify-self-end">
+              Триптих + маніфест: великі кадри, волосина між колонами, без діагоналі.
+            </p>
+          </header>
+          <Separator className="my-8 bg-border" />
+          <ol className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.3fr)_minmax(0,1.05fr)] lg:gap-px lg:bg-border">
+            {MOCK_CASES.map((item, index) => (
+              <li key={item.key} className="bg-background">
+                <figure className="overflow-hidden bg-secondary">
                   <img
                     src="/images/hero.webp"
                     alt=""
-                    className={`aspect-[16/9] size-full object-cover ${item.object}`}
+                    className={cn(
+                      "h-44 w-full object-cover lg:h-64",
+                      item.object
+                    )}
                   />
                 </figure>
-                <div className="mt-3 space-y-1">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    {item.route}
+                <div className="flex flex-col gap-1 pt-4 lg:px-5 lg:pt-5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    {String(index + 1).padStart(2, "0")} · {item.route}
                   </p>
                   <p className="font-black tracking-tight text-foreground">{item.model}</p>
                   <p className="text-sm text-muted-foreground">{item.buyer}</p>

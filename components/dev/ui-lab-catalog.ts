@@ -43,9 +43,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "homepage-close",
     category: "brand",
     title: "Кейси / CTA / футер",
-    hint: "Діагональні пластини продажів, компактна форма 01+03, фрагмент футера на navy.",
+    hint: "Триптих-маніфест продажів, компактна форма 01+03, фрагмент футера на navy.",
     keywords:
-      "sales cases кейси продажі cta callback footer футер телеграм",
+      "sales cases кейси продажі триптих маніфест cta callback footer футер телеграм",
     chrome: "own",
   },
   {
