@@ -1,13 +1,18 @@
-# Homepage IA (2026-09-09, update)
+# Homepage IA (2026-09-10)
 
-1. Hero (navy) — CTA «Замовити техніку» → `#custom-order`, secondary «Зв'язатися з нами» → `#contact`. No catalog/new-arrivals buttons (duplicate quick access already below the fold).
+1. Hero (navy) — CTA «Замовити техніку» → `#custom-order`, secondary «Зв'язатися з нами» → `#contact`.
 2. CatalogBlock `#catalog` / `#inventory` — `bg-secondary` pastel
-3. ServicesSection `#services` — white editorial, importer offer (sale, finance, STO prep, refit) + per-group «more» pill CTA to `/services#...`
-4. CustomOrderSection `#custom-order` — navy roadmap, 4-step custom sourcing process, CTA → `#contact` (see `mem:custom-order-section-2026-09`)
-5. ContactSection `#contact` — `bg-secondary` pastel (same wash as catalog; white form/info cards)
-6. Footer — navy `bg-foreground`
+3. ServicesSection `#services` — white editorial
+4. CustomOrderSection `#custom-order` — navy roadmap; CTA is **ghost/text** to `#contact` (close lives on the form, not a fat button)
+5. SalesCasesSection `#sales-cases` — white editorial, 3 anonymized deliveries (see `mem:sales-cases-section-2026-09`)
+6. CallbackCtaSection `#contact` — compact pastel form (`components/callback-cta-section.tsx` + `contact-form.tsx`)
+7. Footer — navy `bg-foreground` (see `mem:marketing-footer-design-spec-2026-09`)
 
-Color rhythm: navy→pastel→white→navy→pastel→navy. Every consecutive band differs; navy bookends + one extra navy beat mid-page for the roadmap CTA.
+Color rhythm: navy → pastel → white → navy → white → pastel → navy.
 
-## Product principle (explicit user decision, 2026-09-09)
-Homepage sections stay short/teaser (current level is correct). Full detailed content belongs on dedicated pages (`/services`, future `/about` etc.) — not to be built yet unless asked.
+`/contact` is a separate page: same form + text facts, no fake map (`components/contact-section.tsx`).
+
+`main` has **no** `pb-16` — that used to leave a white strip under the pastel CTA before the navy footer.
+
+## Product principle
+Homepage sections stay short/teaser. Full detail on dedicated pages.

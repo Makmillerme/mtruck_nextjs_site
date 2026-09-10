@@ -40,6 +40,15 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
       "header хедер navbar скло glass blur backdrop хамелеон sticky",
   },
   {
+    id: "homepage-close",
+    category: "brand",
+    title: "Кейси / CTA / футер",
+    hint: "Діагональні пластини продажів, компактна форма 01+03, фрагмент футера на navy.",
+    keywords:
+      "sales cases кейси продажі cta callback footer футер телеграм",
+    chrome: "own",
+  },
+  {
     id: "icons",
     category: "icons",
     title: "Іконки",

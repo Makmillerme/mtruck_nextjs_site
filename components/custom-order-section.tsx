@@ -62,7 +62,12 @@ export default async function CustomOrderSection() {
         </ol>
 
         <div className="mt-14 flex justify-center lg:mt-16">
-          <Button asChild size="lg">
+          <Button
+            asChild
+            variant="ghost"
+            size="lg"
+            className="text-background hover:bg-background/10 hover:text-background"
+          >
             <a href="#contact">{t("cta")}</a>
           </Button>
         </div>

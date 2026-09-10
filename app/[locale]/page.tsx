@@ -1,7 +1,8 @@
 import CatalogBlock from "@/components/catalog/CatalogBlock";
 import Hero from "@/components/home/Hero";
-import ContactSection from "@/components/contact-section";
+import CallbackCtaSection from "@/components/callback-cta-section";
 import CustomOrderSection from "@/components/custom-order-section";
+import SalesCasesSection from "@/components/sales-cases-section";
 import ServicesSection from "@/components/services-section";
 import { Suspense } from "react";
 
@@ -22,7 +23,8 @@ function HomePage() {
       </Suspense>
       <ServicesSection />
       <CustomOrderSection />
-      <ContactSection />
+      <SalesCasesSection />
+      <CallbackCtaSection />
     </>
   );
 }

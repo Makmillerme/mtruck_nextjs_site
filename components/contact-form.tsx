@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitCallbackInquiryAction } from "@/utils/actions";
 import { Link } from "@/i18n/navigation";
-import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useFormStatus } from "react-dom";
+import { LuLoader } from "react-icons/lu";
 
 function SubmitCallbackButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -15,7 +15,7 @@ function SubmitCallbackButton({ label }: { label: string }) {
   return (
     <Button type="submit" disabled={pending} className="shrink-0">
       {pending ? (
-        <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+        <LuLoader className="size-4 animate-spin" aria-hidden />
       ) : null}
       {label}
     </Button>
@@ -27,7 +27,7 @@ export default function ContactForm() {
 
   return (
     <FormContainer action={submitCallbackInquiryAction}>
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
         <Input
           id="callback-phone"
           name="phone"
@@ -41,7 +41,7 @@ export default function ContactForm() {
         />
         <SubmitCallbackButton label={t("submit")} />
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         {t.rich("privacy", {
           privacy: (chunks) => (
             <Link href="/privacy" className="text-primary hover:underline">

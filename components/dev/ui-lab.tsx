@@ -75,6 +75,7 @@ import {
 import UiLabButtonSurfaces from "@/components/dev/ui-lab-button-surfaces";
 import UiLabIcons from "@/components/dev/ui-lab-icons";
 import UiLabHeader from "@/components/dev/ui-lab-header";
+import UiLabHomepageClose from "@/components/dev/ui-lab-homepage-close";
 import UiLabMarks from "@/components/dev/ui-lab-marks";
 import { cn } from "@/lib/utils";
 import {
@@ -339,6 +340,16 @@ export default function UiLab({ children }: { children?: ReactNode }) {
               hint="Скло на .site-header-glass, хамелеон на .site-header. Light на white/pastel, dark на photo/navy. Без нижньої риски."
             >
               <UiLabHeader />
+            </Section>
+          </LabGate>
+
+          <LabGate id="homepage-close" visibleIds={visibleIds}>
+            <Section
+              id="homepage-close"
+              title="Кейси / CTA / футер"
+              hint="Діагональні пластини продажів, компактна форма 01+03, фрагмент футера на navy."
+            >
+              <UiLabHomepageClose />
             </Section>
           </LabGate>
 

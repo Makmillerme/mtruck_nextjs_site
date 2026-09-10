@@ -146,6 +146,28 @@
     },
     "cta": "Leave a request"
   },
+  "SalesCases": {
+    "eyebrow": "Deliveries",
+    "title": "Who we already shipped to",
+    "subtitle": "Real deliveries. Buyers stay anonymous — business type and city only.",
+    "cases": {
+      "lviv": {
+        "model": "Scania R450 · 2019",
+        "route": "NL → UA",
+        "buyer": "Haulier, Lviv"
+      },
+      "kyiv": {
+        "model": "DAF XF 480 · 2021",
+        "route": "DE → UA",
+        "buyer": "Fleet operator, Kyiv"
+      },
+      "odesa": {
+        "model": "MAN TGX 18.500 · 2020",
+        "route": "PL → UA",
+        "buyer": "Construction company, Odesa"
+      }
+    }
+  },
   "ServicesPage": {
     "metaTitle": "Services",
     "title": "Our services",

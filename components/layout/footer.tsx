@@ -1,3 +1,5 @@
+import Logo from "@/components/navbar/Logo";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { siteNav } from "@/utils/links";
 import { getTranslations } from "next-intl/server";
@@ -11,6 +13,9 @@ const LEGAL_LINKS = [
 
 const TELEGRAM_URL = "https://t.me/mtruck_sales";
 
+const footerNavClass =
+  "rounded-md px-3 py-2 text-sm font-medium tracking-wide text-background/80 hover:bg-background/10 hover:text-background";
+
 export default async function Footer() {
   const t = await getTranslations("Footer");
   const tNav = await getTranslations("Navbar");
@@ -19,86 +24,64 @@ export default async function Footer() {
   return (
     <footer
       data-header-surface="dark"
-      className="border-t border-background/10 bg-foreground text-background"
+      className="bg-foreground text-background"
     >
       <section aria-label={t("aria")} className="page-container py-8 md:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
           <div className="max-w-sm space-y-3">
-            <Link href="/" className="inline-flex shrink-0 items-center">
-              <img
-                src="/logo_mtruck.svg?v=flatsteel7"
-                alt="M-TRUCK"
-                width={223}
-                height={88}
-                className="h-8 w-auto max-w-[10rem]"
-                decoding="async"
-              />
-            </Link>
+            <Logo />
             <p className="text-sm leading-relaxed text-background/65">{t("tagline")}</p>
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-5 lg:max-w-2xl lg:items-end">
-            <nav aria-label={t("navAria")} className="flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
+            <nav aria-label={t("navAria")} className="flex flex-wrap items-center gap-1 lg:justify-end">
               {siteNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm font-medium text-background/80 transition-colors hover:text-primary"
-                >
+                <Link key={item.href} href={item.href} className={footerNavClass}>
                   {tNav(item.key)}
                 </Link>
               ))}
             </nav>
 
-            <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2 lg:justify-end">
+            <ul className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2 lg:justify-end">
               <li>
-                <a
-                  href={t("phone.href")}
-                  className="inline-flex items-center gap-2 text-sm text-background/65 transition-colors hover:text-primary"
-                >
-                  <LuPhone className="size-3.5 shrink-0 text-primary" aria-hidden />
+                <a href={t("phone.href")} className="inline-flex items-center gap-2.5 text-sm text-background/80 hover:text-background">
+                  <LuPhone className="size-5 shrink-0 text-background/80" aria-hidden />
                   {t("phone.value")}
                 </a>
               </li>
               <li>
-                <a
-                  href={t("email.href")}
-                  className="inline-flex items-center gap-2 text-sm text-background/65 transition-colors hover:text-primary"
-                >
-                  <LuMail className="size-3.5 shrink-0 text-primary" aria-hidden />
+                <a href={t("email.href")} className="inline-flex items-center gap-2.5 text-sm text-background/80 hover:text-background">
+                  <LuMail className="size-5 shrink-0 text-background/80" aria-hidden />
                   {t("email.value")}
                 </a>
               </li>
-              <li className="inline-flex items-start gap-2 text-sm text-background/65 sm:items-center">
-                <LuMapPin className="mt-0.5 size-3.5 shrink-0 text-primary sm:mt-0" aria-hidden />
+              <li className="inline-flex items-start gap-2.5 text-sm text-background/80 sm:items-center">
+                <LuMapPin className="mt-0.5 size-5 shrink-0 text-background/80 sm:mt-0" aria-hidden />
                 <span className="whitespace-pre-line sm:whitespace-normal">{t("address")}</span>
               </li>
-              <li className="inline-flex items-center gap-2 text-sm text-background/65">
-                <LuClock className="size-3.5 shrink-0 text-primary" aria-hidden />
+              <li className="inline-flex items-center gap-2.5 text-sm text-background/80">
+                <LuClock className="size-5 shrink-0 text-background/80" aria-hidden />
                 {t("hours")}
               </li>
             </ul>
 
-            <a
-              href={TELEGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 rounded-md border border-background/20 px-3 py-1.5 text-sm font-medium text-background/90 transition-colors hover:border-primary hover:text-primary"
-            >
-              <FaTelegram className="size-4" aria-hidden />
-              {t("telegramCta")}
-            </a>
+            <Button asChild variant="inverse" size="sm">
+              <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+                <FaTelegram className="size-4" aria-hidden />
+                {t("telegramCta")}
+              </a>
+            </Button>
           </div>
         </div>
 
         <div className="mt-8 flex flex-col items-start gap-3 border-t border-background/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-background/45">{t("copyright", { year })}</p>
+          <p className="text-xs text-background/60">{t("copyright", { year })}</p>
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {LEGAL_LINKS.map(({ key, href }) => (
               <li key={key}>
                 <Link
                   href={href}
-                  className="text-xs text-background/45 transition-colors hover:text-primary"
+                  className="text-xs text-background/60 transition-colors hover:text-background"
                 >
                   {t(`legal.${key}`)}
                 </Link>

@@ -58,7 +58,7 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <Providers>
         <Navbar />
-        <main className="min-w-0 pb-16">
+        <main className="min-w-0">
           <div className="page-container min-w-0 has-[.full-bleed]:contents has-[.page-content]:contents">
             {children}
           </div>
