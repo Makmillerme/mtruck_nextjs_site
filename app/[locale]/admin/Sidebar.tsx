@@ -8,10 +8,7 @@ import { useTranslations } from "next-intl";
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true;
   if (href === "/admin/products") {
-    return (
-      pathname.startsWith("/admin/products/") &&
-      pathname !== "/admin/products/create"
-    );
+    return pathname.startsWith("/admin/products/");
   }
   return false;
 }

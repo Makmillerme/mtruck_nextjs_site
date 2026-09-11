@@ -8,9 +8,12 @@ import { useTranslations } from "next-intl";
 export default function ProductFolderPicker({
   folders,
   selectedId,
+  onNodeChange,
 }: {
   folders: { id: string; name: string; depth: number }[];
   selectedId?: string;
+  /** When set, folder change stays on the current page flow (e.g. create sheet). */
+  onNodeChange?: (nodeId: string | null) => void;
 }) {
   const t = useTranslations("CatalogAdmin");
   const router = useRouter();
@@ -24,9 +27,13 @@ export default function ProductFolderPicker({
         className={catalogSelectClassName}
         value={selectedId ?? ""}
         onChange={(event) => {
-          const id = event.target.value;
+          const id = event.target.value || null;
+          if (onNodeChange) {
+            onNodeChange(id);
+            return;
+          }
           router.push(
-            id ? `/admin/products/create?node=${id}` : "/admin/products/create"
+            id ? `/admin/products?create=1&node=${id}` : "/admin/products?create=1"
           );
         }}
       >

@@ -24,9 +24,6 @@ async function EditProductPage(props: { params: Promise<{ id: string }> }) {
   const { name, company, description, featured, price } = product;
   return (
     <section className="grid gap-6">
-      <div className="grid gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('updateProduct')}</h1>
-      </div>
       <Card className="shadow-sm">
         <CardContent className="grid gap-6 p-6">
           <ImageInputContainer

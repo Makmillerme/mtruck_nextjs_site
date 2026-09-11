@@ -570,7 +570,16 @@
     "email": "Email",
     "updateImage": "Update image",
     "submitCreate": "Create product",
-    "submitUpdate": "Save"
+    "submitUpdate": "Save",
+    "searchPlaceholder": "Search by name or company…",
+    "filter": "Filter",
+    "filterCompany": "Company",
+    "filterStatus": "Status",
+    "filterFeatured": "Featured only",
+    "filterEmptyCompanies": "No companies in the list.",
+    "clearFilters": "Clear filters",
+    "createSheetTitle": "New product",
+    "createSheetLede": "Fill in the form. The folder unlocks the matching specs."
   },
   "CatalogAdmin": {
     "title": "CMS",

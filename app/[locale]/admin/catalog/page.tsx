@@ -31,10 +31,6 @@ async function CatalogPage(props: {
 
   return (
     <section className="grid gap-6">
-      <div className="grid gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("lede")}</p>
-      </div>
       <CmsTabs
         tab={tab}
         nodeId={selected?.id}

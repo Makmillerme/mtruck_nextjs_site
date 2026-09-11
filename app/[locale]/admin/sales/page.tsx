@@ -24,12 +24,9 @@ async function SalesPage() {
 
   return (
     <section className="grid gap-6">
-      <div className="grid gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('sales')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('totalOrders', { count: orders.length })}
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {t('totalOrders', { count: orders.length })}
+      </p>
       <Card className="shadow-sm">
         <CardContent className="p-0">
           <Table>

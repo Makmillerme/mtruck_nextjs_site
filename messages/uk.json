@@ -570,7 +570,16 @@
     "email": "Email",
     "updateImage": "Оновити зображення",
     "submitCreate": "Створити товар",
-    "submitUpdate": "Зберегти"
+    "submitUpdate": "Зберегти",
+    "searchPlaceholder": "Пошук за назвою або компанією…",
+    "filter": "Фільтр",
+    "filterCompany": "Компанія",
+    "filterStatus": "Статус",
+    "filterFeatured": "Лише рекомендовані",
+    "filterEmptyCompanies": "Немає компаній у списку.",
+    "clearFilters": "Скинути фільтри",
+    "createSheetTitle": "Новий товар",
+    "createSheetLede": "Заповніть анкету. Папка визначає доступні характеристики."
   },
   "CatalogAdmin": {
     "title": "CMS",

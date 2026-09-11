@@ -570,7 +570,16 @@
     "email": "E-Mail",
     "updateImage": "Bild aktualisieren",
     "submitCreate": "Produkt erstellen",
-    "submitUpdate": "Speichern"
+    "submitUpdate": "Speichern",
+    "searchPlaceholder": "Suche nach Name oder Firma…",
+    "filter": "Filter",
+    "filterCompany": "Firma",
+    "filterStatus": "Status",
+    "filterFeatured": "Nur empfohlen",
+    "filterEmptyCompanies": "Keine Firmen in der Liste.",
+    "clearFilters": "Filter zurücksetzen",
+    "createSheetTitle": "Neues Produkt",
+    "createSheetLede": "Formular ausfüllen. Der Ordner bestimmt die verfügbaren Felder."
   },
   "CatalogAdmin": {
     "title": "CMS",
