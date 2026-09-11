@@ -20,6 +20,17 @@ export type TaxonomyNodeRow = {
 export type TaxonomyTreeNode = TaxonomyNodeRow & {
   children: TaxonomyTreeNode[];
   productCount: number;
+  attributeCount: number;
+  /** Whole branch, including this node. */
+  subtreeProductCount: number;
+  subtreeAttributeCount: number;
+  descendantCount: number;
+};
+
+export type SubtreeStats = {
+  descendantCount: number;
+  attributeCount: number;
+  productCount: number;
 };
 
 export type AttributeOptionRow = {

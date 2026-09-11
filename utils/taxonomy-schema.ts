@@ -21,6 +21,11 @@ export const nodeIdSchema = z.object({
   nodeId: z.string().uuid(),
 });
 
+export const moveTaxonomyNodeSchema = z.object({
+  nodeId: z.string().uuid(),
+  direction: z.enum(["up", "down"]),
+});
+
 export const createAttributeSchema = z.object({
   taxonomyNodeId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),

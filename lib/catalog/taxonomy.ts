@@ -1,13 +1,15 @@
 import db from "@/utils/db";
 import type {
   CatalogAttribute,
+  SubtreeStats,
   TaxonomyNodeRow,
   TaxonomyTreeNode,
 } from "./types";
 
 export function buildTaxonomyTree(
   nodes: TaxonomyNodeRow[],
-  productCountByNode: Map<string, number>
+  productCountByNode: Map<string, number>,
+  attributeCountByNode: Map<string, number> = new Map()
 ): TaxonomyTreeNode[] {
   const byParent = new Map<string | null, TaxonomyNodeRow[]>();
   for (const node of nodes) {
@@ -22,11 +24,29 @@ export function buildTaxonomyTree(
     return children
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "uk"))
-      .map((node) => ({
-        ...node,
-        productCount: productCountByNode.get(node.id) ?? 0,
-        children: walk(node.id),
-      }));
+      .map((node) => {
+        const branch = walk(node.id);
+        const productCount = productCountByNode.get(node.id) ?? 0;
+        const attributeCount = attributeCountByNode.get(node.id) ?? 0;
+        return {
+          ...node,
+          children: branch,
+          productCount,
+          attributeCount,
+          subtreeProductCount: branch.reduce(
+            (total, child) => total + child.subtreeProductCount,
+            productCount
+          ),
+          subtreeAttributeCount: branch.reduce(
+            (total, child) => total + child.subtreeAttributeCount,
+            attributeCount
+          ),
+          descendantCount: branch.reduce(
+            (total, child) => total + child.descendantCount + 1,
+            0
+          ),
+        };
+      });
   };
 
   return walk(null);
@@ -59,12 +79,21 @@ export async function fetchProductCountByNode() {
   );
 }
 
+export async function fetchAttributeCountByNode() {
+  const rows = await db.attributeDefinition.groupBy({
+    by: ["taxonomyNodeId"],
+    _count: { _all: true },
+  });
+  return new Map(rows.map((row) => [row.taxonomyNodeId, row._count._all]));
+}
+
 export async function fetchTaxonomyTree() {
-  const [nodes, counts] = await Promise.all([
+  const [nodes, productCounts, attributeCounts] = await Promise.all([
     fetchTaxonomyNodes(),
     fetchProductCountByNode(),
+    fetchAttributeCountByNode(),
   ]);
-  return buildTaxonomyTree(nodes, counts);
+  return buildTaxonomyTree(nodes, productCounts, attributeCounts);
 }
 
 export function flattenTaxonomyTree(
@@ -202,4 +231,45 @@ export async function countNodeChildren(nodeId: string) {
 
 export async function countNodeProducts(nodeId: string) {
   return db.product.count({ where: { taxonomyNodeId: nodeId } });
+}
+
+/** Node id plus every descendant id, so deletes and stats cover the whole branch. */
+export async function collectSubtreeIds(nodeId: string) {
+  const nodes = await fetchTaxonomyNodes();
+  const byParent = new Map<string | null, string[]>();
+  for (const node of nodes) {
+    const siblings = byParent.get(node.parentId) ?? [];
+    siblings.push(node.id);
+    byParent.set(node.parentId, siblings);
+  }
+
+  const ids: string[] = [];
+  const queue = [nodeId];
+  while (queue.length > 0) {
+    const current = queue.shift() as string;
+    ids.push(current);
+    queue.push(...(byParent.get(current) ?? []));
+  }
+  return ids;
+}
+
+export async function getSubtreeStats(nodeId: string): Promise<SubtreeStats> {
+  const ids = await collectSubtreeIds(nodeId);
+  const [attributeCount, productCount] = await Promise.all([
+    db.attributeDefinition.count({ where: { taxonomyNodeId: { in: ids } } }),
+    db.product.count({ where: { taxonomyNodeId: { in: ids } } }),
+  ]);
+  return {
+    descendantCount: ids.length - 1,
+    attributeCount,
+    productCount,
+  };
+}
+
+export async function fetchSiblingNodes(parentId: string | null) {
+  return db.taxonomyNode.findMany({
+    where: { parentId },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, sortOrder: true },
+  });
 }

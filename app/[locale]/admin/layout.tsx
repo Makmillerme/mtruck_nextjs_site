@@ -1,22 +1,22 @@
-import { Separator } from '@/components/ui/separator';
-import Sidebar from './Sidebar';
-import { getAdminUser } from '@/utils/session';
-import { getTranslations } from 'next-intl/server';
+import { Separator } from "@/components/ui/separator";
+import Sidebar from "./Sidebar";
+import { getAdminUser } from "@/utils/session";
+import { getTranslations } from "next-intl/server";
 
 async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await getAdminUser();
-  const t = await getTranslations('Admin');
+  const t = await getTranslations("Admin");
   return (
-    <>
-      <h2 className='text-2xl pl-4'>{t('dashboard')}</h2>
-      <Separator className='mt-2' />
-      <section className='grid lg:grid-cols-12 gap-12 mt-12'>
-        <div className='lg:col-span-2'>
-          <Sidebar />
-        </div>
-        <div className='lg:col-span-10 px-4'>{children}</div>
+    <div className="grid gap-8">
+      <div className="grid gap-3">
+        <h2 className="text-xl font-semibold">{t("dashboard")}</h2>
+        <Separator />
+      </div>
+      <section className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <Sidebar />
+        <div className="min-w-0">{children}</div>
       </section>
-    </>
+    </div>
   );
 }
 export default DashboardLayout;

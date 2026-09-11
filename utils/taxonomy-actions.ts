@@ -8,33 +8,34 @@ import {
   createAttributeOptionSchema,
   createAttributeSchema,
   createTaxonomyNodeSchema,
+  moveTaxonomyNodeSchema,
   nodeIdSchema,
   optionIdSchema,
   renameTaxonomyNodeSchema,
   updateAttributeFlagsSchema,
 } from "@/utils/taxonomy-schema";
-import { keyify, slugify, uniqueSlug } from "@/lib/catalog/slug";
+import { keyify, uniqueSlug } from "@/lib/catalog/slug";
 import {
-  countNodeChildren,
-  countNodeProducts,
+  fetchSiblingNodes,
   getPathNodes,
+  getSubtreeStats,
 } from "@/lib/catalog/taxonomy";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
-import type { actionFunction } from "@/utils/types";
+import type { TaxonomyAction, TaxonomyActionState } from "@/utils/taxonomy-action-state";
 
 function checkbox(formData: FormData, name: string) {
   const value = formData.get(name);
   return value === "true" || value === "on";
 }
 
-async function renderTaxonomyError(error: unknown): Promise<{ message: string }> {
+async function renderTaxonomyError(error: unknown): Promise<TaxonomyActionState> {
   console.error(error);
   if (error instanceof Error && error.message) {
-    return { message: error.message };
+    return { message: error.message, ok: false };
   }
   const t = await getTranslations("Actions");
-  return { message: t("error") };
+  return { message: t("error"), ok: false };
 }
 
 function revalidateCatalog() {
@@ -107,17 +108,16 @@ async function assertDependsOnAllowed(
   const parent = await db.attributeDefinition.findUnique({
     where: { id: dependsOnAttributeId },
   });
+  const t = await getTranslations("CatalogAdmin");
   if (!parent || !pathIds.has(parent.taxonomyNodeId)) {
-    const t = await getTranslations("CatalogAdmin");
     throw new Error(t("invalidDependsOn"));
   }
   if (parent.type !== "SELECT") {
-    const t = await getTranslations("CatalogAdmin");
     throw new Error(t("dependsOnMustBeSelect"));
   }
 }
 
-export const createTaxonomyNodeAction: actionFunction = async (_prev, formData) => {
+export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(createTaxonomyNodeSchema, {
@@ -143,13 +143,13 @@ export const createTaxonomyNodeAction: actionFunction = async (_prev, formData) 
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("folderCreated") };
+    return { message: t("folderCreated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const renameTaxonomyNodeAction: actionFunction = async (_prev, formData) => {
+export const renameTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(renameTaxonomyNodeSchema, {
@@ -162,34 +162,73 @@ export const renameTaxonomyNodeAction: actionFunction = async (_prev, formData) 
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("folderRenamed") };
+    return { message: t("folderRenamed"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const deleteTaxonomyNodeAction: actionFunction = async (_prev, formData) => {
+/** Sibling order drives both the admin tree and, later, the public filter order. */
+export const moveTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) => {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(moveTaxonomyNodeSchema, {
+      nodeId: formData.get("nodeId"),
+      direction: formData.get("direction"),
+    });
+    const t = await getTranslations("CatalogAdmin");
+    const node = await db.taxonomyNode.findUnique({
+      where: { id: data.nodeId },
+      select: { id: true, parentId: true },
+    });
+    if (!node) throw new Error(t("folderMissing"));
+
+    const siblings = await fetchSiblingNodes(node.parentId);
+    const index = siblings.findIndex((item) => item.id === node.id);
+    const targetIndex = data.direction === "up" ? index - 1 : index + 1;
+    if (index === -1 || targetIndex < 0 || targetIndex >= siblings.length) {
+      return { message: "", ok: true };
+    }
+
+    const reordered = [...siblings];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+    await db.$transaction(
+      reordered.map((item, position) =>
+        db.taxonomyNode.update({
+          where: { id: item.id },
+          data: { sortOrder: position },
+        })
+      )
+    );
+    revalidateCatalog();
+    return { message: "", ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+/** Children and their fields go with the folder; listings block the delete instead. */
+export const deleteTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(nodeIdSchema, {
       nodeId: formData.get("nodeId"),
     });
     const t = await getTranslations("CatalogAdmin");
-    const [childCount, productCount] = await Promise.all([
-      countNodeChildren(data.nodeId),
-      countNodeProducts(data.nodeId),
-    ]);
-    if (childCount > 0) throw new Error(t("folderHasChildren"));
-    if (productCount > 0) throw new Error(t("folderHasProducts"));
+    const stats = await getSubtreeStats(data.nodeId);
+    if (stats.productCount > 0) {
+      throw new Error(t("folderHasProducts", { count: stats.productCount }));
+    }
     await db.taxonomyNode.delete({ where: { id: data.nodeId } });
     revalidateCatalog();
-    return { message: t("folderDeleted") };
+    return { message: t("folderDeleted"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const createAttributeAction: actionFunction = async (_prev, formData) => {
+export const createAttributeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(createAttributeSchema, {
@@ -224,13 +263,13 @@ export const createAttributeAction: actionFunction = async (_prev, formData) => 
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("fieldCreated") };
+    return { message: t("fieldCreated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const updateAttributeAction: actionFunction = async (_prev, formData) => {
+export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(updateAttributeFlagsSchema, {
@@ -253,13 +292,13 @@ export const updateAttributeAction: actionFunction = async (_prev, formData) => 
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("fieldUpdated") };
+    return { message: t("fieldUpdated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const deleteAttributeAction: actionFunction = async (_prev, formData) => {
+export const deleteAttributeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(attributeIdSchema, {
@@ -272,13 +311,13 @@ export const deleteAttributeAction: actionFunction = async (_prev, formData) => 
     if (dependents > 0) throw new Error(t("fieldHasDependents"));
     await db.attributeDefinition.delete({ where: { id: data.attributeId } });
     revalidateCatalog();
-    return { message: t("fieldDeleted") };
+    return { message: t("fieldDeleted"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const createAttributeOptionAction: actionFunction = async (_prev, formData) => {
+export const createAttributeOptionAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(createAttributeOptionSchema, {
@@ -316,13 +355,13 @@ export const createAttributeOptionAction: actionFunction = async (_prev, formDat
       },
     });
     revalidateCatalog();
-    return { message: t("optionCreated") };
+    return { message: t("optionCreated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
 };
 
-export const deleteAttributeOptionAction: actionFunction = async (_prev, formData) => {
+export const deleteAttributeOptionAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
     const data = validateWithZodSchema(optionIdSchema, {
@@ -331,7 +370,7 @@ export const deleteAttributeOptionAction: actionFunction = async (_prev, formDat
     await db.attributeOption.delete({ where: { id: data.optionId } });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("optionDeleted") };
+    return { message: t("optionDeleted"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
