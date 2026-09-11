@@ -18,3 +18,6 @@ Color rhythm: navy → pastel → white → navy → white → pastel → navy.
 
 ## Product principle
 Homepage sections stay short/teaser. Full detail on dedicated pages.
+
+## Status (2026-09-11)
+**CLOSED** — layout, rhythm, intros, finder chrome, sales lookbook, compact CTA. See `mem:homepage-closed-2026-09`. Do not add homepage sections. Leftover furniture cards / mock counts / case photos / `/services` page are catalog or inner-page work.
