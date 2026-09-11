@@ -74,9 +74,9 @@ function useHeaderSurface() {
 }
 
 const headerIconClass =
-  "size-9 shrink-0 hover:bg-foreground/10 hover:text-inherit";
+  "size-9 shrink-0 text-inherit hover:bg-foreground/10 hover:text-inherit";
 const headerControlClass =
-  "hover:bg-foreground/10 hover:text-inherit";
+  "text-inherit hover:bg-foreground/10 hover:text-inherit";
 
 function navLinkClass(active: boolean) {
   return cn(

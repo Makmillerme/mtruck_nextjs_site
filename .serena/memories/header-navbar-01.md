@@ -4,4 +4,5 @@
 - Header is `fixed`. Spacer `h-14 lg:h-16` always. Hero/partnership `-mt-14`.
 - Chameleon: CSS `html:has(#hero|#partners)` for first paint. JS `data-surface` must not stay stale across client navigations — `[data-surface=light|dark]` beats `:has()`. `useHeaderSurface` resets surface to `null` when `pathname` changes, then remeasures.
 - **Smooth flip (2026-09-10):** `@property --header-ink / --header-glass / --header-cap` interpolate; `.site-header { color: var(--header-ink); transition: color 0.5s }` and glass `background-color`/`box-shadow` 0.5s. Nav/icons inherit ink — do not set `text-foreground` on the bar (that snaps). Do not put `overflow-x: clip` on `html`/`body`/`main`.
+- **Icon flicker (2026-09-11):** shadcn ghost `transition-colors` (150ms) + `.site-header svg { transition: color }` raced the 500ms ink. Icons flickered black/gray/white while nav text stayed smooth. Fix: header `a`/`button` inherit color, transition only background; svg `color: inherit` with **no** color transition.
 - Session server-only in navbar.

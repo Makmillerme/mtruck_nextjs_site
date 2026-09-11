@@ -56,7 +56,7 @@ export default function UserAccountSheet({
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 shrink-0 hover:bg-foreground/10 hover:text-inherit"
+          className="size-9 shrink-0 text-inherit hover:bg-foreground/10 hover:text-inherit"
           aria-label={t("menu")}
         >
           <LuMenu className="size-5" />

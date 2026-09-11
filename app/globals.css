@@ -263,6 +263,19 @@ html:has(#partners) body {
   transition: color 0.5s ease;
 }
 
+/*
+  Nav links inherit header color (smooth).
+  Icon buttons are shadcn ghost: transition-colors (150ms) + svg color
+  transition raced the 500ms ink and flickered black / gray / white.
+*/
+.site-header a,
+.site-header button {
+  color: inherit;
+  transition-property: background-color, box-shadow, opacity;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
 .site-header-glass {
   background-color: var(--header-glass);
   box-shadow:
@@ -326,5 +339,4 @@ html:has(#partners) .site-header-glass:not([data-surface="light"]) {
 
 .site-header svg {
   color: inherit;
-  transition: color 0.5s ease;
 }
