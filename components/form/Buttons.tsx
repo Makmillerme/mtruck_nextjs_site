@@ -65,8 +65,8 @@ export const IconButton = ({ actionType }: { actionType: actionType }) => {
     <Button
       type="submit"
       size="icon"
-      variant="link"
-      className="p-2 cursor-pointer"
+      variant="ghost"
+      className="cursor-pointer text-muted-foreground"
     >
       {pending ? <ReloadIcon className="animate-spin" /> : renderIcon()}
     </Button>

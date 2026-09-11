@@ -81,6 +81,22 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
       "input select textarea checkbox label поле форма телефон марка disabled",
   },
   {
+    id: "tabs",
+    category: "fields",
+    title: "Tabs",
+    hint: "Сегмент як кнопка 01+03: h-11, rounded-sm, активний navy. Не pill finder.",
+    keywords:
+      "tabs таби сегмент cms folders fields папки поля",
+  },
+  {
+    id: "table",
+    category: "fields",
+    title: "Table",
+    hint: "Таблиця в Card shadow-sm — оболонка для sales і списку товарів у адмінці.",
+    keywords:
+      "table таблиця sales orders products адмінка",
+  },
+  {
     id: "marks",
     category: "marks",
     title: "Мітки і знаки",

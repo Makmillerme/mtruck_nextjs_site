@@ -32,14 +32,14 @@ async function CatalogPage(props: {
   return (
     <section className="grid gap-6">
       <div className="grid gap-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("lede")}</p>
       </div>
       <CmsTabs
         tab={tab}
         nodeId={selected?.id}
         folders={
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>{t("foldersTitle")}</CardTitle>
               <CardDescription>{t("foldersHint")}</CardDescription>
@@ -51,7 +51,7 @@ async function CatalogPage(props: {
         }
         fields={
           <div className="grid gap-6 xl:grid-cols-12">
-            <Card className="xl:col-span-4">
+            <Card className="shadow-sm xl:col-span-4">
               <CardHeader>
                 <CardTitle>{t("templateFolderTitle")}</CardTitle>
                 <CardDescription>{t("templateFolderLede")}</CardDescription>

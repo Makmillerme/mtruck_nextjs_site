@@ -51,7 +51,7 @@ function OptionRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-muted-foreground"
+          className="shrink-0 text-muted-foreground"
           onClick={() => onConfirm(option.id)}
           aria-label={t("deleteOption")}
         >
@@ -109,7 +109,7 @@ export default function OptionEditor({
         <p className="text-sm text-muted-foreground">{t("addParentOptionsFirst")}</p>
       ) : (
         parentOptions.map((parent) => (
-          <div key={parent.id} className="grid gap-3 rounded-md border p-4">
+          <div key={parent.id} className="grid gap-3 rounded-sm border p-4">
             <p className="text-sm font-medium">
               {t("optionsForParent", { parent: parent.label })}
             </p>

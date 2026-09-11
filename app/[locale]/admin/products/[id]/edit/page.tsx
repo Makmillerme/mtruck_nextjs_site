@@ -10,6 +10,10 @@ import TextAreaInput from '@/components/form/TextAreaInput';
 import { SubmitButton } from '@/components/form/Buttons';
 import CheckboxInput from '@/components/form/CheckboxInput';
 import ImageInputContainer from '@/components/form/ImageInputContainer';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
 import { getTranslations } from 'next-intl/server';
 
 async function EditProductPage(props: { params: Promise<{ id: string }> }) {
@@ -19,50 +23,54 @@ async function EditProductPage(props: { params: Promise<{ id: string }> }) {
   const product = await fetchAdminProductDetails(id);
   const { name, company, description, featured, price } = product;
   return (
-    <section>
-      <h1 className='text-2xl font-semibold mb-8'>{t('updateProduct')}</h1>
-      <div className='border p-8 rounded'>
-        <ImageInputContainer
-          action={updateProductImageAction}
-          name={name}
-          image={product.image}
-          text={t('updateImage')}
-        >
-          <input type='hidden' name='id' value={id} />
-          <input type='hidden' name='url' value={product.image} />
-        </ImageInputContainer>
-        <FormContainer action={updateProductAction}>
-          <div className='grid gap-4 md:grid-cols-2 my-4'>
-            <input type='hidden' name='id' value={id} />
-            <FormInput
-              type='text'
-              name='name'
-              label={t('productName')}
-              defaultValue={name}
+    <section className="grid gap-6">
+      <div className="grid gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">{t('updateProduct')}</h1>
+      </div>
+      <Card className="shadow-sm">
+        <CardContent className="grid gap-6 p-6">
+          <ImageInputContainer
+            action={updateProductImageAction}
+            name={name}
+            image={product.image}
+            text={t('updateImage')}
+          >
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="url" value={product.image} />
+          </ImageInputContainer>
+          <FormContainer action={updateProductAction}>
+            <div className="grid gap-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <input type="hidden" name="id" value={id} />
+              <FormInput
+                type="text"
+                name="name"
+                label={t('productName')}
+                defaultValue={name}
+              />
+              <FormInput
+                type="text"
+                name="company"
+                label={t('company')}
+                defaultValue={company}
+              />
+              <PriceInput defaultValue={price} />
+            </div>
+            <TextAreaInput
+              name="description"
+              labelText={t('description')}
+              defaultValue={description}
             />
-            <FormInput
-              type='text'
-              name='company'
-              label={t('company')}
-              defaultValue={company}
-            />
-            <PriceInput defaultValue={price} />
-          </div>
-          <TextAreaInput
-            name='description'
-            labelText={t('description')}
-            defaultValue={description}
-          />
-          <div className='mt-6'>
             <CheckboxInput
-              name='featured'
+              name="featured"
               label={t('featured')}
               defaultChecked={featured}
             />
-          </div>
-          <SubmitButton text={t('submitUpdate')} className='mt-8' />
-        </FormContainer>
-      </div>
+            <SubmitButton text={t('submitUpdate')} className="w-fit" />
+            </div>
+          </FormContainer>
+        </CardContent>
+      </Card>
     </section>
   );
 }

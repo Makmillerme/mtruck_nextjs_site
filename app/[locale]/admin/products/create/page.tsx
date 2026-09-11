@@ -1,6 +1,10 @@
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
 import { SubmitButton } from "@/components/form/Buttons";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import CheckboxInput from "@/components/form/CheckboxInput";
 import FormContainer from "@/components/form/FormContainer";
 import FormInput from "@/components/form/FormInput";
@@ -44,11 +48,15 @@ async function CreateProductPage(props: {
     : [];
 
   return (
-    <section>
-      <h1 className="text-2xl font-semibold mb-8">{t("createProduct")}</h1>
-      <div className="border p-8 rounded-md">
+    <section className="grid gap-6">
+      <div className="grid gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("createProduct")}</h1>
+      </div>
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
         <FormContainer action={createProductAction}>
-          <div className="grid gap-4 md:grid-cols-2 my-4">
+          <div className="grid gap-6">
+          <div className="grid gap-4 md:grid-cols-2">
             <ProductFolderPicker
               folders={folders}
               selectedId={selectedExists ? selectedId : undefined}
@@ -88,11 +96,9 @@ async function CreateProductPage(props: {
             <ImageInput />
           </div>
           {attributes.length > 0 ? (
-            <div className="my-6">
-              <ProductSpecFields attributes={attributes} />
-            </div>
+            <ProductSpecFields attributes={attributes} />
           ) : selectedExists ? (
-            <p className="my-4 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {catalogT("noOwnFields")}
             </p>
           ) : null}
@@ -101,12 +107,12 @@ async function CreateProductPage(props: {
             labelText={t("description")}
             defaultValue={description}
           />
-          <div className="mt-6">
-            <CheckboxInput name="featured" label={t("featured")} />
+          <CheckboxInput name="featured" label={t("featured")} />
+          <SubmitButton text={t("submitCreate")} className="w-fit" />
           </div>
-          <SubmitButton text={t("submitCreate")} className="mt-8" />
         </FormContainer>
-      </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }

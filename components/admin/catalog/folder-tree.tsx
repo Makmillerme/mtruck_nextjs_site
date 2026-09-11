@@ -87,15 +87,15 @@ function FolderRow({
     <li>
       <div
         className={cn(
-          "flex items-center gap-1 rounded-md pr-1 transition-colors hover:bg-muted/60",
-          isSelected && "bg-muted"
+          "flex h-11 items-center gap-1 rounded-sm pr-1 transition-colors hover:bg-secondary/70",
+          isSelected && "bg-secondary"
         )}
       >
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-muted-foreground"
+          className="shrink-0 text-muted-foreground"
           onClick={() => onToggle(node.id)}
           disabled={!hasChildren}
           aria-expanded={hasChildren ? isOpen : undefined}
@@ -129,7 +129,7 @@ function FolderRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 text-muted-foreground"
+              className="text-muted-foreground"
               disabled={index === 0 || movePending}
               onClick={() => onMove(node.id, "up")}
               aria-label={t("moveUp")}
@@ -141,7 +141,7 @@ function FolderRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 text-muted-foreground"
+              className="text-muted-foreground"
               disabled={index === siblingCount - 1 || movePending}
               onClick={() => onMove(node.id, "down")}
               aria-label={t("moveDown")}
@@ -153,7 +153,6 @@ function FolderRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8"
               onClick={() => onSheet({ mode: "create", parent: node })}
               aria-label={t("addChildFolder")}
               title={t("addChildFolder")}
@@ -164,7 +163,7 @@ function FolderRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 text-muted-foreground"
+              className="text-muted-foreground"
               onClick={() => onSheet({ mode: "edit", node })}
               aria-label={t("renameFolder")}
               title={t("renameFolder")}
@@ -175,7 +174,7 @@ function FolderRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 text-muted-foreground"
+              className="text-muted-foreground"
               onClick={() => onSheet({ mode: "delete", node })}
               aria-label={t("deleteFolder")}
               title={t("deleteFolder")}

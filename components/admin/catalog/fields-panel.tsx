@@ -64,7 +64,7 @@ function FieldRow({
   ].filter(Boolean);
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+    <div className="flex items-start justify-between gap-4 rounded-sm border p-4">
       <div className="grid min-w-0 gap-2">
         <p className="font-medium">
           {attribute.name}
@@ -96,7 +96,7 @@ function FieldRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-8 text-muted-foreground"
+            className="text-muted-foreground"
             onClick={onEdit}
             aria-label={t("editField")}
             title={t("editField")}
@@ -107,7 +107,7 @@ function FieldRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-8 text-muted-foreground"
+            className="text-muted-foreground"
             onClick={onDelete}
             aria-label={t("deleteField")}
             title={t("deleteField")}
@@ -134,7 +134,7 @@ export default function FieldsPanel({
 
   if (!node) {
     return (
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>{t("pickFolderTitle")}</CardTitle>
           <CardDescription>{t("pickFolderLede")}</CardDescription>
@@ -157,7 +157,7 @@ export default function FieldsPanel({
 
   return (
     <>
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div className="grid min-w-0 gap-1.5">
             <CardTitle>{node.name}</CardTitle>

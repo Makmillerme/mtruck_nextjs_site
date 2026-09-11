@@ -50,6 +50,16 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -483,6 +493,77 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                   </Label>
                 </div>
               </div>
+            </Section>
+          </LabGate>
+
+          <LabGate id="tabs" visibleIds={visibleIds}>
+            <Section
+              id="tabs"
+              title="Tabs"
+              hint="Сегмент як кнопка 01+03: h-11, rounded-sm, активний navy. Не pill finder."
+            >
+              <Tabs defaultValue="folders" className="max-w-xl">
+                <TabsList>
+                  <TabsTrigger value="folders">Папки</TabsTrigger>
+                  <TabsTrigger value="fields">Поля</TabsTrigger>
+                  <TabsTrigger value="preview">Перегляд</TabsTrigger>
+                </TabsList>
+                <TabsContent value="folders" className="mt-6">
+                  <p className="text-sm text-muted-foreground">
+                    Структура каталогу — дерево папок у CMS.
+                  </p>
+                </TabsContent>
+                <TabsContent value="fields" className="mt-6">
+                  <p className="text-sm text-muted-foreground">
+                    Шаблон полів для обраної папки.
+                  </p>
+                </TabsContent>
+                <TabsContent value="preview" className="mt-6">
+                  <p className="text-sm text-muted-foreground">
+                    Третій тригер — лише для лабу.
+                  </p>
+                </TabsContent>
+              </Tabs>
+            </Section>
+          </LabGate>
+
+          <LabGate id="table" visibleIds={visibleIds}>
+            <Section
+              id="table"
+              title="Table"
+              hint="Таблиця в Card shadow-sm — оболонка для sales і списку товарів у адмінці."
+            >
+              <Card className="max-w-2xl shadow-sm">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableCaption>Приклад: 3 замовлення</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Сума</TableHead>
+                        <TableHead>Дата</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>buyer@mtruck.ua</TableCell>
+                        <TableCell>€38 500</TableCell>
+                        <TableCell>11.09.2026</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>fleet@example.com</TableCell>
+                        <TableCell>€52 000</TableCell>
+                        <TableCell>08.09.2026</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>office@logistics.de</TableCell>
+                        <TableCell>€41 200</TableCell>
+                        <TableCell>01.09.2026</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </Section>
           </LabGate>
 
