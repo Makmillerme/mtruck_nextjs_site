@@ -29,6 +29,7 @@ export const accountNav: NavLink[] = [
 ];
 
 export const adminLinks: NavLink[] = [
+  { href: "/admin/catalog", key: "catalog" },
   { href: "/admin/sales", key: "sales" },
   { href: "/admin/products", key: "myProducts" },
   { href: "/admin/products/create", key: "createProduct" },

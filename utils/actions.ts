@@ -26,6 +26,11 @@ import { revalidatePath } from 'next/cache';
 import { Cart } from '@prisma/client';
 import type { CatalogSort } from '@/utils/catalog-query';
 import { productListSelect } from '@/utils/product-list';
+import {
+  specsFromFormData,
+  toPrismaSpecCreates,
+} from '@/lib/catalog/product-specs';
+import type { ProductAvailability, ProductStatus } from '@prisma/client';
 const renderError = async (error: unknown): Promise<{ message: string }> => {
   console.error(error);
   const t = await getTranslations('Actions');
@@ -130,6 +135,15 @@ export const fetchSingleProduct = async (productId: string) => {
   return product;
 };
 
+const PRODUCT_STATUSES: ProductStatus[] = [
+  'DRAFT',
+  'PUBLISHED',
+  'RESERVED',
+  'PREPARING',
+  'SOLD',
+];
+const PRODUCT_AVAILABILITIES: ProductAvailability[] = ['IN_STOCK', 'TRANSIT'];
+
 export const createProductAction = async (
   prevState: { message: string },
   formData: FormData
@@ -138,18 +152,52 @@ export const createProductAction = async (
   try {
     const rawData = Object.fromEntries(formData);
     const file = formData.get('image') as File;
+    const taxonomyNodeId = String(formData.get('taxonomyNodeId') ?? '').trim();
+    let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
+    if (taxonomyNodeId) {
+      const node = await db.taxonomyNode.findUnique({
+        where: { id: taxonomyNodeId },
+        select: { id: true },
+      });
+      if (!node) {
+        const catalogT = await getTranslations('CatalogAdmin');
+        throw new Error(catalogT('parentMissing'));
+      }
+      const parsed = await specsFromFormData(taxonomyNodeId, formData);
+      specCreates = toPrismaSpecCreates(parsed.specs);
+      if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
+        rawData.company = parsed.companyFromIdentity;
+      }
+    }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
     const validatedFile = validateWithZodSchema(imageSchema, { image: file });
     const fullPath = await uploadImage(validatedFile.image);
+    const statusRaw = String(formData.get('status') ?? 'PUBLISHED');
+    const availabilityRaw = String(formData.get('availability') ?? 'IN_STOCK');
+    const status = PRODUCT_STATUSES.includes(statusRaw as ProductStatus)
+      ? (statusRaw as ProductStatus)
+      : 'PUBLISHED';
+    const availability = PRODUCT_AVAILABILITIES.includes(
+      availabilityRaw as ProductAvailability
+    )
+      ? (availabilityRaw as ProductAvailability)
+      : 'IN_STOCK';
 
     await db.product.create({
       data: {
         ...validatedFields,
         image: fullPath,
         userId: user.id,
+        taxonomyNodeId: taxonomyNodeId || null,
+        status,
+        availability,
+        specs: specCreates.length ? { create: specCreates } : undefined,
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message) {
+      return { message: error.message };
+    }
     return renderError(error);
   }
   return redirectLocalized('/admin/products');

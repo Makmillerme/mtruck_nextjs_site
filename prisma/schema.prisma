@@ -13,6 +13,27 @@ enum UserRole {
   ADMIN
 }
 
+enum AttributeType {
+  SELECT
+  NUMBER
+  TEXT
+  BOOLEAN
+  YEAR
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  RESERVED
+  PREPARING
+  SOLD
+}
+
+enum ProductAvailability {
+  IN_STOCK
+  TRANSIT
+}
+
 model User {
   id            String    @id
   name          String
@@ -78,20 +99,109 @@ model Verification {
 }
 
 model Product {
-  id          String     @id @default(uuid())
-  name        String
-  company     String
-  description String
-  featured    Boolean
-  image       String
-  price       Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  favorites   Favorite[]
-  reviews     Review[]
-  cartItems   CartItem[]
+  id             String               @id @default(uuid())
+  name           String
+  company        String
+  description    String
+  featured       Boolean
+  image          String
+  price          Int
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites      Favorite[]
+  reviews        Review[]
+  cartItems      CartItem[]
+  taxonomyNodeId String?
+  taxonomyNode   TaxonomyNode?        @relation(fields: [taxonomyNodeId], references: [id], onDelete: SetNull)
+  status         ProductStatus        @default(PUBLISHED)
+  availability   ProductAvailability  @default(IN_STOCK)
+  specs          ProductSpec[]
+
+  @@index([taxonomyNodeId])
+  @@index([status])
+}
+
+model TaxonomyNode {
+  id        String   @id @default(uuid())
+  parentId  String?
+  parent    TaxonomyNode?  @relation("TaxonomyTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  TaxonomyNode[] @relation("TaxonomyTree")
+  slug      String   @unique
+  name      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attributes AttributeDefinition[]
+  products   Product[]
+
+  @@index([parentId])
+}
+
+model AttributeDefinition {
+  id                   String        @id @default(uuid())
+  taxonomyNodeId       String
+  taxonomyNode         TaxonomyNode  @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  key                  String
+  name                 String
+  type                 AttributeType
+  dependsOnAttributeId String?
+  dependsOn            AttributeDefinition?  @relation("AttributeDepends", fields: [dependsOnAttributeId], references: [id], onDelete: Restrict)
+  dependents           AttributeDefinition[] @relation("AttributeDepends")
+  isRequired           Boolean       @default(false)
+  isFacet              Boolean       @default(true)
+  isIdentity           Boolean       @default(false)
+  unit                 String?
+  sortOrder            Int           @default(0)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  options AttributeOption[]
+  specs   ProductSpec[]
+
+  @@unique([taxonomyNodeId, key])
+  @@index([taxonomyNodeId])
+  @@index([dependsOnAttributeId])
+}
+
+model AttributeOption {
+  id             String   @id @default(uuid())
+  attributeId    String
+  attribute      AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  parentOptionId String?
+  parent         AttributeOption?  @relation("OptionTree", fields: [parentOptionId], references: [id], onDelete: Cascade)
+  children       AttributeOption[] @relation("OptionTree")
+  label          String
+  slug           String
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  specs ProductSpec[]
+
+  @@unique([attributeId, slug])
+  @@index([attributeId])
+  @@index([parentOptionId])
+}
+
+model ProductSpec {
+  id           String              @id @default(uuid())
+  productId    String
+  product      Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeId  String
+  attribute    AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  optionId     String?
+  option       AttributeOption?    @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  numberValue  Float?
+  textValue    String?
+  booleanValue Boolean?
+
+  @@unique([productId, attributeId])
+  @@index([attributeId, optionId])
+  @@index([productId])
 }
 
 model Favorite {

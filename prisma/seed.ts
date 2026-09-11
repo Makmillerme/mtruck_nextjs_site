@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import { getAdminBootstrap, getAdminEmails } from "../lib/admin";
+import { seedCatalogTaxonomyIfEmpty } from "../lib/catalog/seed-taxonomy";
 import { auth } from "../lib/auth";
 import products from "./products.json";
 
@@ -63,6 +64,8 @@ async function main() {
       data: { role: UserRole.ADMIN },
     });
   }
+
+  await seedCatalogTaxonomyIfEmpty(prisma);
 
   const productCount = await prisma.product.count();
   if (productCount > 0) {
