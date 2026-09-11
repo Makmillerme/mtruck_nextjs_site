@@ -6,7 +6,7 @@
 
 **Дата:** 2026-08-20
 
-**Суть:** Клієнт Google OAuth створено. Ключі в `.env` / `.env.local` (`NEXT_PUBLIC_GOOGLE_AUTH=true`). Redirect: `http://localhost:3000/api/auth/callback/google`. Перед продом додати production origin + callback.
+**Суть:** Клієнт Google OAuth створено. Ключі в `.env` (`NEXT_PUBLIC_GOOGLE_AUTH=true`). Redirect: `http://localhost:3000/api/auth/callback/google`. Перед продом додати production origin + callback.
 
 **Статус:** Готово до впровадження
 
@@ -62,9 +62,11 @@
 
 **Дата:** 2026-09-09
 
-**Суть:** Моделі Cart/Order є, але `order.create` відсутній; списки замовлень і `/admin/sales` порожні. Довести flow, коли з’явиться категорія з увімкненим кошиком.
+**Оновлено:** 2026-09-11
 
-**Статус:** Відкладено
+**Суть:** Адмін `/admin/sales` уже вміє CRUD замовлень (клієнт + авто через `Order.productId`). Залишилось: клієнтське створення з кабінету / картки авто та повний cart→order checkout, коли з’явиться категорія з кошиком.
+
+**Статус:** Частково готово / далі — клієнтський self-serve
 
 ## Реальні фото кейсів продажів
 

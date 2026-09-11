@@ -106,6 +106,19 @@ export function flattenTaxonomyTree(
   ]);
 }
 
+/** Map taxonomy tree into CascadeSelect items. */
+export function taxonomyToCascadeItems(
+  nodes: TaxonomyTreeNode[]
+): { id: string; label: string; children?: ReturnType<typeof taxonomyToCascadeItems> }[] {
+  return nodes.map((node) => ({
+    id: node.id,
+    label: node.name,
+    children: node.children.length
+      ? taxonomyToCascadeItems(node.children)
+      : undefined,
+  }));
+}
+
 export async function fetchTaxonomyNode(id: string) {
   return db.taxonomyNode.findUnique({
     where: { id },

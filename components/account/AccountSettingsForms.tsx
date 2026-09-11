@@ -145,8 +145,8 @@ export default function AccountSettingsForms({
         <CardContent>
           <Button
             type="button"
-            variant="outline"
-            className="gap-2 border-destructive text-destructive shadow-none hover:bg-transparent hover:text-destructive"
+            variant="destructive"
+            size="sm"
             disabled={signingOut}
             onClick={handleSignOut}
           >

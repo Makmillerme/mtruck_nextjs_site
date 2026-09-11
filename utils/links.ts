@@ -14,7 +14,6 @@ export const siteNav = [
 ] as const;
 
 export const accountCabinetNav = [
-  { href: "/account", key: "overview", match: "exact" },
   { href: "/account/orders", key: "orders", match: "prefix" },
   { href: "/account/favorites", key: "favorites", match: "prefix" },
   { href: "/account/settings", key: "settings", match: "prefix" },

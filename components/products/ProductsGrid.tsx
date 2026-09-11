@@ -1,4 +1,5 @@
-import VehicleCard, { productToVehicle } from "@/components/vehicles/vehicle-card";
+import VehicleCard from "@/components/vehicles/vehicle-card";
+import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { ProductListItem } from "@/utils/product-list";
 
 async function ProductsGrid({
@@ -17,7 +18,7 @@ async function ProductsGrid({
       {products.map((product, index) => (
         <VehicleCard
           key={product.id}
-          vehicle={productToVehicle(product)}
+          vehicle={productWithSpecsToVehicle(product)}
           priority={index < priorityCount}
           favoriteId={favoriteByProductId?.get(product.id) ?? null}
           isAuthenticated={isAuthenticated}

@@ -9,6 +9,7 @@ import {
   callbackInquirySchema,
   changePasswordSchema,
   partnershipInquirySchema,
+  adminOrderSchema,
   productSchema,
   reviewSchema,
   updateProfileNameSchema,
@@ -17,8 +18,11 @@ import {
 import {
   deleteAvatarImage,
   deleteImage,
+  deleteImages,
+  PRODUCT_IMAGE_MAX,
   uploadAvatarImage,
   uploadImage,
+  uploadProductImages,
 } from './images';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
@@ -40,7 +44,7 @@ const renderError = async (error: unknown): Promise<{ message: string }> => {
 };
 
 async function redirectLocalized(
-  href: "/" | "/products" | "/admin/products" | "/cart"
+  href: "/" | "/products" | "/admin/products" | "/admin/sales" | "/cart"
 ): Promise<never> {
   const locale = await getLocale();
   redirect({ href, locale });
@@ -51,6 +55,7 @@ export const fetchFeaturedProducts = async (take = 6) => {
   return db.product.findMany({
     where: {
       featured: true,
+      status: "PUBLISHED",
     },
     select: productListSelect,
     orderBy: { createdAt: "desc" },
@@ -81,6 +86,7 @@ export const fetchAllProducts = async ({
   return db.product.findMany({
     where: {
       AND: [
+        { status: "PUBLISHED" },
         search
           ? {
               OR: [
@@ -116,17 +122,40 @@ export const fetchUserFavoriteIds = async () => {
 
 export const fetchProductBrands = async () => {
   const rows = await db.product.findMany({
+    where: { status: "PUBLISHED" },
     distinct: ["company"],
     select: { company: true },
     orderBy: { company: "asc" },
   });
-  return rows.map((row) => row.company);
+  return rows
+    .filter((row) => Boolean(row.company))
+    .map((row) => row.company);
 };
 
 export const fetchSingleProduct = async (productId: string) => {
   const product = await db.product.findUnique({
     where: {
       id: productId,
+    },
+    include: {
+      taxonomyNode: { select: { id: true, name: true, slug: true } },
+      images: { orderBy: { sortOrder: 'asc' } },
+      specs: {
+        include: {
+          attribute: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              unit: true,
+              sortOrder: true,
+              type: true,
+            },
+          },
+          option: { select: { id: true, label: true, slug: true } },
+        },
+        orderBy: { attribute: { sortOrder: 'asc' } },
+      },
     },
   });
   if (!product) {
@@ -151,7 +180,6 @@ export const createProductAction = async (
   const user = await getAdminUser();
   try {
     const rawData = Object.fromEntries(formData);
-    const file = formData.get('image') as File;
     const taxonomyNodeId = String(formData.get('taxonomyNodeId') ?? '').trim();
     let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
     if (taxonomyNodeId) {
@@ -170,8 +198,24 @@ export const createProductAction = async (
       }
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
-    const validatedFile = validateWithZodSchema(imageSchema, { image: file });
-    const fullPath = await uploadImage(validatedFile.image);
+    const files = formData
+      .getAll('images')
+      .filter((item): item is File => item instanceof File && item.size > 0);
+    const legacy = formData.get('image');
+    if (legacy instanceof File && legacy.size > 0 && files.length === 0) {
+      files.push(legacy);
+    }
+    if (files.length === 0) {
+      throw new Error('At least one image is required');
+    }
+    if (files.length > PRODUCT_IMAGE_MAX) {
+      throw new Error(`Maximum ${PRODUCT_IMAGE_MAX} images allowed`);
+    }
+    for (const file of files) {
+      validateWithZodSchema(imageSchema, { image: file });
+    }
+    const imageUrls = await uploadProductImages(files);
+    const cover = imageUrls[0]!;
     const statusRaw = String(formData.get('status') ?? 'PUBLISHED');
     const availabilityRaw = String(formData.get('availability') ?? 'IN_STOCK');
     const status = PRODUCT_STATUSES.includes(statusRaw as ProductStatus)
@@ -186,12 +230,15 @@ export const createProductAction = async (
     await db.product.create({
       data: {
         ...validatedFields,
-        image: fullPath,
+        image: cover,
         userId: user.id,
         taxonomyNodeId: taxonomyNodeId || null,
         status,
         availability,
         specs: specCreates.length ? { create: specCreates } : undefined,
+        images: {
+          create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+        },
       },
     });
   } catch (error) {
@@ -209,6 +256,9 @@ export const fetchAdminProducts = async () => {
     orderBy: {
       createdAt: 'desc',
     },
+    include: {
+      specs: true,
+    },
   });
   return products;
 };
@@ -217,12 +267,17 @@ export const deleteProductAction = async (prevState: { productId: string }) => {
   const { productId } = prevState;
   await getAdminUser();
   try {
+    const gallery = await db.productImage.findMany({
+      where: { productId },
+      select: { url: true },
+    });
     const product = await db.product.delete({
       where: {
         id: productId,
       },
     });
-    await deleteImage(product.image);
+    const urls = new Set([product.image, ...gallery.map((item) => item.url)]);
+    await deleteImages([...urls]);
     revalidatePath('/admin/products');
     const t = await getTranslations('Actions');
     return { message: t('productRemoved') };
@@ -245,27 +300,97 @@ export const fetchAdminProductDetails = async (productId: string) => {
 export const updateProductAction = async (
   prevState: { message: string },
   formData: FormData
-) => {
+): Promise<{ message: string }> => {
   await getAdminUser();
   try {
-    const productId = formData.get('id') as string;
+    const productId = String(formData.get('id') ?? '').trim();
+    if (!productId) {
+      throw new Error('Product id is required');
+    }
+    const existing = await db.product.findUnique({
+      where: { id: productId },
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
+    });
+    if (!existing) {
+      const t = await getTranslations('Actions');
+      return { message: t('error') };
+    }
+
     const rawData = Object.fromEntries(formData);
+    const taxonomyNodeId = String(formData.get('taxonomyNodeId') ?? '').trim();
+    let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
+    if (taxonomyNodeId) {
+      const node = await db.taxonomyNode.findUnique({
+        where: { id: taxonomyNodeId },
+        select: { id: true },
+      });
+      if (!node) {
+        const catalogT = await getTranslations('CatalogAdmin');
+        throw new Error(catalogT('parentMissing'));
+      }
+      const parsed = await specsFromFormData(taxonomyNodeId, formData);
+      specCreates = toPrismaSpecCreates(parsed.specs);
+      if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
+        rawData.company = parsed.companyFromIdentity;
+      }
+    }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
+    const statusRaw = String(formData.get('status') ?? existing.status);
+    const availabilityRaw = String(
+      formData.get('availability') ?? existing.availability
+    );
+    const status = PRODUCT_STATUSES.includes(statusRaw as ProductStatus)
+      ? (statusRaw as ProductStatus)
+      : existing.status;
+    const availability = PRODUCT_AVAILABILITIES.includes(
+      availabilityRaw as ProductAvailability
+    )
+      ? (availabilityRaw as ProductAvailability)
+      : existing.availability;
+
+    const files = formData
+      .getAll('images')
+      .filter((item): item is File => item instanceof File && item.size > 0);
+    if (files.length + existing.images.length > PRODUCT_IMAGE_MAX) {
+      throw new Error(`Maximum ${PRODUCT_IMAGE_MAX} images allowed`);
+    }
+    for (const file of files) {
+      validateWithZodSchema(imageSchema, { image: file });
+    }
+    const newUrls = files.length ? await uploadProductImages(files) : [];
+    const cover = existing.image || newUrls[0] || existing.image;
+    const startOrder = existing.images.length;
 
     await db.product.update({
-      where: {
-        id: productId,
-      },
+      where: { id: productId },
       data: {
         ...validatedFields,
+        image: cover,
+        taxonomyNodeId: taxonomyNodeId || null,
+        status,
+        availability,
+        specs: {
+          deleteMany: {},
+          create: specCreates,
+        },
+        images:
+          newUrls.length > 0
+            ? {
+                create: newUrls.map((url, index) => ({
+                  url,
+                  sortOrder: startOrder + index,
+                })),
+              }
+            : undefined,
       },
     });
-    revalidatePath(`/admin/products/${productId}/edit`);
-    const t = await getTranslations('Actions');
-    return { message: t('productUpdated') };
   } catch (error) {
+    if (error instanceof Error && error.message) {
+      return { message: error.message };
+    }
     return renderError(error);
   }
+  return redirectLocalized('/admin/products');
 };
 export const updateProductImageAction = async (
   prevState: { message: string },
@@ -279,7 +404,7 @@ export const updateProductImageAction = async (
 
     const product = await db.product.findUnique({
       where: { id: productId },
-      select: { id: true },
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
     });
     if (!product) {
       const t = await getTranslations('Actions');
@@ -289,14 +414,21 @@ export const updateProductImageAction = async (
     const validatedFile = validateWithZodSchema(imageSchema, { image });
     const fullPath = await uploadImage(validatedFile.image);
     await deleteImage(oldImageUrl);
-    await db.product.update({
-      where: {
-        id: productId,
-      },
-      data: {
-        image: fullPath,
-      },
-    });
+    const firstGallery = product.images[0];
+    await db.$transaction([
+      db.product.update({
+        where: { id: productId },
+        data: { image: fullPath },
+      }),
+      firstGallery
+        ? db.productImage.update({
+            where: { id: firstGallery.id },
+            data: { url: fullPath },
+          })
+        : db.productImage.create({
+            data: { productId, url: fullPath, sortOrder: 0 },
+          }),
+    ]);
     revalidatePath(`/admin/products/${productId}/edit`);
     const t = await getTranslations('Actions');
     return { message: t('imageUpdated') };
@@ -719,7 +851,11 @@ export const fetchUserOrders = async () => {
   const orders = await db.order.findMany({
     where: {
       userId: user.id,
-      isPaid: true,
+    },
+    include: {
+      product: {
+        select: { id: true, name: true, company: true },
+      },
     },
     orderBy: {
       createdAt: 'desc',
@@ -732,14 +868,166 @@ export const fetchAdminOrders = async () => {
   await getAdminUser();
 
   const orders = await db.order.findMany({
-    where: {
-      isPaid: true,
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+      product: {
+        select: { id: true, name: true, company: true, price: true },
+      },
     },
     orderBy: {
       createdAt: 'desc',
     },
   });
   return orders;
+};
+
+export const fetchAdminOrderFormOptions = async () => {
+  await getAdminUser();
+  const [users, products] = await Promise.all([
+    db.user.findMany({
+      select: { id: true, name: true, email: true },
+      orderBy: { email: 'asc' },
+    }),
+    db.product.findMany({
+      select: { id: true, name: true, company: true, price: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+  ]);
+  return { users, products };
+};
+
+export const createAdminOrderAction = async (
+  prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await getAdminUser();
+  try {
+    const raw = Object.fromEntries(formData);
+    const data = validateWithZodSchema(adminOrderSchema, {
+      ...raw,
+      isPaid: formData.get('isPaid') === 'on',
+    });
+    const user = await db.user.findUnique({
+      where: { id: data.userId },
+      select: { id: true, email: true },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    let productId: string | null = data.productId || null;
+    let orderTotal = data.orderTotal;
+    let productsCount = data.products;
+    if (productId) {
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        select: { id: true, price: true },
+      });
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      if (!orderTotal) {
+        orderTotal = product.price;
+      }
+      if (!productsCount) {
+        productsCount = 1;
+      }
+    } else {
+      productId = null;
+    }
+    await db.order.create({
+      data: {
+        userId: user.id,
+        email: user.email,
+        productId,
+        products: productsCount,
+        orderTotal,
+        tax: data.tax,
+        shipping: data.shipping,
+        isPaid: data.isPaid,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message) {
+      return { message: error.message };
+    }
+    return renderError(error);
+  }
+  return redirectLocalized('/admin/sales');
+};
+
+export const updateAdminOrderAction = async (
+  prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await getAdminUser();
+  try {
+    const orderId = String(formData.get('orderId') ?? '').trim();
+    if (!orderId) {
+      throw new Error('Order id is required');
+    }
+    const raw = Object.fromEntries(formData);
+    const data = validateWithZodSchema(adminOrderSchema, {
+      ...raw,
+      isPaid: formData.get('isPaid') === 'on',
+    });
+    const user = await db.user.findUnique({
+      where: { id: data.userId },
+      select: { id: true, email: true },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    let productId: string | null = data.productId || null;
+    if (productId) {
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        select: { id: true },
+      });
+      if (!product) {
+        throw new Error('Product not found');
+      }
+    } else {
+      productId = null;
+    }
+    await db.order.update({
+      where: { id: orderId },
+      data: {
+        userId: user.id,
+        email: user.email,
+        productId,
+        products: data.products,
+        orderTotal: data.orderTotal,
+        tax: data.tax,
+        shipping: data.shipping,
+        isPaid: data.isPaid,
+      },
+    });
+    revalidatePath('/account/orders');
+  } catch (error) {
+    if (error instanceof Error && error.message) {
+      return { message: error.message };
+    }
+    return renderError(error);
+  }
+  return redirectLocalized('/admin/sales');
+};
+
+export const deleteAdminOrderAction = async (prevState: {
+  orderId: string;
+}) => {
+  const { orderId } = prevState;
+  await getAdminUser();
+  try {
+    await db.order.delete({ where: { id: orderId } });
+    revalidatePath('/admin/sales');
+    revalidatePath('/account/orders');
+    const t = await getTranslations('Actions');
+    return { message: t('orderRemoved') };
+  } catch (error) {
+    return renderError(error);
+  }
 };
 
 export const userHasCredentialAccount = async () => {

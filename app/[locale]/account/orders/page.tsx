@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -31,36 +30,42 @@ export default async function AccountOrdersPage() {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableCaption>{t("ordersTotal", { count: orders.length })}</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("productsCount")}</TableHead>
-            <TableHead>{t("orderTotal")}</TableHead>
-            <TableHead>{t("tax")}</TableHead>
-            <TableHead>{t("shipping")}</TableHead>
-            <TableHead>{t("status")}</TableHead>
-            <TableHead>{t("date")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell>{order.products}</TableCell>
-              <TableCell>{formatCurrency(order.orderTotal, locale)}</TableCell>
-              <TableCell>{formatCurrency(order.tax, locale)}</TableCell>
-              <TableCell>{formatCurrency(order.shipping, locale)}</TableCell>
-              <TableCell>
-                <Badge variant={order.isPaid ? "default" : "secondary"}>
-                  {order.isPaid ? t("paid") : t("unpaid")}
-                </Badge>
-              </TableCell>
-              <TableCell>{formatDate(order.createdAt, locale)}</TableCell>
+    <div className="grid gap-3">
+      <p className="text-sm text-muted-foreground">
+        {t("ordersTotal", { count: orders.length })}
+      </p>
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("productsCount")}</TableHead>
+              <TableHead>{t("orderTotal")}</TableHead>
+              <TableHead>{t("tax")}</TableHead>
+              <TableHead>{t("shipping")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
+              <TableHead>{t("date")}</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>
+                  {order.product?.name ?? order.products}
+                </TableCell>
+                <TableCell>{formatCurrency(order.orderTotal, locale)}</TableCell>
+                <TableCell>{formatCurrency(order.tax, locale)}</TableCell>
+                <TableCell>{formatCurrency(order.shipping, locale)}</TableCell>
+                <TableCell>
+                  <Badge variant={order.isPaid ? "default" : "secondary"}>
+                    {order.isPaid ? t("paid") : t("unpaid")}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatDate(order.createdAt, locale)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

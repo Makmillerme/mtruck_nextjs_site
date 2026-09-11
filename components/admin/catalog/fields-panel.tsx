@@ -4,13 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -27,6 +21,7 @@ import {
   updateAttributeAction,
 } from "@/utils/taxonomy-actions";
 import { LuPen, LuPlus, LuTrash2 } from "react-icons/lu";
+import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
 import {
   CatalogField,
@@ -122,11 +117,9 @@ function FieldRow({
 
 export default function FieldsPanel({
   node,
-  pathLabel,
   attributes,
 }: {
   node: TaxonomyNodeRow | null;
-  pathLabel: string;
   attributes: CatalogAttribute[];
 }) {
   const t = useTranslations("CatalogAdmin");
@@ -134,12 +127,7 @@ export default function FieldsPanel({
 
   if (!node) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>{t("pickFolderTitle")}</CardTitle>
-          <CardDescription>{t("pickFolderLede")}</CardDescription>
-        </CardHeader>
-      </Card>
+      <p className="text-sm text-muted-foreground">{t("pickFolderLede")}</p>
     );
   }
 
@@ -158,13 +146,10 @@ export default function FieldsPanel({
   return (
     <>
       <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div className="grid min-w-0 gap-1.5">
-            <CardTitle>{node.name}</CardTitle>
-            <CardDescription>{pathLabel}</CardDescription>
-          </div>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <Button
             type="button"
+            variant="outline"
             size="sm"
             className="shrink-0"
             onClick={() => setSheet({ mode: "create" })}
@@ -172,9 +157,13 @@ export default function FieldsPanel({
             <LuPlus className="size-4" />
             {t("addField")}
           </Button>
+          <AdminInfoTip label={t("helpLabel")}>
+            <p>{t("fieldsHelp.p1")}</p>
+            <p>{t("fieldsHelp.p2")}</p>
+            <p>{t("fieldsHelp.p3")}</p>
+          </AdminInfoTip>
         </CardHeader>
         <CardContent className="grid gap-6">
-          <p className="text-sm text-muted-foreground">{t("inheritHint")}</p>
 
           <div className="grid gap-3">
             <p className="text-sm font-medium">{t("ownFields")}</p>

@@ -26,9 +26,13 @@ export default function CmsTabs({
 
   return (
     <Tabs value={tab} onValueChange={openTab}>
-      <TabsList>
-        <TabsTrigger value="folders">{t("tabFolders")}</TabsTrigger>
-        <TabsTrigger value="fields">{t("tabFields")}</TabsTrigger>
+      <TabsList className="w-full sm:w-full">
+        <TabsTrigger value="folders" className="sm:flex-1">
+          {t("tabFolders")}
+        </TabsTrigger>
+        <TabsTrigger value="fields" className="sm:flex-1">
+          {t("tabFields")}
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="folders" className="mt-6">
         {folders}

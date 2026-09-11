@@ -7,21 +7,18 @@ import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
-import {
-  CatalogNativeSelect,
-} from "@/components/admin/catalog/catalog-fields";
+import { CatalogNativeSelect } from "@/components/admin/catalog/catalog-fields";
+import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { IconButton, SubmitButton } from "@/components/form/Buttons";
 import CheckboxInput from "@/components/form/CheckboxInput";
 import FormContainer from "@/components/form/FormContainer";
 import FormInput from "@/components/form/FormInput";
-import ImageInput from "@/components/form/ImageInput";
+import ImageGalleryInput from "@/components/form/ImageGalleryInput";
 import PriceInput from "@/components/form/PriceInput";
 import TextAreaInput from "@/components/form/TextAreaInput";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -33,16 +30,32 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { CatalogAttribute } from "@/lib/catalog/types";
-import { createProductAction, deleteProductAction } from "@/utils/actions";
+import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
+import {
+  createProductAction,
+  deleteProductAction,
+  updateProductAction,
+} from "@/utils/actions";
 import { formatCurrency } from "@/utils/format";
-import { LuListFilter, LuPlus, LuSearch } from "react-icons/lu";
+import type { actionFunction } from "@/utils/types";
+import AdminListToolbar, {
+  AdminFilterTrigger,
+} from "@/components/admin/admin-list-toolbar";
+import Image from "next/image";
+import { LuPen } from "react-icons/lu";
+
+export type AdminProductSpec = {
+  attributeId: string;
+  optionId: string | null;
+  numberValue: number | null;
+  textValue: string | null;
+  booleanValue: boolean | null;
+};
 
 export type AdminProductRow = {
   id: string;
@@ -51,6 +64,11 @@ export type AdminProductRow = {
   price: number;
   featured: boolean;
   status: string;
+  availability: string;
+  description: string;
+  image: string;
+  taxonomyNodeId: string | null;
+  specs: AdminProductSpec[];
 };
 
 const STATUS_KEYS = [
@@ -70,7 +88,9 @@ const STATUS_LABEL = {
 } as const;
 
 function DeleteProduct({ productId }: { productId: string }) {
-  const deleteProduct = deleteProductAction.bind(null, { productId });
+  const deleteProduct = deleteProductAction.bind(null, {
+    productId,
+  }) as unknown as actionFunction;
   return (
     <FormContainer action={deleteProduct}>
       <IconButton actionType="delete" />
@@ -78,34 +98,140 @@ function DeleteProduct({ productId }: { productId: string }) {
   );
 }
 
-export default function AdminProductsView({
-  items,
-  locale,
-  folders,
-  attributes,
-  createOpen,
+function specsToInitial(specs: AdminProductSpec[]) {
+  const values: Record<string, string> = {};
+  for (const spec of specs) {
+    if (spec.optionId) values[spec.attributeId] = spec.optionId;
+    else if (spec.numberValue != null) {
+      values[spec.attributeId] = String(spec.numberValue);
+    } else if (spec.textValue) values[spec.attributeId] = spec.textValue;
+    else if (spec.booleanValue != null) {
+      values[spec.attributeId] = spec.booleanValue ? "true" : "";
+    }
+  }
+  return values;
+}
+
+function ProductSheetFields({
+  tree,
   selectedNodeId,
-  defaults,
+  onFolderChange,
+  attributes,
+  product,
 }: {
-  items: AdminProductRow[];
-  locale: string;
-  folders: { id: string; name: string; depth: number }[];
-  attributes: CatalogAttribute[];
-  createOpen: boolean;
+  tree: TaxonomyTreeNode[];
   selectedNodeId?: string;
-  defaults: {
-    name: string;
-    company: string;
-    description: string;
-  };
+  onFolderChange: (nodeId: string | null) => void;
+  attributes: CatalogAttribute[];
+  product?: AdminProductRow;
 }) {
   const t = useTranslations("Admin");
   const catalogT = useTranslations("CatalogAdmin");
+
+  return (
+    <div className="grid gap-6">
+      <div className="grid gap-4">
+        <ProductFolderPicker
+          tree={tree}
+          selectedId={selectedNodeId}
+          onNodeChange={onFolderChange}
+        />
+        <CatalogNativeSelect
+          name="status"
+          label={t("status")}
+          defaultValue={product?.status ?? "PUBLISHED"}
+        >
+          <option value="DRAFT">{t("statusDraft")}</option>
+          <option value="PUBLISHED">{t("statusPublished")}</option>
+          <option value="RESERVED">{t("statusReserved")}</option>
+          <option value="PREPARING">{t("statusPreparing")}</option>
+          <option value="SOLD">{t("statusSold")}</option>
+        </CatalogNativeSelect>
+        <CatalogNativeSelect
+          name="availability"
+          label={t("availability")}
+          defaultValue={product?.availability ?? "IN_STOCK"}
+        >
+          <option value="IN_STOCK">{t("availabilityStock")}</option>
+          <option value="TRANSIT">{t("availabilityTransit")}</option>
+        </CatalogNativeSelect>
+        <FormInput
+          type="text"
+          name="name"
+          label={t("productName")}
+          defaultValue={product?.name ?? ""}
+        />
+        <FormInput
+          type="text"
+          name="company"
+          label={t("company")}
+          defaultValue={product?.company ?? ""}
+        />
+        <PriceInput defaultValue={product?.price} />
+        {product ? (
+          <div className="relative aspect-[4/3] max-w-xs overflow-hidden rounded-sm border bg-muted">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="320px"
+              className="object-cover"
+            />
+          </div>
+        ) : null}
+        <ImageGalleryInput required={!product} />
+      </div>
+      {attributes.length > 0 ? (
+        <ProductSpecFields
+          key={`${product?.id ?? "new"}-${selectedNodeId ?? "none"}`}
+          attributes={attributes}
+          initialValues={product ? specsToInitial(product.specs) : {}}
+        />
+      ) : selectedNodeId ? (
+        <p className="text-sm text-muted-foreground">{catalogT("noOwnFields")}</p>
+      ) : null}
+      <TextAreaInput
+        name="description"
+        labelText={t("description")}
+        defaultValue={product?.description ?? ""}
+      />
+      <CheckboxInput
+        name="featured"
+        label={t("featured")}
+        defaultChecked={product?.featured ?? false}
+      />
+    </div>
+  );
+}
+
+export default function AdminProductsView({
+  items,
+  locale,
+  tree,
+  attributes,
+  createOpen,
+  editId,
+  selectedNodeId,
+}: {
+  items: AdminProductRow[];
+  locale: string;
+  tree: TaxonomyTreeNode[];
+  attributes: CatalogAttribute[];
+  createOpen: boolean;
+  editId?: string;
+  selectedNodeId?: string;
+}) {
+  const t = useTranslations("Admin");
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [featuredOnly, setFeaturedOnly] = useState(false);
+
+  const editProduct = useMemo(
+    () => items.find((item) => item.id === editId) ?? null,
+    [items, editId]
+  );
 
   const companies = useMemo(() => {
     const set = new Set(items.map((item) => item.company).filter(Boolean));
@@ -148,7 +274,30 @@ export default function AdminProductsView({
     router.replace("/admin/products", { scroll: false });
   }
 
+  function setEditOpen(open: boolean, productId?: string) {
+    if (open && productId) {
+      const product = items.find((item) => item.id === productId);
+      const node = product?.taxonomyNodeId
+        ? `&node=${product.taxonomyNodeId}`
+        : "";
+      router.replace(`/admin/products?edit=${productId}${node}`, {
+        scroll: false,
+      });
+      return;
+    }
+    router.replace("/admin/products", { scroll: false });
+  }
+
   function onFolderChange(nodeId: string | null) {
+    if (editProduct) {
+      router.replace(
+        nodeId
+          ? `/admin/products?edit=${editProduct.id}&node=${nodeId}`
+          : `/admin/products?edit=${editProduct.id}`,
+        { scroll: false }
+      );
+      return;
+    }
     router.replace(
       nodeId
         ? `/admin/products?create=1&node=${nodeId}`
@@ -179,38 +328,28 @@ export default function AdminProductsView({
     setFeaturedOnly(false);
   }
 
+  const deleteProduct =
+    editProduct != null
+      ? (deleteProductAction.bind(null, {
+          productId: editProduct.id,
+        }) as unknown as actionFunction)
+      : undefined;
+
   return (
-    <section className="grid gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            value={search}
-            placeholder={t("searchPlaceholder")}
-            className="h-9 pl-9"
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label={t("searchPlaceholder")}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+    <section className="grid min-w-0 gap-6">
+      <AdminListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t("searchPlaceholder")}
+        createLabel={t("createProduct")}
+        onCreate={() => setCreateOpen(true)}
+        filterSheet={
           <Sheet>
             <SheetTrigger asChild>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className="relative h-9 gap-2"
-                aria-label={t("filter")}
-              >
-                <LuListFilter className="size-4" />
-                <span className="hidden sm:inline">{t("filter")}</span>
-                {activeFilterCount > 0 ? (
-                  <Badge className="h-5 min-w-5 border-0 bg-primary-foreground px-1.5 text-primary hover:bg-primary-foreground">
-                    {activeFilterCount}
-                  </Badge>
-                ) : null}
-              </Button>
+              <AdminFilterTrigger
+                label={t("filter")}
+                count={activeFilterCount}
+              />
             </SheetTrigger>
             <SheetContent
               side="right"
@@ -282,29 +421,15 @@ export default function AdminProductsView({
                   {t("filterFeatured")}
                 </label>
                 {activeFilterCount > 0 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={clearFilters}
-                  >
+                  <Button type="button" variant="outline" onClick={clearFilters}>
                     {t("clearFilters")}
                   </Button>
                 ) : null}
               </div>
             </SheetContent>
           </Sheet>
-
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 gap-2"
-            onClick={() => setCreateOpen(true)}
-          >
-            <LuPlus className="size-4" />
-            <span className="hidden sm:inline">{t("createProduct")}</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       <p className="text-sm text-muted-foreground">
         {t("totalProducts", { count: filtered.length })}
@@ -316,9 +441,6 @@ export default function AdminProductsView({
         <Card className="shadow-sm">
           <CardContent className="p-0">
             <Table>
-              <TableCaption>
-                {t("totalProducts", { count: filtered.length })}
-              </TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("productName")}</TableHead>
@@ -350,9 +472,16 @@ export default function AdminProductsView({
                     <TableCell>{formatCurrency(item.price, locale)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Link href={`/admin/products/${item.id}/edit`}>
-                          <IconButton actionType="edit" />
-                        </Link>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="cursor-pointer text-muted-foreground"
+                          onClick={() => setEditOpen(true, item.id)}
+                          aria-label={t("editProduct")}
+                        >
+                          <LuPen />
+                        </Button>
                         <DeleteProduct productId={item.id} />
                       </div>
                     </TableCell>
@@ -374,64 +503,69 @@ export default function AdminProductsView({
               <SheetTitle>{t("createSheetTitle")}</SheetTitle>
               <SheetDescription>{t("createSheetLede")}</SheetDescription>
             </SheetHeader>
-            <FormContainer key={createOpen ? "open" : "closed"} action={createProductAction}>
+            <FormContainer
+              key={createOpen ? "create-open" : "create-closed"}
+              action={createProductAction}
+            >
               <div className="grid gap-6">
-                <div className="grid gap-4">
-                  <ProductFolderPicker
-                    folders={folders}
-                    selectedId={selectedNodeId}
-                    onNodeChange={onFolderChange}
-                  />
-                  <CatalogNativeSelect
-                    name="status"
-                    label={t("status")}
-                    defaultValue="PUBLISHED"
-                  >
-                    <option value="DRAFT">{t("statusDraft")}</option>
-                    <option value="PUBLISHED">{t("statusPublished")}</option>
-                    <option value="RESERVED">{t("statusReserved")}</option>
-                    <option value="PREPARING">{t("statusPreparing")}</option>
-                    <option value="SOLD">{t("statusSold")}</option>
-                  </CatalogNativeSelect>
-                  <CatalogNativeSelect
-                    name="availability"
-                    label={t("availability")}
-                    defaultValue="IN_STOCK"
-                  >
-                    <option value="IN_STOCK">{t("availabilityStock")}</option>
-                    <option value="TRANSIT">{t("availabilityTransit")}</option>
-                  </CatalogNativeSelect>
-                  <FormInput
-                    type="text"
-                    name="name"
-                    label={t("productName")}
-                    defaultValue={defaults.name}
-                  />
-                  <FormInput
-                    type="text"
-                    name="company"
-                    label={t("company")}
-                    defaultValue={defaults.company}
-                  />
-                  <PriceInput />
-                  <ImageInput />
-                </div>
-                {attributes.length > 0 ? (
-                  <ProductSpecFields attributes={attributes} />
-                ) : selectedNodeId ? (
-                  <p className="text-sm text-muted-foreground">
-                    {catalogT("noOwnFields")}
-                  </p>
-                ) : null}
-                <TextAreaInput
-                  name="description"
-                  labelText={t("description")}
-                  defaultValue={defaults.description}
+                <ProductSheetFields
+                  tree={tree}
+                  selectedNodeId={selectedNodeId}
+                  onFolderChange={onFolderChange}
+                  attributes={attributes}
                 />
-                <CheckboxInput name="featured" label={t("featured")} />
                 <SubmitButton text={t("submitCreate")} className="w-fit" />
               </div>
             </FormContainer>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={Boolean(editProduct)}
+        onOpenChange={(open) => setEditOpen(open, editProduct?.id)}
+      >
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
+        >
+          <div className="grid gap-6 p-6">
+            <SheetHeader className="text-left">
+              <SheetTitle>{t("editSheetTitle")}</SheetTitle>
+              <SheetDescription>{t("editSheetLede")}</SheetDescription>
+            </SheetHeader>
+            {editProduct ? (
+              <>
+                <FormContainer
+                  key={editProduct.id}
+                  action={updateProductAction}
+                >
+                  <input type="hidden" name="id" value={editProduct.id} />
+                  <div className="grid gap-6">
+                    <ProductSheetFields
+                      tree={tree}
+                      selectedNodeId={selectedNodeId}
+                      onFolderChange={onFolderChange}
+                      attributes={attributes}
+                      product={editProduct}
+                    />
+                    <SheetFormActions
+                      saveLabel={t("submitUpdate")}
+                      deleteFormId="delete-product-form"
+                    />
+                  </div>
+                </FormContainer>
+                {deleteProduct ? (
+                  <FormContainer
+                    id="delete-product-form"
+                    className="hidden"
+                    action={deleteProduct}
+                  >
+                    <input type="hidden" name="productId" value={editProduct.id} />
+                  </FormContainer>
+                ) : null}
+              </>
+            ) : null}
           </div>
         </SheetContent>
       </Sheet>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Footer from "@/components/layout/footer";
+import SiteChrome from "@/components/layout/site-chrome";
 import Navbar from "@/components/navbar/Navbar";
 import Providers from "../providers";
 import { NextIntlClientProvider } from "next-intl";
@@ -57,13 +58,11 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <Providers>
-        <Navbar />
-        <main className="min-w-0">
-          <div className="page-container min-w-0 has-[.full-bleed]:contents has-[.page-content]:contents">
+        <SiteChrome header={<Navbar />} footer={<Footer />}>
+          <div className="page-container flex min-w-0 flex-1 flex-col has-[.full-bleed]:contents has-[.page-content]:contents">
             {children}
           </div>
-        </main>
-        <Footer />
+        </SiteChrome>
       </Providers>
     </NextIntlClientProvider>
   );

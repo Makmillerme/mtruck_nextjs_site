@@ -35,8 +35,22 @@ export const uploadImage = async (image: File) => {
   return writeUpload(image, PRODUCT_UPLOAD_DIR, PRODUCT_PUBLIC_PREFIX);
 };
 
+export const PRODUCT_IMAGE_MAX = 15;
+
+export const uploadProductImages = async (files: File[]) => {
+  const urls: string[] = [];
+  for (const file of files.slice(0, PRODUCT_IMAGE_MAX)) {
+    urls.push(await writeUpload(file, PRODUCT_UPLOAD_DIR, PRODUCT_PUBLIC_PREFIX));
+  }
+  return urls;
+};
+
 export const deleteImage = async (url: string) => {
   await removeUpload(url, PRODUCT_PUBLIC_PREFIX, PRODUCT_UPLOAD_DIR);
+};
+
+export const deleteImages = async (urls: string[]) => {
+  await Promise.all(urls.map((url) => deleteImage(url)));
 };
 
 export const uploadAvatarImage = async (image: File) => {

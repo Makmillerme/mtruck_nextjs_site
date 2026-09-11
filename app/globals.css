@@ -67,6 +67,7 @@
   }
 
   html {
+    min-height: 100dvh;
     scroll-behavior: auto;
     scrollbar-gutter: stable;
   }
@@ -86,7 +87,7 @@
   }
 
   body {
-    @apply max-w-full bg-background font-sans text-foreground antialiased;
+    @apply flex min-h-dvh max-w-full flex-col bg-background font-sans text-foreground antialiased;
   }
 
 

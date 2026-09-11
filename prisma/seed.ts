@@ -1,8 +1,9 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import { getAdminBootstrap, getAdminEmails } from "../lib/admin";
 import { seedCatalogTaxonomyIfEmpty } from "../lib/catalog/seed-taxonomy";
+import { ensureTruckCatalogFields } from "../lib/catalog/ensure-truck-fields";
+import { wipeAndSeedDemoVehicles } from "../lib/catalog/seed-demo-vehicles";
 import { auth } from "../lib/auth";
-import products from "./products.json";
 
 const prisma = new PrismaClient();
 
@@ -66,6 +67,7 @@ async function main() {
   }
 
   await seedCatalogTaxonomyIfEmpty(prisma);
+  await ensureTruckCatalogFields(prisma);
 
   const productCount = await prisma.product.count();
   if (productCount > 0) {
@@ -73,14 +75,7 @@ async function main() {
     return;
   }
 
-  for (const product of products) {
-    await prisma.product.create({
-      data: {
-        ...product,
-        userId: admin.id,
-      },
-    });
-  }
+  await wipeAndSeedDemoVehicles(prisma, admin.id);
 }
 
 main()

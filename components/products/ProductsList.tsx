@@ -1,13 +1,14 @@
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatMileage } from "@/utils/format";
 import { Link } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ProductListItem } from "@/utils/product-list";
+import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import Image from "next/image";
 import FavoriteToggleButton from "./FavoriteToggleButton";
-import { LuTag } from "react-icons/lu";
+import { LuRoute, LuTag } from "react-icons/lu";
 
 async function ProductsList({
   products,
@@ -26,13 +27,16 @@ async function ProductsList({
   return (
     <div className="mt-8 grid gap-6">
       {products.map((product, index) => {
-        const href = `/products/${product.id}`;
+        const vehicle = productWithSpecsToVehicle(product);
+        const href = vehicle.href;
         const price = formatCurrency(product.price, locale);
+        const mileage =
+          vehicle.mileage != null ? formatMileage(vehicle.mileage) : null;
         return (
           <article key={product.id} className="group">
             <Card className="overflow-hidden border-border/80 shadow-sm transition-all duration-300 hover:shadow-lg">
               <CardContent className="grid gap-6 p-4 md:grid-cols-[minmax(0,16rem)_1fr_auto] md:items-center md:p-5">
-                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-[#1a1a2e] md:aspect-auto md:h-36">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-muted md:aspect-auto md:h-36">
                   <Link href={href} className="absolute inset-0">
                     <Image
                       src={product.image}
@@ -46,6 +50,11 @@ async function ProductsList({
                 </div>
                 <div className="space-y-3">
                   <Link href={href} className="space-y-1">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                      {[vehicle.year, vehicle.categoryLabel]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </p>
                     <h3 className="text-lg font-semibold tracking-tight">
                       {product.name}
                     </h3>
@@ -58,10 +67,17 @@ async function ProductsList({
                       <LuTag className="mr-1 size-3.5" aria-hidden />
                       {product.company}
                     </Badge>
-                    {product.featured ? (
-                      <Badge variant="soft">
-                        {t("featuredBadge")}
+                    {mileage ? (
+                      <Badge variant="secondary">
+                        <LuRoute className="mr-1 size-3.5" aria-hidden />
+                        {mileage}
                       </Badge>
+                    ) : null}
+                    {vehicle.euro ? (
+                      <Badge variant="secondary">{vehicle.euro}</Badge>
+                    ) : null}
+                    {product.featured ? (
+                      <Badge variant="soft">{t("featuredBadge")}</Badge>
                     ) : null}
                   </div>
                 </div>

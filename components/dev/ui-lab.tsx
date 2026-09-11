@@ -52,12 +52,12 @@ import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
@@ -87,6 +87,7 @@ import UiLabIcons from "@/components/dev/ui-lab-icons";
 import UiLabHeader from "@/components/dev/ui-lab-header";
 import UiLabHomepageClose from "@/components/dev/ui-lab-homepage-close";
 import UiLabMarks from "@/components/dev/ui-lab-marks";
+import UiLabCascade from "@/components/dev/ui-lab-cascade";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -500,7 +501,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="tabs"
               title="Tabs"
-              hint="Навігаційні сегменти в стилі outline: контур + navy текст, hover/active — заливка. h-9 як sm-кнопка."
+              hint="Сегменти в спільній navy-рамці: не окремі outline-кнопки. Активний — заливка primary."
             >
               <Tabs defaultValue="folders" className="max-w-xl">
                 <TabsList>
@@ -531,39 +532,57 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="table"
               title="Table"
-              hint="Таблиця в Card shadow-sm — оболонка для sales і списку товарів у адмінці."
+              hint="Лічильник над таблицею, шапка secondary, uppercase tracking, hover pastel — єдиний патерн для адмінки (товари, продажі)."
             >
-              <Card className="max-w-2xl shadow-sm">
-                <CardContent className="p-0">
-                  <Table>
-                    <TableCaption>Приклад: 3 замовлення</TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Сума</TableHead>
-                        <TableHead>Дата</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>buyer@mtruck.ua</TableCell>
-                        <TableCell>€38 500</TableCell>
-                        <TableCell>11.09.2026</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>fleet@example.com</TableCell>
-                        <TableCell>€52 000</TableCell>
-                        <TableCell>08.09.2026</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>office@logistics.de</TableCell>
-                        <TableCell>€41 200</TableCell>
-                        <TableCell>01.09.2026</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+              <div className="grid max-w-3xl gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Усього замовлень: 3
+                </p>
+                <Card className="shadow-sm">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Авто</TableHead>
+                          <TableHead>Сума</TableHead>
+                          <TableHead>Статус</TableHead>
+                          <TableHead>Дата</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>buyer@mtruck.ua</TableCell>
+                          <TableCell>Actros 1845</TableCell>
+                          <TableCell>$38 500</TableCell>
+                          <TableCell>
+                            <Badge>Оплачено</Badge>
+                          </TableCell>
+                          <TableCell>11.09.2026</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>fleet@example.com</TableCell>
+                          <TableCell>FH 460</TableCell>
+                          <TableCell>$52 000</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">Не оплачено</Badge>
+                          </TableCell>
+                          <TableCell>08.09.2026</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>office@logistics.de</TableCell>
+                          <TableCell>R450</TableCell>
+                          <TableCell>$41 200</TableCell>
+                          <TableCell>
+                            <Badge>Оплачено</Badge>
+                          </TableCell>
+                          <TableCell>01.09.2026</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
             </Section>
           </LabGate>
 
@@ -574,6 +593,16 @@ export default function UiLab({ children }: { children?: ReactNode }) {
               hint="Теги, чіпи, обране, breadcrumb, рисочки й стрілки — те, що стоїть на сайті після 01+03."
             >
               <UiLabMarks />
+            </Section>
+          </LabGate>
+
+          <LabGate id="cascade" visibleIds={visibleIds}>
+            <Section
+              id="cascade"
+              title="Cascade select"
+              hint="Клік відкриває список; наведення — колонка справа; у кнопці — повний шлях."
+            >
+              <UiLabCascade />
             </Section>
           </LabGate>
 

@@ -1,66 +1,48 @@
+import AdminSalesView from "@/components/admin/sales/admin-sales-view";
 import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  fetchAdminOrderFormOptions,
+  fetchAdminOrders,
+} from "@/utils/actions";
+import { getLocale } from "next-intl/server";
 
-import { fetchAdminOrders } from '@/utils/actions';
-import { formatCurrency, formatDate } from '@/utils/format';
-import { getLocale, getTranslations } from 'next-intl/server';
-
-async function SalesPage() {
-  const t = await getTranslations('Admin');
-  const tOrders = await getTranslations('Orders');
+async function SalesPage(props: {
+  searchParams: Promise<{ create?: string; edit?: string }>;
+}) {
+  const searchParams = await props.searchParams;
   const locale = await getLocale();
-  const orders = await fetchAdminOrders();
+  const [orders, options] = await Promise.all([
+    fetchAdminOrders(),
+    fetchAdminOrderFormOptions(),
+  ]);
+  const createOpen = searchParams.create === "1";
+  const editId = searchParams.edit?.trim() || undefined;
+  const editExists = editId
+    ? orders.some((order) => order.id === editId)
+    : false;
 
   return (
-    <section className="grid gap-6">
-      <p className="text-sm text-muted-foreground">
-        {t('totalOrders', { count: orders.length })}
-      </p>
-      <Card className="shadow-sm">
-        <CardContent className="p-0">
-          <Table>
-            <TableCaption>{t('totalOrders', { count: orders.length })}</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('email')}</TableHead>
-                <TableHead>{tOrders('products')}</TableHead>
-                <TableHead>{tOrders('orderTotal')}</TableHead>
-                <TableHead>{tOrders('tax')}</TableHead>
-                <TableHead>{tOrders('shipping')}</TableHead>
-                <TableHead>{tOrders('date')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => {
-                const { products, orderTotal, tax, shipping, createdAt, email } =
-                  order;
-                return (
-                  <TableRow key={order.id}>
-                    <TableCell>{email}</TableCell>
-                    <TableCell>{products}</TableCell>
-                    <TableCell>{formatCurrency(orderTotal, locale)}</TableCell>
-                    <TableCell>{formatCurrency(tax, locale)}</TableCell>
-                    <TableCell>{formatCurrency(shipping, locale)}</TableCell>
-                    <TableCell>{formatDate(createdAt, locale)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </section>
+    <AdminSalesView
+      locale={locale}
+      createOpen={createOpen}
+      editId={editExists ? editId : undefined}
+      users={options.users}
+      products={options.products}
+      items={orders.map((order) => ({
+        id: order.id,
+        email: order.email,
+        userId: order.userId,
+        userName: order.user.name,
+        productId: order.productId,
+        productName: order.product?.name ?? null,
+        products: order.products,
+        orderTotal: order.orderTotal,
+        tax: order.tax,
+        shipping: order.shipping,
+        isPaid: order.isPaid,
+        createdAt: order.createdAt.toISOString(),
+      }))}
+    />
   );
 }
+
 export default SalesPage;

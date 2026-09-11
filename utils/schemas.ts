@@ -104,6 +104,27 @@ export const changePasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const adminOrderSchema = z.object({
+  userId: z.string().min(1, { message: "Select a customer." }),
+  productId: z
+    .string()
+    .optional()
+    .transform((value) => (value && value.trim() ? value.trim() : "")),
+  products: z.coerce.number().int().min(0, {
+    message: "Quantity must be zero or greater.",
+  }),
+  orderTotal: z.coerce.number().int().min(0, {
+    message: "Order total must be zero or greater.",
+  }),
+  tax: z.coerce.number().int().min(0, {
+    message: "Tax must be zero or greater.",
+  }),
+  shipping: z.coerce.number().int().min(0, {
+    message: "Shipping must be zero or greater.",
+  }),
+  isPaid: z.coerce.boolean(),
+});
+
 export const partnershipInquirySchema = z.object({
   name: z.string().trim().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().trim().email({ message: "Enter a valid email." }),

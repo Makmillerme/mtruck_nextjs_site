@@ -12,7 +12,6 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
 const PAGE_KEYS = {
-  "/account": "overview",
   "/account/orders": "orders",
   "/account/favorites": "favorites",
   "/account/settings": "settings",
@@ -24,17 +23,15 @@ function resolvePageKey(pathname: string): PageKey {
   if (pathname in PAGE_KEYS) {
     return PAGE_KEYS[pathname as keyof typeof PAGE_KEYS];
   }
-  if (pathname.startsWith("/account/orders")) return "orders";
   if (pathname.startsWith("/account/favorites")) return "favorites";
   if (pathname.startsWith("/account/settings")) return "settings";
-  return "overview";
+  return "orders";
 }
 
 export default function AccountBreadcrumbs() {
   const t = useTranslations("AccountCabinet");
   const pathname = usePathname();
   const pageKey = resolvePageKey(pathname);
-  const isOverview = pageKey === "overview";
 
   return (
     <Breadcrumb>
@@ -46,22 +43,14 @@ export default function AccountBreadcrumbs() {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          {isOverview ? (
-            <BreadcrumbPage>{t("title")}</BreadcrumbPage>
-          ) : (
-            <BreadcrumbLink asChild>
-              <Link href="/account">{t("title")}</Link>
-            </BreadcrumbLink>
-          )}
+          <BreadcrumbLink asChild>
+            <Link href="/account/orders">{t("title")}</Link>
+          </BreadcrumbLink>
         </BreadcrumbItem>
-        {!isOverview ? (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{t(pageKey)}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        ) : null}
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{t(pageKey)}</BreadcrumbPage>
+        </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
   );

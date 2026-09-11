@@ -1,22 +1,9 @@
 "use client";
 
-import { Link, usePathname } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { accountCabinetNav } from "@/utils/links";
 import { useTranslations } from "next-intl";
-import {
-  LuHeart,
-  LuLayoutDashboard,
-  LuPackage,
-  LuSettings,
-} from "react-icons/lu";
-
-const icons = {
-  overview: LuLayoutDashboard,
-  orders: LuPackage,
-  favorites: LuHeart,
-  settings: LuSettings,
-} as const;
 
 function isActive(pathname: string, href: string, match: "exact" | "prefix") {
   if (match === "exact") return pathname === href;
@@ -26,33 +13,33 @@ function isActive(pathname: string, href: string, match: "exact" | "prefix") {
 export default function AccountMobileTabs() {
   const t = useTranslations("AccountCabinet");
   const pathname = usePathname();
+  const router = useRouter();
+  const active =
+    accountCabinetNav.find((item) =>
+      isActive(pathname, item.href, item.match)
+    )?.key ?? "orders";
 
   return (
-    <nav
-      aria-label={t("navLabel")}
-      className="grid grid-cols-4 gap-2 lg:hidden"
+    <Tabs
+      value={active}
+      activationMode="manual"
+      onValueChange={(key) => {
+        const item = accountCabinetNav.find((entry) => entry.key === key);
+        if (item && item.href !== pathname) router.push(item.href);
+      }}
     >
-      {accountCabinetNav.map((item) => {
-        const Icon = icons[item.key];
-        const active = isActive(pathname, item.href, item.match);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border text-center transition-colors",
-              active
-                ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
+      <TabsList className="w-full sm:w-full" aria-label={t("navLabel")}>
+        {accountCabinetNav.map((item) => (
+          <TabsTrigger
+            key={item.key}
+            value={item.key}
+            asChild
+            className="sm:flex-1"
           >
-            <Icon className="size-5 shrink-0" />
-            <span className="max-w-full truncate px-1 text-[11px] font-medium leading-tight">
-              {t(item.key)}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+            <Link href={item.href}>{t(item.key)}</Link>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }

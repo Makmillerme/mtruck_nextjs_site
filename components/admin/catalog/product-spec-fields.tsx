@@ -13,12 +13,14 @@ import {
 
 export default function ProductSpecFields({
   attributes,
+  initialValues = {},
 }: {
   attributes: CatalogAttribute[];
+  initialValues?: Record<string, string>;
 }) {
   const t = useTranslations("CatalogAdmin");
   const ordered = useMemo(() => sortByDependency(attributes), [attributes]);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(initialValues);
 
   function setValue(attributeId: string, value: string, dependents: string[]) {
     setValues((current) => {
@@ -102,6 +104,7 @@ export default function ProductSpecFields({
                 key={attribute.id}
                 name={specInputName("bool", attribute.id)}
                 label={label}
+                defaultChecked={initialValues[attribute.id] === "true"}
               />
             );
           }
@@ -115,6 +118,7 @@ export default function ProductSpecFields({
                   id={specInputName("text", attribute.id)}
                   name={specInputName("text", attribute.id)}
                   required={attribute.isRequired}
+                  defaultValue={initialValues[attribute.id] ?? ""}
                 />
               </div>
             );
@@ -131,6 +135,7 @@ export default function ProductSpecFields({
                 required={attribute.isRequired}
                 min={attribute.type === "YEAR" ? 1970 : 0}
                 max={attribute.type === "YEAR" ? 2100 : undefined}
+                defaultValue={initialValues[attribute.id] ?? ""}
               />
             </div>
           );

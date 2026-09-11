@@ -4,9 +4,9 @@ import { getAdminUser } from "@/utils/session";
 async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await getAdminUser();
   return (
-    <section className="grid gap-8 pb-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <section className="grid min-h-0 w-full min-w-0 flex-1 gap-8 pb-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
       <Sidebar />
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0 w-full">{children}</div>
     </section>
   );
 }

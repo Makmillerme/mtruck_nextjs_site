@@ -1,20 +1,10 @@
-# How to run
+# Local env files (2026-09)
 
-## Dev
-- `npm run dev` (only when user asks)
-- Env: `.env` + `.env.local`
+Canonical pair:
+- `.env.example` — committed template, placeholders only
+- `.env` — gitignored secrets; Next.js, Prisma (`--env-file=.env`), seed
 
-## Database
-- PostgressOps PgBouncer: `173.242.62.135:6432`
-- DB/role: `mtruck_nextjs`
-- `npx prisma generate` / `npx prisma db push` / `npm run db:seed`
+`.env.local` removed 2026-09-11: it only duplicated `NEXT_PUBLIC_GOOGLE_AUTH` and leftover Clerk-era `NEXT_PUBLIC_ADMIN_*` (unused; admin is DB role).
 
-## Admin bootstrap
-- Privilege: email listed in `ADMIN_EMAIL` (optional `ADMIN_TEST_EMAIL`)
-- Seed creates the user in DB from `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`
-- Default avatar: `/favicon_mtruck.svg`
-- Re-seed does **not** overwrite password, name, or image if the user already exists
-
-## Test accounts (after seed)
-- Admin: values from `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`)
-- `test@user.com` / `12345678`
+Required in `.env`: `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `NEXT_PUBLIC_WEBSITE_URL`.
+Optional: `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `NEXT_PUBLIC_GOOGLE_AUTH=true`; `ADMIN_TEST_EMAIL`.

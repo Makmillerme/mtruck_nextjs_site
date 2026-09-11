@@ -24,7 +24,7 @@ export default async function Footer() {
   return (
     <footer
       data-header-surface="dark"
-      className="bg-foreground text-background"
+      className="mt-auto bg-foreground text-background"
     >
       <section aria-label={t("aria")} className="page-container py-8 md:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">

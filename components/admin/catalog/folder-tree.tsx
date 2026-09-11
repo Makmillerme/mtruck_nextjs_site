@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,7 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import {
   createTaxonomyNodeAction,
@@ -31,6 +29,7 @@ import {
   LuPlus,
   LuTrash2,
 } from "react-icons/lu";
+import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
 import { CatalogField, CatalogSubmit } from "./catalog-fields";
 
@@ -40,25 +39,10 @@ type FolderSheet =
   | { mode: "delete"; node: TaxonomyTreeNode }
   | null;
 
-function findAncestorIds(
-  nodes: TaxonomyTreeNode[],
-  targetId: string,
-  trail: string[] = []
-): string[] | null {
-  for (const node of nodes) {
-    if (node.id === targetId) return trail;
-    const found = findAncestorIds(node.children, targetId, [...trail, node.id]);
-    if (found) return found;
-  }
-  return null;
-}
-
 function FolderRow({
   node,
   index,
   siblingCount,
-  mode,
-  selectedId,
   expanded,
   onToggle,
   onSelect,
@@ -69,8 +53,6 @@ function FolderRow({
   node: TaxonomyTreeNode;
   index: number;
   siblingCount: number;
-  mode: "manage" | "pick";
-  selectedId?: string;
   expanded: Set<string>;
   onToggle: (id: string) => void;
   onSelect: (node: TaxonomyTreeNode) => void;
@@ -81,16 +63,10 @@ function FolderRow({
   const t = useTranslations("CatalogAdmin");
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
-  const isSelected = node.id === selectedId;
 
   return (
     <li>
-      <div
-        className={cn(
-          "flex h-11 items-center gap-1 rounded-sm pr-1 transition-colors hover:bg-secondary/70",
-          isSelected && "bg-secondary"
-        )}
-      >
+      <div className="flex h-11 items-center gap-1 rounded-sm pr-1 transition-colors hover:bg-secondary/70">
         <Button
           type="button"
           variant="ghost"
@@ -123,8 +99,7 @@ function FolderRow({
             </span>
           ) : null}
         </button>
-        {mode === "manage" ? (
-          <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center">
             <Button
               type="button"
               variant="ghost"
@@ -182,7 +157,6 @@ function FolderRow({
               <LuTrash2 className="size-4" />
             </Button>
           </div>
-        ) : null}
       </div>
       {hasChildren && isOpen ? (
         <ul className="ml-4 grid gap-0.5 border-l border-border pl-2">
@@ -192,8 +166,6 @@ function FolderRow({
               node={child}
               index={childIndex}
               siblingCount={node.children.length}
-              mode={mode}
-              selectedId={selectedId}
               expanded={expanded}
               onToggle={onToggle}
               onSelect={onSelect}
@@ -210,23 +182,14 @@ function FolderRow({
 
 export default function FolderTree({
   tree,
-  selectedId,
-  mode = "manage",
 }: {
   tree: TaxonomyTreeNode[];
-  selectedId?: string;
-  mode?: "manage" | "pick";
 }) {
   const t = useTranslations("CatalogAdmin");
-  const router = useRouter();
   const { toast } = useToast();
   const [movePending, startMove] = useTransition();
   const [sheet, setSheet] = useState<FolderSheet>(null);
-  const initialExpanded = useMemo(() => {
-    const ids = selectedId ? findAncestorIds(tree, selectedId) ?? [] : [];
-    return new Set(ids);
-  }, [tree, selectedId]);
-  const [expanded, setExpanded] = useState<Set<string>>(initialExpanded);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   function toggle(id: string) {
     setExpanded((current) => {
@@ -239,9 +202,6 @@ export default function FolderTree({
 
   function select(node: TaxonomyTreeNode) {
     toggle(node.id);
-    if (mode === "pick") {
-      router.push(`/admin/catalog?tab=fields&node=${node.id}`);
-    }
   }
 
   function move(nodeId: string, direction: "up" | "down") {
@@ -261,21 +221,23 @@ export default function FolderTree({
 
   return (
     <div className="grid gap-4">
-      {mode === "manage" ? (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">{t("foldersLede")}</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={() => setSheet({ mode: "create", parent: null })}
-          >
-            <LuPlus className="size-4" />
-            {t("addRootFolder")}
-          </Button>
-        </div>
-      ) : null}
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={() => setSheet({ mode: "create", parent: null })}
+        >
+          <LuPlus className="size-4" />
+          {t("addRootFolder")}
+        </Button>
+        <AdminInfoTip label={t("helpLabel")}>
+          <p>{t("foldersHelp.p1")}</p>
+          <p>{t("foldersHelp.p2")}</p>
+          <p>{t("foldersHelp.p3")}</p>
+        </AdminInfoTip>
+      </div>
 
       {tree.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("emptyFolders")}</p>
@@ -287,8 +249,6 @@ export default function FolderTree({
               node={node}
               index={index}
               siblingCount={tree.length}
-              mode={mode}
-              selectedId={selectedId}
               expanded={expanded}
               onToggle={toggle}
               onSelect={select}

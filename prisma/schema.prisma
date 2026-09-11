@@ -113,14 +113,27 @@ model Product {
   favorites      Favorite[]
   reviews        Review[]
   cartItems      CartItem[]
+  orders         Order[]
   taxonomyNodeId String?
   taxonomyNode   TaxonomyNode?        @relation(fields: [taxonomyNodeId], references: [id], onDelete: SetNull)
   status         ProductStatus        @default(PUBLISHED)
   availability   ProductAvailability  @default(IN_STOCK)
   specs          ProductSpec[]
+  images         ProductImage[]
 
   @@index([taxonomyNodeId])
   @@index([status])
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 model TaxonomyNode {
@@ -258,6 +271,8 @@ model Order {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   products   Int      @default(0)
   orderTotal Int      @default(0)
   tax        Int      @default(0)
@@ -266,4 +281,7 @@ model Order {
   isPaid     Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
 }

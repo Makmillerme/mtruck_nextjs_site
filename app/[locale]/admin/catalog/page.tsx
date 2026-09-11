@@ -1,32 +1,23 @@
 import CmsTabs from "@/components/admin/catalog/cms-tabs";
 import FieldsPanel from "@/components/admin/catalog/fields-panel";
 import FolderTree from "@/components/admin/catalog/folder-tree";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import TemplateFolderPicker from "@/components/admin/catalog/template-folder-picker";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   fetchAttributesForNode,
   fetchTaxonomyNode,
   fetchTaxonomyTree,
-  getPathNodes,
 } from "@/lib/catalog/taxonomy";
-import { getTranslations } from "next-intl/server";
 
 async function CatalogPage(props: {
   searchParams: Promise<{ tab?: string; node?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const t = await getTranslations("CatalogAdmin");
   const tab = searchParams.tab === "fields" ? "fields" : "folders";
   const tree = await fetchTaxonomyTree();
   const selected = searchParams.node
     ? await fetchTaxonomyNode(searchParams.node)
     : null;
-  const path = selected ? await getPathNodes(selected.id) : [];
   const attributes = selected ? await fetchAttributesForNode(selected.id) : [];
 
   return (
@@ -36,33 +27,18 @@ async function CatalogPage(props: {
         nodeId={selected?.id}
         folders={
           <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("foldersTitle")}</CardTitle>
-              <CardDescription>{t("foldersHint")}</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <FolderTree tree={tree} />
             </CardContent>
           </Card>
         }
         fields={
-          <div className="grid gap-6 xl:grid-cols-12">
-            <Card className="shadow-sm xl:col-span-4">
-              <CardHeader>
-                <CardTitle>{t("templateFolderTitle")}</CardTitle>
-                <CardDescription>{t("templateFolderLede")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FolderTree tree={tree} selectedId={selected?.id} mode="pick" />
-              </CardContent>
-            </Card>
-            <div className="min-w-0 xl:col-span-8">
-              <FieldsPanel
-                node={selected}
-                pathLabel={path.map((item) => item.name).join(" / ")}
-                attributes={attributes}
-              />
-            </div>
+          <div className="grid gap-6">
+            <TemplateFolderPicker
+              tree={tree}
+              selectedId={selected?.id}
+            />
+            <FieldsPanel node={selected} attributes={attributes} />
           </div>
         }
       />

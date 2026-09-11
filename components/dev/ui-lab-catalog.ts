@@ -84,7 +84,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "tabs",
     category: "fields",
     title: "Tabs",
-    hint: "Навігаційні сегменти в стилі outline: контур + navy текст, hover/active — заливка. h-9 як sm-кнопка.",
+    hint: "Сегменти в спільній navy-рамці: не окремі outline-кнопки. Активний — заливка primary.",
     keywords:
       "tabs таби сегмент cms folders fields папки поля",
   },
@@ -92,7 +92,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "table",
     category: "fields",
     title: "Table",
-    hint: "Таблиця в Card shadow-sm — оболонка для sales і списку товарів у адмінці.",
+    hint: "Лічильник над таблицею, шапка secondary, uppercase tracking — єдиний патерн для адмінки.",
     keywords:
       "table таблиця sales orders products адмінка",
   },
@@ -110,6 +110,14 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     title: "Dropdown / Popover / Tooltip / Sheet",
     keywords:
       "dropdown popover tooltip sheet menu overlay меню фільтри панель",
+  },
+  {
+    id: "cascade",
+    category: "overlays",
+    title: "Cascade select",
+    hint: "Клік відкриває список; наведення — колонка справа; у кнопці — повний шлях.",
+    keywords:
+      "cascade cascader folder папка submenu підменю path шлях taxonomy каскад",
   },
   {
     id: "feedback",

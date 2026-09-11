@@ -43,7 +43,7 @@ export default async function RootLayout({
       className={`${plusJakarta.variable} ${geistMono.variable} light`}
       suppressHydrationWarning
     >
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className="flex min-h-dvh flex-col font-sans antialiased" suppressHydrationWarning>
         <Script id="mtruck-boot" strategy="beforeInteractive">
           {`try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(e){}
 document.documentElement.setAttribute("data-scroll-behavior","auto");
