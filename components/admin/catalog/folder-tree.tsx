@@ -95,7 +95,7 @@ function FolderRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="shrink-0 text-muted-foreground"
+          className="shrink-0 text-muted-foreground hover:bg-transparent hover:text-muted-foreground"
           onClick={() => onToggle(node.id)}
           disabled={!hasChildren}
           aria-expanded={hasChildren ? isOpen : undefined}

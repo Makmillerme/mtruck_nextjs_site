@@ -500,7 +500,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="tabs"
               title="Tabs"
-              hint="Сегмент як кнопка 01+03: h-11, rounded-sm, активний navy. Не pill finder."
+              hint="Навігаційні сегменти в стилі outline: контур + navy текст, hover/active — заливка. h-9 як sm-кнопка."
             >
               <Tabs defaultValue="folders" className="max-w-xl">
                 <TabsList>

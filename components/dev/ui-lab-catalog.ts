@@ -84,7 +84,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "tabs",
     category: "fields",
     title: "Tabs",
-    hint: "Сегмент як кнопка 01+03: h-11, rounded-sm, активний navy. Не pill finder.",
+    hint: "Навігаційні сегменти в стилі outline: контур + navy текст, hover/active — заливка. h-9 як sm-кнопка.",
     keywords:
       "tabs таби сегмент cms folders fields папки поля",
   },
