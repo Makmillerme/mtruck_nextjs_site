@@ -83,12 +83,65 @@ export const callbackInquirySchema = z.object({
     }),
 });
 
-export const updateProfileNameSchema = z.object({
+export const updateAccountProfileSchema = z.object({
   name: z
     .string()
     .trim()
     .min(2, { message: "Name must be at least 2 characters." })
     .max(80, { message: "Name must be less than 80 characters." }),
+  phone: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/\s+/g, " "))
+    .refine(
+      (value) => value === "" || /^\+?[\d\s()-]{10,20}$/.test(value),
+      { message: "Enter a valid phone number." }
+    ),
+});
+
+export const adminCreateUserSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters." })
+    .max(80, { message: "Name must be less than 80 characters." }),
+  email: z.string().trim().email({ message: "Enter a valid email." }),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ?? "").replace(/\s+/g, " "))
+    .refine(
+      (value) => value === "" || /^\+?[\d\s()-]{10,20}$/.test(value),
+      { message: "Enter a valid phone number." }
+    ),
+  role: z
+    .enum(["USER", "ADMIN", "MANAGER"])
+    .optional()
+    .default("USER"),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters." }),
+});
+
+export const adminUpdateUserSchema = z.object({
+  id: z.string().min(1),
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters." })
+    .max(80, { message: "Name must be less than 80 characters." }),
+  email: z.string().trim().email({ message: "Enter a valid email." }),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ?? "").replace(/\s+/g, " "))
+    .refine(
+      (value) => value === "" || /^\+?[\d\s()-]{10,20}$/.test(value),
+      { message: "Enter a valid phone number." }
+    ),
+  role: z.enum(["USER", "ADMIN", "MANAGER"]).optional(),
 });
 
 export const changePasswordSchema = z
@@ -103,6 +156,16 @@ export const changePasswordSchema = z
     message: "Passwords do not match.",
     path: ["confirmPassword"],
   });
+
+export const userRequestOrderSchema = z.object({
+  taxonomyNodeId: z.string().min(1, { message: "Select a folder." }),
+  note: z
+    .string()
+    .trim()
+    .max(2000, { message: "Note must be at most 2000 characters." })
+    .optional()
+    .transform((value) => value ?? ""),
+});
 
 export const adminOrderSchema = z.object({
   userId: z.string().min(1, { message: "Select a customer." }),

@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { generateUniqueUserCode } from "@/lib/codes";
 import db from "@/utils/db";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -24,6 +25,45 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "USER",
         input: false,
+      },
+      userCode: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const userCode = await generateUniqueUserCode();
+          return {
+            data: {
+              ...user,
+              userCode,
+            },
+          };
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          const row = await db.user.findUnique({
+            where: { id: session.userId },
+            select: { archivedAt: true },
+          });
+          if (row?.archivedAt) {
+            throw new Error("Account archived");
+          }
+          return { data: session };
+        },
       },
     },
   },

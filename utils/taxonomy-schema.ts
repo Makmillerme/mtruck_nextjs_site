@@ -10,11 +10,13 @@ const optionalUuid = z
 export const createTaxonomyNodeSchema = z.object({
   name: z.string().trim().min(2).max(80),
   parentId: optionalUuid,
+  showInFilter: z.coerce.boolean().optional().default(true),
 });
 
 export const renameTaxonomyNodeSchema = z.object({
   nodeId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
+  showInFilter: z.coerce.boolean().optional().default(false),
 });
 
 export const nodeIdSchema = z.object({
@@ -46,6 +48,7 @@ export const createAttributeSchema = z.object({
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
   isIdentity: z.coerce.boolean().optional().default(false),
+  sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
 });
 
 export const updateAttributeFlagsSchema = z.object({
@@ -60,6 +63,47 @@ export const updateAttributeFlagsSchema = z.object({
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
   isIdentity: z.coerce.boolean().optional().default(false),
+  sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
+});
+
+export const createDisplayGroupSchema = z.object({
+  taxonomyNodeId: z.string().uuid(),
+  name: z.string().trim().min(2).max(80),
+  key: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : undefined)),
+  separator: z
+    .string()
+    .max(16)
+    .optional()
+    .transform((value) => (value == null || value.length === 0 ? " " : value)),
+  writesProductName: z.coerce.boolean().optional().default(false),
+  memberAttributeIds: z
+    .array(z.string().uuid())
+    .min(1)
+    .max(20),
+});
+
+export const updateDisplayGroupSchema = z.object({
+  groupId: z.string().uuid(),
+  name: z.string().trim().min(2).max(80),
+  separator: z
+    .string()
+    .max(16)
+    .optional()
+    .transform((value) => (value == null || value.length === 0 ? " " : value)),
+  writesProductName: z.coerce.boolean().optional().default(false),
+  memberAttributeIds: z
+    .array(z.string().uuid())
+    .min(1)
+    .max(20),
+});
+
+export const displayGroupIdSchema = z.object({
+  groupId: z.string().uuid(),
 });
 
 export const attributeIdSchema = z.object({

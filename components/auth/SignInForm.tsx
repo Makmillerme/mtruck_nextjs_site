@@ -2,13 +2,6 @@
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,63 +9,20 @@ import { useToast } from "@/components/ui/use-toast";
 import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 
-const testAccounts = {
-  "guest-user": {
-    name: "Test User",
-    email: "test@user.com",
-    password: "12345678",
-  },
-  "guest-admin": {
-    name: "Test Admin",
-    email: "test@admin.com",
-    password: "12345678",
-  },
-};
-
 interface SignInFormProps {
-  isGuest?: boolean | "admin";
   redirectUrl?: string;
 }
 
-function getGuestDefaults(isGuest: boolean | "admin") {
-  if (isGuest === "admin") {
-    return { role: "guest-admin", ...testAccounts["guest-admin"] };
-  }
-  if (isGuest) {
-    return { role: "guest-user", ...testAccounts["guest-user"] };
-  }
-  return { role: "", email: "", password: "" };
-}
-
 export default function SignInForm({
-  isGuest = false,
   redirectUrl = "/products",
 }: SignInFormProps) {
   const t = useTranslations("Auth");
   const { toast } = useToast();
   const router = useRouter();
-  const defaults = getGuestDefaults(isGuest);
-  const [selectedRole, setSelectedRole] = useState(defaults.role);
-  const [email, setEmail] = useState(defaults.email);
-  const [password, setPassword] = useState(defaults.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "true";
-  const showTestAccounts = process.env.NODE_ENV === "development";
-
-  const handleRoleSelect = (value: string) => {
-    if (value === "clear") {
-      setSelectedRole("");
-      setEmail("");
-      setPassword("");
-    } else {
-      setSelectedRole(value);
-      const account = testAccounts[value as keyof typeof testAccounts];
-      if (account) {
-        setEmail(account.email);
-        setPassword(account.password);
-      }
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     if (!googleEnabled) {
@@ -125,47 +75,6 @@ export default function SignInForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {showTestAccounts ? (
-            <div className="space-y-2">
-              <Label htmlFor="guest-select">{t("testAccount")}</Label>
-              <Select
-                key={`select-${selectedRole || "empty"}`}
-                value={selectedRole || undefined}
-                onValueChange={handleRoleSelect}
-              >
-                <SelectTrigger id="guest-select">
-                  <SelectValue placeholder={t("selectTestAccount")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="guest-user">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{t("testUser")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        test@user.com
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="guest-admin">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{t("guestAdmin")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        test@admin.com
-                      </span>
-                    </div>
-                  </SelectItem>
-                  {selectedRole && (
-                    <SelectItem
-                      value="clear"
-                      className="opacity-60 focus:opacity-100"
-                    >
-                      {t("clearSelection")}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
-
           <div className="space-y-2">
             <Label htmlFor="email">{t("email")}</Label>
             <Input

@@ -18,14 +18,17 @@ const config = {
   		}
   	},
   	extend: {
-  		fontFamily: {
-  			sans: [
-  				'var(--font-sans)'
-  			],
-  			mono: [
-  				'var(--font-mono)'
-  			]
-  		},
+		fontFamily: {
+			sans: [
+				'var(--font-sans)'
+			],
+			mono: [
+				'var(--font-mono)'
+			]
+		},
+		fontWeight: {
+			black: "800",
+		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

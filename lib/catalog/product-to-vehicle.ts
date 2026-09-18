@@ -29,6 +29,18 @@ function textValue(specs: Map<string, SpecForCard>, key: string) {
   return specs.get(key)?.textValue?.trim() || null;
 }
 
+export function uniqueImages(cover: string, gallery: string[] = []) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const url of [cover, ...gallery]) {
+    const trimmed = url?.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    out.push(trimmed);
+  }
+  return out;
+}
+
 export function productWithSpecsToVehicle(product: {
   id: string;
   name: string;
@@ -38,13 +50,19 @@ export function productWithSpecsToVehicle(product: {
   status?: string;
   taxonomyNode?: { name: string } | null;
   specs?: SpecForCard[];
+  images?: { url: string }[];
 }): VehicleCardModel {
   const specs = specMap(product.specs ?? []);
+  const images = uniqueImages(
+    product.image,
+    product.images?.map((item) => item.url) ?? []
+  );
   return {
     id: product.id,
     name: product.name,
     price: product.price,
-    image: product.image,
+    image: images[0] ?? product.image,
+    images,
     href: `/products/${product.id}`,
     status: (product.status as VehicleStatus | undefined) ?? "PUBLISHED",
     year: numberValue(specs, "year"),

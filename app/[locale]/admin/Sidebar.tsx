@@ -10,18 +10,24 @@ function isActive(pathname: string, href: string) {
   if (href === "/admin/products") {
     return pathname.startsWith("/admin/products/");
   }
+  if (href === "/admin/archive") {
+    return pathname.startsWith("/admin/archive");
+  }
   return false;
 }
 
-function Sidebar() {
+function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const t = useTranslations("Admin");
+  const links = isAdmin
+    ? adminLinks
+    : adminLinks.filter((link) => link.href !== "/admin/catalog");
 
   return (
     <aside className="min-w-0">
       <Card className="sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto shadow-sm lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
         <CardContent className="grid gap-1 p-3">
-          {adminLinks.map((link) => (
+          {links.map((link) => (
             <Button
               key={link.href}
               asChild

@@ -1,4 +1,5 @@
 import AccountShell from "@/components/account/AccountShell";
+import { ensureUserCode } from "@/lib/codes";
 import { getAuthUser } from "@/utils/session";
 
 export default async function AccountLayout({
@@ -6,7 +7,8 @@ export default async function AccountLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await getAuthUser();
+  const user = await getAuthUser();
+  const userCode = await ensureUserCode(user.id);
 
-  return <AccountShell>{children}</AccountShell>;
+  return <AccountShell userCode={userCode}>{children}</AccountShell>;
 }

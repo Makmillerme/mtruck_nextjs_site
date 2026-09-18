@@ -24,8 +24,8 @@
     --input: 214 32% 91%;
     --ring: 222 47% 11%;
     --radius: 0.5rem;
-    --font-sans: var(--font-plus-jakarta, ui-sans-serif), system-ui, sans-serif;
-    --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, Menlo, monospace;
+    --font-sans: var(--font-manrope), system-ui, sans-serif;
+    --font-mono: var(--font-manrope), system-ui, sans-serif;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 222 47% 11%;
@@ -207,6 +207,15 @@
 html body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
+}
+
+/*
+  Modal Sheet sets body { pointer-events: none }. Menus/popovers portal to body,
+  so the Popper wrapper must re-enable hits and sit above the sheet (z-50).
+*/
+body [data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
+  pointer-events: auto !important;
 }
 
 /*

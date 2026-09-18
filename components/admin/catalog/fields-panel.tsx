@@ -13,8 +13,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { ATTRIBUTE_TYPES, type CatalogAttribute } from "@/lib/catalog/types";
-import type { TaxonomyNodeRow } from "@/lib/catalog/types";
+import {
+  ATTRIBUTE_TYPES,
+  SHEET_WIDTHS,
+  type CatalogAttribute,
+  type CatalogDisplayGroup,
+  type TaxonomyNodeRow,
+} from "@/lib/catalog/types";
 import {
   createAttributeAction,
   deleteAttributeAction,
@@ -29,6 +34,7 @@ import {
   CatalogNativeSelect,
   CatalogSubmit,
 } from "./catalog-fields";
+import DisplayGroupsPanel from "./display-groups-panel";
 import OptionEditor from "./option-editor";
 
 type FieldSheet =
@@ -78,6 +84,9 @@ function FieldRow({
           {attribute.isIdentity ? (
             <Badge variant="secondary">{t("flagIdentity")}</Badge>
           ) : null}
+          <Badge variant="outline">
+            {t(`sheetWidth.${attribute.sheetWidth}`)}
+          </Badge>
           {attribute.type === "SELECT" ? (
             <Badge variant="outline">
               {t("optionsCount", { count: attribute.options.length })}
@@ -118,9 +127,11 @@ function FieldRow({
 export default function FieldsPanel({
   node,
   attributes,
+  displayGroups,
 }: {
   node: TaxonomyNodeRow | null;
   attributes: CatalogAttribute[];
+  displayGroups: CatalogDisplayGroup[];
 }) {
   const t = useTranslations("CatalogAdmin");
   const [sheet, setSheet] = useState<FieldSheet>(null);
@@ -208,7 +219,7 @@ export default function FieldsPanel({
           if (!open) setSheet(null);
         }}
       >
-        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+        <SheetContent>
           {sheet?.mode === "create" ? (
             <div className="grid gap-6">
               <SheetHeader>
@@ -253,6 +264,17 @@ export default function FieldsPanel({
                   label={t("unit")}
                   required={false}
                 />
+                <CatalogNativeSelect
+                  name="sheetWidth"
+                  label={t("sheetWidthLabel")}
+                  defaultValue="FULL"
+                >
+                  {SHEET_WIDTHS.map((width) => (
+                    <option key={width} value={width}>
+                      {t(`sheetWidth.${width}`)}
+                    </option>
+                  ))}
+                </CatalogNativeSelect>
                 <div className="flex flex-wrap gap-4">
                   <CatalogFlag name="isRequired" label={t("flagRequired")} />
                   <CatalogFlag
@@ -294,6 +316,17 @@ export default function FieldsPanel({
                   defaultValue={active.unit ?? ""}
                   required={false}
                 />
+                <CatalogNativeSelect
+                  name="sheetWidth"
+                  label={t("sheetWidthLabel")}
+                  defaultValue={active.sheetWidth}
+                >
+                  {SHEET_WIDTHS.map((width) => (
+                    <option key={width} value={width}>
+                      {t(`sheetWidth.${width}`)}
+                    </option>
+                  ))}
+                </CatalogNativeSelect>
                 <div className="flex flex-wrap gap-4">
                   <CatalogFlag
                     name="isRequired"
@@ -358,6 +391,12 @@ export default function FieldsPanel({
           ) : null}
         </SheetContent>
       </Sheet>
+
+      <DisplayGroupsPanel
+        node={node}
+        attributes={attributes}
+        groups={displayGroups}
+      />
     </>
   );
 }

@@ -1,7 +1,8 @@
 import BreadCrumbs from '@/components/single-product/BreadCrumbs';
 import { fetchFavoriteId, fetchSingleProduct, findExistingReview } from '@/utils/actions';
-import Image from 'next/image';
+import PhotoCarousel from '@/components/media/photo-carousel';
 import { formatCurrency } from '@/utils/format';
+import { uniqueImages } from '@/lib/catalog/product-to-vehicle';
 import FavoriteToggleButton from '@/components/products/FavoriteToggleButton';
 import ProductRating from '@/components/single-product/ProductRating';
 import ShareButton from '@/components/single-product/ShareButton';
@@ -13,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatSpecDisplay } from '@/lib/catalog/product-to-vehicle';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import RequestCatalogOrder from '@/components/single-product/RequestCatalogOrder';
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -31,11 +33,10 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const reviewDoesNotExist =
     userId && !(await findExistingReview(userId, product.id));
 
-  const gallery =
-    product.images.length > 0
-      ? product.images.map((item) => item.url)
-      : [product.image];
-  const cover = gallery[0]!;
+  const gallery = uniqueImages(
+    product.image,
+    product.images.map((item) => item.url)
+  ).map((src) => ({ src, alt: name }));
   const specs = [...product.specs].sort(
     (a, b) => a.attribute.sortOrder - b.attribute.sortOrder
   );
@@ -44,36 +45,13 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     <section className="grid gap-8 pb-8">
       <BreadCrumbs name={product.name} />
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="grid gap-3">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-sm border bg-muted">
-            <Image
-              src={cover}
-              alt={name}
-              fill
-              sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 33vw"
-              priority
-              className="object-cover"
-            />
-          </div>
-          {gallery.length > 1 ? (
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-              {gallery.map((url, index) => (
-                <div
-                  key={`${url}-${index}`}
-                  className="relative aspect-[4/3] overflow-hidden rounded-sm border bg-muted"
-                >
-                  <Image
-                    src={url}
-                    alt={`${name} ${index + 1}`}
-                    fill
-                    sizes="120px"
-                    className="object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <PhotoCarousel
+          variant="page"
+          images={gallery}
+          priority
+          sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 33vw"
+          className="overflow-hidden rounded-sm"
+        />
 
         <div className="grid gap-5 content-start">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -139,9 +117,15 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             </div>
           ) : null}
 
-          <Button asChild className="w-fit">
-            <Link href="/products">{t('backToCatalog')}</Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <RequestCatalogOrder
+              productId={params.id}
+              isAuthenticated={isAuthenticated}
+            />
+            <Button asChild variant="outline" className="w-fit">
+              <Link href="/products">{t('backToCatalog')}</Link>
+            </Button>
+          </div>
         </div>
       </div>
 

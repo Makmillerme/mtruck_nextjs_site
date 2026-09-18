@@ -11,6 +11,7 @@ export { specInputName, sortByDependency } from "./spec-fields";
 export type SpecCreateInput = {
   attributeId: string;
   optionId?: string | null;
+  optionLabel?: string | null;
   numberValue?: number | null;
   textValue?: string | null;
   booleanValue?: boolean | null;
@@ -43,7 +44,11 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
         }
       }
       chosenOptions[attribute.id] = option.id;
-      specs.push({ attributeId: attribute.id, optionId: option.id });
+      specs.push({
+        attributeId: attribute.id,
+        optionId: option.id,
+        optionLabel: option.label,
+      });
       if (attribute.isIdentity && !companyFromIdentity) {
         companyFromIdentity = option.label;
       }

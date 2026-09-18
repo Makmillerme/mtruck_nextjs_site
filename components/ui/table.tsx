@@ -6,7 +6,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
+  <div className="relative w-full min-w-0 max-w-full overflow-x-auto">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
@@ -100,6 +100,13 @@ const TableCell = React.forwardRef<
 ))
 TableCell.displayName = "TableCell"
 
+/** Text link inside a cell. Pair with `Button variant="link" asChild`. */
+const tableLinkClassName =
+  "h-auto whitespace-normal p-0 text-left tracking-wide text-muted-foreground underline"
+
+/** Single-icon actions column (delete / edit). Center the control in the cell. */
+const tableActionsClassName = "w-24 text-center"
+
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
@@ -121,4 +128,6 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  tableLinkClassName,
+  tableActionsClassName,
 }

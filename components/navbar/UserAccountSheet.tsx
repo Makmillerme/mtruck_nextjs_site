@@ -9,6 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import UserCodeChip from "@/components/account/UserCodeChip";
 import { Separator } from "@/components/ui/separator";
 import { accountNav, siteNav } from "@/utils/links";
 import { signOutAndRefresh } from "@/lib/sign-out";
@@ -62,19 +63,23 @@ export default function UserAccountSheet({
           <LuMenu className="size-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="flex w-80 flex-col gap-4 overflow-y-auto sm:max-w-80"
-      >
-        <SheetHeader className="text-left">
+      <SheetContent>
+        <SheetHeader>
           <SheetTitle className="sr-only">{t("account")}</SheetTitle>
           {user ? (
-            <div className="flex items-center gap-3">
-              <UserAvatar user={user} />
-              <div className="min-w-0">
-                <p className="font-semibold text-foreground">{user.name}</p>
-                <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <UserAvatar user={user} />
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground">{user.name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
               </div>
+              {user.userCode ? (
+                <UserCodeChip code={user.userCode} className="w-fit" />
+              ) : null}
             </div>
           ) : (
             <p className="font-semibold">{t("account")}</p>

@@ -20,12 +20,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useRouter } from "@/i18n/navigation";
+import type { PublicFilterSchema } from "@/lib/catalog/public-filter";
 import {
   CATALOG_LAYOUT_COOKIE,
   parseCatalogLayout,
   type CatalogLayout,
 } from "@/utils/catalog-layout";
-import { parseCatalogSort, type CatalogSort } from "@/utils/catalog-query";
+import {
+  buildCatalogHref,
+  parseCatalogSort,
+  type CatalogSort,
+} from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -38,13 +43,8 @@ import {
 } from "react-icons/lu";
 import { useDebouncedCallback } from "use-debounce";
 
-function persistLayout(layout: CatalogLayout) {
+function persistLayoutCookie(layout: CatalogLayout) {
   document.cookie = `${CATALOG_LAYOUT_COOKIE}=${layout}; Path=/; Max-Age=31536000; SameSite=Lax`;
-  const params = new URLSearchParams(window.location.search);
-  params.set("layout", layout);
-  const query = params.toString();
-  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-  window.history.replaceState(window.history.state, "", nextUrl);
 }
 
 function CatalogSearch({
@@ -66,11 +66,10 @@ function CatalogSearch({
   }
 
   const handleSearch = useDebouncedCallback((value: string) => {
-    const params = new URLSearchParams(window.location.search);
-    if (value) params.set("search", value);
-    else params.delete("search");
-    const query = params.toString();
-    router.replace(query ? `/products?${query}` : "/products", { scroll: false });
+    const href = buildCatalogHref(new URLSearchParams(window.location.search), {
+      search: value,
+    });
+    router.replace(href, { scroll: false });
   }, 400);
 
   return (
@@ -102,11 +101,10 @@ function CatalogSortButton({
   const sort = parseCatalogSort(searchParams.get("sort") ?? initialSort);
 
   function selectSort(next: string) {
-    const params = new URLSearchParams(window.location.search);
-    if (next && next !== "newest") params.set("sort", next);
-    else params.delete("sort");
-    const query = params.toString();
-    router.replace(query ? `/products?${query}` : "/products", { scroll: false });
+    const href = buildCatalogHref(new URLSearchParams(window.location.search), {
+      sort: parseCatalogSort(next),
+    });
+    router.replace(href, { scroll: false });
   }
 
   return (
@@ -130,12 +128,12 @@ function CatalogSortButton({
 }
 
 function CatalogFilterSheet({
-  brands,
+  schema,
 }: {
-  brands: string[];
+  schema: PublicFilterSchema;
 }) {
   const t = useTranslations("Products");
-  const { activeCount } = useCatalogFilters(brands);
+  const { activeCount } = useCatalogFilters(schema);
 
   return (
     <Sheet>
@@ -156,20 +154,20 @@ function CatalogFilterSheet({
           ) : null}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="flex w-80 flex-col gap-6 sm:max-w-80">
-        <SheetHeader className="text-left">
+      <SheetContent>
+        <SheetHeader>
           <SheetTitle>{t("filter")}</SheetTitle>
         </SheetHeader>
-        <CatalogFilterFields brands={brands} idPrefix="catalog-mobile" />
+        <CatalogFilterFields schema={schema} idPrefix="catalog-mobile" />
       </SheetContent>
     </Sheet>
   );
 }
 
 function CatalogFilterSidebar({
-  brands,
+  schema,
 }: {
-  brands: string[];
+  schema: PublicFilterSchema;
 }) {
   const t = useTranslations("Products");
 
@@ -180,7 +178,7 @@ function CatalogFilterSidebar({
           <CardTitle className="text-base">{t("filter")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <CatalogFilterFields brands={brands} idPrefix="catalog-desktop" />
+          <CatalogFilterFields schema={schema} idPrefix="catalog-desktop" />
         </CardContent>
       </Card>
     </aside>
@@ -191,33 +189,43 @@ export default function CatalogView({
   initialLayout,
   initialSearch,
   initialSort,
-  brands,
+  schema,
   children,
 }: {
   initialLayout: CatalogLayout;
   initialSearch: string;
   initialSort: CatalogSort;
-  brands: string[];
+  schema: PublicFilterSchema;
   children: ReactNode;
 }) {
   const t = useTranslations("Products");
   const router = useRouter();
-  const layout = parseCatalogLayout(initialLayout);
+  const [layout, setLayout] = useState(parseCatalogLayout(initialLayout));
+  const [prevLayout, setPrevLayout] = useState(initialLayout);
+
+  if (initialLayout !== prevLayout) {
+    setPrevLayout(initialLayout);
+    setLayout(parseCatalogLayout(initialLayout));
+  }
 
   function selectLayout(next: CatalogLayout) {
-    persistLayout(next);
-    router.refresh();
+    setLayout(next);
+    persistLayoutCookie(next);
+    const href = buildCatalogHref(new URLSearchParams(window.location.search), {
+      layout: next,
+    });
+    router.replace(href, { scroll: false });
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
-      <CatalogFilterSidebar brands={brands} />
+      <CatalogFilterSidebar schema={schema} />
       <div className="min-w-0">
         <section className="flex flex-col gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <CatalogSearch initialSearch={initialSearch} />
             <CatalogSortButton initialSort={initialSort} />
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="hidden shrink-0 items-center gap-1 md:flex">
               <Button
                 type="button"
                 variant={layout === "grid" ? "default" : "ghost"}
@@ -241,7 +249,7 @@ export default function CatalogView({
                 <LuList />
               </Button>
             </div>
-            <CatalogFilterSheet brands={brands} />
+            <CatalogFilterSheet schema={schema} />
           </div>
         </section>
         <div className="mt-6">{children}</div>

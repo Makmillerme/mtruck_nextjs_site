@@ -1,20 +1,28 @@
 import AdminProductsView from "@/components/admin/products/admin-products-view";
 import {
   fetchAttributesForNode,
+  fetchDisplayGroupsForNode,
+  fetchRootCatalogAttributes,
   fetchTaxonomyTree,
   flattenTaxonomyTree,
   resolveAttributesByKey,
+  resolveDisplayGroupsByKey,
 } from "@/lib/catalog/taxonomy";
 import { fetchAdminProducts } from "@/utils/actions";
 import { getLocale } from "next-intl/server";
+import { getStaffUser, isAdminRole } from "@/utils/session";
 
 async function AdminProductsPage(props: {
   searchParams: Promise<{ create?: string; edit?: string; node?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const locale = await getLocale();
-  const items = await fetchAdminProducts();
-  const tree = await fetchTaxonomyTree();
+  const { role } = await getStaffUser();
+  const [items, tree, tableAttributes] = await Promise.all([
+    fetchAdminProducts(),
+    fetchTaxonomyTree(),
+    fetchRootCatalogAttributes(),
+  ]);
   const flatFolders = flattenTaxonomyTree(tree);
   const createOpen = searchParams.create === "1";
   const editId = searchParams.edit?.trim() || undefined;
@@ -32,6 +40,13 @@ async function AdminProductsPage(props: {
     sheetOpen && selectedExists && selectedId
       ? resolveAttributesByKey(await fetchAttributesForNode(selectedId))
       : [];
+  const displayGroups =
+    sheetOpen && selectedExists && selectedId
+      ? resolveDisplayGroupsByKey(await fetchDisplayGroupsForNode(selectedId))
+      : [];
+  const nameFromDisplayGroup = displayGroups.some(
+    (group) => group.writesProductName
+  );
 
   return (
     <AdminProductsView
@@ -41,6 +56,9 @@ async function AdminProductsPage(props: {
       selectedNodeId={selectedExists ? selectedId : undefined}
       tree={tree}
       attributes={attributes}
+      tableAttributes={tableAttributes}
+      nameFromDisplayGroup={nameFromDisplayGroup}
+      canDelete={isAdminRole(role)}
       items={items.map((item) => ({
         id: item.id,
         name: item.name,
@@ -58,6 +76,10 @@ async function AdminProductsPage(props: {
           numberValue: spec.numberValue,
           textValue: spec.textValue,
           booleanValue: spec.booleanValue,
+          optionLabel: spec.option?.label ?? null,
+          attributeKey: spec.attribute?.key ?? null,
+          unit: spec.attribute?.unit ?? null,
+          type: spec.attribute?.type ?? null,
         })),
       }))}
     />

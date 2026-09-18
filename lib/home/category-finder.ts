@@ -73,12 +73,19 @@ export function getMockOfferCount(
   return count;
 }
 
-/** Finder params use `make`/`status`/`category` so they do not clash with
- *  catalog `brand` (company) filter until vehicle taxonomy exists. */
+const FINDER_FOLDER_SLUG: Record<CategoryId, string> = {
+  tractors: "vantazhni-avto",
+  semitrailers: "prychepy",
+  containers: "kontejnerovozy",
+  vans: "vantazhni-avto",
+  special: "komercijna-tehnika",
+};
+
+/** Maps homepage finder → public catalog query (`folder`, `f.*`). */
 export function buildProductsHref(
   categoryId: CategoryId,
   brandId: string | null,
-  status: StatusFilter,
+  _status: StatusFilter,
   ranges?: {
     yearFrom?: number;
     yearTo?: number;
@@ -87,13 +94,12 @@ export function buildProductsHref(
   }
 ): string {
   const params = new URLSearchParams();
-  params.set("category", categoryId);
-  if (brandId) params.set("make", brandId);
-  if (status !== "all") params.set("status", status);
-  if (ranges?.yearFrom != null) params.set("yearFrom", String(ranges.yearFrom));
-  if (ranges?.yearTo != null) params.set("yearTo", String(ranges.yearTo));
-  if (ranges?.kmFrom != null) params.set("kmFrom", String(ranges.kmFrom));
-  if (ranges?.kmTo != null) params.set("kmTo", String(ranges.kmTo));
+  params.set("folder", FINDER_FOLDER_SLUG[categoryId] ?? categoryId);
+  if (brandId) params.set("f.make", brandId);
+  if (ranges?.yearFrom != null) params.set("f.yearMin", String(ranges.yearFrom));
+  if (ranges?.yearTo != null) params.set("f.yearMax", String(ranges.yearTo));
+  if (ranges?.kmFrom != null) params.set("f.mileageMin", String(ranges.kmFrom));
+  if (ranges?.kmTo != null) params.set("f.mileageMax", String(ranges.kmTo));
   const query = params.toString();
   return query ? `/products?${query}` : "/products";
 }

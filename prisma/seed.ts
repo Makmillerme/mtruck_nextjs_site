@@ -56,8 +56,6 @@ async function main() {
     adminBootstrap.password,
     adminBootstrap.image
   );
-  await ensureUser("Test User", "test@user.com", "12345678");
-
   const adminEmails = getAdminEmails();
   if (adminEmails.length > 0) {
     await prisma.user.updateMany({

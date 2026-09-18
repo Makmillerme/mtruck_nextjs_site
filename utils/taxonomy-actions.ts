@@ -7,12 +7,15 @@ import {
   attributeIdSchema,
   createAttributeOptionSchema,
   createAttributeSchema,
+  createDisplayGroupSchema,
   createTaxonomyNodeSchema,
+  displayGroupIdSchema,
   moveTaxonomyNodeSchema,
   nodeIdSchema,
   optionIdSchema,
   renameTaxonomyNodeSchema,
   updateAttributeFlagsSchema,
+  updateDisplayGroupSchema,
 } from "@/utils/taxonomy-schema";
 import { keyify, uniqueSlug } from "@/lib/catalog/slug";
 import {
@@ -41,6 +44,7 @@ async function renderTaxonomyError(error: unknown): Promise<TaxonomyActionState>
 function revalidateCatalog() {
   revalidatePath("/admin/catalog");
   revalidatePath("/admin/products/create");
+  revalidatePath("/products");
 }
 
 async function uniqueNodeSlug(name: string) {
@@ -90,6 +94,61 @@ async function nextAttributeSort(taxonomyNodeId: string) {
   return (aggregate._max.sortOrder ?? -1) + 1;
 }
 
+async function nextDisplayGroupSort(taxonomyNodeId: string) {
+  const aggregate = await db.displayGroup.aggregate({
+    where: { taxonomyNodeId },
+    _max: { sortOrder: true },
+  });
+  return (aggregate._max.sortOrder ?? -1) + 1;
+}
+
+async function uniqueDisplayGroupKey(taxonomyNodeId: string, name: string) {
+  const root = keyify(name);
+  let key = root;
+  let n = 2;
+  while (
+    await db.displayGroup.findUnique({
+      where: { taxonomyNodeId_key: { taxonomyNodeId, key } },
+    })
+  ) {
+    key = `${root}_${n}`;
+    n += 1;
+  }
+  return key;
+}
+
+function memberAttributeIdsFromForm(formData: FormData) {
+  return formData
+    .getAll("memberAttributeId")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+}
+
+async function assertMembersAllowed(
+  taxonomyNodeId: string,
+  memberAttributeIds: string[]
+) {
+  const t = await getTranslations("CatalogAdmin");
+  const path = await getPathNodes(taxonomyNodeId);
+  const pathIds = new Set(path.map((node) => node.id));
+  const attributes = await db.attributeDefinition.findMany({
+    where: { id: { in: memberAttributeIds } },
+    select: { id: true, taxonomyNodeId: true },
+  });
+  if (attributes.length !== memberAttributeIds.length) {
+    throw new Error(t("displayGroupMemberMissing"));
+  }
+  for (const attribute of attributes) {
+    if (!pathIds.has(attribute.taxonomyNodeId)) {
+      throw new Error(t("displayGroupMemberOutOfBranch"));
+    }
+  }
+  const unique = new Set(memberAttributeIds);
+  if (unique.size !== memberAttributeIds.length) {
+    throw new Error(t("displayGroupMemberDuplicate"));
+  }
+}
+
 async function nextOptionSort(attributeId: string, parentOptionId: string | null) {
   const aggregate = await db.attributeOption.aggregate({
     where: { attributeId, parentOptionId },
@@ -123,6 +182,7 @@ export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
     const data = validateWithZodSchema(createTaxonomyNodeSchema, {
       name: formData.get("name"),
       parentId: formData.get("parentId") ?? undefined,
+      showInFilter: checkbox(formData, "showInFilter"),
     });
     if (data.parentId) {
       const parent = await db.taxonomyNode.findUnique({
@@ -139,6 +199,7 @@ export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
         slug: await uniqueNodeSlug(data.name),
         parentId: data.parentId ?? null,
         sortOrder: await nextSiblingSort(data.parentId ?? null),
+        showInFilter: data.showInFilter,
       },
     });
     revalidateCatalog();
@@ -155,10 +216,11 @@ export const renameTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
     const data = validateWithZodSchema(renameTaxonomyNodeSchema, {
       nodeId: formData.get("nodeId"),
       name: formData.get("name"),
+      showInFilter: checkbox(formData, "showInFilter"),
     });
     await db.taxonomyNode.update({
       where: { id: data.nodeId },
-      data: { name: data.name },
+      data: { name: data.name, showInFilter: data.showInFilter },
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
@@ -241,6 +303,7 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
       isIdentity: checkbox(formData, "isIdentity"),
+      sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
     await assertDependsOnAllowed(data.taxonomyNodeId, data.dependsOnAttributeId);
     const key = await uniqueAttributeKey(
@@ -258,6 +321,7 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
         isRequired: data.isRequired,
         isFacet: data.isFacet,
         isIdentity: data.isIdentity,
+        sheetWidth: data.sheetWidth,
         sortOrder: await nextAttributeSort(data.taxonomyNodeId),
       },
     });
@@ -279,6 +343,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
       isIdentity: checkbox(formData, "isIdentity"),
+      sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
     await db.attributeDefinition.update({
       where: { id: data.attributeId },
@@ -288,6 +353,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
         isRequired: data.isRequired,
         isFacet: data.isFacet,
         isIdentity: data.isIdentity,
+        sheetWidth: data.sheetWidth,
       },
     });
     revalidateCatalog();
@@ -371,6 +437,121 @@ export const deleteAttributeOptionAction: TaxonomyAction = async (_prev, formDat
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
     return { message: t("optionDeleted"), ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+export const createDisplayGroupAction: TaxonomyAction = async (_prev, formData) => {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(createDisplayGroupSchema, {
+      taxonomyNodeId: formData.get("taxonomyNodeId"),
+      name: formData.get("name"),
+      key: formData.get("key") ?? undefined,
+      separator: formData.get("separator") ?? " ",
+      writesProductName: checkbox(formData, "writesProductName"),
+      memberAttributeIds: memberAttributeIdsFromForm(formData),
+    });
+    await assertMembersAllowed(data.taxonomyNodeId, data.memberAttributeIds);
+    const key = await uniqueDisplayGroupKey(
+      data.taxonomyNodeId,
+      data.key ?? data.name
+    );
+    if (data.writesProductName) {
+      await db.displayGroup.updateMany({
+        where: {
+          taxonomyNodeId: data.taxonomyNodeId,
+          writesProductName: true,
+        },
+        data: { writesProductName: false },
+      });
+    }
+    await db.displayGroup.create({
+      data: {
+        taxonomyNodeId: data.taxonomyNodeId,
+        name: data.name,
+        key,
+        separator: data.separator,
+        writesProductName: data.writesProductName,
+        sortOrder: await nextDisplayGroupSort(data.taxonomyNodeId),
+        members: {
+          create: data.memberAttributeIds.map((attributeId, index) => ({
+            attributeId,
+            sortOrder: index,
+          })),
+        },
+      },
+    });
+    revalidateCatalog();
+    const t = await getTranslations("CatalogAdmin");
+    return { message: t("displayGroupCreated"), ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+export const updateDisplayGroupAction: TaxonomyAction = async (_prev, formData) => {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(updateDisplayGroupSchema, {
+      groupId: formData.get("groupId"),
+      name: formData.get("name"),
+      separator: formData.get("separator") ?? " ",
+      writesProductName: checkbox(formData, "writesProductName"),
+      memberAttributeIds: memberAttributeIdsFromForm(formData),
+    });
+    const existing = await db.displayGroup.findUnique({
+      where: { id: data.groupId },
+      select: { id: true, taxonomyNodeId: true },
+    });
+    const t = await getTranslations("CatalogAdmin");
+    if (!existing) throw new Error(t("displayGroupMissing"));
+    await assertMembersAllowed(existing.taxonomyNodeId, data.memberAttributeIds);
+    if (data.writesProductName) {
+      await db.displayGroup.updateMany({
+        where: {
+          taxonomyNodeId: existing.taxonomyNodeId,
+          writesProductName: true,
+          NOT: { id: existing.id },
+        },
+        data: { writesProductName: false },
+      });
+    }
+    await db.$transaction([
+      db.displayGroupMember.deleteMany({ where: { groupId: existing.id } }),
+      db.displayGroup.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name,
+          separator: data.separator,
+          writesProductName: data.writesProductName,
+          members: {
+            create: data.memberAttributeIds.map((attributeId, index) => ({
+              attributeId,
+              sortOrder: index,
+            })),
+          },
+        },
+      }),
+    ]);
+    revalidateCatalog();
+    return { message: t("displayGroupUpdated"), ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+export const deleteDisplayGroupAction: TaxonomyAction = async (_prev, formData) => {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(displayGroupIdSchema, {
+      groupId: formData.get("groupId"),
+    });
+    await db.displayGroup.delete({ where: { id: data.groupId } });
+    revalidateCatalog();
+    const t = await getTranslations("CatalogAdmin");
+    return { message: t("displayGroupDeleted"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }

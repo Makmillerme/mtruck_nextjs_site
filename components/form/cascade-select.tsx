@@ -145,7 +145,7 @@ export default function CascadeSelect({
             type="button"
             variant="outline"
             className={cn(
-              "h-11 w-full max-w-sm justify-between px-3 font-normal",
+              "h-11 w-full justify-between px-3 font-normal",
               !label && "text-muted-foreground",
               triggerClassName
             )}

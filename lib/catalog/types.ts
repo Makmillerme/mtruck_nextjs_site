@@ -8,6 +8,10 @@ export const ATTRIBUTE_TYPES = [
 
 export type AttributeTypeName = (typeof ATTRIBUTE_TYPES)[number];
 
+export const SHEET_WIDTHS = ["FULL", "HALF", "THIRD"] as const;
+
+export type SheetWidthName = (typeof SHEET_WIDTHS)[number];
+
 export type TaxonomyNodeRow = {
   id: string;
   parentId: string | null;
@@ -15,6 +19,7 @@ export type TaxonomyNodeRow = {
   name: string;
   sortOrder: number;
   isActive: boolean;
+  showInFilter: boolean;
 };
 
 export type TaxonomyTreeNode = TaxonomyNodeRow & {
@@ -59,8 +64,35 @@ export type CatalogAttribute = {
   isFacet: boolean;
   isIdentity: boolean;
   unit: string | null;
+  sheetWidth: SheetWidthName;
   sortOrder: number;
   source: AttributeSource;
   inherited: boolean;
   options: AttributeOptionRow[];
+};
+
+export type DisplayGroupMemberRow = {
+  id: string;
+  attributeId: string;
+  sortOrder: number;
+  attribute: {
+    id: string;
+    key: string;
+    name: string;
+    type: AttributeTypeName;
+    unit: string | null;
+  };
+};
+
+export type CatalogDisplayGroup = {
+  id: string;
+  taxonomyNodeId: string;
+  key: string;
+  name: string;
+  separator: string;
+  sortOrder: number;
+  writesProductName: boolean;
+  source: AttributeSource;
+  inherited: boolean;
+  members: DisplayGroupMemberRow[];
 };

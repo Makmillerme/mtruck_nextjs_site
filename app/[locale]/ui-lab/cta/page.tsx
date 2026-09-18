@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import UiLabCta from "@/components/dev/ui-lab-cta";
@@ -13,10 +12,6 @@ export default async function UiLabCtaPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  if (process.env.NODE_ENV === "production") {
-    notFound();
-  }
-
   const { locale } = await params;
   setRequestLocale(locale);
 

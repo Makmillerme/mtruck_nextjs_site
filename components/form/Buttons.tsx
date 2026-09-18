@@ -163,8 +163,8 @@ export const ProductSignInButton = () => {
   const t = useTranslations("Product");
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <Button type="button" className="mt-8" asChild>
-      <Link href={href}>{t("signIn")}</Link>
+    <Button type="button" className="w-fit" asChild>
+      <Link href={href}>{t("signInToOrder")}</Link>
     </Button>
   );
 };

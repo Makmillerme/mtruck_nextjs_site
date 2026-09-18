@@ -4,8 +4,10 @@ import type { ReactNode } from "react";
 
 export default function AccountShell({
   children,
+  userCode,
 }: {
   children: ReactNode;
+  userCode?: string | null;
 }) {
   return (
     <div id="account-shell" className="w-full">
@@ -13,7 +15,7 @@ export default function AccountShell({
         <AccountMobileTabs />
       </div>
       <div className="flex min-w-0 flex-col gap-6 pb-6 md:pb-8">
-        <AccountBreadcrumbs />
+        <AccountBreadcrumbs userCode={userCode} />
         {children}
       </div>
     </div>

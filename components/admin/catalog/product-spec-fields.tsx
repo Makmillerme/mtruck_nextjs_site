@@ -5,11 +5,13 @@ import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import type { CatalogAttribute } from "@/lib/catalog/types";
+import { packSheetAttributes } from "@/lib/catalog/sheet-layout";
 import { specInputName, sortByDependency } from "@/lib/catalog/spec-fields";
 import {
   CatalogFlag,
   catalogSelectClassName,
 } from "@/components/admin/catalog/catalog-fields";
+import { cn } from "@/lib/utils";
 
 export default function ProductSpecFields({
   attributes,
@@ -20,6 +22,7 @@ export default function ProductSpecFields({
 }) {
   const t = useTranslations("CatalogAdmin");
   const ordered = useMemo(() => sortByDependency(attributes), [attributes]);
+  const layout = useMemo(() => packSheetAttributes(ordered), [ordered]);
   const [values, setValues] = useState<Record<string, string>>(initialValues);
 
   function setValue(attributeId: string, value: string, dependents: string[]) {
@@ -51,8 +54,8 @@ export default function ProductSpecFields({
   return (
     <div className="grid gap-4">
       <p className="font-medium">{t("productSpecs")}</p>
-      <div className="grid gap-4 md:grid-cols-2">
-        {ordered.map((attribute) => {
+      <div className="grid grid-cols-6 gap-6">
+        {layout.map(({ attribute, className }) => {
           const label = attribute.unit
             ? `${attribute.name}, ${attribute.unit}`
             : attribute.name;
@@ -69,7 +72,7 @@ export default function ProductSpecFields({
               attribute.dependsOnAttributeId && !parentValue
             );
             return (
-              <div key={attribute.id} className="grid gap-2">
+              <div key={attribute.id} className={cn("grid gap-2", className)}>
                 <Label htmlFor={specInputName("option", attribute.id)}>
                   {label}
                 </Label>
@@ -100,17 +103,18 @@ export default function ProductSpecFields({
           }
           if (attribute.type === "BOOLEAN") {
             return (
-              <CatalogFlag
-                key={attribute.id}
-                name={specInputName("bool", attribute.id)}
-                label={label}
-                defaultChecked={initialValues[attribute.id] === "true"}
-              />
+              <div key={attribute.id} className={cn("grid gap-2", className)}>
+                <CatalogFlag
+                  name={specInputName("bool", attribute.id)}
+                  label={label}
+                  defaultChecked={initialValues[attribute.id] === "true"}
+                />
+              </div>
             );
           }
           if (attribute.type === "TEXT") {
             return (
-              <div key={attribute.id} className="grid gap-2">
+              <div key={attribute.id} className={cn("grid gap-2", className)}>
                 <Label htmlFor={specInputName("text", attribute.id)}>
                   {label}
                 </Label>
@@ -124,7 +128,7 @@ export default function ProductSpecFields({
             );
           }
           return (
-            <div key={attribute.id} className="grid gap-2">
+            <div key={attribute.id} className={cn("grid gap-2", className)}>
               <Label htmlFor={specInputName("number", attribute.id)}>
                 {label}
               </Label>

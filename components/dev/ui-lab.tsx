@@ -56,9 +56,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  tableLinkClassName,
 } from "@/components/ui/table";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Sheet,
   SheetContent,
@@ -88,6 +101,11 @@ import UiLabHeader from "@/components/dev/ui-lab-header";
 import UiLabHomepageClose from "@/components/dev/ui-lab-homepage-close";
 import UiLabMarks from "@/components/dev/ui-lab-marks";
 import UiLabCascade from "@/components/dev/ui-lab-cascade";
+import UiLabLayoutRules from "@/components/dev/ui-lab-layout";
+import {
+  UiLabCatalogFilterDemo,
+  UiLabCatalogPaginationDemo,
+} from "@/components/dev/ui-lab-catalog-filter";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -276,7 +294,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             </h1>
             <p className="text-base leading-relaxed text-muted-foreground">
               Канон примітивів, які йдуть на сайт. `default` — navy на світлому, біла
-              пластина на hero/navy. У production маршрут віддає 404.
+              пластина на hero/navy. Лише ADMIN; у production маршрут віддає 404.
             </p>
           </header>
 
@@ -291,6 +309,36 @@ export default function UiLab({ children }: { children?: ReactNode }) {
           />
 
           <div className="mt-12 space-y-16 md:mt-16">
+          <LabGate id="layout" visibleIds={visibleIds}>
+            <Section
+              id="layout"
+              title="Правила розмітки"
+              hint="Канон для всіх сторінок: шрифт, горизонтальні gutters, вертикаль секцій, вкладеність layout."
+            >
+              <UiLabLayoutRules />
+            </Section>
+          </LabGate>
+
+          <LabGate id="catalog-filter" visibleIds={visibleIds}>
+            <Section
+              id="catalog-filter"
+              title="Фільтр каталогу"
+              hint="Вкладений Accordion type=single: сусід закриває сусіда; поля лише в листку."
+            >
+              <UiLabCatalogFilterDemo />
+            </Section>
+          </LabGate>
+
+          <LabGate id="catalog-pagination" visibleIds={visibleIds}>
+            <Section
+              id="catalog-pagination"
+              title="Пагінація каталогу"
+              hint="Стрілки + сторінка/усього + Select 10/25/40."
+            >
+              <UiLabCatalogPaginationDemo />
+            </Section>
+          </LabGate>
+
           {visibleIds.size === 0 ? (
             <Empty className="border border-dashed border-border">
               <EmptyHeader>
@@ -532,7 +580,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="table"
               title="Table"
-              hint="Лічильник над таблицею, шапка secondary, uppercase tracking, hover pastel — єдиний патерн для адмінки (товари, продажі)."
+              hint="Лічильник над таблицею, Card + p-0, шапка secondary, uppercase tracking, hover pastel. Назва авто — Button link + tableLinkClassName. Той самий патерн: адмінка і кабінет."
             >
               <div className="grid max-w-3xl gap-3">
                 <p className="text-sm text-muted-foreground">
@@ -553,7 +601,15 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                       <TableBody>
                         <TableRow>
                           <TableCell>buyer@mtruck.ua</TableCell>
-                          <TableCell>Actros 1845</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              asChild
+                              className={tableLinkClassName}
+                            >
+                              <Link href="/products">Actros 1845</Link>
+                            </Button>
+                          </TableCell>
                           <TableCell>$38 500</TableCell>
                           <TableCell>
                             <Badge>Оплачено</Badge>
@@ -562,7 +618,15 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                         </TableRow>
                         <TableRow>
                           <TableCell>fleet@example.com</TableCell>
-                          <TableCell>FH 460</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              asChild
+                              className={tableLinkClassName}
+                            >
+                              <Link href="/products">FH 460</Link>
+                            </Button>
+                          </TableCell>
                           <TableCell>$52 000</TableCell>
                           <TableCell>
                             <Badge variant="secondary">Не оплачено</Badge>
@@ -571,7 +635,15 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                         </TableRow>
                         <TableRow>
                           <TableCell>office@logistics.de</TableCell>
-                          <TableCell>R450</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              asChild
+                              className={tableLinkClassName}
+                            >
+                              <Link href="/products">R450</Link>
+                            </Button>
+                          </TableCell>
                           <TableCell>$41 200</TableCell>
                           <TableCell>
                             <Badge>Оплачено</Badge>
@@ -607,7 +679,18 @@ export default function UiLab({ children }: { children?: ReactNode }) {
           </LabGate>
 
           <LabGate id="overlays" visibleIds={visibleIds}>
-            <Section id="overlays" title="Dropdown / Popover / Tooltip / Sheet">
+            <Section
+              id="overlays"
+              title="Dropdown / Popover / Tooltip / Sheet / AlertDialog"
+            >
+              <p className="mb-3 max-w-2xl text-sm text-muted-foreground">
+                Правило: будь-яке видалення — лише після підтвердження. У таблицях
+                — <code className="text-xs">ConfirmDeleteIcon</code>; у Sheet
+                footer — <code className="text-xs">ConfirmDeleteFormButton</code>
+                (через <code className="text-xs">SheetFormActions</code>). AlertDialog
+                z-[110], щоб бути над Sheet. CMS folders/fields — двокрокове
+                підтвердження в sheet, не окремий dialog.
+              </p>
               <div className="flex flex-wrap items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -656,10 +739,14 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                         Приклад бічної панелі (мобільне меню / фільтри каталогу).
                       </SheetDescription>
                     </SheetHeader>
-                    <div className="grid gap-4 py-6">
-                      <div className="space-y-2">
+                    <div className="grid gap-6">
+                      <div className="grid gap-2">
                         <Label htmlFor="sheet-brand">Марка</Label>
                         <Input id="sheet-brand" placeholder="MAN" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Папка</Label>
+                        <UiLabCascade />
                       </div>
                     </div>
                     <SheetFooter>
@@ -667,6 +754,24 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">AlertDialog delete</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Видалити?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Демо ConfirmDelete: дія не виконується без підтвердження.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                      <AlertDialogAction>Видалити</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </Section>
           </LabGate>

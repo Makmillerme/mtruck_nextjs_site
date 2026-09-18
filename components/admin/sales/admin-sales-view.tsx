@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogField } from "@/components/admin/catalog/catalog-fields";
-import { IconButton, SubmitButton } from "@/components/form/Buttons";
+import { SubmitButton } from "@/components/form/Buttons";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import FormContainer from "@/components/form/FormContainer";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +28,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  tableActionsClassName,
+  tableLinkClassName,
 } from "@/components/ui/table";
 import {
+  archiveAdminOrderAction,
   createAdminOrderAction,
-  deleteAdminOrderAction,
   updateAdminOrderAction,
 } from "@/utils/actions";
 import type { actionFunction } from "@/utils/types";
@@ -38,13 +41,16 @@ import { formatCurrency, formatDate } from "@/utils/format";
 import AdminListToolbar, {
   AdminFilterTrigger,
 } from "@/components/admin/admin-list-toolbar";
-import { LuPen } from "react-icons/lu";
+import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
+import { LuArchive, LuPen } from "react-icons/lu";
 
 export type AdminOrderRow = {
   id: string;
   email: string;
   userId: string;
   userName: string;
+  kind: "CATALOG" | "REQUEST";
+  status: "NEW" | "IN_PROGRESS" | "CLOSED";
   productId: string | null;
   productName: string | null;
   products: number;
@@ -59,6 +65,8 @@ export type AdminOrderUserOption = {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
+  userCode: string;
 };
 
 export type AdminOrderProductOption = {
@@ -66,17 +74,15 @@ export type AdminOrderProductOption = {
   name: string;
   company: string;
   price: number;
+  productCode: string;
+  status: string;
 };
 
-function DeleteOrder({ orderId }: { orderId: string }) {
-  const deleteOrder = deleteAdminOrderAction.bind(null, {
+function ArchiveOrder({ orderId }: { orderId: string }) {
+  const archiveOrder = archiveAdminOrderAction.bind(null, {
     orderId,
   }) as unknown as actionFunction;
-  return (
-    <FormContainer action={deleteOrder}>
-      <IconButton actionType="delete" />
-    </FormContainer>
-  );
+  return <ConfirmDeleteIcon action={archiveOrder} mode="archive" />;
 }
 
 function OrderFormFields({
@@ -108,6 +114,38 @@ function OrderFormFields({
   );
   const [isPaid, setIsPaid] = useState(defaults?.isPaid ?? false);
 
+  const userOptions = useMemo(
+    () =>
+      users.map((user) => ({
+        value: user.id,
+        label: user.name
+          ? `${user.userCode} · ${user.name} · ${user.email}`
+          : `${user.userCode} · ${user.email}`,
+        keywords: [
+          user.userCode,
+          user.name,
+          user.email,
+          user.phone ?? "",
+        ],
+      })),
+    [users]
+  );
+
+  const productOptions = useMemo(
+    () =>
+      products.map((product) => ({
+        value: product.id,
+        label: `${product.productCode} · ${product.name} · ${product.company}`,
+        keywords: [
+          product.productCode,
+          product.name,
+          product.company,
+          product.status,
+        ],
+      })),
+    [products]
+  );
+
   function onProductChange(nextId: string) {
     setProductId(nextId);
     if (!nextId) return;
@@ -119,46 +157,31 @@ function OrderFormFields({
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-2">
-        <label htmlFor="userId" className="text-sm font-medium">
-          {t("customer")}
-        </label>
-        <select
-          id="userId"
-          name="userId"
-          required
-          value={userId}
-          onChange={(event) => setUserId(event.target.value)}
-          className="flex h-11 w-full rounded-sm border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">{t("selectCustomer")}</option>
-          {users.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name ? `${user.name} · ${user.email}` : user.email}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SearchableEntityPicker
+        name="userId"
+        label={t("customer")}
+        placeholder={t("selectCustomer")}
+        searchPlaceholder={t("searchCustomerPlaceholder")}
+        emptyLabel={t("searchNoResults")}
+        options={userOptions}
+        value={userId}
+        onValueChange={setUserId}
+        required
+        allowClear={false}
+      />
 
-      <div className="grid gap-2">
-        <label htmlFor="productId" className="text-sm font-medium">
-          {t("vehicle")}
-        </label>
-        <select
-          id="productId"
-          name="productId"
-          value={productId ?? ""}
-          onChange={(event) => onProductChange(event.target.value)}
-          className="flex h-11 w-full rounded-sm border border-input bg-background px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">{t("selectVehicle")}</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name} · {product.company}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SearchableEntityPicker
+        name="productId"
+        label={t("vehicle")}
+        placeholder={t("selectVehicle")}
+        searchPlaceholder={t("searchVehiclePlaceholder")}
+        emptyLabel={t("searchNoResults")}
+        options={productOptions}
+        value={productId ?? ""}
+        onValueChange={onProductChange}
+        allowClear
+        clearLabel={t("vehicleUnset")}
+      />
 
       <CatalogField
         name="products"
@@ -205,6 +228,8 @@ export default function AdminSalesView({
   locale,
   createOpen,
   editId,
+  preselectedUserId,
+  canDelete = false,
 }: {
   items: AdminOrderRow[];
   users: AdminOrderUserOption[];
@@ -212,6 +237,8 @@ export default function AdminSalesView({
   locale: string;
   createOpen: boolean;
   editId?: string;
+  preselectedUserId?: string;
+  canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
   const tOrders = useTranslations("Orders");
@@ -244,7 +271,10 @@ export default function AdminSalesView({
 
   function setCreateOpen(open: boolean) {
     if (open) {
-      router.replace("/admin/sales?create=1", { scroll: false });
+      const userQuery = preselectedUserId
+        ? `&userId=${preselectedUserId}`
+        : "";
+      router.replace(`/admin/sales?create=1${userQuery}`, { scroll: false });
       return;
     }
     router.replace("/admin/sales", { scroll: false });
@@ -259,7 +289,7 @@ export default function AdminSalesView({
   }
 
   return (
-    <section className="grid min-w-0 gap-6">
+    <section className="grid w-full min-w-0 grid-cols-1 gap-6">
       <AdminListToolbar
         search={search}
         onSearchChange={setSearch}
@@ -274,11 +304,8 @@ export default function AdminSalesView({
                 count={activeFilterCount}
               />
             </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="flex w-full flex-col gap-6 sm:max-w-sm"
-            >
-              <SheetHeader className="text-left">
+            <SheetContent>
+              <SheetHeader>
                 <SheetTitle>{t("filter")}</SheetTitle>
               </SheetHeader>
               <div className="grid gap-6 overflow-y-auto">
@@ -325,9 +352,17 @@ export default function AdminSalesView({
         }
       />
 
-      <p className="text-sm text-muted-foreground">
-        {t("totalOrders", { count: filtered.length })}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {t("totalOrders", { count: filtered.length })}
+        </p>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/archive?tab=sales">
+            <LuArchive className="size-4" />
+            {t("archive")}
+          </Link>
+        </Button>
+      </div>
 
       {filtered.length === 0 ? (
         <EmptyList />
@@ -342,24 +377,46 @@ export default function AdminSalesView({
                   <TableHead>{tOrders("orderTotal")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{tOrders("date")}</TableHead>
-                  <TableHead>{t("actions")}</TableHead>
+                  <TableHead className={tableActionsClassName}>
+                    {t("actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="grid gap-0.5">
-                        <span>{order.email}</span>
-                        {order.userName ? (
-                          <span className="text-xs text-muted-foreground">
-                            {order.userName}
+                      <Button
+                        variant="link"
+                        asChild
+                        className={tableLinkClassName}
+                      >
+                        <Link href={`/admin/users?edit=${order.userId}`}>
+                          <span className="grid gap-0.5 text-left">
+                            <span>{order.email}</span>
+                            {order.userName ? (
+                              <span className="text-xs text-muted-foreground">
+                                {order.userName}
+                              </span>
+                            ) : null}
                           </span>
-                        ) : null}
-                      </div>
+                        </Link>
+                      </Button>
                     </TableCell>
                     <TableCell>
-                      {order.productName ?? t("vehicleUnset")}
+                      {order.productId && order.productName ? (
+                        <Button
+                          variant="link"
+                          asChild
+                          className={tableLinkClassName}
+                        >
+                          <Link href={`/products/${order.productId}`}>
+                            {order.productName}
+                          </Link>
+                        </Button>
+                      ) : (
+                        (order.productName ?? t("vehicleUnset"))
+                      )}
                     </TableCell>
                     <TableCell>
                       {formatCurrency(order.orderTotal, locale)}
@@ -372,8 +429,8 @@ export default function AdminSalesView({
                     <TableCell>
                       {formatDate(new Date(order.createdAt), locale)}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
+                    <TableCell className={tableActionsClassName}>
+                      <div className="inline-flex items-center justify-center gap-1">
                         <Button
                           type="button"
                           variant="ghost"
@@ -384,7 +441,9 @@ export default function AdminSalesView({
                         >
                           <LuPen />
                         </Button>
-                        <DeleteOrder orderId={order.id} />
+                        {canDelete ? (
+                          <ArchiveOrder orderId={order.id} />
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -396,12 +455,9 @@ export default function AdminSalesView({
       )}
 
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
-        >
-          <div className="grid gap-6 p-6">
-            <SheetHeader className="text-left">
+        <SheetContent>
+          <div className="grid gap-6">
+            <SheetHeader>
               <SheetTitle>{t("createOrderSheetTitle")}</SheetTitle>
               <SheetDescription>{t("createOrderSheetLede")}</SheetDescription>
             </SheetHeader>
@@ -410,7 +466,13 @@ export default function AdminSalesView({
               action={createAdminOrderAction}
             >
               <div className="grid gap-6">
-                <OrderFormFields users={users} products={products} />
+                <OrderFormFields
+                  users={users}
+                  products={products}
+                  defaults={{
+                    userId: preselectedUserId,
+                  }}
+                />
                 <SubmitButton text={t("submitCreateOrder")} className="w-fit" />
               </div>
             </FormContainer>
@@ -422,12 +484,9 @@ export default function AdminSalesView({
         open={Boolean(editOrder)}
         onOpenChange={(open) => setEditOpen(open, editOrder?.id)}
       >
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
-        >
-          <div className="grid gap-6 p-6">
-            <SheetHeader className="text-left">
+        <SheetContent>
+          <div className="grid gap-6">
+            <SheetHeader>
               <SheetTitle>{t("editOrderSheetTitle")}</SheetTitle>
               <SheetDescription>{t("editOrderSheetLede")}</SheetDescription>
             </SheetHeader>
@@ -454,21 +513,25 @@ export default function AdminSalesView({
                     />
                     <SheetFormActions
                       saveLabel={t("submitUpdate")}
-                      deleteFormId="delete-order-form"
+                      deleteFormId={
+                        canDelete ? "archive-order-form" : undefined
+                      }
                     />
                   </div>
                 </FormContainer>
-                <FormContainer
-                  id="delete-order-form"
-                  className="hidden"
-                  action={
-                    deleteAdminOrderAction.bind(null, {
-                      orderId: editOrder.id,
-                    }) as unknown as actionFunction
-                  }
-                >
-                  <input type="hidden" name="orderId" value={editOrder.id} />
-                </FormContainer>
+                {canDelete ? (
+                  <FormContainer
+                    id="archive-order-form"
+                    className="hidden"
+                    action={
+                      archiveAdminOrderAction.bind(null, {
+                        orderId: editOrder.id,
+                      }) as unknown as actionFunction
+                    }
+                  >
+                    <input type="hidden" name="orderId" value={editOrder.id} />
+                  </FormContainer>
+                ) : null}
               </>
             ) : null}
           </div>

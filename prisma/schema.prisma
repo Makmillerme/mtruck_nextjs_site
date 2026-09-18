@@ -11,6 +11,7 @@ generator client {
 enum UserRole {
   USER
   ADMIN
+  MANAGER
 }
 
 enum AttributeType {
@@ -34,12 +35,36 @@ enum ProductAvailability {
   TRANSIT
 }
 
+enum OrderKind {
+  CATALOG
+  REQUEST
+}
+
+enum OrderStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
+enum OrderOrigin {
+  USER
+  ADMIN
+}
+
+enum SheetWidth {
+  FULL
+  HALF
+  THIRD
+}
+
 model User {
   id            String    @id
   name          String
   email         String    @unique
   emailVerified Boolean
   image         String?
+  phone         String?
+  userCode      String    @unique
   role          UserRole  @default(USER)
   createdAt     DateTime
   updatedAt     DateTime
@@ -48,8 +73,11 @@ model User {
   products      Product[]
   favorites     Favorite[]
   reviews       Review[]
-  carts         Cart[]
   orders        Order[]
+  archivedAt    DateTime?
+
+  @@index([phone])
+  @@index([archivedAt])
 }
 
 model Session {
@@ -106,13 +134,13 @@ model Product {
   featured       Boolean
   image          String
   price          Int
+  productCode    String               @unique
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   userId         String
   user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   favorites      Favorite[]
   reviews        Review[]
-  cartItems      CartItem[]
   orders         Order[]
   taxonomyNodeId String?
   taxonomyNode   TaxonomyNode?        @relation(fields: [taxonomyNodeId], references: [id], onDelete: SetNull)
@@ -120,9 +148,11 @@ model Product {
   availability   ProductAvailability  @default(IN_STOCK)
   specs          ProductSpec[]
   images         ProductImage[]
+  archivedAt     DateTime?
 
   @@index([taxonomyNodeId])
   @@index([status])
+  @@index([archivedAt])
 }
 
 model ProductImage {
@@ -144,12 +174,15 @@ model TaxonomyNode {
   slug      String   @unique
   name      String
   sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
+  isActive      Boolean @default(true)
+  showInFilter  Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  attributes AttributeDefinition[]
-  products   Product[]
+  attributes    AttributeDefinition[]
+  displayGroups DisplayGroup[]
+  products      Product[]
+  orders        Order[]
 
   @@index([parentId])
 }
@@ -168,12 +201,14 @@ model AttributeDefinition {
   isFacet              Boolean       @default(true)
   isIdentity           Boolean       @default(false)
   unit                 String?
+  sheetWidth           SheetWidth    @default(FULL)
   sortOrder            Int           @default(0)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  options AttributeOption[]
-  specs   ProductSpec[]
+  options             AttributeOption[]
+  specs               ProductSpec[]
+  displayGroupMembers DisplayGroupMember[]
 
   @@unique([taxonomyNodeId, key])
   @@index([taxonomyNodeId])
@@ -217,6 +252,37 @@ model ProductSpec {
   @@index([productId])
 }
 
+model DisplayGroup {
+  id                String       @id @default(uuid())
+  taxonomyNodeId    String
+  taxonomyNode      TaxonomyNode @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  key               String
+  name              String
+  separator         String       @default(" ")
+  sortOrder         Int          @default(0)
+  writesProductName Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  members DisplayGroupMember[]
+
+  @@unique([taxonomyNodeId, key])
+  @@index([taxonomyNodeId])
+}
+
+model DisplayGroupMember {
+  id          String              @id @default(uuid())
+  groupId     String
+  group       DisplayGroup        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int                 @default(0)
+
+  @@unique([groupId, attributeId])
+  @@index([groupId])
+  @@index([attributeId])
+}
+
 model Favorite {
   id        String   @id @default(uuid())
   userId    String
@@ -241,47 +307,34 @@ model Review {
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-model Cart {
-  id             String     @id @default(uuid())
-  userId         String
-  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cartItems      CartItem[]
-  numItemsInCart Int        @default(0)
-  cartTotal      Int        @default(0)
-  shipping       Int        @default(5)
-  tax            Int        @default(0)
-  taxRate        Float      @default(0.1)
-  orderTotal     Int        @default(0)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  amount    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Order {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId  String?
-  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  products   Int      @default(0)
-  orderTotal Int      @default(0)
-  tax        Int      @default(0)
-  shipping   Int      @default(0)
-  email      String
-  isPaid     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind           OrderKind    @default(CATALOG)
+  status         OrderStatus  @default(NEW)
+  origin         OrderOrigin  @default(ADMIN)
+  productId      String?
+  product        Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  taxonomyNodeId String?
+  taxonomyNode   TaxonomyNode? @relation(fields: [taxonomyNodeId], references: [id], onDelete: SetNull)
+  specs          Json?
+  note           String?
+  products       Int          @default(1)
+  orderTotal     Int          @default(0)
+  tax            Int          @default(0)
+  shipping       Int          @default(0)
+  email          String
+  isPaid         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  archivedAt     DateTime?
 
   @@index([userId])
   @@index([productId])
+  @@index([taxonomyNodeId])
+  @@index([kind])
+  @@index([status])
+  @@index([origin])
+  @@index([archivedAt])
 }

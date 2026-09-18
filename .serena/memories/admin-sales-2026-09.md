@@ -3,12 +3,13 @@
 ## Table UI
 
 - `components/ui/table.tsx`: header `bg-secondary/50`, head uppercase tracking, row hover `secondary/40`.
+- Dates: `formatDate` = `DD.MM.YYYY` (`uk-UA` 2-digit). Products + sales: same Card/Table, status as `Badge`, vehicle name as `tableLinkClassName`.
 - Лічильник завжди **над** таблицею (`p.text-sm text-muted-foreground`), не `TableCaption`.
 - UI Lab Table оновлено під цей патерн (Badge статусу, колонка Авто).
 
 ## Продажі (`/admin/sales`)
 
-- `components/admin/sales/admin-sales-view.tsx`: пошук + Sheet-фільтр (оплата) + створення/редагування в Sheet (`?create=1`, `?edit=id`).
+- Таблиця продажів (2026-09-14): без колонки «Тип»; у «Статус» лише оплата (Оплачено / Не оплачено), без стану NEW/IN_PROGRESS/CLOSED.
 - Actions: `fetchAdminOrders` (усі + user/product), `fetchAdminOrderFormOptions`, `createAdminOrderAction`, `updateAdminOrderAction`, `deleteAdminOrderAction`.
 - Schema: `Order.productId` optional → конкретне авто; `adminOrderSchema` у `utils/schemas.ts`.
 - `prisma db push` уже виконано.

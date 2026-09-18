@@ -1,6 +1,7 @@
 import db from "@/utils/db";
 import type {
   CatalogAttribute,
+  CatalogDisplayGroup,
   SubtreeStats,
   TaxonomyNodeRow,
   TaxonomyTreeNode,
@@ -62,6 +63,7 @@ export async function fetchTaxonomyNodes() {
       name: true,
       sortOrder: true,
       isActive: true,
+      showInFilter: true,
     },
   });
 }
@@ -136,6 +138,7 @@ export async function getPathNodes(nodeId: string) {
       name: true,
       sortOrder: true,
       isActive: true,
+      showInFilter: true,
     },
   });
   while (current) {
@@ -150,6 +153,7 @@ export async function getPathNodes(nodeId: string) {
         name: true,
         sortOrder: true,
         isActive: true,
+        showInFilter: true,
       },
     });
   }
@@ -169,6 +173,7 @@ function mapAttribute(
     isFacet: boolean;
     isIdentity: boolean;
     unit: string | null;
+    sheetWidth: CatalogAttribute["sheetWidth"];
     sortOrder: number;
     taxonomyNode: { id: string; name: string };
     options: {
@@ -194,6 +199,7 @@ function mapAttribute(
     isFacet: def.isFacet,
     isIdentity: def.isIdentity,
     unit: def.unit,
+    sheetWidth: def.sheetWidth,
     sortOrder: def.sortOrder,
     source: def.taxonomyNode,
     inherited: def.taxonomyNodeId !== selectedNodeId,
@@ -227,11 +233,104 @@ export async function fetchAttributesForNode(nodeId: string) {
     .map((def) => mapAttribute(def, nodeId));
 }
 
+/** All attributes under root folders (main catalog trees), unique by key. */
+export async function fetchRootCatalogAttributes() {
+  const roots = await db.taxonomyNode.findMany({
+    where: { parentId: null, isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true },
+  });
+  if (roots.length === 0) return [] as CatalogAttribute[];
+  const subtreeIds = (
+    await Promise.all(roots.map((root) => collectSubtreeIds(root.id)))
+  ).flat();
+  const uniqueIds = [...new Set(subtreeIds)];
+  const defs = await db.attributeDefinition.findMany({
+    where: { taxonomyNodeId: { in: uniqueIds } },
+    include: attributeInclude,
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+  return resolveAttributesByKey(
+    defs.map((def) => mapAttribute(def, def.taxonomyNodeId))
+  );
+}
+
 /** Closest folder wins when the same key exists on parent and child. */
 export function resolveAttributesByKey(attributes: CatalogAttribute[]) {
   const byKey = new Map<string, CatalogAttribute>();
   for (const attribute of attributes) {
     byKey.set(attribute.key, attribute);
+  }
+  return [...byKey.values()].sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "uk")
+  );
+}
+
+export async function fetchDisplayGroupsForNode(nodeId: string) {
+  const path = await getPathNodes(nodeId);
+  const pathIds = path.map((node) => node.id);
+  const groups = await db.displayGroup.findMany({
+    where: { taxonomyNodeId: { in: pathIds } },
+    include: {
+      taxonomyNode: { select: { id: true, name: true } },
+      members: {
+        orderBy: [{ sortOrder: "asc" }],
+        include: {
+          attribute: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              type: true,
+              unit: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+  const depth = new Map(pathIds.map((id, index) => [id, index]));
+  return groups
+    .slice()
+    .sort(
+      (a, b) =>
+        (depth.get(a.taxonomyNodeId) ?? 0) - (depth.get(b.taxonomyNodeId) ?? 0) ||
+        a.sortOrder - b.sortOrder ||
+        a.name.localeCompare(b.name, "uk")
+    )
+    .map(
+      (group): CatalogDisplayGroup => ({
+        id: group.id,
+        taxonomyNodeId: group.taxonomyNodeId,
+        key: group.key,
+        name: group.name,
+        separator: group.separator,
+        sortOrder: group.sortOrder,
+        writesProductName: group.writesProductName,
+        source: group.taxonomyNode,
+        inherited: group.taxonomyNodeId !== nodeId,
+        members: group.members.map((member) => ({
+          id: member.id,
+          attributeId: member.attributeId,
+          sortOrder: member.sortOrder,
+          attribute: {
+            id: member.attribute.id,
+            key: member.attribute.key,
+            name: member.attribute.name,
+            type: member.attribute.type,
+            unit: member.attribute.unit,
+          },
+        })),
+      })
+    );
+}
+
+/** Closest folder wins when the same key exists on parent and child. */
+export function resolveDisplayGroupsByKey(groups: CatalogDisplayGroup[]) {
+  const byKey = new Map<string, CatalogDisplayGroup>();
+  for (const group of groups) {
+    byKey.set(group.key, group);
   }
   return [...byKey.values()].sort(
     (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "uk")

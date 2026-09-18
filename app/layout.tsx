@@ -1,19 +1,13 @@
 import { headers } from "next/headers";
-import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Manrope } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@teispace/next-themes";
 import { routing } from "@/i18n/routing";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin", "latin-ext", "vietnamese"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -40,7 +34,7 @@ export default async function RootLayout({
     <html
       lang={htmlLang}
       data-scroll-behavior="auto"
-      className={`${plusJakarta.variable} ${geistMono.variable} light`}
+      className={`${manrope.variable} light`}
       suppressHydrationWarning
     >
       <body className="flex min-h-dvh flex-col font-sans antialiased" suppressHydrationWarning>

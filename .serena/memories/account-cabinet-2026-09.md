@@ -1,16 +1,16 @@
-# Account cabinet (2026-09)
+## Account cabinet (2026-09, settings polish)
 
 ## Layout
-- Routes: `/account` redirects to `/account/orders`. Tabs: `/account/orders`, `/account/favorites`, `/account/settings`. No Overview.
-- Shell: `AccountShell` — framed `Tabs` on top at every breakpoint, then breadcrumbs + page. No sidebar / `AccountNavCard`.
-- Nav: `AccountMobileTabs` + `accountCabinetNav` in `utils/links.ts`. Pathname → active tab; Link + `router.push`.
-- Breadcrumbs: Home → Мій кабінет (`/account/orders`) → current tab.
-- Navbar «Мій кабінет» still points at `/account` (redirects to orders).
+- Routes: `/account` → `/account/orders`. Tabs: orders, favorites, settings.
+- Shell: `AccountShell` — framed Tabs, breadcrumbs + `UserCodeChip`, page.
+- `account/layout.tsx` calls `ensureUserCode` once.
 
-## Tabs primitive
-- `TabsList`: navy `border-2 border-primary` frame. Triggers have no own border; idle transparent, hover/active primary fill.
-- Same look in UI Lab, CMS catalog tabs, and cabinet.
+## Settings (premium compact)
+- One `max-w-2xl` Card `rounded-sm`:
+  - Identity: avatar + camera → Dialog avatar upload; name title + email once; outline «Змінити пароль» Dialog.
+  - Form: name + phone only; Save default aligned end.
+  - Session: border-t row inside same card (destructive sign-out).
+- No duplicate email field, no instructional CardDescription, no second sign-out Card.
 
-## Logout
-- Only at end of Settings (`AccountSettingsForms`)
-- Style: outline — red border + red text, no fill
+## User code chrome
+- `UserCodeChip` on breadcrumbs, mobile sheet, desktop dropdown.

@@ -1,0 +1,22 @@
+---
+description: Manrope — єдиний шрифт MTruck (кирилиця + латиниця). Без Jakarta/Geist/Inter.
+alwaysApply: true
+---
+
+# Типографіка — Manrope
+
+Єдиний шрифт сайту: **Manrope** (`next/font/google`), subsets `latin`, `latin-ext`, `cyrillic`, `cyrillic-ext`.
+
+- Підключення: [`app/layout.tsx`](app/layout.tsx) → CSS variable `--font-manrope` → `--font-sans` і `--font-mono` у [`app/globals.css`](app/globals.css).
+- `font-mono` — той самий Manrope + `uppercase tracking-[0.22em]`. Не підключати другий файловий шрифт.
+- Ваги 200–800. `font-black` / `font-extrabold` = ExtraBold 800 (у Manrope немає 900).
+
+## Заборонено
+
+- Plus Jakarta Sans, Geist, Geist Mono, Inter, Roboto як дефолт
+- Другий `next/font` / `@font-face` «для кирилиці»
+- `font-family: ui-monospace` / `SFMono` як окреме сімейство
+
+## Канон
+
+Живі зразки: UI Lab → Розмітка → «Шрифт» (`components/dev/ui-lab-layout.tsx`).

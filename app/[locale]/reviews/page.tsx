@@ -1,8 +1,7 @@
-import { deleteReviewAction, fetchProductReviewsByUser } from '@/utils/actions';
+import { fetchProductReviewsByUser } from '@/utils/actions';
 import ReviewCard from '@/components/reviews/ReviewCard';
 import SectionTitle from '@/components/global/SectionTitle';
-import FormContainer from '@/components/form/FormContainer';
-import { IconButton } from '@/components/form/Buttons';
+import DeleteReviewButton from '@/components/reviews/DeleteReviewButton';
 import { getTranslations } from 'next-intl/server';
 
 async function ReviewsPage() {
@@ -22,7 +21,7 @@ async function ReviewsPage() {
           const reviewInfo = { comment, rating, name, image };
           return (
             <ReviewCard key={review.id} reviewInfo={reviewInfo}>
-              <DeleteReview reviewId={review.id} />
+              <DeleteReviewButton reviewId={review.id} />
             </ReviewCard>
           );
         })}
@@ -30,14 +29,5 @@ async function ReviewsPage() {
     </>
   );
 }
-
-const DeleteReview = ({ reviewId }: { reviewId: string }) => {
-  const deleteReview = deleteReviewAction.bind(null, { reviewId });
-  return (
-    <FormContainer action={deleteReview}>
-      <IconButton actionType='delete' />
-    </FormContainer>
-  );
-};
 
 export default ReviewsPage;

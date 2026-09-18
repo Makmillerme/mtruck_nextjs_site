@@ -1,5 +1,6 @@
 "use client";
 
+import UserCodeChip from "@/components/account/UserCodeChip";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -28,30 +29,37 @@ function resolvePageKey(pathname: string): PageKey {
   return "orders";
 }
 
-export default function AccountBreadcrumbs() {
+export default function AccountBreadcrumbs({
+  userCode,
+}: {
+  userCode?: string | null;
+}) {
   const t = useTranslations("AccountCabinet");
   const pathname = usePathname();
   const pageKey = resolvePageKey(pathname);
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/">{t("home")}</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/account/orders">{t("title")}</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{t(pageKey)}</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/">{t("home")}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/account/orders">{t("title")}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{t(pageKey)}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      {userCode ? <UserCodeChip code={userCode} /> : null}
+    </div>
   );
 }

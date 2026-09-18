@@ -11,6 +11,7 @@
 ## Адмінка spacing
 
 - `admin/layout.tsx`: без `py-8` зверху — лише `pb-8`. Верхній відступ дає глобальний `main > .page-container` (`clamp(2.5rem, 5vw, 3.5rem)`), як на інших внутрішніх сторінках.
+- 2026-09-14: `grid` без `grid-cols-1` робить колонку `auto` (max-content). Тулбар і таблиця розпирали сторінку продажів (кнопка «Створити» обрізалась, «Дії» їхали вправо). Канон: `grid w-full min-w-0 grid-cols-1` (`minmax(0,1fr)`). Layout: `grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]`.
 
 ## CMS tree
 

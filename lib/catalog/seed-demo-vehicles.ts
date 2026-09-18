@@ -181,6 +181,8 @@ export async function wipeAndSeedDemoVehicles(
     const gallery = demo.imageIndexes.map((i) => DEMO_GALLERY[i]!);
     const cover = gallery[0]!;
 
+    const { generateUniqueProductCode } = await import("../codes");
+    const productCode = await generateUniqueProductCode();
     await prisma.product.create({
       data: {
         name: demo.name,
@@ -189,6 +191,7 @@ export async function wipeAndSeedDemoVehicles(
         featured: demo.featured,
         image: cover,
         price: demo.price,
+        productCode,
         userId: adminUserId,
         taxonomyNodeId: containers.id,
         status: "PUBLISHED",

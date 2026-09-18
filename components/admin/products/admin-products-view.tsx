@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
@@ -9,7 +9,8 @@ import ProductFolderPicker from "@/components/admin/catalog/product-folder-picke
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
 import { CatalogNativeSelect } from "@/components/admin/catalog/catalog-fields";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
-import { IconButton, SubmitButton } from "@/components/form/Buttons";
+import { SubmitButton } from "@/components/form/Buttons";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import CheckboxInput from "@/components/form/CheckboxInput";
 import FormContainer from "@/components/form/FormContainer";
 import FormInput from "@/components/form/FormInput";
@@ -34,20 +35,25 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  tableActionsClassName,
+  tableLinkClassName,
 } from "@/components/ui/table";
+import { formatSpecCell } from "@/lib/catalog/spec-display";
 import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
+import type { AttributeTypeName } from "@/lib/catalog/types";
 import {
+  archiveProductAction,
   createProductAction,
-  deleteProductAction,
   updateProductAction,
 } from "@/utils/actions";
-import { formatCurrency } from "@/utils/format";
 import type { actionFunction } from "@/utils/types";
 import AdminListToolbar, {
   AdminFilterTrigger,
 } from "@/components/admin/admin-list-toolbar";
 import Image from "next/image";
-import { LuPen } from "react-icons/lu";
+import { LuArchive, LuColumns3, LuPen } from "react-icons/lu";
+
+const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
 
 export type AdminProductSpec = {
   attributeId: string;
@@ -55,6 +61,10 @@ export type AdminProductSpec = {
   numberValue: number | null;
   textValue: string | null;
   booleanValue: boolean | null;
+  optionLabel?: string | null;
+  attributeKey?: string | null;
+  unit?: string | null;
+  type?: AttributeTypeName | null;
 };
 
 export type AdminProductRow = {
@@ -87,15 +97,11 @@ const STATUS_LABEL = {
   SOLD: "statusSold",
 } as const;
 
-function DeleteProduct({ productId }: { productId: string }) {
-  const deleteProduct = deleteProductAction.bind(null, {
+function ArchiveProduct({ productId }: { productId: string }) {
+  const archiveProduct = archiveProductAction.bind(null, {
     productId,
   }) as unknown as actionFunction;
-  return (
-    <FormContainer action={deleteProduct}>
-      <IconButton actionType="delete" />
-    </FormContainer>
-  );
+  return <ConfirmDeleteIcon action={archiveProduct} mode="archive" />;
 }
 
 function specsToInitial(specs: AdminProductSpec[]) {
@@ -112,18 +118,30 @@ function specsToInitial(specs: AdminProductSpec[]) {
   return values;
 }
 
+function findSpecForAttribute(
+  specs: AdminProductSpec[],
+  attribute: CatalogAttribute
+) {
+  return (
+    specs.find((spec) => spec.attributeId === attribute.id) ??
+    specs.find((spec) => spec.attributeKey === attribute.key)
+  );
+}
+
 function ProductSheetFields({
   tree,
   selectedNodeId,
   onFolderChange,
   attributes,
   product,
+  nameFromDisplayGroup = false,
 }: {
   tree: TaxonomyTreeNode[];
   selectedNodeId?: string;
   onFolderChange: (nodeId: string | null) => void;
   attributes: CatalogAttribute[];
   product?: AdminProductRow;
+  nameFromDisplayGroup?: boolean;
 }) {
   const t = useTranslations("Admin");
   const catalogT = useTranslations("CatalogAdmin");
@@ -155,18 +173,32 @@ function ProductSheetFields({
           <option value="IN_STOCK">{t("availabilityStock")}</option>
           <option value="TRANSIT">{t("availabilityTransit")}</option>
         </CatalogNativeSelect>
-        <FormInput
-          type="text"
-          name="name"
-          label={t("productName")}
-          defaultValue={product?.name ?? ""}
-        />
-        <FormInput
-          type="text"
-          name="company"
-          label={t("company")}
-          defaultValue={product?.company ?? ""}
-        />
+        {nameFromDisplayGroup ? (
+          <div className="grid gap-2">
+            <p className="text-sm font-medium">{t("productName")}</p>
+            <p className="text-sm text-muted-foreground">
+              {catalogT("productNameFromDisplayGroup")}
+            </p>
+            {product?.name ? (
+              <p className="rounded-sm border bg-muted/40 px-3 py-2 text-sm">
+                {product.name}
+              </p>
+            ) : null}
+            <input
+              type="hidden"
+              name="name"
+              value={product?.name?.trim() || "Авто"}
+            />
+          </div>
+        ) : (
+          <FormInput
+            type="text"
+            name="name"
+            label={t("productName")}
+            defaultValue={product?.name ?? ""}
+          />
+        )}
+        <input type="hidden" name="company" value={product?.company ?? ""} />
         <PriceInput defaultValue={product?.price} />
         {product ? (
           <div className="relative aspect-[4/3] max-w-xs overflow-hidden rounded-sm border bg-muted">
@@ -206,20 +238,25 @@ function ProductSheetFields({
 
 export default function AdminProductsView({
   items,
-  locale,
   tree,
   attributes,
+  tableAttributes,
   createOpen,
   editId,
   selectedNodeId,
+  nameFromDisplayGroup = false,
+  canDelete = false,
 }: {
   items: AdminProductRow[];
   locale: string;
   tree: TaxonomyTreeNode[];
   attributes: CatalogAttribute[];
+  tableAttributes: CatalogAttribute[];
   createOpen: boolean;
   editId?: string;
   selectedNodeId?: string;
+  nameFromDisplayGroup?: boolean;
+  canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
@@ -227,10 +264,53 @@ export default function AdminProductsView({
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
+  const [columnsReady, setColumnsReady] = useState(false);
 
   const editProduct = useMemo(
     () => items.find((item) => item.id === editId) ?? null,
     [items, editId]
+  );
+
+  const tableAttributeKeys = useMemo(
+    () => new Set(tableAttributes.map((attribute) => attribute.key)),
+    [tableAttributes]
+  );
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) {
+          setVisibleKeys(
+            parsed.filter(
+              (key): key is string =>
+                typeof key === "string" && tableAttributeKeys.has(key)
+            )
+          );
+        }
+      }
+    } catch {
+      // ignore invalid prefs
+    }
+    setColumnsReady(true);
+  }, [tableAttributeKeys]);
+
+  useEffect(() => {
+    if (!columnsReady) return;
+    window.localStorage.setItem(
+      COLUMNS_STORAGE_KEY,
+      JSON.stringify(visibleKeys)
+    );
+  }, [visibleKeys, columnsReady]);
+
+  const visibleAttributes = useMemo(
+    () =>
+      tableAttributes.filter((attribute) =>
+        visibleKeys.includes(attribute.key)
+      ),
+    [tableAttributes, visibleKeys]
   );
 
   const companies = useMemo(() => {
@@ -245,7 +325,15 @@ export default function AdminProductsView({
     const q = search.trim().toLowerCase();
     return items.filter((item) => {
       if (q) {
-        const hay = `${item.name} ${item.company}`.toLowerCase();
+        const specHay = item.specs
+          .map((spec) =>
+            [spec.optionLabel, spec.textValue, spec.numberValue]
+              .filter((value) => value != null && value !== "")
+              .join(" ")
+          )
+          .join(" ")
+          .toLowerCase();
+        const hay = `${item.name} ${item.company} ${specHay}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (
@@ -328,21 +416,105 @@ export default function AdminProductsView({
     setFeaturedOnly(false);
   }
 
-  const deleteProduct =
+  function toggleColumn(key: string, checked: boolean) {
+    setVisibleKeys((current) =>
+      checked
+        ? current.includes(key)
+          ? current
+          : [...current, key]
+        : current.filter((item) => item !== key)
+    );
+  }
+
+  const archiveProduct =
     editProduct != null
-      ? (deleteProductAction.bind(null, {
+      ? (archiveProductAction.bind(null, {
           productId: editProduct.id,
         }) as unknown as actionFunction)
       : undefined;
 
   return (
-    <section className="grid min-w-0 gap-6">
+    <section className="grid w-full min-w-0 grid-cols-1 gap-6">
       <AdminListToolbar
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder={t("searchPlaceholder")}
         createLabel={t("createProduct")}
         onCreate={() => setCreateOpen(true)}
+        toolbarActions={
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 gap-2"
+              >
+                <LuColumns3 className="size-4" />
+                {t("columns")}
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>{t("columnsSheetTitle")}</SheetTitle>
+                <SheetDescription>{t("columnsSheetLede")}</SheetDescription>
+              </SheetHeader>
+              <div className="grid gap-4 overflow-y-auto">
+                {tableAttributes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("columnsEmpty")}
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setVisibleKeys(
+                            tableAttributes.map((attribute) => attribute.key)
+                          )
+                        }
+                      >
+                        {t("columnsSelectAll")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setVisibleKeys([])}
+                      >
+                        {t("columnsClear")}
+                      </Button>
+                    </div>
+                    <div className="grid gap-3">
+                      {tableAttributes.map((attribute) => {
+                        const id = `admin-col-${attribute.key}`;
+                        return (
+                          <label
+                            key={attribute.key}
+                            htmlFor={id}
+                            className="flex cursor-pointer items-center gap-3 text-sm"
+                          >
+                            <Checkbox
+                              id={id}
+                              checked={visibleKeys.includes(attribute.key)}
+                              onCheckedChange={(value) =>
+                                toggleColumn(attribute.key, value === true)
+                              }
+                            />
+                            {attribute.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        }
         filterSheet={
           <Sheet>
             <SheetTrigger asChild>
@@ -351,11 +523,8 @@ export default function AdminProductsView({
                 count={activeFilterCount}
               />
             </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="flex w-full flex-col gap-6 sm:max-w-sm"
-            >
-              <SheetHeader className="text-left">
+            <SheetContent>
+              <SheetHeader>
                 <SheetTitle>{t("filter")}</SheetTitle>
               </SheetHeader>
               <div className="grid gap-6 overflow-y-auto">
@@ -431,9 +600,17 @@ export default function AdminProductsView({
         }
       />
 
-      <p className="text-sm text-muted-foreground">
-        {t("totalProducts", { count: filtered.length })}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {t("totalProducts", { count: filtered.length })}
+        </p>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/archive?tab=products">
+            <LuArchive className="size-4" />
+            {t("archive")}
+          </Link>
+        </Button>
+      </div>
 
       {filtered.length === 0 ? (
         <EmptyList />
@@ -444,34 +621,38 @@ export default function AdminProductsView({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("productName")}</TableHead>
-                  <TableHead>{t("company")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead>{t("price")}</TableHead>
-                  <TableHead>{t("actions")}</TableHead>
+                  {visibleAttributes.map((attribute) => (
+                    <TableHead key={attribute.key}>{attribute.name}</TableHead>
+                  ))}
+                  <TableHead className={tableActionsClassName}>
+                    {t("actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <Link
-                        href={`/products/${item.id}`}
-                        className="tracking-wide text-muted-foreground underline capitalize"
+                      <Button
+                        variant="link"
+                        asChild
+                        className={tableLinkClassName}
                       >
-                        {item.name}
-                      </Link>
+                        <Link href={`/products/${item.id}`}>{item.name}</Link>
+                      </Button>
                     </TableCell>
-                    <TableCell>{item.company}</TableCell>
-                    <TableCell>
-                      {t(
-                        STATUS_LABEL[
-                          item.status as keyof typeof STATUS_LABEL
-                        ] ?? "statusPublished"
-                      )}
-                    </TableCell>
-                    <TableCell>{formatCurrency(item.price, locale)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
+                    {visibleAttributes.map((attribute) => (
+                      <TableCell key={attribute.key}>
+                        {formatSpecCell(
+                          attribute,
+                          findSpecForAttribute(item.specs, attribute),
+                          t("columnsYes"),
+                          t("columnsEmptyCell")
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell className={tableActionsClassName}>
+                      <div className="inline-flex items-center justify-center gap-1">
                         <Button
                           type="button"
                           variant="ghost"
@@ -482,7 +663,9 @@ export default function AdminProductsView({
                         >
                           <LuPen />
                         </Button>
-                        <DeleteProduct productId={item.id} />
+                        {canDelete ? (
+                          <ArchiveProduct productId={item.id} />
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -494,12 +677,9 @@ export default function AdminProductsView({
       )}
 
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
-        >
-          <div className="grid gap-6 p-6">
-            <SheetHeader className="text-left">
+        <SheetContent>
+          <div className="grid gap-6">
+            <SheetHeader>
               <SheetTitle>{t("createSheetTitle")}</SheetTitle>
               <SheetDescription>{t("createSheetLede")}</SheetDescription>
             </SheetHeader>
@@ -513,6 +693,7 @@ export default function AdminProductsView({
                   selectedNodeId={selectedNodeId}
                   onFolderChange={onFolderChange}
                   attributes={attributes}
+                  nameFromDisplayGroup={nameFromDisplayGroup}
                 />
                 <SubmitButton text={t("submitCreate")} className="w-fit" />
               </div>
@@ -525,12 +706,9 @@ export default function AdminProductsView({
         open={Boolean(editProduct)}
         onOpenChange={(open) => setEditOpen(open, editProduct?.id)}
       >
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
-        >
-          <div className="grid gap-6 p-6">
-            <SheetHeader className="text-left">
+        <SheetContent>
+          <div className="grid gap-6">
+            <SheetHeader>
               <SheetTitle>{t("editSheetTitle")}</SheetTitle>
               <SheetDescription>{t("editSheetLede")}</SheetDescription>
             </SheetHeader>
@@ -548,20 +726,27 @@ export default function AdminProductsView({
                       onFolderChange={onFolderChange}
                       attributes={attributes}
                       product={editProduct}
+                      nameFromDisplayGroup={nameFromDisplayGroup}
                     />
                     <SheetFormActions
                       saveLabel={t("submitUpdate")}
-                      deleteFormId="delete-product-form"
+                      deleteFormId={
+                        canDelete ? "archive-product-form" : undefined
+                      }
                     />
                   </div>
                 </FormContainer>
-                {deleteProduct ? (
+                {canDelete && archiveProduct ? (
                   <FormContainer
-                    id="delete-product-form"
+                    id="archive-product-form"
                     className="hidden"
-                    action={deleteProduct}
+                    action={archiveProduct}
                   >
-                    <input type="hidden" name="productId" value={editProduct.id} />
+                    <input
+                      type="hidden"
+                      name="productId"
+                      value={editProduct.id}
+                    />
                   </FormContainer>
                 ) : null}
               </>

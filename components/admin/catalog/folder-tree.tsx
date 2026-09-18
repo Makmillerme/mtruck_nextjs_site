@@ -31,7 +31,7 @@ import {
 } from "react-icons/lu";
 import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
-import { CatalogField, CatalogSubmit } from "./catalog-fields";
+import { CatalogField, CatalogFlag, CatalogSubmit } from "./catalog-fields";
 
 type FolderSheet =
   | { mode: "create"; parent: TaxonomyTreeNode | null }
@@ -93,6 +93,11 @@ function FolderRow({
           className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left text-sm"
         >
           <span className="truncate">{node.name}</span>
+          {!node.showInFilter ? (
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {t("hiddenFromFilter")}
+            </span>
+          ) : null}
           {node.productCount > 0 ? (
             <span className="shrink-0 text-xs text-muted-foreground">
               {node.productCount}
@@ -266,7 +271,7 @@ export default function FolderTree({
           if (!open) setSheet(null);
         }}
       >
-        <SheetContent className="w-full sm:max-w-md">
+        <SheetContent>
           {sheet?.mode === "create" ? (
             <div className="grid gap-6">
               <SheetHeader>
@@ -286,6 +291,11 @@ export default function FolderTree({
                   <input type="hidden" name="parentId" value={sheet.parent.id} />
                 ) : null}
                 <CatalogField name="name" label={t("folderName")} />
+                <CatalogFlag
+                  name="showInFilter"
+                  label={t("flagShowInFilter")}
+                  defaultChecked
+                />
                 <CatalogSubmit text={t("createFolder")} className="w-fit" />
               </CatalogForm>
             </div>
@@ -309,6 +319,11 @@ export default function FolderTree({
                   name="name"
                   label={t("folderName")}
                   defaultValue={sheet.node.name}
+                />
+                <CatalogFlag
+                  name="showInFilter"
+                  label={t("flagShowInFilter")}
+                  defaultChecked={sheet.node.showInFilter}
                 />
                 <CatalogSubmit text={t("saveFolder")} className="w-fit" />
               </CatalogForm>

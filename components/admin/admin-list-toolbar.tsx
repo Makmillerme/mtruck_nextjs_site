@@ -11,18 +11,20 @@ export default function AdminListToolbar({
   onSearchChange,
   searchPlaceholder,
   filterSheet,
+  toolbarActions,
   createLabel,
   onCreate,
 }: {
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
-  filterSheet: ReactNode;
+  filterSheet?: ReactNode;
+  toolbarActions?: ReactNode;
   createLabel: string;
   onCreate: () => void;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex w-full min-w-0 items-center gap-2">
       <div className="relative min-w-0 flex-1">
         <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -36,6 +38,7 @@ export default function AdminListToolbar({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {filterSheet}
+        {toolbarActions}
         <Button
           type="button"
           size="sm"

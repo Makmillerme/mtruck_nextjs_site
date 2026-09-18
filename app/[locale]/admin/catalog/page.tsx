@@ -5,13 +5,16 @@ import TemplateFolderPicker from "@/components/admin/catalog/template-folder-pic
 import { Card, CardContent } from "@/components/ui/card";
 import {
   fetchAttributesForNode,
+  fetchDisplayGroupsForNode,
   fetchTaxonomyNode,
   fetchTaxonomyTree,
 } from "@/lib/catalog/taxonomy";
+import { getAdminUser } from "@/utils/session";
 
 async function CatalogPage(props: {
   searchParams: Promise<{ tab?: string; node?: string }>;
 }) {
+  await getAdminUser();
   const searchParams = await props.searchParams;
   const tab = searchParams.tab === "fields" ? "fields" : "folders";
   const tree = await fetchTaxonomyTree();
@@ -19,9 +22,12 @@ async function CatalogPage(props: {
     ? await fetchTaxonomyNode(searchParams.node)
     : null;
   const attributes = selected ? await fetchAttributesForNode(selected.id) : [];
+  const displayGroups = selected
+    ? await fetchDisplayGroupsForNode(selected.id)
+    : [];
 
   return (
-    <section className="grid gap-6">
+    <section className="grid w-full min-w-0 grid-cols-1 gap-6">
       <CmsTabs
         tab={tab}
         nodeId={selected?.id}
@@ -38,7 +44,11 @@ async function CatalogPage(props: {
               tree={tree}
               selectedId={selected?.id}
             />
-            <FieldsPanel node={selected} attributes={attributes} />
+            <FieldsPanel
+              node={selected}
+              attributes={attributes}
+              displayGroups={displayGroups}
+            />
           </div>
         }
       />

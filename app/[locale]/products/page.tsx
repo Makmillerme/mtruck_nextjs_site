@@ -3,39 +3,32 @@ import {
   CATALOG_LAYOUT_COOKIE,
   parseCatalogLayout,
 } from "@/utils/catalog-layout";
-import {
-  parseCatalogBrands,
-  parseCatalogSort,
-  parseFeaturedOnly,
-} from "@/utils/catalog-query";
+import { parseCatalogQuery } from "@/utils/catalog-query";
 import { cookies } from "next/headers";
 
 async function ProductsPage(props: {
-  searchParams: Promise<{
-    layout?: string;
-    search?: string;
-    sort?: string;
-    brand?: string | string[];
-    featured?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const searchParams = await props.searchParams;
   const cookieStore = await cookies();
+  const parsed = parseCatalogQuery(searchParams);
   const layout = parseCatalogLayout(
-    searchParams.layout || cookieStore.get(CATALOG_LAYOUT_COOKIE)?.value
+    parsed.layout || cookieStore.get(CATALOG_LAYOUT_COOKIE)?.value
   );
-  const search = searchParams.search || "";
-  const sort = parseCatalogSort(searchParams.sort);
-  const brands = parseCatalogBrands(searchParams.brand);
-  const featuredOnly = parseFeaturedOnly(searchParams.featured);
 
   return (
     <ProductsContainer
       layout={layout}
-      search={search}
-      sort={sort}
-      brands={brands}
-      featuredOnly={featuredOnly}
+      query={{
+        search: parsed.search,
+        sort: parsed.sort,
+        featuredOnly: parsed.featuredOnly,
+        folders: parsed.folders,
+        facets: parsed.facets,
+        ranges: parsed.ranges,
+        page: parsed.page,
+        pageSize: parsed.pageSize,
+      }}
     />
   );
 }

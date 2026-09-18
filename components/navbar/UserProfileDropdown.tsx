@@ -1,6 +1,7 @@
 'use client';
 
 import { Link, useRouter } from '@/i18n/navigation';
+import UserCodeChip from '@/components/account/UserCodeChip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,10 +39,15 @@ export default function UserProfileDropdown({
       <DropdownMenuTrigger asChild>
         <AccountTrigger user={user} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="font-medium">{name}</p>
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="flex items-start justify-between gap-2 font-normal">
+          <div className="min-w-0">
+            <p className="font-medium">{name}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+          {user.userCode ? (
+            <UserCodeChip code={user.userCode} compact className="shrink-0" />
+          ) : null}
         </DropdownMenuLabel>
         {isAdmin ? (
           <>

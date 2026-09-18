@@ -17,6 +17,11 @@ export const productListSelect = {
   status: true,
   taxonomyNode: { select: { name: true, slug: true } },
   specs: { select: productSpecCardSelect },
+  images: {
+    select: { url: true },
+    orderBy: { sortOrder: "asc" as const },
+    take: 8,
+  },
 } as const;
 
 export type ProductListItem = {
@@ -36,4 +41,5 @@ export type ProductListItem = {
     textValue: string | null;
     booleanValue: boolean | null;
   }[];
+  images: { url: string }[];
 };

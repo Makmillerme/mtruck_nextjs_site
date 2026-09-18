@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import UiLabBlocks from "@/components/dev/ui-lab-blocks";
@@ -14,10 +13,6 @@ export default async function UiLabPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  if (process.env.NODE_ENV === "production") {
-    notFound();
-  }
-
   const { locale } = await params;
   setRequestLocale(locale);
 

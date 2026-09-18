@@ -1,5 +1,6 @@
 export const LAB_CATEGORIES = [
   { id: "all", label: "Усі" },
+  { id: "layout", label: "Розмітка" },
   { id: "brand", label: "Бренд" },
   { id: "icons", label: "Іконки" },
   { id: "buttons", label: "Кнопки" },
@@ -23,6 +24,30 @@ export type LabSectionMeta = {
 };
 
 export const LAB_SECTION_META: LabSectionMeta[] = [
+  {
+    id: "layout",
+    category: "layout",
+    title: "Правила розмітки",
+    hint: "Глобальний канон: Manrope (єдиний шрифт), gutters (.page-container / .page-content), section-spacing, вкладеність full-bleed.",
+    keywords:
+      "layout розмітка gutter відступ padding page-container page-content section-spacing typography шрифт font manrope кирилиця full-bleed",
+  },
+  {
+    id: "catalog-filter",
+    category: "layout",
+    title: "Фільтр каталогу",
+    hint: "Вкладений Accordion type=single: сусід закриває сусіда; поля isFacet лише в листку папки.",
+    keywords:
+      "filter каталог фільтр accordion папка folder facet isFacet cascade дерево",
+  },
+  {
+    id: "catalog-pagination",
+    category: "layout",
+    title: "Пагінація каталогу",
+    hint: "Стрілки + сторінка/усього + Select 10/25/40. Той самий блок на /products.",
+    keywords:
+      "pagination пагінація page pagesize 10 25 40 каталог products",
+  },
   {
     id: "logo",
     category: "brand",
@@ -107,9 +132,10 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
   {
     id: "overlays",
     category: "overlays",
-    title: "Dropdown / Popover / Tooltip / Sheet",
+    title: "Dropdown / Popover / Tooltip / Sheet / AlertDialog",
+    hint: "Видалення завжди через ConfirmDelete (AlertDialog z-[110]). Icon → ConfirmDeleteIcon; Sheet footer → ConfirmDeleteFormButton. CMS folders/fields — двокрокове підтвердження в sheet.",
     keywords:
-      "dropdown popover tooltip sheet menu overlay меню фільтри панель",
+      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель видалення підтвердження",
   },
   {
     id: "cascade",
@@ -143,10 +169,18 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "vehicle",
     category: "cards",
     title: "Картка техніки",
-    hint: "Живий VehicleCard на пастелі. Тінь + zoom на hover — це не те саме, що кнопки без drop-shadow.",
+    hint: "Живий VehicleCard: PhotoCarousel, ціна + Детальніше w-full знизу. Сітка 1/2/3. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
     keywords:
-      "vehicle card картка техніки тягач man overlay статус heart сердечко тінь zoom hover shadow",
+      "vehicle card картка техніки тягач man overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
     chrome: "own",
+  },
+  {
+    id: "carousel",
+    category: "overlays",
+    title: "PhotoCarousel",
+    hint: "Єдиний Embla-компонент: variant card (dots) і page (thumbs). Підключати на картках і PDP, не дублювати.",
+    keywords:
+      "carousel карусель embla photo gallery галерея thumbs dots слайд",
   },
 ];
 

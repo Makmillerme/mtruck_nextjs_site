@@ -22,4 +22,4 @@ alwaysApply: false
 
 ## Тест
 
-Адмін: акаунт із `role=ADMIN` (сід з `ADMIN_EMAIL`). Тест-юзер: `test@user.com` / `12345678`. Команда: `npm run db:seed`.
+Адмін: акаунт із `role=ADMIN` (сід з `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`). Інших заготовок користувачів у seed немає. Команда: `npm run db:seed`.
