@@ -6,6 +6,7 @@ import {
   buildCatalogHref,
   type CatalogPageSize,
 } from "@/utils/catalog-query";
+import { useTransition } from "react";
 
 export default function CatalogPaginationClient({
   page,
@@ -19,23 +20,28 @@ export default function CatalogPaginationClient({
   className?: string;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   function go(patch: { page?: number; pageSize?: CatalogPageSize }) {
     const href = buildCatalogHref(
       new URLSearchParams(window.location.search),
       patch
     );
-    router.replace(href, { scroll: false });
+    startTransition(() => {
+      router.replace(href, { scroll: false });
+    });
   }
 
   return (
-    <CatalogPagination
-      page={page}
-      pageCount={pageCount}
-      pageSize={pageSize}
-      className={className}
-      onPageChange={(next) => go({ page: next })}
-      onPageSizeChange={(size) => go({ pageSize: size, page: 1 })}
-    />
+    <div className={isPending ? "opacity-70 transition-opacity" : undefined}>
+      <CatalogPagination
+        page={page}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        className={className}
+        onPageChange={(next) => go({ page: next })}
+        onPageSizeChange={(size) => go({ pageSize: size, page: 1 })}
+      />
+    </div>
   );
 }

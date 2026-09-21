@@ -385,7 +385,7 @@
     "empty": "Noch keine Produkte.",
     "layoutGrid": "Kacheln",
     "layoutList": "Liste",
-    "searchPlaceholder": "Lkw suchen...",
+    "searchPlaceholder": "Suche...",
     "filter": "Filter",
     "filterFolder": "Kategorie",
     "filterFrom": "Von",
@@ -398,12 +398,15 @@
     "sortName": "Name",
     "filterBrand": "Marke",
     "filterFeatured": "Nur Highlights",
+    "filterApply": "Filtern",
     "filterClear": "Filter zurücksetzen",
     "filterEmpty": "Keine Werte für dieses Feld.",
     "pageOf": "{page} / {total}",
     "pageSize": "Pro Seite",
     "prevPage": "Vorherige Seite",
-    "nextPage": "Nächste Seite"
+    "nextPage": "Nächste Seite",
+    "filterExpand": "Öffnen",
+    "filterCollapse": "Schließen"
   },
   "Product": {
     "home": "Startseite",

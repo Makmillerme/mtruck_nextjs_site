@@ -106,6 +106,7 @@ import {
   UiLabCatalogFilterDemo,
   UiLabCatalogPaginationDemo,
 } from "@/components/dev/ui-lab-catalog-filter";
+import { UiLabDropdownCanon } from "@/components/dev/ui-lab-dropdown-canon";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -323,7 +324,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="catalog-filter"
               title="Фільтр каталогу"
-              hint="Вкладений Accordion type=single: сусід закриває сусіда; поля лише в листку."
+              hint="Рядок розкриває й обирає папку. Модель залежить від марки."
             >
               <UiLabCatalogFilterDemo />
             </Section>
@@ -691,6 +692,9 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 z-[110], щоб бути над Sheet. CMS folders/fields — двокрокове
                 підтвердження в sheet, не окремий dialog.
               </p>
+              <div className="mb-8">
+                <UiLabDropdownCanon />
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -699,7 +703,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                       <LuChevronDown className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="min-w-0 w-max">
                     <DropdownMenuLabel>Акаунт</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>Профіль</DropdownMenuItem>

@@ -65,6 +65,7 @@ function SlideImage({
 export default function PhotoCarousel({
   images,
   variant = "card",
+  frame = "ratio",
   sizes = "(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw",
   priority = false,
   className,
@@ -73,6 +74,8 @@ export default function PhotoCarousel({
 }: {
   images: PhotoCarouselImage[];
   variant?: "card" | "page";
+  /** `ratio` = aspect 4/3; `fill` = stretch to parent height (list cards). */
+  frame?: "ratio" | "fill";
   sizes?: string;
   priority?: boolean;
   className?: string;
@@ -83,6 +86,14 @@ export default function PhotoCarousel({
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
   const multi = slides.length > 1;
+  const stageClass =
+    frame === "fill"
+      ? "relative h-full min-h-0 overflow-hidden bg-muted"
+      : "relative aspect-[4/3] overflow-hidden bg-muted";
+  const slideFrameClass =
+    frame === "fill"
+      ? "absolute inset-0 overflow-hidden"
+      : "relative aspect-[4/3] w-full overflow-hidden";
 
   useEffect(() => {
     if (!api) return;
@@ -103,25 +114,13 @@ export default function PhotoCarousel({
   );
 
   if (slides.length === 0) {
-    return (
-      <div
-        className={cn(
-          "relative aspect-[4/3] overflow-hidden bg-muted",
-          className
-        )}
-      />
-    );
+    return <div className={cn(stageClass, className)} />;
   }
 
   if (!multi) {
     const first = slides[0]!;
     return (
-      <div
-        className={cn(
-          "relative aspect-[4/3] overflow-hidden bg-muted",
-          className
-        )}
-      >
+      <div className={cn(stageClass, className)}>
         <SlideImage
           src={first.src}
           alt={first.alt ?? ""}
@@ -140,21 +139,30 @@ export default function PhotoCarousel({
   }
 
   return (
-    <div className={cn(variant === "page" && "grid gap-3", className)}>
+    <div
+      className={cn(
+        variant === "page" && "grid gap-3",
+        frame === "fill" && "h-full min-h-0",
+        className
+      )}
+    >
       <Carousel
         setApi={setApi}
         opts={{ loop: true, align: "start", containScroll: false }}
-        className="relative w-full overflow-hidden"
+        className={cn(
+          "relative w-full overflow-hidden",
+          frame === "fill" && "h-full"
+        )}
       >
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <div className={stageClass}>
           {/* Flush slides: override shadcn default -ml-4 / pl-4 gap pattern */}
           <CarouselContent className="!ml-0 h-full">
             {slides.map((item, i) => (
               <CarouselItem
                 key={`${item.src}-${i}`}
-                className="min-w-0 !basis-full !pl-0"
+                className="relative min-w-0 !basis-full !pl-0 h-full"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <div className={slideFrameClass}>
                   <SlideImage
                     src={item.src}
                     alt={item.alt ?? ""}

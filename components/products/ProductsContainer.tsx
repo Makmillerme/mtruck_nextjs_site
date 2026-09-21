@@ -1,18 +1,27 @@
+import { Suspense } from "react";
 import ProductsGrid from "./ProductsGrid";
 import ProductsList from "./ProductsList";
 import CatalogView from "./catalog-view";
 import CatalogPaginationClient from "./catalog-pagination-client";
-import { fetchPublicFilterSchema } from "@/lib/catalog/public-filter";
+import CatalogResultsSwitch from "./catalog-results-switch";
+import { fetchFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
+import {
+  fetchPublicFilterSchema,
+  pruneScopedFacetsForTree,
+  pruneScopedFacetsToSchema,
+} from "@/lib/catalog/public-filter";
 import { fetchAllProducts, fetchUserFavoriteIds } from "@/utils/actions";
 import { getTranslations } from "next-intl/server";
 import type { CatalogLayout } from "@/utils/catalog-layout";
-import type { CatalogQuery } from "@/utils/catalog-query";
+import {
+  catalogQueryIsFiltered,
+  type CatalogQuery,
+} from "@/utils/catalog-query";
 
 async function CatalogResults({
-  layout,
   query,
 }: {
-  layout: CatalogLayout;
   query: Omit<CatalogQuery, "layout">;
 }) {
   const t = await getTranslations("Products");
@@ -24,6 +33,8 @@ async function CatalogResults({
       folders: query.folders,
       facets: query.facets,
       ranges: query.ranges,
+      scopedFacets: query.scopedFacets,
+      scopedRanges: query.scopedRanges,
       page: query.page,
       pageSize: query.pageSize,
     }),
@@ -32,46 +43,42 @@ async function CatalogResults({
   const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
   const emptyLabel =
     total === 0
-      ? query.search ||
-        query.folders.length ||
-        query.featuredOnly ||
-        Object.keys(query.facets).length ||
-        Object.keys(query.ranges).length
+      ? catalogQueryIsFiltered(query)
         ? t("emptySearch")
         : t("empty")
       : null;
 
   return (
-    <>
-      <h2 className="mb-3 text-lg font-medium">
-        {t("count", { count: total })}
-      </h2>
-      {emptyLabel ? (
-        <p className="mt-16 text-2xl">{emptyLabel}</p>
-      ) : layout === "grid" ? (
+    <CatalogResultsSwitch
+      countLabel={t("count", { count: total })}
+      emptyLabel={emptyLabel}
+      grid={
         <ProductsGrid
           products={products}
           favoriteByProductId={favorites.favoriteByProductId}
           isAuthenticated={favorites.isAuthenticated}
           priorityCount={3}
         />
-      ) : (
+      }
+      list={
         <ProductsList
           products={products}
           favoriteByProductId={favorites.favoriteByProductId}
           isAuthenticated={favorites.isAuthenticated}
           priorityCount={3}
         />
-      )}
-      {total > 0 ? (
-        <CatalogPaginationClient
-          page={query.page}
-          pageCount={pageCount}
-          pageSize={query.pageSize}
-          className="mt-8"
-        />
-      ) : null}
-    </>
+      }
+      pagination={
+        total > 0 ? (
+          <CatalogPaginationClient
+            page={query.page}
+            pageCount={pageCount}
+            pageSize={query.pageSize}
+            className="mt-8"
+          />
+        ) : null
+      }
+    />
   );
 }
 
@@ -82,21 +89,42 @@ async function ProductsContainer({
   layout: CatalogLayout;
   query: Omit<CatalogQuery, "layout">;
 }) {
-  const t = await getTranslations("Products");
-  const schema = await fetchPublicFilterSchema();
+  const [schema, availability] = await Promise.all([
+    fetchPublicFilterSchema(),
+    fetchFilterAvailabilityIndex(),
+  ]);
+  const dependentPruned = {
+    ...query,
+    scopedFacets: pruneScopedFacetsForTree(schema.tree, query.scopedFacets),
+  };
+  const availabilityPruned = narrowDraftAgainstIndex(
+    schema.tree,
+    dependentPruned.folders,
+    dependentPruned.scopedFacets,
+    dependentPruned.scopedRanges,
+    availability
+  );
+  const prunedQuery = {
+    ...dependentPruned,
+    scopedFacets: pruneScopedFacetsToSchema(
+      schema.tree,
+      availabilityPruned.scopedFacets
+    ),
+    scopedRanges: availabilityPruned.scopedRanges,
+  };
 
   return (
     <div className="page-content">
-      <h1 className="mb-6 text-3xl font-extrabold tracking-tight md:text-4xl">
-        {t("pageTitle")}
-      </h1>
       <CatalogView
         initialLayout={layout}
-        initialSearch={query.search}
-        initialSort={query.sort}
+        initialSearch={prunedQuery.search}
+        initialSort={prunedQuery.sort}
         schema={schema}
+        availability={availability}
       >
-        <CatalogResults layout={layout} query={query} />
+        <Suspense fallback={null}>
+          <CatalogResults query={prunedQuery} />
+        </Suspense>
       </CatalogView>
     </div>
   );

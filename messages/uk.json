@@ -385,7 +385,7 @@
     "empty": "Поки немає товарів.",
     "layoutGrid": "Картки",
     "layoutList": "Список",
-    "searchPlaceholder": "Пошук вантажівок...",
+    "searchPlaceholder": "Пошук...",
     "filter": "Фільтр",
     "filterFolder": "Категорія",
     "filterFrom": "Від",
@@ -398,12 +398,15 @@
     "sortName": "За назвою",
     "filterBrand": "Бренд",
     "filterFeatured": "Лише новинки",
+    "filterApply": "Фільтрувати",
     "filterClear": "Скинути фільтри",
     "filterEmpty": "Немає значень для цього поля.",
     "pageOf": "{page} / {total}",
     "pageSize": "На сторінці",
     "prevPage": "Попередня сторінка",
-    "nextPage": "Наступна сторінка"
+    "nextPage": "Наступна сторінка",
+    "filterExpand": "Розкрити",
+    "filterCollapse": "Згорнути"
   },
   "Product": {
     "home": "Головна",

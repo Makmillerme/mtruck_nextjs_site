@@ -26,6 +26,8 @@ async function ProductsPage(props: {
         folders: parsed.folders,
         facets: parsed.facets,
         ranges: parsed.ranges,
+        scopedFacets: parsed.scopedFacets,
+        scopedRanges: parsed.scopedRanges,
         page: parsed.page,
         pageSize: parsed.pageSize,
       }}

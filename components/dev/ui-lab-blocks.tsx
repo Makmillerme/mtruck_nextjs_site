@@ -53,6 +53,24 @@ export default async function UiLabBlocks() {
           />
         </div>
 
+        <div className="grid max-w-4xl gap-3">
+          <h3 className="text-sm font-semibold tracking-tight">List</h3>
+          <p className="text-sm text-muted-foreground">
+            Фото зліва на всю висоту рядка (md+), без білої смуги під превʼю.
+            Той самий chrome, що в сітці.
+          </p>
+          <VehicleCard
+            layout="list"
+            vehicle={{
+              ...DEMO_VEHICLE,
+              id: "ui-lab-list",
+              name: "Mercedes-Benz Actros 1845",
+              categoryLabel: "Контейнеровози",
+            }}
+            isAuthenticated={false}
+          />
+        </div>
+
         <div className="grid gap-3">
           <h3 className="text-sm font-semibold tracking-tight">
             PhotoCarousel (page)

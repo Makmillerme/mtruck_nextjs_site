@@ -37,7 +37,12 @@ import {
 } from './images';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_cache } from 'next/cache';
+import {
+  CATALOG_CACHE_REVALIDATE_SECONDS,
+  CATALOG_CACHE_TAGS,
+} from '@/lib/catalog/cache-tags';
+import { revalidatePublicCatalog } from '@/lib/catalog/cache';
 import type { CatalogQuery, CatalogSort } from '@/utils/catalog-query';
 import { catalogQueryToWhere } from '@/lib/catalog/public-filter';
 import { productListSelect } from '@/utils/product-list';
@@ -82,13 +87,15 @@ export const fetchFeaturedProducts = async (take = 6) => {
   });
 };
 
-export const fetchAllProducts = async ({
+async function fetchAllProductsUncached({
   search = "",
   sort = "newest",
   featuredOnly = false,
   folders = [],
   facets = {},
   ranges = {},
+  scopedFacets = {},
+  scopedRanges = {},
   page = 1,
   pageSize = 10,
 }: {
@@ -98,9 +105,11 @@ export const fetchAllProducts = async ({
   folders?: string[];
   facets?: CatalogQuery["facets"];
   ranges?: CatalogQuery["ranges"];
+  scopedFacets?: CatalogQuery["scopedFacets"];
+  scopedRanges?: CatalogQuery["scopedRanges"];
   page?: number;
   pageSize?: number;
-}) => {
+}) {
   const orderBy =
     sort === "price-asc"
       ? { price: "asc" as const }
@@ -116,6 +125,8 @@ export const fetchAllProducts = async ({
     folders,
     facets,
     ranges,
+    scopedFacets,
+    scopedRanges,
   });
 
   const where = { AND: and };
@@ -133,6 +144,40 @@ export const fetchAllProducts = async ({
   ]);
 
   return { products, total };
+}
+
+export const fetchAllProducts = async (args: {
+  search?: string;
+  sort?: CatalogSort;
+  featuredOnly?: boolean;
+  folders?: string[];
+  facets?: CatalogQuery["facets"];
+  ranges?: CatalogQuery["ranges"];
+  scopedFacets?: CatalogQuery["scopedFacets"];
+  scopedRanges?: CatalogQuery["scopedRanges"];
+  page?: number;
+  pageSize?: number;
+}) => {
+  const key = JSON.stringify({
+    search: args.search ?? "",
+    sort: args.sort ?? "newest",
+    featuredOnly: args.featuredOnly ?? false,
+    folders: args.folders ?? [],
+    facets: args.facets ?? {},
+    ranges: args.ranges ?? {},
+    scopedFacets: args.scopedFacets ?? {},
+    scopedRanges: args.scopedRanges ?? {},
+    page: args.page ?? 1,
+    pageSize: args.pageSize ?? 10,
+  });
+  return unstable_cache(
+    () => fetchAllProductsUncached(args),
+    ["catalog-products", key],
+    {
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+      tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
+    }
+  )();
 };
 
 export const fetchUserFavoriteIds = async () => {
@@ -282,6 +327,7 @@ export const createProductAction = async (
         },
       },
     });
+    revalidatePublicCatalog();
   } catch (error) {
     if (error instanceof Error && error.message) {
       return { message: error.message };
@@ -322,7 +368,7 @@ export const archiveProductAction = async (prevState: { productId: string }) => 
     });
     revalidatePath('/admin/products');
     revalidatePath('/admin/archive');
-    revalidatePath('/products');
+    revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
     return { message: t('productArchived') };
   } catch (error) {
@@ -343,7 +389,7 @@ export const restoreProductAction = async (prevState: { productId: string }) => 
     });
     revalidatePath('/admin/products');
     revalidatePath('/admin/archive');
-    revalidatePath('/products');
+    revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
     return { message: t('productRestored') };
   } catch (error) {
@@ -377,7 +423,7 @@ export const deleteProductAction = async (prevState: { productId: string }) => {
     await deleteImages([...urls]);
     revalidatePath('/admin/products');
     revalidatePath('/admin/archive');
-    revalidatePath('/products');
+    revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
     return { message: t('productRemoved') };
   } catch (error) {
@@ -493,6 +539,7 @@ export const updateProductAction = async (
             : undefined,
       },
     });
+    revalidatePublicCatalog({ productId });
   } catch (error) {
     if (error instanceof Error && error.message) {
       return { message: error.message };
@@ -539,6 +586,7 @@ export const updateProductImageAction = async (
           }),
     ]);
     revalidatePath(`/admin/products/${productId}/edit`);
+    revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
     return { message: t('imageUpdated') };
   } catch (error) {

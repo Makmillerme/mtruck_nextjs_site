@@ -118,44 +118,52 @@ export default async function VehicleCard({
           isList ? "flex-col md:flex-row" : "flex-col"
         )}
       >
-        <PhotoCarousel
-          variant="card"
-          images={gallery}
-          href={vehicle.href}
-          priority={priority}
-          className={isList ? "md:w-72 md:shrink-0" : undefined}
-          sizes={
-            isList
-              ? "(max-width: 768px) 100vw, 288px"
-              : "(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
-          }
-          overlay={
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 sm:p-3">
-              <Badge
-                variant="secondary"
-                className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-background/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-background/90 sm:px-3 sm:py-1.5 sm:text-xs"
-              >
-                <span
-                  className={cn(
-                    "size-1.5 shrink-0 rounded-full",
-                    STATUS_DOT[status]
-                  )}
-                  aria-hidden
-                />
-                <span className="whitespace-nowrap">
-                  {t(`status.${status}`)}
-                </span>
-              </Badge>
-              <div className="pointer-events-auto shrink-0">
-                <FavoriteToggleButton
-                  productId={vehicle.id}
-                  favoriteId={favoriteId}
-                  isAuthenticated={isAuthenticated}
-                />
+        <div
+          className={cn(
+            isList &&
+              "relative aspect-[4/3] w-full md:aspect-auto md:w-[min(52%,28rem)] md:shrink-0 md:self-stretch"
+          )}
+        >
+          <PhotoCarousel
+            variant="card"
+            frame={isList ? "fill" : "ratio"}
+            images={gallery}
+            href={vehicle.href}
+            priority={priority}
+            className={isList ? "absolute inset-0 h-full" : undefined}
+            sizes={
+              isList
+                ? "(max-width: 768px) 100vw, 448px"
+                : "(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
+            }
+            overlay={
+              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 sm:p-3">
+                <Badge
+                  variant="secondary"
+                  className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-background/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-background/90 sm:px-3 sm:py-1.5 sm:text-xs"
+                >
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      STATUS_DOT[status]
+                    )}
+                    aria-hidden
+                  />
+                  <span className="whitespace-nowrap">
+                    {t(`status.${status}`)}
+                  </span>
+                </Badge>
+                <div className="pointer-events-auto shrink-0">
+                  <FavoriteToggleButton
+                    productId={vehicle.id}
+                    favoriteId={favoriteId}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col p-4 lg:p-5">
           <Link href={vehicle.href} className="block">

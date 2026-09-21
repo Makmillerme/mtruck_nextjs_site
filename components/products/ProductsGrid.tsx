@@ -14,15 +14,20 @@ async function ProductsGrid({
   priorityCount?: number;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 min-[900px]:grid-cols-3 md:gap-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
       {products.map((product, index) => (
-        <VehicleCard
+        <div
           key={product.id}
-          vehicle={productWithSpecsToVehicle(product)}
-          priority={index < priorityCount}
-          favoriteId={favoriteByProductId?.get(product.id) ?? null}
-          isAuthenticated={isAuthenticated}
-        />
+          className="animate-in fade-in duration-300 fill-mode-both"
+          style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+        >
+          <VehicleCard
+            vehicle={productWithSpecsToVehicle(product)}
+            priority={index < priorityCount}
+            favoriteId={favoriteByProductId?.get(product.id) ?? null}
+            isAuthenticated={isAuthenticated}
+          />
+        </div>
       ))}
     </div>
   );

@@ -1,364 +1,345 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import type {
-  PublicFilterFacet,
-  PublicFilterNode,
-  PublicFilterSchema,
+  CatalogFilterTree,
+  FILTER_SCROLL_CLASS,
+  type FilterTreeLabels,
+} from "@/components/products/catalog-filter-tree";
+import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import {
+  findFilterNode,
+  pruneDependentFacetValues,
+  type PublicFilterNode,
+  type PublicFilterSchema,
 } from "@/lib/catalog/public-filter";
+import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import {
   buildCatalogHref,
+  buildCatalogHrefFromDraft,
   countActiveCatalogFilters,
   parseCatalogQuery,
+  serializeCatalogFilterDraft,
   type CatalogRange,
+  type CatalogScopedFacets,
+  type CatalogScopedRanges,
 } from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
+import { LuTrash2 } from "react-icons/lu";
 
-export function useCatalogFilters(schema: PublicFilterSchema) {
+type FilterDraft = {
+  folders: string[];
+  scopedFacets: CatalogScopedFacets;
+  scopedRanges: CatalogScopedRanges;
+};
+
+type CatalogFilterApi = ReturnType<typeof useCatalogFilters>;
+
+const CatalogFilterContext = createContext<CatalogFilterApi | null>(null);
+
+function draftFromQuery(query: ReturnType<typeof parseCatalogQuery>): FilterDraft {
+  return {
+    folders: query.folders,
+    scopedFacets: query.scopedFacets,
+    scopedRanges: query.scopedRanges,
+  };
+}
+
+function applyFacetOverrides(
+  nodes: PublicFilterNode[],
+  overrides: Record<string, PublicFilterNode["facets"]>
+): PublicFilterNode[] {
+  return nodes.map((node) => {
+    const children = applyFacetOverrides(node.children, overrides);
+    const facets = overrides[node.slug] ?? node.facets;
+    return { ...node, children, facets };
+  });
+}
+
+export function useCatalogFilters(
+  schema: PublicFilterSchema,
+  availability: FilterAvailabilityIndex
+) {
   const t = useTranslations("Products");
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = parseCatalogQuery(searchParams);
+  const applied = draftFromQuery(query);
+  const urlKey = searchParams.toString();
+
+  const [draft, setDraft] = useState<FilterDraft>(applied);
+  const [prevUrlKey, setPrevUrlKey] = useState(urlKey);
+
+  if (urlKey !== prevUrlKey) {
+    setPrevUrlKey(urlKey);
+    setDraft(draftFromQuery(query));
+  }
+
+  const narrowed = useMemo(
+    () =>
+      narrowDraftAgainstIndex(
+        schema.tree,
+        draft.folders,
+        draft.scopedFacets,
+        draft.scopedRanges,
+        availability
+      ),
+    [schema.tree, draft.folders, draft.scopedFacets, draft.scopedRanges, availability]
+  );
+
+  const narrowedKey = serializeCatalogFilterDraft({
+    folders: draft.folders,
+    scopedFacets: narrowed.scopedFacets,
+    scopedRanges: narrowed.scopedRanges,
+  });
+  const draftKey = serializeCatalogFilterDraft(draft);
+  if (narrowedKey !== draftKey && draft.folders.length > 0) {
+    setDraft({
+      folders: draft.folders,
+      scopedFacets: narrowed.scopedFacets,
+      scopedRanges: narrowed.scopedRanges,
+    });
+  }
+
+  const displayTree = useMemo(
+    () => applyFacetOverrides(schema.tree, narrowed.leafFacetsBySlug),
+    [schema.tree, narrowed.leafFacetsBySlug]
+  );
+
   const activeCount = countActiveCatalogFilters(query);
+  const draftActiveCount = countActiveCatalogFilters({
+    folders: draft.folders,
+    scopedFacets: draft.scopedFacets,
+    scopedRanges: draft.scopedRanges,
+    facets: {},
+    ranges: {},
+    featuredOnly: false,
+  });
+  const isDirty =
+    serializeCatalogFilterDraft(draft) !==
+    serializeCatalogFilterDraft(applied);
+  const canClear = draftActiveCount > 0 || activeCount > 0;
+
+  const [isPending, startTransition] = useTransition();
 
   function go(href: string) {
-    router.replace(href, { scroll: false });
+    startTransition(() => {
+      router.replace(href, { scroll: false });
+    });
   }
 
   function current() {
     return new URLSearchParams(window.location.search);
   }
 
-  /** Selecting a folder replaces the folder filter (one active branch). */
   function selectFolder(slug: string) {
-    const params = current();
-    // Clear facet params when switching branch so leaf fields don't leak.
-    for (const key of [...params.keys()]) {
-      if (key.startsWith("f.")) params.delete(key);
-    }
-    go(
-      buildCatalogHref(params, {
-        folders: [slug],
-        clearFacets: false,
-        resetPage: true,
-      })
-    );
+    setDraft((currentDraft) => ({
+      folders: [slug],
+      scopedFacets: currentDraft.scopedFacets[slug]
+        ? { [slug]: currentDraft.scopedFacets[slug] }
+        : {},
+      scopedRanges: currentDraft.scopedRanges[slug]
+        ? { [slug]: currentDraft.scopedRanges[slug] }
+        : {},
+    }));
   }
 
-  function toggleFacet(key: string, value: string, checked: boolean) {
-    const selected = query.facets[key] ?? [];
-    const next = checked
-      ? [...selected, value]
-      : selected.filter((item) => item !== value);
-    go(buildCatalogHref(current(), { facetKey: key, facetValues: next }));
+  function toggleFacet(
+    folderSlug: string,
+    key: string,
+    value: string,
+    checked: boolean
+  ) {
+    setDraft((currentDraft) => {
+      const bucket = currentDraft.scopedFacets[folderSlug] ?? {};
+      const list = bucket[key] ?? [];
+      const nextValues = checked
+        ? [...list, value]
+        : list.filter((item) => item !== value);
+      const node = findFilterNode(schema.tree, folderSlug);
+      const nextBucket = pruneDependentFacetValues(node?.facets ?? [], {
+        ...bucket,
+        [key]: nextValues,
+      });
+      return {
+        folders: [folderSlug],
+        scopedFacets: { [folderSlug]: nextBucket },
+        scopedRanges: currentDraft.scopedRanges[folderSlug]
+          ? { [folderSlug]: currentDraft.scopedRanges[folderSlug] }
+          : {},
+      };
+    });
   }
 
-  function setRange(key: string, range: CatalogRange) {
-    go(buildCatalogHref(current(), { rangeKey: key, range }));
+  function setRange(folderSlug: string, key: string, range: CatalogRange) {
+    setDraft((currentDraft) => ({
+      folders: [folderSlug],
+      scopedFacets: currentDraft.scopedFacets[folderSlug]
+        ? { [folderSlug]: currentDraft.scopedFacets[folderSlug] }
+        : currentDraft.scopedFacets,
+      scopedRanges: {
+        [folderSlug]: {
+          ...(currentDraft.scopedRanges[folderSlug] ?? {}),
+          [key]: range,
+        },
+      },
+    }));
+  }
+
+  function applyFilters() {
+    if (!isDirty) return;
+    go(buildCatalogHrefFromDraft(current(), draft));
   }
 
   function clearFilters() {
-    go(buildCatalogHref(current(), { clearFacets: true }));
+    setDraft({ folders: [], scopedFacets: {}, scopedRanges: {} });
+    if (activeCount > 0) {
+      go(buildCatalogHref(current(), { clearFacets: true }));
+    }
   }
 
   return {
     t,
     schema,
+    displayTree,
+    availability,
     query,
+    draft,
     activeCount,
+    draftActiveCount,
+    isDirty,
+    canClear,
+    isPending,
     selectFolder,
     toggleFacet,
     setRange,
+    applyFilters,
     clearFilters,
   };
 }
 
-function RangeFacet({
-  facetKey,
-  name,
-  unit,
-  range,
-  onChange,
+export function CatalogFilterProvider({
+  schema,
+  availability,
+  children,
 }: {
-  facetKey: string;
-  name: string;
-  unit: string | null;
-  range: CatalogRange;
-  onChange: (range: CatalogRange) => void;
+  schema: PublicFilterSchema;
+  availability: FilterAvailabilityIndex;
+  children: ReactNode;
 }) {
-  const t = useTranslations("Products");
-  const apply = useDebouncedCallback((next: CatalogRange) => {
-    onChange(next);
-  }, 400);
-
+  const api = useCatalogFilters(schema, availability);
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">
-        {name}
-        {unit ? (
-          <span className="text-muted-foreground">, {unit}</span>
-        ) : null}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Input
-          type="text"
-          inputMode="numeric"
-          defaultValue={range.min ?? ""}
-          placeholder={t("filterFrom")}
-          aria-label={`${name} ${t("filterFrom")}`}
-          onChange={(event) => {
-            const raw = event.target.value.replace(/\D/g, "");
-            apply({
-              min: raw ? Number(raw) : undefined,
-              max: range.max,
-            });
-          }}
-        />
-        <Input
-          type="text"
-          inputMode="numeric"
-          defaultValue={range.max ?? ""}
-          placeholder={t("filterTo")}
-          aria-label={`${name} ${t("filterTo")}`}
-          onChange={(event) => {
-            const raw = event.target.value.replace(/\D/g, "");
-            apply({
-              min: range.min,
-              max: raw ? Number(raw) : undefined,
-            });
-          }}
-        />
-      </div>
-    </div>
+    <CatalogFilterContext.Provider value={api}>
+      {children}
+    </CatalogFilterContext.Provider>
   );
 }
 
-function FacetFields({
-  facets,
-  idPrefix,
-  query,
-  toggleFacet,
-  setRange,
-}: {
-  facets: PublicFilterFacet[];
-  idPrefix: string;
-  query: ReturnType<typeof parseCatalogQuery>;
-  toggleFacet: (key: string, value: string, checked: boolean) => void;
-  setRange: (key: string, range: CatalogRange) => void;
-}) {
-  const t = useTranslations("Products");
-
-  if (facets.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">{t("filterEmpty")}</p>
-    );
+function useCatalogFilterContext() {
+  const ctx = useContext(CatalogFilterContext);
+  if (!ctx) {
+    throw new Error("CatalogFilter* must be used inside CatalogFilterProvider");
   }
-
-  return (
-    <div className="flex flex-col gap-5">
-      {facets.map((facet) => {
-        if (facet.type === "NUMBER" || facet.type === "YEAR") {
-          return (
-            <RangeFacet
-              key={facet.key}
-              facetKey={facet.key}
-              name={facet.name}
-              unit={facet.unit}
-              range={query.ranges[facet.key] ?? {}}
-              onChange={(range) => setRange(facet.key, range)}
-            />
-          );
-        }
-
-        if (facet.type === "BOOLEAN") {
-          const id = `${idPrefix}-bool-${facet.key}`;
-          const checked = (query.facets[facet.key] ?? []).includes("1");
-          return (
-            <label
-              key={facet.key}
-              htmlFor={id}
-              className="flex cursor-pointer items-center gap-3 text-sm"
-            >
-              <Checkbox
-                id={id}
-                checked={checked}
-                onCheckedChange={(value) =>
-                  toggleFacet(facet.key, "1", value === true)
-                }
-              />
-              {facet.name}
-            </label>
-          );
-        }
-
-        return (
-          <div key={facet.key} className="flex flex-col gap-3">
-            <p className="text-sm font-medium">{facet.name}</p>
-            {facet.options.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("filterEmpty")}</p>
-            ) : (
-              facet.options.map((option) => {
-                const checked = (query.facets[facet.key] ?? []).includes(
-                  option.slug
-                );
-                const id = `${idPrefix}-${facet.key}-${option.slug}`;
-                return (
-                  <label
-                    key={option.slug}
-                    htmlFor={id}
-                    className="flex cursor-pointer items-center gap-3 text-sm"
-                  >
-                    <Checkbox
-                      id={id}
-                      checked={checked}
-                      onCheckedChange={(value) =>
-                        toggleFacet(facet.key, option.slug, value === true)
-                      }
-                    />
-                    {option.label}
-                  </label>
-                );
-              })
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+  return ctx;
 }
 
-function nodeContainsSlug(node: PublicFilterNode, slug: string): boolean {
-  if (node.slug === slug) return true;
-  return node.children.some((child) => nodeContainsSlug(child, slug));
-}
-
-function CatalogFilterBranch({
-  nodes,
-  idPrefix,
-  query,
-  selectFolder,
-  toggleFacet,
-  setRange,
+/** UI Lab: LuTrash2 — clear filters (не LuX: плутають із закриттям). */
+export function CatalogFilterClearButton({
+  className,
 }: {
-  nodes: PublicFilterNode[];
-  idPrefix: string;
-  query: ReturnType<typeof parseCatalogQuery>;
-  selectFolder: (slug: string) => void;
-  toggleFacet: (key: string, value: string, checked: boolean) => void;
-  setRange: (key: string, range: CatalogRange) => void;
+  className?: string;
 }) {
-  const selected = query.folders[0];
-  const openSlug = selected
-    ? nodes.find((node) => nodeContainsSlug(node, selected))?.slug
-    : undefined;
-
-  if (nodes.length === 0) return null;
+  const { t, canClear, isPending, clearFilters } = useCatalogFilterContext();
 
   return (
-    <Accordion
-      type="single"
-      collapsible
-      value={openSlug}
-      onValueChange={(value) => {
-        if (value) selectFolder(value);
-      }}
-      className="w-full"
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={cn("size-8 shrink-0", className)}
+      disabled={!canClear || isPending}
+      aria-label={t("filterClear")}
+      title={t("filterClear")}
+      onClick={clearFilters}
     >
-      {nodes.map((node) => {
-        const isLeaf = node.children.length === 0;
-        return (
-          <AccordionItem
-            key={node.id}
-            value={node.slug}
-            className="border-b border-border"
-          >
-            <AccordionTrigger className="py-3 text-sm font-medium hover:no-underline">
-              {node.name}
-            </AccordionTrigger>
-            <AccordionContent className="pb-3">
-              {isLeaf ? (
-                <FacetFields
-                  facets={node.facets}
-                  idPrefix={`${idPrefix}-${node.slug}`}
-                  query={query}
-                  toggleFacet={toggleFacet}
-                  setRange={setRange}
-                />
-              ) : (
-                <CatalogFilterBranch
-                  nodes={node.children}
-                  idPrefix={`${idPrefix}-${node.slug}`}
-                  query={query}
-                  selectFolder={selectFolder}
-                  toggleFacet={toggleFacet}
-                  setRange={setRange}
-                />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+      <LuTrash2 className="size-4" />
+    </Button>
   );
 }
 
 export function CatalogFilterFields({
-  schema,
   idPrefix,
   className,
 }: {
-  schema: PublicFilterSchema;
   idPrefix: string;
   className?: string;
 }) {
   const {
     t,
-    query,
-    activeCount,
+    displayTree,
+    draft,
+    isDirty,
+    isPending,
     selectFolder,
     toggleFacet,
     setRange,
-    clearFilters,
-  } = useCatalogFilters(schema);
+    applyFilters,
+  } = useCatalogFilterContext();
 
-  const empty = schema.tree.length === 0;
+  const empty = displayTree.length === 0;
+  const labels: FilterTreeLabels = {
+    from: t("filterFrom"),
+    to: t("filterTo"),
+    empty: t("filterEmpty"),
+    expand: t("filterExpand"),
+    collapse: t("filterCollapse"),
+  };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
-      {empty ? (
-        <p className="text-sm text-muted-foreground">{t("filterEmptyFacets")}</p>
-      ) : (
-        <CatalogFilterBranch
-          nodes={schema.tree}
-          idPrefix={idPrefix}
-          query={query}
-          selectFolder={selectFolder}
-          toggleFacet={toggleFacet}
-          setRange={setRange}
-        />
-      )}
+    <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+      <div className={cn("min-h-0 flex-1 pr-3", FILTER_SCROLL_CLASS)}>
+        {empty ? (
+          <p className="text-sm text-muted-foreground">
+            {t("filterEmptyFacets")}
+          </p>
+        ) : (
+          <CatalogFilterTree
+            nodes={displayTree}
+            selected={draft.folders}
+            initialOpenSlug={draft.folders.at(-1) ?? null}
+            scopedFacets={draft.scopedFacets}
+            scopedRanges={draft.scopedRanges}
+            labels={labels}
+            idPrefix={idPrefix}
+            onSelectFolder={selectFolder}
+            onToggleFacet={toggleFacet}
+            onSetRange={setRange}
+          />
+        )}
+      </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        disabled={activeCount === 0}
-        onClick={clearFilters}
-      >
-        {t("filterClear")}
-      </Button>
+      <div className="shrink-0 pt-3">
+        <Button
+          type="button"
+          variant={isDirty ? "default" : "outline"}
+          className="h-10 w-full text-sm"
+          disabled={!isDirty || isPending}
+          onClick={applyFilters}
+        >
+          {t("filterApply")}
+        </Button>
+      </div>
     </div>
   );
 }

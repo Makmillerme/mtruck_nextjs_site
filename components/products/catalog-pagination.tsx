@@ -2,19 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useEdgeMenuAlign } from "@/lib/use-edge-menu-align";
 import { cn } from "@/lib/utils";
 import {
   CATALOG_PAGE_SIZES,
   type CatalogPageSize,
 } from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
-import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { useRef } from "react";
+import { LuChevronDown, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
 export default function CatalogPagination({
   page,
@@ -34,6 +36,8 @@ export default function CatalogPagination({
   const t = useTranslations("Products");
   const safeCount = Math.max(1, pageCount);
   const safePage = Math.min(Math.max(1, page), safeCount);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { align, onOpenChange, collisionPadding } = useEdgeMenuAlign("end");
 
   return (
     <div
@@ -72,23 +76,42 @@ export default function CatalogPagination({
 
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">{t("pageSize")}</span>
-        <Select
-          value={String(pageSize)}
-          onValueChange={(value) =>
-            onPageSizeChange(Number(value) as CatalogPageSize)
-          }
+        <DropdownMenu
+          modal={false}
+          onOpenChange={(open) => onOpenChange(open, triggerRef.current)}
         >
-          <SelectTrigger className="h-9 w-[4.5rem] rounded-sm">
-            <SelectValue placeholder={String(pageSize)} />
-          </SelectTrigger>
-          <SelectContent>
-            {CATALOG_PAGE_SIZES.map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {size}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <DropdownMenuTrigger asChild>
+            <Button
+              ref={triggerRef}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 min-w-[4.5rem] gap-1.5"
+              aria-label={t("pageSize")}
+            >
+              {pageSize}
+              <LuChevronDown className="size-4 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align={align}
+            collisionPadding={collisionPadding}
+            className="min-w-0 w-max"
+          >
+            <DropdownMenuRadioGroup
+              value={String(pageSize)}
+              onValueChange={(value) =>
+                onPageSizeChange(Number(value) as CatalogPageSize)
+              }
+            >
+              {CATALOG_PAGE_SIZES.map((size) => (
+                <DropdownMenuRadioItem key={size} value={String(size)}>
+                  {size}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

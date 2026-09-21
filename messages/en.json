@@ -385,7 +385,7 @@
     "empty": "No products yet.",
     "layoutGrid": "Grid",
     "layoutList": "List",
-    "searchPlaceholder": "Search trucks...",
+    "searchPlaceholder": "Search...",
     "filter": "Filter",
     "filterFolder": "Category",
     "filterFrom": "From",
@@ -398,12 +398,15 @@
     "sortName": "Name",
     "filterBrand": "Brand",
     "filterFeatured": "Featured only",
+    "filterApply": "Apply filters",
     "filterClear": "Clear filters",
     "filterEmpty": "No values for this field.",
     "pageOf": "{page} / {total}",
     "pageSize": "Per page",
     "prevPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "filterExpand": "Expand",
+    "filterCollapse": "Collapse"
   },
   "Product": {
     "home": "Home",

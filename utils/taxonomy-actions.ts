@@ -25,6 +25,7 @@ import {
 } from "@/lib/catalog/taxonomy";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
+import { revalidatePublicCatalog } from "@/lib/catalog/cache";
 import type { TaxonomyAction, TaxonomyActionState } from "@/utils/taxonomy-action-state";
 
 function checkbox(formData: FormData, name: string) {
@@ -44,7 +45,7 @@ async function renderTaxonomyError(error: unknown): Promise<TaxonomyActionState>
 function revalidateCatalog() {
   revalidatePath("/admin/catalog");
   revalidatePath("/admin/products/create");
-  revalidatePath("/products");
+  revalidatePublicCatalog();
 }
 
 async function uniqueNodeSlug(name: string) {

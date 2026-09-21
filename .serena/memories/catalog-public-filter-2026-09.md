@@ -8,7 +8,7 @@ Public `/products` filter is generated from admin catalog, not hardcoded brands.
 
 ## Public
 - `lib/catalog/public-filter.ts`: `fetchPublicFilterSchema` + `catalogQueryToWhere`
-- URL: `folder=slug,slug`, `f.{key}=slug,slug`, `f.{key}Min` / `f.{key}Max`, plus search/sort/layout/featured
+- URL: `folder=slug,slug`, per-folder `f.{folderSlug}.{key}=slug,slug` and `f.{folderSlug}.{key}Min|Max`, plus legacy `f.{key}` / `f.{key}Min|Max`, search/sort/layout/featured
 - Legacy: `category`→folder, `make`/`brand`→`f.make`, `yearFrom`/`kmFrom`→ranges
 - Homepage finder `buildProductsHref` writes the new params (folder slugs mapped from mock category ids)
 

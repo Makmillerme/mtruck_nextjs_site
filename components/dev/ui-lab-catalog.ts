@@ -36,17 +36,17 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "catalog-filter",
     category: "layout",
     title: "Фільтр каталогу",
-    hint: "Вкладений Accordion type=single: сусід закриває сусіда; поля isFacet лише в листку папки.",
+    hint: "Draft + кнопка Фільтрувати. Папка ≠ поле, range+slider, .app-scroll.",
     keywords:
-      "filter каталог фільтр accordion папка folder facet isFacet cascade дерево",
+      "filter каталог фільтр accordion папка folder facet isFacet cascade дерево slider scrollbar",
   },
   {
     id: "catalog-pagination",
     category: "layout",
     title: "Пагінація каталогу",
-    hint: "Стрілки + сторінка/усього + Select 10/25/40. Той самий блок на /products.",
+    hint: "Стрілки + сторінка/усього + outline DropdownMenu 10/25/40.",
     keywords:
-      "pagination пагінація page pagesize 10 25 40 каталог products",
+      "pagination пагінація page pagesize 10 25 40 каталог products dropdown",
   },
   {
     id: "logo",
@@ -133,9 +133,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "overlays",
     category: "overlays",
     title: "Dropdown / Popover / Tooltip / Sheet / AlertDialog",
-    hint: "Видалення завжди через ConfirmDelete (AlertDialog z-[110]). Icon → ConfirmDeleteIcon; Sheet footer → ConfirmDeleteFormButton. CMS folders/fields — двокрокове підтвердження в sheet.",
+    hint: "Канон меню: outline toolbar/поле; хедер ghost — виняток. ConfirmDelete z-[110]. Тонкий .app-scroll.",
     keywords:
-      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель видалення підтвердження",
+      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель scrollbar скролбар",
   },
   {
     id: "cascade",
@@ -169,7 +169,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "vehicle",
     category: "cards",
     title: "Картка техніки",
-    hint: "Живий VehicleCard: PhotoCarousel, ціна + Детальніше w-full знизу. Сітка 1/2/3. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
+    hint: "Живий VehicleCard: сітка + list (фото на всю висоту). PhotoCarousel, ціна + Детальніше w-full. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
     keywords:
       "vehicle card картка техніки тягач man overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
     chrome: "own",
