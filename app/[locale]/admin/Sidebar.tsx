@@ -73,7 +73,7 @@ function Sidebar({
                     />
                   </Button>
                   {productsOpen ? (
-                    <div className="grid gap-1 pl-2">
+                    <div className="ml-3 grid gap-1 border-l border-border pl-2">
                       {productRoots.map((root) => {
                         const href = `/admin/products?root=${root.id}`;
                         const active = onProducts && activeRoot === root.id;
