@@ -30,6 +30,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -258,8 +259,21 @@ function ProductSheetFields({
     : name;
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4">
+    <Tabs defaultValue="main" className="grid gap-6">
+      <TabsList className="w-full">
+        <TabsTrigger value="main" className="sm:flex-1">
+          {t("sheetTabMain")}
+        </TabsTrigger>
+        <TabsTrigger value="specs" className="sm:flex-1">
+          {t("sheetTabSpecs")}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent
+        value="main"
+        forceMount
+        className="mt-0 grid gap-4 data-[state=inactive]:hidden"
+      >
         <ProductFolderPicker
           tree={tree}
           selectedId={selectedNodeId}
@@ -344,28 +358,38 @@ function ProductSheetFields({
           defaultCurrency={product?.currency ?? "USD"}
         />
         <input type="hidden" name="company" value={product?.company ?? ""} />
-      </div>
-      {attributes.length > 0 ? (
-        <ProductSpecFields
-          key={`${product?.id ?? "new"}-${selectedNodeId ?? "none"}`}
-          attributes={attributes}
-          initialValues={product ? specsToInitial(product.specs) : {}}
-          onValuesChange={setSpecValues}
+        <TextAreaInput
+          name="description"
+          labelText={t("description")}
+          defaultValue={product?.description ?? ""}
+          required={false}
         />
-      ) : selectedNodeId ? (
-        <p className="text-sm text-muted-foreground">{catalogT("noOwnFields")}</p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {catalogT("productSpecsNeedFolder")}
-        </p>
-      )}
-      <TextAreaInput
-        name="description"
-        labelText={t("description")}
-        defaultValue={product?.description ?? ""}
-        required={false}
-      />
-    </div>
+      </TabsContent>
+
+      <TabsContent
+        value="specs"
+        forceMount
+        className="mt-0 data-[state=inactive]:hidden"
+      >
+        {attributes.length > 0 ? (
+          <ProductSpecFields
+            key={`${product?.id ?? "new"}-${selectedNodeId ?? "none"}`}
+            attributes={attributes}
+            initialValues={product ? specsToInitial(product.specs) : {}}
+            onValuesChange={setSpecValues}
+            showHeading={false}
+          />
+        ) : selectedNodeId ? (
+          <p className="text-sm text-muted-foreground">
+            {catalogT("noOwnFields")}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {catalogT("productSpecsNeedFolder")}
+          </p>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -857,7 +881,6 @@ export default function AdminProductsView({
           <div className="grid gap-6">
             <SheetHeader>
               <SheetTitle>{t("createSheetTitle")}</SheetTitle>
-              <SheetDescription>{t("createSheetLede")}</SheetDescription>
             </SheetHeader>
             <FormContainer
               key={sheetCreateOpen ? "create-open" : "create-closed"}
@@ -887,7 +910,6 @@ export default function AdminProductsView({
           <div className="grid gap-6">
             <SheetHeader>
               <SheetTitle>{t("editSheetTitle")}</SheetTitle>
-              <SheetDescription>{t("editSheetLede")}</SheetDescription>
             </SheetHeader>
             {editProduct ? (
               <>

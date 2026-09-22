@@ -31,10 +31,12 @@ export default function ProductSpecFields({
   attributes,
   initialValues = {},
   onValuesChange,
+  showHeading = true,
 }: {
   attributes: CatalogAttribute[];
   initialValues?: Record<string, string>;
   onValuesChange?: (values: Record<string, string>) => void;
+  showHeading?: boolean;
 }) {
   const t = useTranslations("CatalogAdmin");
   const ordered = useMemo(() => sortSheetAttributes(attributes), [attributes]);
@@ -68,7 +70,9 @@ export default function ProductSpecFields({
 
   return (
     <div className="grid gap-4">
-      <p className="font-medium">{t("productSpecs")}</p>
+      {showHeading ? (
+        <p className="font-medium">{t("productSpecs")}</p>
+      ) : null}
       <div className="grid grid-cols-6 gap-6">
         {layout.map(({ attribute }) => {
           const className = sheetWidthClass(attribute.sheetWidth);
