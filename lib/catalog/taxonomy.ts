@@ -132,6 +132,43 @@ export function collectSubtreeNodeIds(
   return ids;
 }
 
+/** Find a node anywhere in the tree. */
+export function findNodeInTree(
+  tree: TaxonomyTreeNode[],
+  nodeId: string
+): TaxonomyTreeNode | null {
+  for (const node of tree) {
+    if (node.id === nodeId) return node;
+    const nested = findNodeInTree(node.children, nodeId);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+/** Direct children of a root (scoped folder picker under ?root=). */
+export function getRootChildren(
+  tree: TaxonomyTreeNode[],
+  rootId: string
+): TaxonomyTreeNode[] {
+  const root = tree.find((node) => node.id === rootId);
+  return root?.children ?? [];
+}
+
+/** First node in depth-first preorder (for default folder under a root). */
+export function firstTreeNodeId(nodes: TaxonomyTreeNode[]): string | undefined {
+  if (nodes.length === 0) return undefined;
+  return nodes[0].id;
+}
+
+/** True if nodeId is the root or any descendant of rootId. */
+export function isNodeInSubtree(
+  tree: TaxonomyTreeNode[],
+  rootId: string,
+  nodeId: string
+): boolean {
+  return collectSubtreeNodeIds(tree, rootId).has(nodeId);
+}
+
 /** Map taxonomy tree into CascadeSelect items. */
 export function taxonomyToCascadeItems(
   nodes: TaxonomyTreeNode[]

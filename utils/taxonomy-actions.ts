@@ -44,7 +44,9 @@ async function renderTaxonomyError(error: unknown): Promise<TaxonomyActionState>
 }
 
 function revalidateCatalog() {
+  revalidatePath("/admin");
   revalidatePath("/admin/catalog");
+  revalidatePath("/admin/products");
   revalidatePath("/admin/products/create");
   revalidatePublicCatalog();
 }

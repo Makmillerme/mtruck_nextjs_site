@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -120,17 +120,14 @@ function CascadeTreeRows({
   onToggle: (id: string) => void;
   onSelect: (id: string) => void;
 }) {
-  return items.map((item) => {
+  const rows = items.map((item) => {
     const hasChildren = Boolean(item.children?.length);
     const isSelected = item.id === value;
     const isOpen = expanded.has(item.id);
 
     return (
-      <div key={item.id} className="grid">
-        <div
-          className="flex items-center gap-0.5"
-          style={{ paddingLeft: depth * 12 }}
-        >
+      <div key={item.id} className="grid gap-0.5">
+        <div className="flex items-center gap-0.5">
           {hasChildren ? (
             <button
               type="button"
@@ -163,25 +160,27 @@ function CascadeTreeRows({
           </button>
         </div>
         {hasChildren && isOpen ? (
-          <CascadeTreeRows
-            items={item.children!}
-            value={value}
-            depth={depth + 1}
-            expanded={expanded}
-            onToggle={onToggle}
-            onSelect={onSelect}
-          />
+          <div className="ml-3 grid gap-0.5 border-l border-border pl-2">
+            <CascadeTreeRows
+              items={item.children!}
+              value={value}
+              depth={depth + 1}
+              expanded={expanded}
+              onToggle={onToggle}
+              onSelect={onSelect}
+            />
+          </div>
         ) : null}
       </div>
     );
   });
+
+  return <>{rows}</>;
 }
 
-function initialExpanded(items: CascadeItem[], path: CascadeItem[] | null) {
+/** Expand only ancestors on the selected path (not every branch). */
+function initialExpanded(_items: CascadeItem[], path: CascadeItem[] | null) {
   const ids = new Set<string>();
-  for (const item of items) {
-    if (item.children?.length) ids.add(item.id);
-  }
   if (path) {
     for (const item of path.slice(0, -1)) ids.add(item.id);
   }
@@ -230,6 +229,10 @@ export default function CascadeSelect({
   const [expanded, setExpanded] = useState(() =>
     initialExpanded(items, path)
   );
+
+  useEffect(() => {
+    setExpanded(initialExpanded(items, path));
+  }, [items, path]);
 
   function select(id: string | null) {
     onValueChange?.(id);
