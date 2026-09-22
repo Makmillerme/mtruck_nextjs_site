@@ -42,6 +42,7 @@ import AdminListToolbar, {
   AdminFilterTrigger,
 } from "@/components/admin/admin-list-toolbar";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
+import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import { LuArchive, LuPen } from "react-icons/lu";
 
 export type AdminOrderRow = {
@@ -249,22 +250,6 @@ export default function AdminSalesView({
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
-  function syncSalesSheetUrl(next: {
-    create?: boolean;
-    edit?: string;
-    userId?: string;
-  }) {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("create");
-    url.searchParams.delete("edit");
-    url.searchParams.delete("userId");
-    if (next.create) url.searchParams.set("create", "1");
-    if (next.edit) url.searchParams.set("edit", next.edit);
-    if (next.userId) url.searchParams.set("userId", next.userId);
-    window.history.replaceState(null, "", url.toString());
-  }
-
   const editOrder = useMemo(
     () => items.find((item) => item.id === sheetEditId) ?? null,
     [items, sheetEditId]
@@ -290,24 +275,24 @@ export default function AdminSalesView({
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
-      syncSalesSheetUrl({
+      syncAdminSheetUrl({
         create: true,
         userId: preselectedUserId,
       });
       return;
     }
-    syncSalesSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   function setEditOpen(open: boolean, orderId?: string) {
     if (open && orderId) {
       setSheetCreateOpen(false);
       setSheetEditId(orderId);
-      syncSalesSheetUrl({ edit: orderId });
+      syncAdminSheetUrl({ edit: orderId });
       return;
     }
     setSheetEditId(undefined);
-    syncSalesSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   return (

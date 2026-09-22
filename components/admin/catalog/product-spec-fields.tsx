@@ -116,7 +116,6 @@ export default function ProductSpecFields({
                   allowClear={!attribute.isRequired}
                   clearLabel="—"
                   disabled={disabled}
-                  searchable={options.length >= 10}
                 />
               </div>
             );

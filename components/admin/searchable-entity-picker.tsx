@@ -49,7 +49,7 @@ export default function SearchableEntityPicker({
   clearLabel,
   disabled = false,
   hideLabel = false,
-  searchable = true,
+  searchable,
 }: {
   name: string;
   label: string;
@@ -65,11 +65,18 @@ export default function SearchableEntityPicker({
   disabled?: boolean;
   /** Keep a11y label, hide visible Label (e.g. currency beside price). */
   hideLabel?: boolean;
-  /** Show search field + filter. Off for short fixed lists. */
+  /**
+   * Explicit on/off. When omitted, search shows only if
+   * `options.length >= SHEET_COMBOBOX_SEARCH_MIN`.
+   */
   searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const showSearch =
+    searchable ?? options.length >= SHEET_COMBOBOX_SEARCH_MIN;
+  const queryTrimmed = query.trim();
+  const showClear = allowClear && !queryTrimmed;
 
   const selected = useMemo(
     () => options.find((option) => option.value === value) ?? null,
@@ -77,11 +84,11 @@ export default function SearchableEntityPicker({
   );
 
   const filtered = useMemo(() => {
-    if (!searchable) return options;
-    const q = query.trim().toLocaleLowerCase();
+    if (!showSearch) return options;
+    const q = queryTrimmed.toLocaleLowerCase();
     if (!q) return options;
     return options.filter((option) => optionHaystack(option).includes(q));
-  }, [options, query, searchable]);
+  }, [options, queryTrimmed, showSearch]);
 
   return (
     <div className="grid gap-2">
@@ -131,12 +138,12 @@ export default function SearchableEntityPicker({
           align="start"
           onOpenAutoFocus={(event) => {
             // Let the plain search Input take focus when present.
-            if (!searchable) event.preventDefault();
+            if (!showSearch) event.preventDefault();
           }}
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <Command shouldFilter={false} className="rounded-sm border-0">
-            {searchable ? (
+            {showSearch ? (
               <div className="flex items-center gap-2 border-b px-3">
                 <LuSearch
                   className="size-4 shrink-0 text-muted-foreground"
@@ -159,7 +166,7 @@ export default function SearchableEntityPicker({
             <CommandList>
               <CommandEmpty>{emptyLabel}</CommandEmpty>
               <CommandGroup>
-                {allowClear ? (
+                {showClear ? (
                   <CommandItem
                     value="__clear__"
                     onSelect={() => {

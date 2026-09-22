@@ -23,6 +23,7 @@ import {
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { Badge } from "@/components/ui/badge";
+import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import { loadProductSheetMetaAction } from "@/lib/catalog/product-sheet-meta";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { SubmitButton } from "@/components/form/Buttons";
@@ -109,24 +110,6 @@ import { LuArchive, LuArrowRight, LuColumns3, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
 const STATUS_COLUMN_STORAGE_KEY = "mtruck.admin.products.showStatusColumn";
-
-function syncProductsSheetUrl(next: {
-  create?: boolean;
-  edit?: string;
-  node?: string | null;
-}) {
-  if (typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  const root = url.searchParams.get("root");
-  url.searchParams.delete("create");
-  url.searchParams.delete("edit");
-  url.searchParams.delete("node");
-  if (next.create) url.searchParams.set("create", "1");
-  if (next.edit) url.searchParams.set("edit", next.edit);
-  if (next.node) url.searchParams.set("node", next.node);
-  if (root) url.searchParams.set("root", root);
-  window.history.replaceState(null, "", url.toString());
-}
 
 export type AdminProductSpec = {
   attributeId: string;
@@ -659,11 +642,11 @@ export default function AdminProductsView({
       const node =
         resolveScopedFolderId(tree, listRootId, folderNodeId) ?? null;
       if (node && node !== folderNodeId) setFolderNodeId(node);
-      syncProductsSheetUrl({ create: true, node });
+      syncAdminSheetUrl({ create: true, node });
       if (node) void loadSheetMeta(node);
       return;
     }
-    syncProductsSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   function setEditOpen(open: boolean, productId?: string) {
@@ -673,20 +656,20 @@ export default function AdminProductsView({
       setSheetCreateOpen(false);
       setSheetEditId(productId);
       setFolderNodeId(node ?? undefined);
-      syncProductsSheetUrl({ edit: productId, node });
+      syncAdminSheetUrl({ edit: productId, node });
       void loadSheetMeta(node);
       return;
     }
     setSheetEditId(undefined);
-    syncProductsSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   function onFolderChange(nodeId: string | null) {
     setFolderNodeId(nodeId ?? undefined);
     if (sheetEditId) {
-      syncProductsSheetUrl({ edit: sheetEditId, node: nodeId });
+      syncAdminSheetUrl({ edit: sheetEditId, node: nodeId });
     } else if (sheetCreateOpen) {
-      syncProductsSheetUrl({ create: true, node: nodeId });
+      syncAdminSheetUrl({ create: true, node: nodeId });
     }
     void loadSheetMeta(nodeId);
   }

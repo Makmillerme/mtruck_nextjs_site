@@ -8,6 +8,7 @@ import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
 import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
+import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import FormContainer from "@/components/form/FormContainer";
 import FormInput from "@/components/form/FormInput";
 import { Badge } from "@/components/ui/badge";
@@ -147,16 +148,6 @@ export default function AdminUsersView({
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
-  function syncUsersSheetUrl(next: { create?: boolean; edit?: string }) {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("create");
-    url.searchParams.delete("edit");
-    if (next.create) url.searchParams.set("create", "1");
-    if (next.edit) url.searchParams.set("edit", next.edit);
-    window.history.replaceState(null, "", url.toString());
-  }
-
   function canEditUser(user: AdminUserRow) {
     return canManageRoles || user.role === "USER";
   }
@@ -187,21 +178,21 @@ export default function AdminUsersView({
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
-      syncUsersSheetUrl({ create: true });
+      syncAdminSheetUrl({ create: true });
       return;
     }
-    syncUsersSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   function setEditOpen(open: boolean, userId?: string) {
     if (open && userId) {
       setSheetCreateOpen(false);
       setSheetEditId(userId);
-      syncUsersSheetUrl({ edit: userId });
+      syncAdminSheetUrl({ edit: userId });
       return;
     }
     setSheetEditId(undefined);
-    syncUsersSheetUrl({});
+    syncAdminSheetUrl({});
   }
 
   const archiveUser =
