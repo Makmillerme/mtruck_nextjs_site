@@ -1,8 +1,5 @@
-'use client';
+import { LoadingAdminTable } from "@/components/global/loading-skeletons";
 
-import LoadingTable from '@/components/global/LoadingTable';
-
-function loading() {
-  return <LoadingTable />;
+export default function Loading() {
+  return <LoadingAdminTable />;
 }
-export default loading;

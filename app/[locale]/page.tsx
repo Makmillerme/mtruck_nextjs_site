@@ -4,12 +4,15 @@ import CallbackCtaSection from "@/components/callback-cta-section";
 import CustomOrderSection from "@/components/custom-order-section";
 import SalesCasesSection from "@/components/sales-cases-section";
 import ServicesSection from "@/components/services-section";
+import { LoadingCatalogGridCards } from "@/components/global/loading-skeletons";
 import { Suspense } from "react";
 
 function CatalogFallback() {
   return (
     <section className="full-bleed bg-secondary" aria-hidden>
-      <div className="page-container min-h-[40rem] py-16 md:py-24" />
+      <div className="page-container py-16 md:py-24">
+        <LoadingCatalogGridCards count={3} />
+      </div>
     </section>
   );
 }

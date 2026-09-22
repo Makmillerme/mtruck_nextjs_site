@@ -1,3 +1,4 @@
+import { cache } from "react";
 import db from "@/utils/db";
 import type {
   CatalogAttribute,
@@ -89,14 +90,15 @@ export async function fetchAttributeCountByNode() {
   return new Map(rows.map((row) => [row.taxonomyNodeId, row._count._all]));
 }
 
-export async function fetchTaxonomyTree() {
+/** Request-scoped memo — layout + page share one tree fetch. */
+export const fetchTaxonomyTree = cache(async () => {
   const [nodes, productCounts, attributeCounts] = await Promise.all([
     fetchTaxonomyNodes(),
     fetchProductCountByNode(),
     fetchAttributeCountByNode(),
   ]);
   return buildTaxonomyTree(nodes, productCounts, attributeCounts);
-}
+});
 
 export function flattenTaxonomyTree(
   tree: TaxonomyTreeNode[],

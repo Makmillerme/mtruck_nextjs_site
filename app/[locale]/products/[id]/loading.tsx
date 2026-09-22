@@ -1,7 +1,5 @@
-'use client';
-
-import LoadingContainer from '@/components/global/LoadingContainer';
+import { LoadingProductPage } from "@/components/global/loading-skeletons";
 
 export default function Loading() {
-  return <LoadingContainer />;
+  return <LoadingProductPage />;
 }

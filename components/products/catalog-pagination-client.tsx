@@ -33,7 +33,10 @@ export default function CatalogPaginationClient({
   }
 
   return (
-    <div className={isPending ? "opacity-70 transition-opacity" : undefined}>
+    <div
+      className={isPending ? "pointer-events-none opacity-60 transition-opacity" : undefined}
+      aria-busy={isPending || undefined}
+    >
       <CatalogPagination
         page={page}
         pageCount={pageCount}

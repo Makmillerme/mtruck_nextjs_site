@@ -81,7 +81,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingCardSkeleton } from "@/components/global/loading-skeletons";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -827,12 +827,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                   </EmptyContent>
                 </Empty>
 
-                <div className="space-y-3 rounded-sm border border-border p-6">
-                  <Skeleton className="h-40 w-full rounded-sm" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-6 w-2/3" />
-                  <Skeleton className="h-11 w-32" />
-                </div>
+                <LoadingCardSkeleton />
               </div>
             </Section>
           </LabGate>

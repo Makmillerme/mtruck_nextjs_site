@@ -18,20 +18,22 @@ import RequestCatalogOrder from '@/components/single-product/RequestCatalogOrder
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const product = await fetchSingleProduct(params.id);
+  const [product, locale, t, session] = await Promise.all([
+    fetchSingleProduct(params.id),
+    getLocale(),
+    getTranslations('Product'),
+    getSession(),
+  ]);
   const { name, company, description, price } = product;
-  const locale = await getLocale();
-  const t = await getTranslations('Product');
   const dollarsAmount = formatCurrency(price, locale);
-  const session = await getSession();
   const user = session?.user;
   const userId = user?.id;
   const isAuthenticated = Boolean(userId);
-  const favoriteId = userId
-    ? await fetchFavoriteId({ productId: product.id })
-    : null;
-  const reviewDoesNotExist =
-    userId && !(await findExistingReview(userId, product.id));
+  const [favoriteId, existingReview] = await Promise.all([
+    userId ? fetchFavoriteId({ productId: product.id }) : Promise.resolve(null),
+    userId ? findExistingReview(userId, product.id) : Promise.resolve(null),
+  ]);
+  const reviewDoesNotExist = Boolean(userId && !existingReview);
 
   const gallery = uniqueImages(
     product.image,

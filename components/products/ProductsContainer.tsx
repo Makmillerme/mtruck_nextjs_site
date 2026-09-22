@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { LoadingCatalogGridCards } from "@/components/global/loading-skeletons";
 import ProductsGrid from "./ProductsGrid";
 import ProductsList from "./ProductsList";
 import CatalogView from "./catalog-view";
@@ -122,7 +123,7 @@ async function ProductsContainer({
         schema={schema}
         availability={availability}
       >
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingCatalogGridCards count={6} />}>
           <CatalogResults query={prunedQuery} />
         </Suspense>
       </CatalogView>
