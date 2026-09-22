@@ -81,29 +81,11 @@ export function LoadingCatalogGridCards({
 }
 
 /** Full catalog page shell: filter column + results grid. */
+/** Results-only catalog wait — never skeleton the filter chrome. */
 export function LoadingCatalogPage() {
   return (
     <div className="page-content">
-      <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="min-w-0">
-          <div className="space-y-3 rounded-sm border border-border p-4">
-            <Skeleton className="h-6 w-24" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-11 w-full" />
-          </div>
-        </aside>
-        <div className="grid min-w-0 gap-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Skeleton className="h-11 min-w-0 flex-1" />
-            <Skeleton className="h-11 w-28" />
-            <Skeleton className="h-11 w-20" />
-          </div>
-          <Skeleton className="h-6 w-32" />
-          <LoadingCatalogGridCards count={6} />
-        </div>
-      </div>
+      <LoadingCatalogGridCards count={6} />
     </div>
   );
 }

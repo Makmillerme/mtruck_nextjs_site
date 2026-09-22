@@ -1,8 +1,5 @@
 import { Suspense } from "react";
-import {
-  LoadingCatalogGridCards,
-  LoadingCatalogPage,
-} from "@/components/global/loading-skeletons";
+import { LoadingCatalogGridCards } from "@/components/global/loading-skeletons";
 import ProductsGrid from "./ProductsGrid";
 import ProductsList from "./ProductsList";
 import CatalogView from "./catalog-view";
@@ -146,9 +143,10 @@ function ProductsContainer({
 }) {
   return (
     <div className="page-content">
-      {/* Nested Suspense (not route loading.tsx) so soft-nav transitions
-          keep previous UI instead of flashing a full-page skeleton. */}
-      <Suspense fallback={<LoadingCatalogPage />}>
+      {/* No chrome skeleton: filter is template UI, not a loading surface.
+          Soft-nav keeps prior body via startTransition; cold wait is blank
+          until schema resolves, then real filter + results (grid skeleton). */}
+      <Suspense fallback={null}>
         <ProductsCatalogBody layout={layout} query={query} />
       </Suspense>
     </div>
