@@ -1,12 +1,12 @@
 "use client";
 
 import CatalogPagination from "@/components/products/catalog-pagination";
+import { useCatalogSoftNav } from "@/components/products/catalog-soft-nav";
 import { useRouter } from "@/i18n/navigation";
 import {
   buildCatalogHref,
   type CatalogPageSize,
 } from "@/utils/catalog-query";
-import { useTransition } from "react";
 
 export default function CatalogPaginationClient({
   page,
@@ -20,7 +20,7 @@ export default function CatalogPaginationClient({
   className?: string;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { startTransition } = useCatalogSoftNav();
 
   function go(patch: { page?: number; pageSize?: CatalogPageSize }) {
     const href = buildCatalogHref(
@@ -33,18 +33,13 @@ export default function CatalogPaginationClient({
   }
 
   return (
-    <div
-      className={isPending ? "pointer-events-none opacity-60 transition-opacity" : undefined}
-      aria-busy={isPending || undefined}
-    >
-      <CatalogPagination
-        page={page}
-        pageCount={pageCount}
-        pageSize={pageSize}
-        className={className}
-        onPageChange={(next) => go({ page: next })}
-        onPageSizeChange={(size) => go({ pageSize: size, page: 1 })}
-      />
-    </div>
+    <CatalogPagination
+      page={page}
+      pageCount={pageCount}
+      pageSize={pageSize}
+      className={className}
+      onPageChange={(next) => go({ page: next })}
+      onPageSizeChange={(size) => go({ pageSize: size, page: 1 })}
+    />
   );
 }

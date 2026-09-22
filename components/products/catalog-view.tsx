@@ -31,8 +31,6 @@ import { useRouter } from "@/i18n/navigation";
 import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import type { PublicFilterSchema } from "@/lib/catalog/public-filter";
 import { useEdgeMenuAlign } from "@/lib/use-edge-menu-align";
-import { cn } from "@/lib/utils";
-
 import {
   CATALOG_LAYOUT_COOKIE,
   parseCatalogLayout,
@@ -46,11 +44,14 @@ import {
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import {
+  CatalogSoftNavProvider,
+  useCatalogSoftNav,
+} from "@/components/products/catalog-soft-nav";
+import {
   createContext,
   useContext,
   useRef,
   useState,
-  useTransition,
   type ReactNode,
 } from "react";
 import {
@@ -91,7 +92,7 @@ function CatalogSearch({
     setSearch(urlSearch);
   }
 
-  const [, startTransition] = useTransition();
+  const { startTransition } = useCatalogSoftNav();
   const handleSearch = useDebouncedCallback((value: string) => {
     const href = buildCatalogHref(new URLSearchParams(window.location.search), {
       search: value,
@@ -131,7 +132,7 @@ function CatalogSortButton({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { align, onOpenChange, collisionPadding } = useEdgeMenuAlign("end");
 
-  const [, startTransition] = useTransition();
+  const { startTransition } = useCatalogSoftNav();
   function selectSort(next: string) {
     const href = buildCatalogHref(new URLSearchParams(window.location.search), {
       sort: parseCatalogSort(next),
@@ -288,44 +289,46 @@ export default function CatalogView({
   }
 
   return (
-    <CatalogLayoutContext.Provider value={layout}>
-      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] lg:gap-8">
-        <CatalogFilterSidebar schema={schema} availability={availability} />
-        <div className="flex min-w-0 flex-col">
-          <section className="flex flex-col gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <CatalogSearch initialSearch={initialSearch} />
-              <CatalogSortButton initialSort={initialSort} />
-              <div className="hidden shrink-0 items-center gap-1 md:flex">
-                <Button
-                  type="button"
-                  variant={layout === "grid" ? "default" : "ghost"}
-                  size="icon"
-                  className="size-9"
-                  aria-pressed={layout === "grid"}
-                  aria-label={t("layoutGrid")}
-                  onClick={() => selectLayout("grid")}
-                >
-                  <LuLayoutGrid />
-                </Button>
-                <Button
-                  type="button"
-                  variant={layout === "list" ? "default" : "ghost"}
-                  size="icon"
-                  className="size-9"
-                  aria-pressed={layout === "list"}
-                  aria-label={t("layoutList")}
-                  onClick={() => selectLayout("list")}
-                >
-                  <LuList />
-                </Button>
+    <CatalogSoftNavProvider>
+      <CatalogLayoutContext.Provider value={layout}>
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] lg:gap-8">
+          <CatalogFilterSidebar schema={schema} availability={availability} />
+          <div className="flex min-w-0 flex-col">
+            <section className="flex flex-col gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <CatalogSearch initialSearch={initialSearch} />
+                <CatalogSortButton initialSort={initialSort} />
+                <div className="hidden shrink-0 items-center gap-1 md:flex">
+                  <Button
+                    type="button"
+                    variant={layout === "grid" ? "default" : "ghost"}
+                    size="icon"
+                    className="size-9"
+                    aria-pressed={layout === "grid"}
+                    aria-label={t("layoutGrid")}
+                    onClick={() => selectLayout("grid")}
+                  >
+                    <LuLayoutGrid />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={layout === "list" ? "default" : "ghost"}
+                    size="icon"
+                    className="size-9"
+                    aria-pressed={layout === "list"}
+                    aria-label={t("layoutList")}
+                    onClick={() => selectLayout("list")}
+                  >
+                    <LuList />
+                  </Button>
+                </div>
+                <CatalogFilterSheet schema={schema} availability={availability} />
               </div>
-              <CatalogFilterSheet schema={schema} availability={availability} />
-            </div>
-          </section>
-          <div className="mt-6 flex min-h-0 flex-1 flex-col">{children}</div>
+            </section>
+            <div className="mt-6 flex min-h-0 flex-1 flex-col">{children}</div>
+          </div>
         </div>
-      </div>
-    </CatalogLayoutContext.Provider>
+      </CatalogLayoutContext.Provider>
+    </CatalogSoftNavProvider>
   );
 }

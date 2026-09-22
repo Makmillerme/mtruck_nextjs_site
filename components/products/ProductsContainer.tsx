@@ -1,10 +1,14 @@
 import { Suspense } from "react";
-import { LoadingCatalogGridCards } from "@/components/global/loading-skeletons";
+import {
+  LoadingCatalogGridCards,
+  LoadingCatalogPage,
+} from "@/components/global/loading-skeletons";
 import ProductsGrid from "./ProductsGrid";
 import ProductsList from "./ProductsList";
 import CatalogView from "./catalog-view";
 import CatalogPaginationClient from "./catalog-pagination-client";
 import CatalogResultsSwitch from "./catalog-results-switch";
+import { CatalogSoftNavResults } from "./catalog-soft-nav";
 import { fetchFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
 import {
@@ -83,7 +87,7 @@ async function CatalogResults({
   );
 }
 
-async function ProductsContainer({
+async function ProductsCatalogBody({
   layout,
   query,
 }: {
@@ -115,18 +119,38 @@ async function ProductsContainer({
   };
 
   return (
-    <div className="page-content">
-      <CatalogView
-        initialLayout={layout}
-        initialSearch={prunedQuery.search}
-        initialSort={prunedQuery.sort}
-        schema={schema}
-        availability={availability}
-      >
+    <CatalogView
+      initialLayout={layout}
+      initialSearch={prunedQuery.search}
+      initialSort={prunedQuery.sort}
+      schema={schema}
+      availability={availability}
+    >
+      <CatalogSoftNavResults>
+        {/* Soft-nav: startTransition keeps prior results (no fallback flash).
+            Cold stream: skeleton only while results have never painted. */}
         <Suspense fallback={<LoadingCatalogGridCards count={6} />}>
           <CatalogResults query={prunedQuery} />
         </Suspense>
-      </CatalogView>
+      </CatalogSoftNavResults>
+    </CatalogView>
+  );
+}
+
+function ProductsContainer({
+  layout,
+  query,
+}: {
+  layout: CatalogLayout;
+  query: Omit<CatalogQuery, "layout">;
+}) {
+  return (
+    <div className="page-content">
+      {/* Nested Suspense (not route loading.tsx) so soft-nav transitions
+          keep previous UI instead of flashing a full-page skeleton. */}
+      <Suspense fallback={<LoadingCatalogPage />}>
+        <ProductsCatalogBody layout={layout} query={query} />
+      </Suspense>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
 } from "@/lib/catalog/public-filter";
 import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
 import { cn } from "@/lib/utils";
+import { useCatalogSoftNavOptional } from "@/components/products/catalog-soft-nav";
 import { useRouter } from "@/i18n/navigation";
 import {
   buildCatalogHref,
@@ -132,7 +133,10 @@ export function useCatalogFilters(
     serializeCatalogFilterDraft(applied);
   const canClear = draftActiveCount > 0 || activeCount > 0;
 
-  const [isPending, startTransition] = useTransition();
+  const softNav = useCatalogSoftNavOptional();
+  const [localPending, startLocalTransition] = useTransition();
+  const startTransition = softNav?.startTransition ?? startLocalTransition;
+  const isPending = softNav?.isPending ?? localPending;
 
   function go(href: string) {
     startTransition(() => {
