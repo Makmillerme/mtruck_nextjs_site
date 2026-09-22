@@ -1,63 +1,32 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import type { CatalogAttribute } from "@/lib/catalog/types";
 import {
   createAttributeOptionAction,
   deleteAttributeOptionAction,
 } from "@/utils/taxonomy-actions";
-import { LuTrash2 } from "react-icons/lu";
+import type { actionFunction } from "@/utils/types";
 import CatalogForm from "./catalog-form";
 import { CatalogField, CatalogSubmit } from "./catalog-fields";
 
 function OptionRow({
   option,
-  confirmId,
-  onConfirm,
 }: {
   option: CatalogAttribute["options"][number];
-  confirmId: string | null;
-  onConfirm: (id: string | null) => void;
 }) {
   const t = useTranslations("CatalogAdmin");
   return (
     <li className="flex min-h-9 items-center justify-between gap-3">
       <span className="truncate text-sm">{option.label}</span>
-      {confirmId === option.id ? (
-        <CatalogForm
-          className="flex shrink-0 items-center gap-2"
-          action={deleteAttributeOptionAction}
-          onSuccess={() => onConfirm(null)}
-        >
-          <input type="hidden" name="optionId" value={option.id} />
-          <CatalogSubmit
-            text={t("confirmDelete")}
-            variant="destructive"
-            size="sm"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onConfirm(null)}
-          >
-            {t("cancel")}
-          </Button>
-        </CatalogForm>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="shrink-0 text-muted-foreground"
-          onClick={() => onConfirm(option.id)}
-          aria-label={t("deleteOption")}
-        >
-          <LuTrash2 className="size-4" />
-        </Button>
-      )}
+      <ConfirmDeleteIcon
+        action={deleteAttributeOptionAction as unknown as actionFunction}
+        title={t("deleteOption")}
+        className="shrink-0 text-muted-foreground"
+      >
+        <input type="hidden" name="optionId" value={option.id} />
+      </ConfirmDeleteIcon>
     </li>
   );
 }
@@ -70,7 +39,6 @@ export default function OptionEditor({
   parentOptions: CatalogAttribute["options"];
 }) {
   const t = useTranslations("CatalogAdmin");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   if (attribute.type !== "SELECT") return null;
 
@@ -80,12 +48,7 @@ export default function OptionEditor({
         <p className="text-sm font-medium">{t("optionsTitle")}</p>
         <ul className="grid gap-1">
           {attribute.options.map((option) => (
-            <OptionRow
-              key={option.id}
-              option={option}
-              confirmId={confirmId}
-              onConfirm={setConfirmId}
-            />
+            <OptionRow key={option.id} option={option} />
           ))}
         </ul>
         <CatalogForm
@@ -117,12 +80,7 @@ export default function OptionEditor({
               {attribute.options
                 .filter((option) => option.parentOptionId === parent.id)
                 .map((option) => (
-                  <OptionRow
-                    key={option.id}
-                    option={option}
-                    confirmId={confirmId}
-                    onConfirm={setConfirmId}
-                  />
+                  <OptionRow key={option.id} option={option} />
                 ))}
             </ul>
             <CatalogForm

@@ -3,8 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import EmptyList from "@/components/global/EmptyList";
-import FormContainer from "@/components/form/FormContainer";
-import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +27,8 @@ import {
 } from "@/utils/actions";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { canMutateUserArchive } from "@/utils/user-roles";
-import type { actionFunction } from "@/utils/types";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import { LuRotateCcw } from "react-icons/lu";
-import { useFormStatus } from "react-dom";
 
 export type ArchiveTab = "sales" | "products" | "users";
 
@@ -72,33 +70,24 @@ const STATUS_KEY = {
   SOLD: "statusSold",
 } as const;
 
-function RestoreSubmit({ label }: { label: string }) {
-  const { pending } = useFormStatus();
+function RestoreIcon({
+  label,
+  onRestore,
+}: {
+  label: string;
+  onRestore: () => void;
+}) {
   return (
     <Button
-      type="submit"
+      type="button"
       size="icon"
       variant="ghost"
       className="cursor-pointer text-muted-foreground"
-      disabled={pending}
       aria-label={label}
+      onClick={onRestore}
     >
       <LuRotateCcw />
     </Button>
-  );
-}
-
-function RestoreIcon({
-  action,
-  label,
-}: {
-  action: actionFunction;
-  label: string;
-}) {
-  return (
-    <FormContainer action={action} className="inline-flex">
-      <RestoreSubmit label={label} />
-    </FormContainer>
   );
 }
 
@@ -147,6 +136,18 @@ export default function AdminArchiveView({
 }) {
   const t = useTranslations("Admin");
   const [activeTab, setActiveTab] = useState<ArchiveTab>(tab);
+  const {
+    optimisticItems: optimisticOrders,
+    removeOptimistically: removeOrder,
+  } = useOptimisticListRemove(orders);
+  const {
+    optimisticItems: optimisticProducts,
+    removeOptimistically: removeProduct,
+  } = useOptimisticListRemove(products);
+  const {
+    optimisticItems: optimisticUsers,
+    removeOptimistically: removeUser,
+  } = useOptimisticListRemove(users);
 
   function setTab(value: string) {
     const next: ArchiveTab =
@@ -177,7 +178,10 @@ export default function AdminArchiveView({
         </TabsList>
 
         <TabsContent value="sales" className="mt-6">
-          <ArchiveTable empty={orders.length === 0} count={orders.length}>
+          <ArchiveTable
+            empty={optimisticOrders.length === 0}
+            count={optimisticOrders.length}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -193,7 +197,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
+                {optimisticOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
                       <div className="grid gap-0.5">
@@ -219,17 +223,21 @@ export default function AdminArchiveView({
                         <div className="inline-flex items-center justify-center gap-1">
                           <RestoreIcon
                             label={t("restore")}
-                            action={
-                              restoreAdminOrderAction.bind(null, {
-                                orderId: order.id,
-                              }) as unknown as actionFunction
+                            onRestore={() =>
+                              removeOrder(order.id, () =>
+                                restoreAdminOrderAction({
+                                  orderId: order.id,
+                                })
+                              )
                             }
                           />
-                          <ConfirmDeleteIcon
-                            action={
-                              deleteAdminOrderAction.bind(null, {
-                                orderId: order.id,
-                              }) as unknown as actionFunction
+                          <ConfirmDeleteCallbackIcon
+                            onConfirm={() =>
+                              removeOrder(order.id, () =>
+                                deleteAdminOrderAction({
+                                  orderId: order.id,
+                                })
+                              )
                             }
                           />
                         </div>
@@ -243,7 +251,10 @@ export default function AdminArchiveView({
         </TabsContent>
 
         <TabsContent value="products" className="mt-6">
-          <ArchiveTable empty={products.length === 0} count={products.length}>
+          <ArchiveTable
+            empty={optimisticProducts.length === 0}
+            count={optimisticProducts.length}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -261,7 +272,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((item) => (
+                {optimisticProducts.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="tabular-nums">
                       {item.productCode}
@@ -286,17 +297,21 @@ export default function AdminArchiveView({
                         <div className="inline-flex items-center justify-center gap-1">
                           <RestoreIcon
                             label={t("restore")}
-                            action={
-                              restoreProductAction.bind(null, {
-                                productId: item.id,
-                              }) as unknown as actionFunction
+                            onRestore={() =>
+                              removeProduct(item.id, () =>
+                                restoreProductAction({
+                                  productId: item.id,
+                                })
+                              )
                             }
                           />
-                          <ConfirmDeleteIcon
-                            action={
-                              deleteProductAction.bind(null, {
-                                productId: item.id,
-                              }) as unknown as actionFunction
+                          <ConfirmDeleteCallbackIcon
+                            onConfirm={() =>
+                              removeProduct(item.id, () =>
+                                deleteProductAction({
+                                  productId: item.id,
+                                })
+                              )
                             }
                           />
                         </div>
@@ -310,7 +325,10 @@ export default function AdminArchiveView({
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
-          <ArchiveTable empty={users.length === 0} count={users.length}>
+          <ArchiveTable
+            empty={optimisticUsers.length === 0}
+            count={optimisticUsers.length}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -327,7 +345,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((item) => {
+                {optimisticUsers.map((item) => {
                   const canMutate = canMutateUserArchive(item, currentUserId);
                   const canHardDelete =
                     canMutate &&
@@ -361,18 +379,22 @@ export default function AdminArchiveView({
                           <div className="inline-flex items-center justify-center gap-1">
                             <RestoreIcon
                               label={t("restore")}
-                              action={
-                                restoreAdminUserAction.bind(null, {
-                                  userId: item.id,
-                                }) as unknown as actionFunction
+                              onRestore={() =>
+                                removeUser(item.id, () =>
+                                  restoreAdminUserAction({
+                                    userId: item.id,
+                                  })
+                                )
                               }
                             />
                             {canHardDelete ? (
-                              <ConfirmDeleteIcon
-                                action={
-                                  deleteAdminUserAction.bind(null, {
-                                    userId: item.id,
-                                  }) as unknown as actionFunction
+                              <ConfirmDeleteCallbackIcon
+                                onConfirm={() =>
+                                  removeUser(item.id, () =>
+                                    deleteAdminUserAction({
+                                      userId: item.id,
+                                    })
+                                  )
                                 }
                               />
                             ) : null}

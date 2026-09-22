@@ -11,13 +11,12 @@ Every destructive delete needs explicit confirmation before submit.
 - `components/admin/sheet-form-actions.tsx` — save + optional `ConfirmDeleteFormButton` via `deleteFormId`.
 
 ## Wired call sites
-- Admin table icons: users, sales/orders, products → `ConfirmDeleteIcon`
+- Admin table archive (optimistic): products/sales/users → `ConfirmDeleteCallbackIcon` + `useOptimisticListRemove`
+- Admin archive hard-delete → `ConfirmDeleteCallbackIcon`; restore → optimistic button (no dialog)
 - Account: orders delete, favorites remove → `ConfirmDeleteIcon`
 - Reviews: `components/reviews/DeleteReviewButton.tsx`
 - Sheet footers: SheetFormActions (users/sales/products/account orders)
-
-## Already OK (left as-is)
-- CMS catalog: folder-tree, fields-panel, display-groups, option-editor — inline two-step confirm in sheet (not AlertDialog).
+- CMS catalog: folder-tree, fields-panel, display-groups, option-editor → `ConfirmDeleteIcon` (delete sheets removed)
 
 ## i18n (Common)
 `cancel`, `confirmDeleteTitle`, `confirmDeleteDescription`, `confirmDelete` — uk/en/de.

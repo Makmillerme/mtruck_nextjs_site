@@ -6,7 +6,8 @@ import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogField } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
-import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import FormContainer from "@/components/form/FormContainer";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import {
   Table,
@@ -39,7 +39,7 @@ import {
 import type { actionFunction } from "@/utils/types";
 import { formatCurrency, formatDate } from "@/utils/format";
 import AdminListToolbar, {
-  AdminFilterTrigger,
+  AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
@@ -79,11 +79,19 @@ export type AdminOrderProductOption = {
   status: string;
 };
 
-function ArchiveOrder({ orderId }: { orderId: string }) {
-  const archiveOrder = archiveAdminOrderAction.bind(null, {
-    orderId,
-  }) as unknown as actionFunction;
-  return <ConfirmDeleteIcon action={archiveOrder} mode="archive" />;
+function ArchiveOrder({
+  orderId,
+  onArchive,
+}: {
+  orderId: string;
+  onArchive: (orderId: string) => void;
+}) {
+  return (
+    <ConfirmDeleteCallbackIcon
+      mode="archive"
+      onConfirm={() => onArchive(orderId)}
+    />
+  );
 }
 
 function OrderFormFields({
@@ -243,6 +251,8 @@ export default function AdminSalesView({
 }) {
   const t = useTranslations("Admin");
   const tOrders = useTranslations("Orders");
+  const { optimisticItems, removeOptimistically } =
+    useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [paidFilter, setPaidFilter] = useState<"all" | "paid" | "unpaid">(
     "all"
@@ -259,7 +269,7 @@ export default function AdminSalesView({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((item) => {
+    return optimisticItems.filter((item) => {
       if (q) {
         const hay = `${item.email} ${item.userName} ${item.productName ?? ""}`
           .toLowerCase();
@@ -269,7 +279,7 @@ export default function AdminSalesView({
       if (paidFilter === "unpaid" && item.isPaid) return false;
       return true;
     });
-  }, [items, search, paidFilter]);
+  }, [optimisticItems, search, paidFilter]);
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -304,58 +314,41 @@ export default function AdminSalesView({
         createLabel={t("createOrder")}
         onCreate={() => setCreateOpen(true)}
         filterSheet={
-          <Sheet>
-            <SheetTrigger asChild>
-              <AdminFilterTrigger
-                label={t("filter")}
-                count={activeFilterCount}
-              />
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>{t("filter")}</SheetTitle>
-              </SheetHeader>
-              <div className="grid gap-6 overflow-y-auto">
-                <div className="grid gap-3">
-                  <p className="text-sm font-medium">{t("filterPayment")}</p>
-                  {(
-                    [
-                      ["all", t("filterPaymentAll")],
-                      ["paid", t("paid")],
-                      ["unpaid", t("unpaid")],
-                    ] as const
-                  ).map(([value, label]) => {
-                    const id = `admin-order-paid-${value}`;
-                    return (
-                      <label
-                        key={value}
-                        htmlFor={id}
-                        className="flex cursor-pointer items-center gap-3 text-sm"
-                      >
-                        <Checkbox
-                          id={id}
-                          checked={paidFilter === value}
-                          onCheckedChange={(checked) => {
-                            if (checked === true) setPaidFilter(value);
-                          }}
-                        />
-                        {label}
-                      </label>
-                    );
-                  })}
-                </div>
-                {activeFilterCount > 0 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setPaidFilter("all")}
+          <AdminFilterSheet
+            label={t("filter")}
+            count={activeFilterCount}
+            clearLabel={t("clearFilters")}
+            onClear={() => setPaidFilter("all")}
+          >
+            <div className="grid gap-3">
+              <p className="text-sm font-medium">{t("filterPayment")}</p>
+              {(
+                [
+                  ["all", t("filterPaymentAll")],
+                  ["paid", t("paid")],
+                  ["unpaid", t("unpaid")],
+                ] as const
+              ).map(([value, label]) => {
+                const id = `admin-order-paid-${value}`;
+                return (
+                  <label
+                    key={value}
+                    htmlFor={id}
+                    className="flex cursor-pointer items-center gap-3 text-sm"
                   >
-                    {t("clearFilters")}
-                  </Button>
-                ) : null}
-              </div>
-            </SheetContent>
-          </Sheet>
+                    <Checkbox
+                      id={id}
+                      checked={paidFilter === value}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) setPaidFilter(value);
+                      }}
+                    />
+                    {label}
+                  </label>
+                );
+              })}
+            </div>
+          </AdminFilterSheet>
         }
       />
 
@@ -449,7 +442,14 @@ export default function AdminSalesView({
                           <LuPen />
                         </Button>
                         {canDelete ? (
-                          <ArchiveOrder orderId={order.id} />
+                          <ArchiveOrder
+                            orderId={order.id}
+                            onArchive={(orderId) =>
+                              removeOptimistically(orderId, () =>
+                                archiveAdminOrderAction({ orderId })
+                              )
+                            }
+                          />
                         ) : null}
                       </div>
                     </TableCell>

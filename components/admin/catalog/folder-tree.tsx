@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/use-toast";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import {
   createTaxonomyNodeAction,
   deleteTaxonomyNodeAction,
@@ -19,6 +20,7 @@ import {
   renameTaxonomyNodeAction,
 } from "@/utils/taxonomy-actions";
 import { initialTaxonomyActionState } from "@/utils/taxonomy-action-state";
+import type { actionFunction } from "@/utils/types";
 import {
   LuArrowDown,
   LuArrowUp,
@@ -36,7 +38,6 @@ import { CatalogField, CatalogFlag, CatalogSubmit } from "./catalog-fields";
 type FolderSheet =
   | { mode: "create"; parent: TaxonomyTreeNode | null }
   | { mode: "edit"; node: TaxonomyTreeNode }
-  | { mode: "delete"; node: TaxonomyTreeNode }
   | null;
 
 function FolderRow({
@@ -150,17 +151,34 @@ function FolderRow({
             >
               <LuPen className="size-4" />
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground"
-              onClick={() => onSheet({ mode: "delete", node })}
-              aria-label={t("deleteFolder")}
-              title={t("deleteFolder")}
-            >
-              <LuTrash2 className="size-4" />
-            </Button>
+            {node.subtreeProductCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground"
+                disabled
+                aria-label={t("deleteFolder")}
+                title={t("deleteFolderBlocked", {
+                  count: node.subtreeProductCount,
+                })}
+              >
+                <LuTrash2 className="size-4" />
+              </Button>
+            ) : (
+              <ConfirmDeleteIcon
+                action={
+                  deleteTaxonomyNodeAction as unknown as actionFunction
+                }
+                title={t("deleteFolderTitle")}
+                description={t("deleteFolderCascade", {
+                  folders: node.descendantCount,
+                  fields: node.subtreeAttributeCount,
+                })}
+              >
+                <input type="hidden" name="nodeId" value={node.id} />
+              </ConfirmDeleteIcon>
+            )}
           </div>
       </div>
       {hasChildren && isOpen ? (
@@ -330,60 +348,7 @@ export default function FolderTree({
             </div>
           ) : null}
 
-          {sheet?.mode === "delete" ? (
-            <div className="grid gap-6">
-              <SheetHeader>
-                <SheetTitle>{t("deleteFolderTitle")}</SheetTitle>
-                <SheetDescription>
-                  {t("deleteFolderSubject", { folder: sheet.node.name })}
-                </SheetDescription>
-              </SheetHeader>
-              {sheet.node.subtreeProductCount > 0 ? (
-                <div className="grid gap-4">
-                  <p className="text-sm text-destructive">
-                    {t("deleteFolderBlocked", {
-                      count: sheet.node.subtreeProductCount,
-                    })}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-fit"
-                    onClick={() => setSheet(null)}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  <p className="text-sm text-muted-foreground">
-                    {t("deleteFolderCascade", {
-                      folders: sheet.node.descendantCount,
-                      fields: sheet.node.subtreeAttributeCount,
-                    })}
-                  </p>
-                  <CatalogForm
-                    className="flex items-center gap-3"
-                    action={deleteTaxonomyNodeAction}
-                    onSuccess={() => setSheet(null)}
-                  >
-                    <input type="hidden" name="nodeId" value={sheet.node.id} />
-                    <CatalogSubmit
-                      text={t("confirmDelete")}
-                      variant="destructive"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setSheet(null)}
-                    >
-                      {t("cancel")}
-                    </Button>
-                  </CatalogForm>
-                </div>
-              )}
-            </div>
-          ) : null}
+
         </SheetContent>
       </Sheet>
     </div>

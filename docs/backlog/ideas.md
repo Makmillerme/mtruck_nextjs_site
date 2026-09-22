@@ -92,7 +92,7 @@
 
 **Суть:** Після аудиту адмінки: UI спочатку на фронті, запис у БД асинхронно (архів, sheet CRUD). Зараз списки чекають RSC.
 
-**Статус:** Відкладено
+**Статус:** Готово (архів/restore у list + archive; sheet CRUD поза скоупом)
 
 ## Shared admin filter-sheet примітив
 
@@ -100,7 +100,7 @@
 
 **Суть:** Products і sales мають майже однакові inline filter Sheet; винести спільний компонент.
 
-**Статус:** Відкладено
+**Статус:** Готово (`AdminFilterSheet` у `admin-list-toolbar.tsx`)
 
 ## CMS delete → AlertDialog канон
 
@@ -108,4 +108,4 @@
 
 **Суть:** CMS лишає inline sheet delete / two-step; уніфікація з `ConfirmDelete*` лише за явним запитом.
 
-**Статус:** Відкладено
+**Статус:** Готово (folder/fields/groups/options → `ConfirmDeleteIcon`)

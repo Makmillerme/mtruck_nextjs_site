@@ -400,12 +400,12 @@ export const archiveProductAction = async (prevState: { productId: string }) => 
     revalidatePath('/admin/archive');
     revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
-    return { message: t('productArchived') };
+    return { message: t('productArchived'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -421,12 +421,12 @@ export const restoreProductAction = async (prevState: { productId: string }) => 
     revalidatePath('/admin/archive');
     revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
-    return { message: t('productRestored') };
+    return { message: t('productRestored'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -455,12 +455,12 @@ export const deleteProductAction = async (prevState: { productId: string }) => {
     revalidatePath('/admin/archive');
     revalidatePublicCatalog({ productId });
     const t = await getTranslations('Actions');
-    return { message: t('productRemoved') };
+    return { message: t('productRemoved'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1292,12 +1292,12 @@ export const archiveAdminOrderAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/account/orders');
     const t = await getTranslations('Actions');
-    return { message: t('orderArchived') };
+    return { message: t('orderArchived'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1315,12 +1315,12 @@ export const restoreAdminOrderAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/account/orders');
     const t = await getTranslations('Actions');
-    return { message: t('orderRestored') };
+    return { message: t('orderRestored'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1343,12 +1343,12 @@ export const deleteAdminOrderAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/account/orders');
     const t = await getTranslations('Actions');
-    return { message: t('orderRemoved') };
+    return { message: t('orderRemoved'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1644,12 +1644,12 @@ export const archiveAdminUserAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/admin/sales');
     const t = await getTranslations('Actions');
-    return { message: t('userArchived') };
+    return { message: t('userArchived'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1668,12 +1668,12 @@ export const restoreAdminUserAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/admin/sales');
     const t = await getTranslations('Actions');
-    return { message: t('userRestored') };
+    return { message: t('userRestored'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 
@@ -1710,12 +1710,12 @@ export const deleteAdminUserAction = async (prevState: {
     revalidatePath('/admin/archive');
     revalidatePath('/admin/sales');
     const t = await getTranslations('Actions');
-    return { message: t('userRemoved') };
+    return { message: t('userRemoved'), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
 };
 

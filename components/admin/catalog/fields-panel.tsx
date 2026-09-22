@@ -20,12 +20,14 @@ import {
   type CatalogDisplayGroup,
   type TaxonomyNodeRow,
 } from "@/lib/catalog/types";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import {
   createAttributeAction,
   deleteAttributeAction,
   updateAttributeAction,
 } from "@/utils/taxonomy-actions";
-import { LuPen, LuPlus, LuTrash2 } from "react-icons/lu";
+import type { actionFunction } from "@/utils/types";
+import { LuPen, LuPlus } from "react-icons/lu";
 import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
 import {
@@ -40,17 +42,14 @@ import OptionEditor from "./option-editor";
 type FieldSheet =
   | { mode: "create" }
   | { mode: "edit"; attributeId: string }
-  | { mode: "delete"; attributeId: string }
   | null;
 
 function FieldRow({
   attribute,
   onEdit,
-  onDelete,
 }: {
   attribute: CatalogAttribute;
   onEdit?: () => void;
-  onDelete?: () => void;
 }) {
   const t = useTranslations("CatalogAdmin");
   const meta = [
@@ -94,7 +93,7 @@ function FieldRow({
           ) : null}
         </div>
       </div>
-      {onEdit && onDelete ? (
+      {onEdit ? (
         <div className="flex shrink-0 items-center">
           <Button
             type="button"
@@ -107,17 +106,13 @@ function FieldRow({
           >
             <LuPen className="size-4" />
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground"
-            onClick={onDelete}
-            aria-label={t("deleteField")}
-            title={t("deleteField")}
+          <ConfirmDeleteIcon
+            action={deleteAttributeAction as unknown as actionFunction}
+            title={t("deleteFieldTitle")}
+            description={`${t("deleteFieldSubject", { field: attribute.name })} ${t("deleteFieldHint")}`}
           >
-            <LuTrash2 className="size-4" />
-          </Button>
+            <input type="hidden" name="attributeId" value={attribute.id} />
+          </ConfirmDeleteIcon>
         </div>
       ) : null}
     </div>
@@ -187,9 +182,6 @@ export default function FieldsPanel({
                   attribute={attribute}
                   onEdit={() =>
                     setSheet({ mode: "edit", attributeId: attribute.id })
-                  }
-                  onDelete={() =>
-                    setSheet({ mode: "delete", attributeId: attribute.id })
                   }
                 />
               ))
@@ -352,37 +344,7 @@ export default function FieldsPanel({
             </div>
           ) : null}
 
-          {sheet?.mode === "delete" && active ? (
-            <div className="grid gap-6">
-              <SheetHeader>
-                <SheetTitle>{t("deleteFieldTitle")}</SheetTitle>
-                <SheetDescription>
-                  {t("deleteFieldSubject", { field: active.name })}
-                </SheetDescription>
-              </SheetHeader>
-              <p className="text-sm text-muted-foreground">
-                {t("deleteFieldHint")}
-              </p>
-              <CatalogForm
-                className="flex items-center gap-3"
-                action={deleteAttributeAction}
-                onSuccess={() => setSheet(null)}
-              >
-                <input type="hidden" name="attributeId" value={active.id} />
-                <CatalogSubmit
-                  text={t("confirmDelete")}
-                  variant="destructive"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSheet(null)}
-                >
-                  {t("cancel")}
-                </Button>
-              </CatalogForm>
-            </div>
-          ) : null}
+
         </SheetContent>
       </Sheet>
 

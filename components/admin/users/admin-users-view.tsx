@@ -6,7 +6,8 @@ import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
-import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import FormContainer from "@/components/form/FormContainer";
@@ -54,11 +55,19 @@ export type AdminUserRow = {
   archivedAt?: string | null;
 };
 
-function ArchiveUser({ userId }: { userId: string }) {
-  const archiveUser = archiveAdminUserAction.bind(null, {
-    userId,
-  }) as unknown as actionFunction;
-  return <ConfirmDeleteIcon action={archiveUser} mode="archive" />;
+function ArchiveUser({
+  userId,
+  onArchive,
+}: {
+  userId: string;
+  onArchive: (userId: string) => void;
+}) {
+  return (
+    <ConfirmDeleteCallbackIcon
+      mode="archive"
+      onConfirm={() => onArchive(userId)}
+    />
+  );
 }
 
 function UserFormFields({
@@ -144,6 +153,8 @@ export default function AdminUsersView({
   canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
+  const { optimisticItems, removeOptimistically } =
+    useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
@@ -166,13 +177,13 @@ export default function AdminUsersView({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => {
+    if (!q) return optimisticItems;
+    return optimisticItems.filter((item) => {
       const hay = `${item.name} ${item.email} ${item.phone ?? ""} ${item.userCode}`
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [items, search]);
+  }, [optimisticItems, search]);
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -295,7 +306,14 @@ export default function AdminUsersView({
                           </Button>
                         ) : null}
                         {canArchiveUser(item) && !item.archivedAt ? (
-                          <ArchiveUser userId={item.id} />
+                          <ArchiveUser
+                            userId={item.id}
+                            onArchive={(userId) =>
+                              removeOptimistically(userId, () =>
+                                archiveAdminUserAction({ userId })
+                              )
+                            }
+                          />
                         ) : null}
                       </div>
                     </TableCell>

@@ -100,7 +100,7 @@ export function ConfirmDeleteIcon({
   );
 }
 
-/** Icon → AlertDialog → client callback (no server form). Gallery / local list deletes. */
+/** Icon → AlertDialog → client callback (no server form). Gallery / optimistic archive. */
 export function ConfirmDeleteCallbackIcon({
   onConfirm,
   title,
@@ -108,19 +108,30 @@ export function ConfirmDeleteCallbackIcon({
   confirmLabel,
   className,
   iconClassName,
+  mode = "delete",
 }: {
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title?: string;
   description?: string;
   confirmLabel?: string;
   className?: string;
   iconClassName?: string;
+  mode?: "delete" | "archive";
 }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("Common");
-  const resolvedTitle = title ?? t("confirmDeleteTitle");
-  const resolvedDescription = description ?? t("confirmDeleteDescription");
-  const resolvedConfirm = confirmLabel ?? t("confirmDelete");
+  const isArchive = mode === "archive";
+  const resolvedTitle =
+    title ??
+    (isArchive ? t("confirmArchiveTitle") : t("confirmDeleteTitle"));
+  const resolvedDescription =
+    description ??
+    (isArchive
+      ? t("confirmArchiveDescription")
+      : t("confirmDeleteDescription"));
+  const resolvedConfirm =
+    confirmLabel ??
+    (isArchive ? t("confirmArchive") : t("confirmDelete"));
 
   return (
     <>
@@ -128,7 +139,7 @@ export function ConfirmDeleteCallbackIcon({
         type="button"
         size="icon"
         variant="ghost"
-        className={className}
+        className={className ?? "cursor-pointer text-muted-foreground"}
         aria-label={resolvedTitle}
         onMouseDown={(event) => {
           event.preventDefault();
@@ -140,7 +151,11 @@ export function ConfirmDeleteCallbackIcon({
           setOpen(true);
         }}
       >
-        <LuTrash2 className={iconClassName} aria-hidden />
+        {isArchive ? (
+          <LuArchive className={iconClassName} aria-hidden />
+        ) : (
+          <LuTrash2 className={iconClassName} aria-hidden />
+        )}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="z-[110]">
@@ -156,8 +171,7 @@ export function ConfirmDeleteCallbackIcon({
               type="button"
               variant="destructive"
               onClick={() => {
-                onConfirm();
-                setOpen(false);
+                void Promise.resolve(onConfirm()).finally(() => setOpen(false));
               }}
             >
               {resolvedConfirm}

@@ -22,8 +22,10 @@ import {
   deleteDisplayGroupAction,
   updateDisplayGroupAction,
 } from "@/utils/taxonomy-actions";
-import { LuArrowDown, LuArrowUp, LuPen, LuPlus, LuTrash2, LuX } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuPen, LuPlus, LuX } from "react-icons/lu";
+import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
+import type { actionFunction } from "@/utils/types";
 import CatalogForm from "./catalog-form";
 import {
   CatalogField,
@@ -34,7 +36,6 @@ import {
 type GroupSheet =
   | { mode: "create" }
   | { mode: "edit"; groupId: string }
-  | { mode: "delete"; groupId: string }
   | null;
 
 export function MemberOrderPicker({
@@ -247,18 +248,17 @@ export default function DisplayGroupsPanel({
                   >
                     <LuPen className="size-4" />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground"
-                    onClick={() =>
-                      setSheet({ mode: "delete", groupId: group.id })
+                  <ConfirmDeleteIcon
+                    action={
+                      deleteDisplayGroupAction as unknown as actionFunction
                     }
-                    aria-label={t("deleteDisplayGroup")}
+                    title={t("deleteDisplayGroupTitle")}
+                    description={t("deleteDisplayGroupSubject", {
+                      group: group.name,
+                    })}
                   >
-                    <LuTrash2 className="size-4" />
-                  </Button>
+                    <input type="hidden" name="groupId" value={group.id} />
+                  </ConfirmDeleteIcon>
                 </div>
               </div>
             ))
@@ -366,34 +366,7 @@ export default function DisplayGroupsPanel({
             </div>
           ) : null}
 
-          {sheet?.mode === "delete" && active ? (
-            <div className="grid gap-6">
-              <SheetHeader>
-                <SheetTitle>{t("deleteDisplayGroupTitle")}</SheetTitle>
-                <SheetDescription>
-                  {t("deleteDisplayGroupSubject", { group: active.name })}
-                </SheetDescription>
-              </SheetHeader>
-              <CatalogForm
-                className="flex items-center gap-3"
-                action={deleteDisplayGroupAction}
-                onSuccess={() => setSheet(null)}
-              >
-                <input type="hidden" name="groupId" value={active.id} />
-                <CatalogSubmit
-                  text={t("confirmDelete")}
-                  variant="destructive"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSheet(null)}
-                >
-                  {t("cancel")}
-                </Button>
-              </CatalogForm>
-            </div>
-          ) : null}
+
         </SheetContent>
       </Sheet>
     </>

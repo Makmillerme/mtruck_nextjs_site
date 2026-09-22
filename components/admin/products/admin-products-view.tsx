@@ -27,7 +27,8 @@ import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import { loadProductSheetMetaAction } from "@/lib/catalog/product-sheet-meta";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { SubmitButton } from "@/components/form/Buttons";
-import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import FormContainer from "@/components/form/FormContainer";
 import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PriceInput from "@/components/form/PriceInput";
@@ -104,7 +105,7 @@ import {
 } from "@/utils/actions";
 import type { actionFunction } from "@/utils/types";
 import AdminListToolbar, {
-  AdminFilterTrigger,
+  AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
 import { LuArchive, LuArrowRight, LuColumns3, LuPen } from "react-icons/lu";
 
@@ -181,11 +182,19 @@ function ProductStatusBadge({ status }: { status: string }) {
   );
 }
 
-function ArchiveProduct({ productId }: { productId: string }) {
-  const archiveProduct = archiveProductAction.bind(null, {
-    productId,
-  }) as unknown as actionFunction;
-  return <ConfirmDeleteIcon action={archiveProduct} mode="archive" />;
+function ArchiveProduct({
+  productId,
+  onArchive,
+}: {
+  productId: string;
+  onArchive: (productId: string) => void;
+}) {
+  return (
+    <ConfirmDeleteCallbackIcon
+      mode="archive"
+      onConfirm={() => onArchive(productId)}
+    />
+  );
 }
 
 function specsToInitial(specs: AdminProductSpec[]) {
@@ -503,6 +512,8 @@ export default function AdminProductsView({
   canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
+  const { optimisticItems, removeOptimistically } =
+    useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -594,7 +605,7 @@ export default function AdminProductsView({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((item) => {
+    return optimisticItems.filter((item) => {
       if (q) {
         const specHay = item.specs
           .map((spec) =>
@@ -622,7 +633,13 @@ export default function AdminProductsView({
       if (featuredOnly && !item.featured) return false;
       return true;
     });
-  }, [items, search, selectedCompanies, selectedStatuses, featuredOnly]);
+  }, [
+    optimisticItems,
+    search,
+    selectedCompanies,
+    selectedStatuses,
+    featuredOnly,
+  ]);
 
   async function loadSheetMeta(nodeId: string | null) {
     try {
@@ -805,87 +822,74 @@ export default function AdminProductsView({
           </Sheet>
         }
         filterSheet={
-          <Sheet>
-            <SheetTrigger asChild>
-              <AdminFilterTrigger
-                label={t("filter")}
-                count={activeFilterCount}
+          <AdminFilterSheet
+            label={t("filter")}
+            count={activeFilterCount}
+            clearLabel={t("clearFilters")}
+            onClear={clearFilters}
+          >
+            <div className="grid gap-3">
+              <p className="text-sm font-medium">{t("filterCompany")}</p>
+              {companies.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("filterEmptyCompanies")}
+                </p>
+              ) : (
+                companies.map((company) => {
+                  const id = `admin-company-${company}`;
+                  return (
+                    <label
+                      key={company}
+                      htmlFor={id}
+                      className="flex cursor-pointer items-center gap-3 text-sm"
+                    >
+                      <Checkbox
+                        id={id}
+                        checked={selectedCompanies.includes(company)}
+                        onCheckedChange={(value) =>
+                          toggleCompany(company, value === true)
+                        }
+                      />
+                      {company}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            <div className="grid gap-3">
+              <p className="text-sm font-medium">{t("filterStatus")}</p>
+              {STATUS_KEYS.map((status) => {
+                const id = `admin-status-${status}`;
+                return (
+                  <label
+                    key={status}
+                    htmlFor={id}
+                    className="flex cursor-pointer items-center gap-3 text-sm"
+                  >
+                    <Checkbox
+                      id={id}
+                      checked={selectedStatuses.includes(status)}
+                      onCheckedChange={(value) =>
+                        toggleStatus(status, value === true)
+                      }
+                    />
+                    {t(STATUS_LABEL[status])}
+                  </label>
+                );
+              })}
+            </div>
+            <label
+              htmlFor="admin-featured"
+              className="flex cursor-pointer items-center gap-3 text-sm"
+            >
+              <Checkbox
+                id="admin-featured"
+                checked={featuredOnly}
+                onCheckedChange={(value) => setFeaturedOnly(value === true)}
               />
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>{t("filter")}</SheetTitle>
-              </SheetHeader>
-              <div className="grid gap-6 overflow-y-auto">
-                <div className="grid gap-3">
-                  <p className="text-sm font-medium">{t("filterCompany")}</p>
-                  {companies.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("filterEmptyCompanies")}
-                    </p>
-                  ) : (
-                    companies.map((company) => {
-                      const id = `admin-company-${company}`;
-                      return (
-                        <label
-                          key={company}
-                          htmlFor={id}
-                          className="flex cursor-pointer items-center gap-3 text-sm"
-                        >
-                          <Checkbox
-                            id={id}
-                            checked={selectedCompanies.includes(company)}
-                            onCheckedChange={(value) =>
-                              toggleCompany(company, value === true)
-                            }
-                          />
-                          {company}
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="grid gap-3">
-                  <p className="text-sm font-medium">{t("filterStatus")}</p>
-                  {STATUS_KEYS.map((status) => {
-                    const id = `admin-status-${status}`;
-                    return (
-                      <label
-                        key={status}
-                        htmlFor={id}
-                        className="flex cursor-pointer items-center gap-3 text-sm"
-                      >
-                        <Checkbox
-                          id={id}
-                          checked={selectedStatuses.includes(status)}
-                          onCheckedChange={(value) =>
-                            toggleStatus(status, value === true)
-                          }
-                        />
-                        {t(STATUS_LABEL[status])}
-                      </label>
-                    );
-                  })}
-                </div>
-                <label
-                  htmlFor="admin-featured"
-                  className="flex cursor-pointer items-center gap-3 text-sm"
-                >
-                  <Checkbox
-                    id="admin-featured"
-                    checked={featuredOnly}
-                    onCheckedChange={(value) => setFeaturedOnly(value === true)}
-                  />
-                  {t("filterFeatured")}
-                </label>
-                {activeFilterCount > 0 ? (
-                  <Button type="button" variant="outline" onClick={clearFilters}>
-                    {t("clearFilters")}
-                  </Button>
-                ) : null}
-              </div>
-            </SheetContent>
-          </Sheet>
+              {t("filterFeatured")}
+            </label>
+          </AdminFilterSheet>
         }
       />
 
@@ -961,7 +965,14 @@ export default function AdminProductsView({
                           <LuPen />
                         </Button>
                         {canDelete ? (
-                          <ArchiveProduct productId={item.id} />
+                          <ArchiveProduct
+                            productId={item.id}
+                            onArchive={(productId) =>
+                              removeOptimistically(productId, () =>
+                                archiveProductAction({ productId })
+                              )
+                            }
+                          />
                         ) : null}
                       </div>
                     </TableCell>

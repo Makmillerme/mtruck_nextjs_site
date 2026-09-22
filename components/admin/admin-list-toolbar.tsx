@@ -3,6 +3,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { ReactNode } from "react";
 import { LuListFilter, LuPlus, LuSearch } from "react-icons/lu";
 
@@ -76,5 +83,41 @@ export function AdminFilterTrigger({
         </Badge>
       ) : null}
     </Button>
+  );
+}
+
+/** Shared filter Sheet chrome for admin list toolbars. */
+export function AdminFilterSheet({
+  label,
+  count,
+  clearLabel,
+  onClear,
+  children,
+}: {
+  label: string;
+  count: number;
+  clearLabel: string;
+  onClear: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <AdminFilterTrigger label={label} count={count} />
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>{label}</SheetTitle>
+        </SheetHeader>
+        <div className="grid gap-6 overflow-y-auto">
+          {children}
+          {count > 0 ? (
+            <Button type="button" variant="outline" onClick={onClear}>
+              {clearLabel}
+            </Button>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
