@@ -107,6 +107,7 @@ import {
   UiLabCatalogPaginationDemo,
 } from "@/components/dev/ui-lab-catalog-filter";
 import { UiLabDropdownCanon } from "@/components/dev/ui-lab-dropdown-canon";
+import { UiLabSheetFieldsCanon } from "@/components/dev/ui-lab-sheet-fields";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -692,8 +693,15 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 z-[110], щоб бути над Sheet. CMS folders/fields — двокрокове
                 підтвердження в sheet, не окремий dialog.
               </p>
-              <div className="mb-8">
-                <UiLabDropdownCanon />
+              <div className="mb-8 grid gap-8">
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Sheet fields (канон)</p>
+                  <UiLabSheetFieldsCanon />
+                </div>
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Toolbar / filter dropdowns</p>
+                  <UiLabDropdownCanon />
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <DropdownMenu>
@@ -744,14 +752,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                       </SheetDescription>
                     </SheetHeader>
                     <div className="grid gap-6">
-                      <div className="grid gap-2">
-                        <Label htmlFor="sheet-brand">Марка</Label>
-                        <Input id="sheet-brand" placeholder="MAN" />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Папка</Label>
-                        <UiLabCascade />
-                      </div>
+                      <UiLabSheetFieldsCanon />
                     </div>
                     <SheetFooter>
                       <Button className="w-full">Застосувати</Button>

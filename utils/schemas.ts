@@ -1,26 +1,25 @@
 import { z, ZodSchema } from "zod";
+import { PRODUCT_IMAGE_UPLOAD_MAX_BYTES } from "@/lib/catalog/product-image-limits";
 
 export const productSchema = z.object({
-  name: z
-    .string()
-    .min(2, {
-      message: "name must be at least 2 characters.",
-    })
-    .max(100, {
-      message: "name must be less than 100 characters.",
-    }),
+  name: z.string().max(100, {
+    message: "name must be less than 100 characters.",
+  }),
   company: z.string(),
   featured: z.coerce.boolean(),
   price: z.coerce.number().int().min(0, {
     message: "price must be a positive number.",
   }),
+  currency: z.enum(["USD", "EUR", "UAH"]).default("USD"),
   description: z.string().refine(
     (description) => {
-      const wordCount = description.split(" ").length;
-      return wordCount >= 10 && wordCount <= 1000;
+      const wordCount = description.trim()
+        ? description.trim().split(/\s+/).length
+        : 0;
+      return wordCount <= 1000;
     },
     {
-      message: "description must be between 10 and 1000 words.",
+      message: "description must be at most 1000 words.",
     }
   ),
 });
@@ -29,13 +28,13 @@ export const imageSchema = z.object({
 });
 
 function validateImageFile() {
-  const maxUploadSize = 1024 * 1024;
+  // Raw upload cap; server compresses to WebP (target ≤1 MB) in utils/images.ts.
   return z
     .custom<File>((value) => typeof File !== "undefined" && value instanceof File, {
       message: "Image file is required",
     })
-    .refine((file) => file.size > 0 && file.size <= maxUploadSize, {
-      message: "File size must be less than 1MB",
+    .refine((file) => file.size > 0 && file.size <= PRODUCT_IMAGE_UPLOAD_MAX_BYTES, {
+      message: "File size must be less than 10MB",
     })
     .refine((file) => file.type.startsWith("image/"), {
       message: "File must be an image",

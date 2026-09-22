@@ -71,6 +71,7 @@ export default function PhotoCarousel({
   className,
   overlay,
   href,
+  startIndex = 0,
 }: {
   images: PhotoCarouselImage[];
   variant?: "card" | "page";
@@ -81,10 +82,16 @@ export default function PhotoCarousel({
   className?: string;
   overlay?: ReactNode;
   href?: string;
+  /** Initial Embla snap (admin gallery thumb click). */
+  startIndex?: number;
 }) {
   const slides = images.filter((item) => Boolean(item.src));
   const [api, setApi] = useState<CarouselApi>();
-  const [index, setIndex] = useState(0);
+  const safeStart = Math.min(
+    Math.max(0, startIndex),
+    Math.max(0, slides.length - 1)
+  );
+  const [index, setIndex] = useState(safeStart);
   const multi = slides.length > 1;
   const stageClass =
     frame === "fill"
@@ -105,6 +112,11 @@ export default function PhotoCarousel({
       api.off("select", onSelect);
     };
   }, [api]);
+
+  useEffect(() => {
+    if (!api) return;
+    api.scrollTo(safeStart, true);
+  }, [api, safeStart]);
 
   const scrollTo = useCallback(
     (next: number) => {
@@ -148,7 +160,12 @@ export default function PhotoCarousel({
     >
       <Carousel
         setApi={setApi}
-        opts={{ loop: true, align: "start", containScroll: false }}
+        opts={{
+          loop: true,
+          align: "start",
+          containScroll: false,
+          startIndex: safeStart,
+        }}
         className={cn(
           "relative w-full overflow-hidden",
           frame === "fill" && "h-full"

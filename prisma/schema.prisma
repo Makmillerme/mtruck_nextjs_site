@@ -35,6 +35,12 @@ enum ProductAvailability {
   TRANSIT
 }
 
+enum ProductCurrency {
+  USD
+  EUR
+  UAH
+}
+
 enum OrderKind {
   CATALOG
   REQUEST
@@ -134,6 +140,7 @@ model Product {
   featured       Boolean
   image          String
   price          Int
+  currency       ProductCurrency      @default(USD)
   productCode    String               @unique
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt

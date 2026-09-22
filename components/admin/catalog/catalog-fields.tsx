@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { ReloadIcon } from "@radix-ui/react-icons";
+import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -95,6 +97,7 @@ export function CatalogFlag({
   );
 }
 
+/** @deprecated Prefer CatalogMenuSelect (sheet combobox canon). */
 export function CatalogNativeSelect({
   name,
   label,
@@ -119,6 +122,80 @@ export function CatalogNativeSelect({
       >
         {children}
       </select>
+    </div>
+  );
+}
+
+export type CatalogMenuOption = {
+  value: string;
+  label: string;
+};
+
+/**
+ * Sheet field canon: same combobox chrome as SearchableEntityPicker
+ * (outline Button h-11 + Popover + cmdk).
+ */
+export function CatalogMenuSelect({
+  name,
+  label,
+  options,
+  defaultValue,
+  placeholder,
+  searchPlaceholder,
+  emptyLabel = "—",
+  allowClear = false,
+  clearLabel,
+  className,
+  hideLabel = false,
+  required = false,
+  searchable = false,
+}: {
+  name: string;
+  label: string;
+  options: CatalogMenuOption[];
+  defaultValue?: string;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyLabel?: string;
+  allowClear?: boolean;
+  clearLabel?: string;
+  className?: string;
+  hideLabel?: boolean;
+  required?: boolean;
+  /** Default off — short sheet lists (status, currency). Opt-in for long lists. */
+  searchable?: boolean;
+}) {
+  const hasDefault =
+    defaultValue != null &&
+    options.some((option) => option.value === defaultValue);
+  const initial = hasDefault
+    ? defaultValue!
+    : allowClear
+      ? (defaultValue ?? "")
+      : (options[0]?.value ?? "");
+  const [value, setValue] = useState(initial);
+
+  return (
+    <div className={cn(className)}>
+      <SearchableEntityPicker
+        name={name}
+        label={label}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          keywords: [option.label, option.value],
+        }))}
+        value={value}
+        onValueChange={setValue}
+        placeholder={placeholder ?? clearLabel ?? label}
+        searchPlaceholder={searchPlaceholder ?? label}
+        emptyLabel={emptyLabel}
+        allowClear={allowClear}
+        clearLabel={clearLabel}
+        hideLabel={hideLabel}
+        required={required}
+        searchable={searchable}
+      />
     </div>
   );
 }

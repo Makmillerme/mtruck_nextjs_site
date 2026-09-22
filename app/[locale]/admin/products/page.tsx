@@ -44,9 +44,9 @@ async function AdminProductsPage(props: {
     sheetOpen && selectedExists && selectedId
       ? resolveDisplayGroupsByKey(await fetchDisplayGroupsForNode(selectedId))
       : [];
-  const nameFromDisplayGroup = displayGroups.some(
-    (group) => group.writesProductName
-  );
+  const writers = displayGroups.filter((group) => group.writesProductName);
+  const nameWriterGroup =
+    writers.find((group) => !group.inherited) ?? writers[0] ?? null;
 
   return (
     <AdminProductsView
@@ -57,18 +57,23 @@ async function AdminProductsPage(props: {
       tree={tree}
       attributes={attributes}
       tableAttributes={tableAttributes}
-      nameFromDisplayGroup={nameFromDisplayGroup}
+      nameWriterGroup={nameWriterGroup}
       canDelete={isAdminRole(role)}
       items={items.map((item) => ({
         id: item.id,
         name: item.name,
         company: item.company,
         price: item.price,
+        currency: item.currency,
         featured: item.featured,
         status: item.status,
         availability: item.availability,
         description: item.description,
         image: item.image,
+        images: item.images.map((image) => ({
+          id: image.id,
+          url: image.url,
+        })),
         taxonomyNodeId: item.taxonomyNodeId,
         specs: item.specs.map((spec) => ({
           attributeId: spec.attributeId,

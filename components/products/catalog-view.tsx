@@ -184,12 +184,13 @@ function CatalogFilterSheet({
 }) {
   const t = useTranslations("Products");
   const searchParams = useSearchParams();
+  const [open, setOpen] = useState(false);
   const activeCount = countActiveCatalogFilters(
     parseCatalogQuery(searchParams)
   );
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           type="button"
@@ -208,7 +209,11 @@ function CatalogFilterSheet({
         </Button>
       </SheetTrigger>
       <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
-        <CatalogFilterProvider schema={schema} availability={availability}>
+        <CatalogFilterProvider
+          schema={schema}
+          availability={availability}
+          onApplied={() => setOpen(false)}
+        >
           <SheetHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 px-6 pt-6 pr-14">
             <SheetTitle>{t("filter")}</SheetTitle>
             <CatalogFilterClearButton />

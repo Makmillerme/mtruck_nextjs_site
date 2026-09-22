@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogField } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
@@ -242,15 +242,32 @@ export default function AdminSalesView({
 }) {
   const t = useTranslations("Admin");
   const tOrders = useTranslations("Orders");
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [paidFilter, setPaidFilter] = useState<"all" | "paid" | "unpaid">(
     "all"
   );
+  const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
+
+  function syncSalesSheetUrl(next: {
+    create?: boolean;
+    edit?: string;
+    userId?: string;
+  }) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("create");
+    url.searchParams.delete("edit");
+    url.searchParams.delete("userId");
+    if (next.create) url.searchParams.set("create", "1");
+    if (next.edit) url.searchParams.set("edit", next.edit);
+    if (next.userId) url.searchParams.set("userId", next.userId);
+    window.history.replaceState(null, "", url.toString());
+  }
 
   const editOrder = useMemo(
-    () => items.find((item) => item.id === editId) ?? null,
-    [items, editId]
+    () => items.find((item) => item.id === sheetEditId) ?? null,
+    [items, sheetEditId]
   );
 
   const activeFilterCount = paidFilter === "all" ? 0 : 1;
@@ -270,22 +287,27 @@ export default function AdminSalesView({
   }, [items, search, paidFilter]);
 
   function setCreateOpen(open: boolean) {
+    setSheetCreateOpen(open);
     if (open) {
-      const userQuery = preselectedUserId
-        ? `&userId=${preselectedUserId}`
-        : "";
-      router.replace(`/admin/sales?create=1${userQuery}`, { scroll: false });
+      setSheetEditId(undefined);
+      syncSalesSheetUrl({
+        create: true,
+        userId: preselectedUserId,
+      });
       return;
     }
-    router.replace("/admin/sales", { scroll: false });
+    syncSalesSheetUrl({});
   }
 
   function setEditOpen(open: boolean, orderId?: string) {
     if (open && orderId) {
-      router.replace(`/admin/sales?edit=${orderId}`, { scroll: false });
+      setSheetCreateOpen(false);
+      setSheetEditId(orderId);
+      syncSalesSheetUrl({ edit: orderId });
       return;
     }
-    router.replace("/admin/sales", { scroll: false });
+    setSheetEditId(undefined);
+    syncSalesSheetUrl({});
   }
 
   return (
@@ -454,7 +476,7 @@ export default function AdminSalesView({
         </Card>
       )}
 
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+      <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <div className="grid gap-6">
             <SheetHeader>
@@ -462,7 +484,7 @@ export default function AdminSalesView({
               <SheetDescription>{t("createOrderSheetLede")}</SheetDescription>
             </SheetHeader>
             <FormContainer
-              key={createOpen ? "create-open" : "create-closed"}
+              key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createAdminOrderAction}
             >
               <div className="grid gap-6">

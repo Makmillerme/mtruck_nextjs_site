@@ -31,7 +31,7 @@ import CatalogForm from "./catalog-form";
 import {
   CatalogField,
   CatalogFlag,
-  CatalogNativeSelect,
+  CatalogMenuSelect,
   CatalogSubmit,
 } from "./catalog-fields";
 import DisplayGroupsPanel from "./display-groups-panel";
@@ -235,46 +235,42 @@ export default function FieldsPanel({
               >
                 <input type="hidden" name="taxonomyNodeId" value={node.id} />
                 <CatalogField name="name" label={t("fieldName")} />
-                <CatalogNativeSelect
+                <CatalogMenuSelect
                   name="type"
                   label={t("fieldType")}
                   defaultValue="SELECT"
-                >
-                  {ATTRIBUTE_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`type.${type}`)}
-                    </option>
-                  ))}
-                </CatalogNativeSelect>
-                <CatalogNativeSelect
+                  options={ATTRIBUTE_TYPES.map((type) => ({
+                    value: type,
+                    label: t(`type.${type}`),
+                  }))}
+                />
+                <CatalogMenuSelect
                   name="dependsOnAttributeId"
                   label={t("dependsOn")}
-                >
-                  <option value="">{t("dependsOnNone")}</option>
-                  {selectFields.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.inherited
-                        ? `${item.name} (${item.source.name})`
-                        : item.name}
-                    </option>
-                  ))}
-                </CatalogNativeSelect>
+                  defaultValue=""
+                  allowClear
+                  clearLabel={t("dependsOnNone")}
+                  options={selectFields.map((item) => ({
+                    value: item.id,
+                    label: item.inherited
+                      ? `${item.name} (${item.source.name})`
+                      : item.name,
+                  }))}
+                />
                 <CatalogField
                   name="unit"
                   label={t("unit")}
                   required={false}
                 />
-                <CatalogNativeSelect
+                <CatalogMenuSelect
                   name="sheetWidth"
                   label={t("sheetWidthLabel")}
                   defaultValue="FULL"
-                >
-                  {SHEET_WIDTHS.map((width) => (
-                    <option key={width} value={width}>
-                      {t(`sheetWidth.${width}`)}
-                    </option>
-                  ))}
-                </CatalogNativeSelect>
+                  options={SHEET_WIDTHS.map((width) => ({
+                    value: width,
+                    label: t(`sheetWidth.${width}`),
+                  }))}
+                />
                 <div className="flex flex-wrap gap-4">
                   <CatalogFlag name="isRequired" label={t("flagRequired")} />
                   <CatalogFlag
@@ -316,17 +312,15 @@ export default function FieldsPanel({
                   defaultValue={active.unit ?? ""}
                   required={false}
                 />
-                <CatalogNativeSelect
+                <CatalogMenuSelect
                   name="sheetWidth"
                   label={t("sheetWidthLabel")}
                   defaultValue={active.sheetWidth}
-                >
-                  {SHEET_WIDTHS.map((width) => (
-                    <option key={width} value={width}>
-                      {t(`sheetWidth.${width}`)}
-                    </option>
-                  ))}
-                </CatalogNativeSelect>
+                  options={SHEET_WIDTHS.map((width) => ({
+                    value: width,
+                    label: t(`sheetWidth.${width}`),
+                  }))}
+                />
                 <div className="flex flex-wrap gap-4">
                   <CatalogFlag
                     name="isRequired"

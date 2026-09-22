@@ -1,9 +1,14 @@
-export const formatCurrency = (amount: number | null, locale = 'uk') => {
+export const formatCurrency = (
+  amount: number | null,
+  locale = "uk",
+  currency: "USD" | "EUR" | "UAH" = "USD"
+) => {
   const value = amount || 0;
-  const intlLocale = locale === 'uk' ? 'uk-UA' : 'en-US';
+  const intlLocale =
+    locale === "uk" ? "uk-UA" : locale === "de" ? "de-DE" : "en-US";
   return new Intl.NumberFormat(intlLocale, {
-    style: 'currency',
-    currency: 'USD',
+    style: "currency",
+    currency,
   }).format(value);
 };
 

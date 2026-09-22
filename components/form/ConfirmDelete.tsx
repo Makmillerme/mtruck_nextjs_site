@@ -100,6 +100,75 @@ export function ConfirmDeleteIcon({
   );
 }
 
+/** Icon → AlertDialog → client callback (no server form). Gallery / local list deletes. */
+export function ConfirmDeleteCallbackIcon({
+  onConfirm,
+  title,
+  description,
+  confirmLabel,
+  className,
+  iconClassName,
+}: {
+  onConfirm: () => void;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  className?: string;
+  iconClassName?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const t = useTranslations("Common");
+  const resolvedTitle = title ?? t("confirmDeleteTitle");
+  const resolvedDescription = description ?? t("confirmDeleteDescription");
+  const resolvedConfirm = confirmLabel ?? t("confirmDelete");
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className={className}
+        aria-label={resolvedTitle}
+        onMouseDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
+        <LuTrash2 className={iconClassName} aria-hidden />
+      </Button>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent className="z-[110]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{resolvedTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {resolvedDescription}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+            >
+              {resolvedConfirm}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 /** Destructive button that submits an external form only after confirm. */
 export function ConfirmDeleteFormButton({
   formId,

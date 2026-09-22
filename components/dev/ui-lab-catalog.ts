@@ -135,7 +135,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     title: "Dropdown / Popover / Tooltip / Sheet / AlertDialog",
     hint: "Канон меню: outline toolbar/поле; хедер ghost — виняток. ConfirmDelete z-[110]. Тонкий .app-scroll.",
     keywords:
-      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель scrollbar скролбар",
+      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель scrollbar скролбар combobox sheet field searchable",
   },
   {
     id: "cascade",
@@ -178,9 +178,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "carousel",
     category: "overlays",
     title: "PhotoCarousel",
-    hint: "Єдиний Embla-компонент: variant card (dots) і page (thumbs). Підключати на картках і PDP, не дублювати.",
+    hint: "Єдиний Embla-компонент: variant card (dots) і page (thumbs). Admin sheet: ProductImageGalleryField (carousel + Reorder thumbs +).",
     keywords:
-      "carousel карусель embla photo gallery галерея thumbs dots слайд",
+      "carousel карусель embla photo gallery галерея thumbs dots слайд reorder dnd admin +",
   },
 ];
 

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import AdminListToolbar from "@/components/admin/admin-list-toolbar";
@@ -108,22 +107,26 @@ export default function AccountOrdersView({
   locale,
   createOpen,
   editId,
+  onSheetUrlChange,
 }: {
   items: AccountOrderRow[];
   tree: TaxonomyTreeNode[];
   locale: string;
   createOpen: boolean;
   editId?: string;
+  /** Sync sheet query without RSC (cabinet uses replaceState). */
+  onSheetUrlChange?: (next: { create?: boolean; edit?: string }) => void;
 }) {
   const t = useTranslations("AccountCabinet");
   const tOrders = useTranslations("Orders");
   const tAdmin = useTranslations("Admin");
-  const router = useRouter();
   const [search, setSearch] = useState("");
+  const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
   const editOrder = useMemo(
-    () => items.find((item) => item.id === editId) ?? null,
-    [items, editId]
+    () => items.find((item) => item.id === sheetEditId) ?? null,
+    [items, sheetEditId]
   );
   const editAllowed = editOrder ? canEditOrder(editOrder) : false;
 
@@ -137,19 +140,24 @@ export default function AccountOrdersView({
   }, [items, search]);
 
   function setCreateOpen(open: boolean) {
+    setSheetCreateOpen(open);
     if (open) {
-      router.replace("/account/orders?create=1", { scroll: false });
+      setSheetEditId(undefined);
+      onSheetUrlChange?.({ create: true });
       return;
     }
-    router.replace("/account/orders", { scroll: false });
+    onSheetUrlChange?.({});
   }
 
   function setEditOpen(open: boolean, orderId?: string) {
     if (open && orderId) {
-      router.replace(`/account/orders?edit=${orderId}`, { scroll: false });
+      setSheetCreateOpen(false);
+      setSheetEditId(orderId);
+      onSheetUrlChange?.({ edit: orderId });
       return;
     }
-    router.replace("/account/orders", { scroll: false });
+    setSheetEditId(undefined);
+    onSheetUrlChange?.({});
   }
 
   return (
@@ -253,7 +261,7 @@ export default function AccountOrdersView({
         </Card>
       )}
 
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+      <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <div className="grid gap-6">
             <SheetHeader>
@@ -261,7 +269,7 @@ export default function AccountOrdersView({
               <SheetDescription>{t("createOrderSheetLede")}</SheetDescription>
             </SheetHeader>
             <FormContainer
-              key={createOpen ? "create-open" : "create-closed"}
+              key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createUserRequestOrderAction}
             >
               <div className="grid gap-6">

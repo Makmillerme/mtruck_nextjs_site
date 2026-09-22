@@ -6,11 +6,15 @@
 - `card` — aspect 4/3, arrows + dots, optional `href` on slides, hover zoom
 - `page` — same stage + thumbnail strip (aria-current only on selected)
 
+## Props
+- `startIndex?: number` — Embla start + scrollTo (admin gallery thumb click)
+
 ## Surfaces
 - VehicleCard preview
 - ProductsList (via VehicleCard)
 - PDP product gallery
 - ui-lab blocks
+- Admin product sheet: `ProductImageGalleryField` (card + Reorder thumbs + add)
 
 ## Hover jump fix (2026-09)
 Card preview shifted left on hover because:

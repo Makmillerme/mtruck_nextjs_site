@@ -69,7 +69,8 @@ function applyFacetOverrides(
 
 export function useCatalogFilters(
   schema: PublicFilterSchema,
-  availability: FilterAvailabilityIndex
+  availability: FilterAvailabilityIndex,
+  onApplied?: () => void
 ) {
   const t = useTranslations("Products");
   const router = useRouter();
@@ -200,6 +201,7 @@ export function useCatalogFilters(
   function applyFilters() {
     if (!isDirty) return;
     go(buildCatalogHrefFromDraft(current(), draft));
+    onApplied?.();
   }
 
   function clearFilters() {
@@ -232,13 +234,15 @@ export function useCatalogFilters(
 export function CatalogFilterProvider({
   schema,
   availability,
+  onApplied,
   children,
 }: {
   schema: PublicFilterSchema;
   availability: FilterAvailabilityIndex;
+  onApplied?: () => void;
   children: ReactNode;
 }) {
-  const api = useCatalogFilters(schema, availability);
+  const api = useCatalogFilters(schema, availability, onApplied);
   return (
     <CatalogFilterContext.Provider value={api}>
       {children}

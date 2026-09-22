@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
-import { CatalogNativeSelect } from "@/components/admin/catalog/catalog-fields";
+import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
 import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
@@ -92,15 +92,16 @@ function UserFormFields({
         required={false}
       />
       {canManageRoles ? (
-        <CatalogNativeSelect
+        <CatalogMenuSelect
           name="role"
           label={t("role")}
           defaultValue={user?.role ?? "USER"}
-        >
-          <option value="USER">{t("roleUser")}</option>
-          <option value="MANAGER">{t("roleManager")}</option>
-          <option value="ADMIN">{t("roleAdmin")}</option>
-        </CatalogNativeSelect>
+          options={[
+            { value: "USER", label: t("roleUser") },
+            { value: "MANAGER", label: t("roleManager") },
+            { value: "ADMIN", label: t("roleAdmin") },
+          ]}
+        />
       ) : null}
       {includePassword ? (
         <FormInput
@@ -142,8 +143,19 @@ export default function AdminUsersView({
   canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
-  const router = useRouter();
   const [search, setSearch] = useState("");
+  const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
+
+  function syncUsersSheetUrl(next: { create?: boolean; edit?: string }) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("create");
+    url.searchParams.delete("edit");
+    if (next.create) url.searchParams.set("create", "1");
+    if (next.edit) url.searchParams.set("edit", next.edit);
+    window.history.replaceState(null, "", url.toString());
+  }
 
   function canEditUser(user: AdminUserRow) {
     return canManageRoles || user.role === "USER";
@@ -155,11 +167,11 @@ export default function AdminUsersView({
 
   const editUser = useMemo(() => {
     const found =
-      items.find((item) => item.id === editId) ??
-      (editFallback && editFallback.id === editId ? editFallback : null);
+      items.find((item) => item.id === sheetEditId) ??
+      (editFallback && editFallback.id === sheetEditId ? editFallback : null);
     if (!found || !canEditUser(found)) return null;
     return found;
-  }, [items, editId, editFallback, canManageRoles]);
+  }, [items, sheetEditId, editFallback, canManageRoles]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -172,19 +184,24 @@ export default function AdminUsersView({
   }, [items, search]);
 
   function setCreateOpen(open: boolean) {
+    setSheetCreateOpen(open);
     if (open) {
-      router.replace("/admin/users?create=1", { scroll: false });
+      setSheetEditId(undefined);
+      syncUsersSheetUrl({ create: true });
       return;
     }
-    router.replace("/admin/users", { scroll: false });
+    syncUsersSheetUrl({});
   }
 
   function setEditOpen(open: boolean, userId?: string) {
     if (open && userId) {
-      router.replace(`/admin/users?edit=${userId}`, { scroll: false });
+      setSheetCreateOpen(false);
+      setSheetEditId(userId);
+      syncUsersSheetUrl({ edit: userId });
       return;
     }
-    router.replace("/admin/users", { scroll: false });
+    setSheetEditId(undefined);
+    syncUsersSheetUrl({});
   }
 
   const archiveUser =
@@ -299,7 +316,7 @@ export default function AdminUsersView({
         </Card>
       )}
 
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+      <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <div className="grid gap-6">
             <SheetHeader>

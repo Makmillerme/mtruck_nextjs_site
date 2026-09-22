@@ -2,22 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
-import { CatalogNativeSelect } from "@/components/admin/catalog/catalog-fields";
+import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
+import { Badge } from "@/components/ui/badge";
+import { loadProductSheetMetaAction } from "@/lib/catalog/product-sheet-meta";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { SubmitButton } from "@/components/form/Buttons";
 import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
-import CheckboxInput from "@/components/form/CheckboxInput";
 import FormContainer from "@/components/form/FormContainer";
-import FormInput from "@/components/form/FormInput";
-import ImageGalleryInput from "@/components/form/ImageGalleryInput";
+import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PriceInput from "@/components/form/PriceInput";
 import TextAreaInput from "@/components/form/TextAreaInput";
+import ProductNameSettingsDialog from "@/components/admin/products/product-name-settings-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -38,8 +40,26 @@ import {
   tableActionsClassName,
   tableLinkClassName,
 } from "@/components/ui/table";
+import { ProductNameInput } from "@/components/admin/products/product-name-tags";
+import {
+  joinProductName,
+  resolveDisplayGroupParts,
+  resolveDisplayGroupString,
+  specsFromSheetValues,
+  splitProductNameAroundComposed,
+} from "@/lib/catalog/display-group";
 import { formatSpecCell } from "@/lib/catalog/spec-display";
-import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
+import type {
+  CatalogAttribute,
+  CatalogDisplayGroup,
+  TaxonomyTreeNode,
+} from "@/lib/catalog/types";
+
+function hasNameTemplate(
+  group: CatalogDisplayGroup | null | undefined
+): group is CatalogDisplayGroup {
+  return Boolean(group && group.members.length > 0);
+}
 import type { AttributeTypeName } from "@/lib/catalog/types";
 import {
   archiveProductAction,
@@ -50,10 +70,26 @@ import type { actionFunction } from "@/utils/types";
 import AdminListToolbar, {
   AdminFilterTrigger,
 } from "@/components/admin/admin-list-toolbar";
-import Image from "next/image";
 import { LuArchive, LuColumns3, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
+const STATUS_COLUMN_STORAGE_KEY = "mtruck.admin.products.showStatusColumn";
+
+function syncProductsSheetUrl(next: {
+  create?: boolean;
+  edit?: string;
+  node?: string | null;
+}) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("create");
+  url.searchParams.delete("edit");
+  url.searchParams.delete("node");
+  if (next.create) url.searchParams.set("create", "1");
+  if (next.edit) url.searchParams.set("edit", next.edit);
+  if (next.node) url.searchParams.set("node", next.node);
+  window.history.replaceState(null, "", url.toString());
+}
 
 export type AdminProductSpec = {
   attributeId: string;
@@ -72,11 +108,13 @@ export type AdminProductRow = {
   name: string;
   company: string;
   price: number;
+  currency: string;
   featured: boolean;
   status: string;
   availability: string;
   description: string;
   image: string;
+  images: { id: string; url: string }[];
   taxonomyNodeId: string | null;
   specs: AdminProductSpec[];
 };
@@ -96,6 +134,32 @@ const STATUS_LABEL = {
   PREPARING: "statusPreparing",
   SOLD: "statusSold",
 } as const;
+
+const STATUS_BADGE_CLASS: Record<(typeof STATUS_KEYS)[number], string> = {
+  DRAFT: "border-transparent bg-muted text-muted-foreground",
+  PUBLISHED: "border-transparent bg-primary/15 text-primary",
+  RESERVED:
+    "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-200",
+  PREPARING:
+    "border-transparent bg-sky-500/15 text-sky-800 dark:text-sky-200",
+  SOLD: "border-transparent bg-destructive/15 text-destructive",
+};
+
+function ProductStatusBadge({ status }: { status: string }) {
+  const t = useTranslations("Admin");
+  const key = STATUS_KEYS.includes(status as (typeof STATUS_KEYS)[number])
+    ? (status as (typeof STATUS_KEYS)[number])
+    : null;
+  const label = key ? t(STATUS_LABEL[key]) : status;
+  return (
+    <Badge
+      variant="outline"
+      className={key ? STATUS_BADGE_CLASS[key] : undefined}
+    >
+      {label}
+    </Badge>
+  );
+}
 
 function ArchiveProduct({ productId }: { productId: string }) {
   const archiveProduct = archiveProductAction.bind(null, {
@@ -134,17 +198,64 @@ function ProductSheetFields({
   onFolderChange,
   attributes,
   product,
-  nameFromDisplayGroup = false,
+  nameWriterGroup = null,
+  onNameSettingsSaved,
 }: {
   tree: TaxonomyTreeNode[];
   selectedNodeId?: string;
   onFolderChange: (nodeId: string | null) => void;
   attributes: CatalogAttribute[];
   product?: AdminProductRow;
-  nameFromDisplayGroup?: boolean;
+  nameWriterGroup?: CatalogDisplayGroup | null;
+  onNameSettingsSaved: () => void;
 }) {
   const t = useTranslations("Admin");
   const catalogT = useTranslations("CatalogAdmin");
+  const nameTemplate = hasNameTemplate(nameWriterGroup) ? nameWriterGroup : null;
+  const [name, setName] = useState(product?.name ?? "");
+  const [namePrefix, setNamePrefix] = useState("");
+  const [nameSuffix, setNameSuffix] = useState("");
+  const [specValues, setSpecValues] = useState<Record<string, string>>(() =>
+    product ? specsToInitial(product.specs) : {}
+  );
+
+  useEffect(() => {
+    const initialSpecs = product ? specsToInitial(product.specs) : {};
+    setSpecValues(initialSpecs);
+    setName(product?.name ?? "");
+    if (!product || !nameTemplate) {
+      setNamePrefix("");
+      setNameSuffix("");
+      return;
+    }
+    const composed = resolveDisplayGroupString(
+      nameTemplate,
+      specsFromSheetValues(attributes, initialSpecs)
+    );
+    const split = splitProductNameAroundComposed(product.name, composed);
+    setNamePrefix(split.prefix);
+    setNameSuffix(split.suffix);
+  }, [product?.id, selectedNodeId, nameTemplate?.id, attributes]);
+
+  const nameParts = useMemo(() => {
+    if (!nameTemplate) return [];
+    return resolveDisplayGroupParts(
+      nameTemplate,
+      specsFromSheetValues(attributes, specValues)
+    );
+  }, [nameTemplate, attributes, specValues]);
+
+  const composedName = useMemo(() => {
+    if (!nameTemplate) return "";
+    return resolveDisplayGroupString(
+      nameTemplate,
+      specsFromSheetValues(attributes, specValues)
+    );
+  }, [nameTemplate, attributes, specValues]);
+
+  const submittedName = nameTemplate
+    ? joinProductName(namePrefix, composedName, nameSuffix)
+    : name;
 
   return (
     <div className="grid gap-6">
@@ -154,83 +265,105 @@ function ProductSheetFields({
           selectedId={selectedNodeId}
           onNodeChange={onFolderChange}
         />
-        <CatalogNativeSelect
+        <CatalogMenuSelect
           name="status"
           label={t("status")}
-          defaultValue={product?.status ?? "PUBLISHED"}
-        >
-          <option value="DRAFT">{t("statusDraft")}</option>
-          <option value="PUBLISHED">{t("statusPublished")}</option>
-          <option value="RESERVED">{t("statusReserved")}</option>
-          <option value="PREPARING">{t("statusPreparing")}</option>
-          <option value="SOLD">{t("statusSold")}</option>
-        </CatalogNativeSelect>
-        <CatalogNativeSelect
+          defaultValue={product?.status ?? "DRAFT"}
+          options={STATUS_KEYS.map((status) => ({
+            value: status,
+            label: t(STATUS_LABEL[status]),
+          }))}
+        />
+        <CatalogMenuSelect
           name="availability"
           label={t("availability")}
           defaultValue={product?.availability ?? "IN_STOCK"}
-        >
-          <option value="IN_STOCK">{t("availabilityStock")}</option>
-          <option value="TRANSIT">{t("availabilityTransit")}</option>
-        </CatalogNativeSelect>
-        {nameFromDisplayGroup ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-medium">{t("productName")}</p>
-            <p className="text-sm text-muted-foreground">
-              {catalogT("productNameFromDisplayGroup")}
+          options={[
+            { value: "IN_STOCK", label: t("availabilityStock") },
+            { value: "TRANSIT", label: t("availabilityTransit") },
+          ]}
+        />
+        <ProductImageGalleryField
+          existing={
+            product?.images?.length
+              ? product.images
+              : product?.image
+                ? [{ id: `cover:${product.id}`, url: product.image }]
+                : []
+          }
+          resetKey={product?.id ?? "new"}
+          alt={product?.name ?? ""}
+        />
+        <div className="grid gap-2">
+          <Label htmlFor="name">{t("productName")}</Label>
+          <div className="flex items-center gap-2">
+            {nameTemplate ? (
+              <>
+                <ProductNameInput
+                  resetKey={`${product?.id ?? "new"}-${nameTemplate.id}`}
+                  tags={nameParts.map((part) => ({
+                    id: part.attributeId,
+                    label: part.value ?? part.name,
+                    filled: Boolean(part.value),
+                  }))}
+                  separator={nameTemplate.separator}
+                  prefix={namePrefix}
+                  suffix={nameSuffix}
+                  onPrefixChange={setNamePrefix}
+                  onSuffixChange={setNameSuffix}
+                />
+                <input type="hidden" name="namePrefix" value={namePrefix} />
+                <input type="hidden" name="nameSuffix" value={nameSuffix} />
+                <input type="hidden" id="name" name="name" value={submittedName} />
+              </>
+            ) : (
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="min-w-0 flex-1"
+              />
+            )}
+            <ProductNameSettingsDialog
+              folderNodeId={selectedNodeId}
+              attributes={attributes}
+              writerGroup={nameWriterGroup}
+              onSaved={onNameSettingsSaved}
+            />
+          </div>
+          {!selectedNodeId ? (
+            <p className="text-xs text-muted-foreground">
+              {catalogT("productNameSettingsNeedFolder")}
             </p>
-            {product?.name ? (
-              <p className="rounded-sm border bg-muted/40 px-3 py-2 text-sm">
-                {product.name}
-              </p>
-            ) : null}
-            <input
-              type="hidden"
-              name="name"
-              value={product?.name?.trim() || "Авто"}
-            />
-          </div>
-        ) : (
-          <FormInput
-            type="text"
-            name="name"
-            label={t("productName")}
-            defaultValue={product?.name ?? ""}
-          />
-        )}
+          ) : null}
+        </div>
+        <PriceInput
+          defaultValue={product?.price}
+          defaultCurrency={product?.currency ?? "USD"}
+        />
         <input type="hidden" name="company" value={product?.company ?? ""} />
-        <PriceInput defaultValue={product?.price} />
-        {product ? (
-          <div className="relative aspect-[4/3] max-w-xs overflow-hidden rounded-sm border bg-muted">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              sizes="320px"
-              className="object-cover"
-            />
-          </div>
-        ) : null}
-        <ImageGalleryInput required={!product} />
       </div>
       {attributes.length > 0 ? (
         <ProductSpecFields
           key={`${product?.id ?? "new"}-${selectedNodeId ?? "none"}`}
           attributes={attributes}
           initialValues={product ? specsToInitial(product.specs) : {}}
+          onValuesChange={setSpecValues}
         />
       ) : selectedNodeId ? (
         <p className="text-sm text-muted-foreground">{catalogT("noOwnFields")}</p>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {catalogT("productSpecsNeedFolder")}
+        </p>
+      )}
       <TextAreaInput
         name="description"
         labelText={t("description")}
         defaultValue={product?.description ?? ""}
-      />
-      <CheckboxInput
-        name="featured"
-        label={t("featured")}
-        defaultChecked={product?.featured ?? false}
+        required={false}
       />
     </div>
   );
@@ -244,7 +377,7 @@ export default function AdminProductsView({
   createOpen,
   editId,
   selectedNodeId,
-  nameFromDisplayGroup = false,
+  nameWriterGroup = null,
   canDelete = false,
 }: {
   items: AdminProductRow[];
@@ -255,21 +388,30 @@ export default function AdminProductsView({
   createOpen: boolean;
   editId?: string;
   selectedNodeId?: string;
-  nameFromDisplayGroup?: boolean;
+  nameWriterGroup?: CatalogDisplayGroup | null;
   canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
+  const [showStatusColumn, setShowStatusColumn] = useState(true);
   const [columnsReady, setColumnsReady] = useState(false);
+  const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
+  const [folderNodeId, setFolderNodeId] = useState<string | undefined>(
+    selectedNodeId
+  );
+  const [sheetAttributes, setSheetAttributes] =
+    useState<CatalogAttribute[]>(attributes);
+  const [sheetNameWriterGroup, setSheetNameWriterGroup] =
+    useState<CatalogDisplayGroup | null>(nameWriterGroup);
 
   const editProduct = useMemo(
-    () => items.find((item) => item.id === editId) ?? null,
-    [items, editId]
+    () => items.find((item) => item.id === sheetEditId) ?? null,
+    [items, sheetEditId]
   );
 
   const tableAttributeKeys = useMemo(
@@ -291,6 +433,9 @@ export default function AdminProductsView({
           );
         }
       }
+      const statusRaw = window.localStorage.getItem(STATUS_COLUMN_STORAGE_KEY);
+      if (statusRaw === "0") setShowStatusColumn(false);
+      if (statusRaw === "1") setShowStatusColumn(true);
     } catch {
       // ignore invalid prefs
     }
@@ -304,6 +449,14 @@ export default function AdminProductsView({
       JSON.stringify(visibleKeys)
     );
   }, [visibleKeys, columnsReady]);
+
+  useEffect(() => {
+    if (!columnsReady) return;
+    window.localStorage.setItem(
+      STATUS_COLUMN_STORAGE_KEY,
+      showStatusColumn ? "1" : "0"
+    );
+  }, [showStatusColumn, columnsReady]);
 
   const visibleAttributes = useMemo(
     () =>
@@ -353,45 +506,51 @@ export default function AdminProductsView({
     });
   }, [items, search, selectedCompanies, selectedStatuses, featuredOnly]);
 
+  async function loadSheetMeta(nodeId: string | null) {
+    try {
+      const meta = await loadProductSheetMetaAction(nodeId);
+      setSheetAttributes(meta.attributes);
+      setSheetNameWriterGroup(meta.nameWriterGroup);
+    } catch {
+      setSheetAttributes([]);
+      setSheetNameWriterGroup(null);
+    }
+  }
+
   function setCreateOpen(open: boolean) {
+    setSheetCreateOpen(open);
     if (open) {
-      const node = selectedNodeId ? `&node=${selectedNodeId}` : "";
-      router.replace(`/admin/products?create=1${node}`, { scroll: false });
+      setSheetEditId(undefined);
+      syncProductsSheetUrl({ create: true, node: folderNodeId ?? null });
+      if (folderNodeId) void loadSheetMeta(folderNodeId);
       return;
     }
-    router.replace("/admin/products", { scroll: false });
+    syncProductsSheetUrl({});
   }
 
   function setEditOpen(open: boolean, productId?: string) {
     if (open && productId) {
       const product = items.find((item) => item.id === productId);
-      const node = product?.taxonomyNodeId
-        ? `&node=${product.taxonomyNodeId}`
-        : "";
-      router.replace(`/admin/products?edit=${productId}${node}`, {
-        scroll: false,
-      });
+      const node = product?.taxonomyNodeId ?? null;
+      setSheetCreateOpen(false);
+      setSheetEditId(productId);
+      setFolderNodeId(node ?? undefined);
+      syncProductsSheetUrl({ edit: productId, node });
+      void loadSheetMeta(node);
       return;
     }
-    router.replace("/admin/products", { scroll: false });
+    setSheetEditId(undefined);
+    syncProductsSheetUrl({});
   }
 
   function onFolderChange(nodeId: string | null) {
-    if (editProduct) {
-      router.replace(
-        nodeId
-          ? `/admin/products?edit=${editProduct.id}&node=${nodeId}`
-          : `/admin/products?edit=${editProduct.id}`,
-        { scroll: false }
-      );
-      return;
+    setFolderNodeId(nodeId ?? undefined);
+    if (sheetEditId) {
+      syncProductsSheetUrl({ edit: sheetEditId, node: nodeId });
+    } else if (sheetCreateOpen) {
+      syncProductsSheetUrl({ create: true, node: nodeId });
     }
-    router.replace(
-      nodeId
-        ? `/admin/products?create=1&node=${nodeId}`
-        : "/admin/products?create=1",
-      { scroll: false }
-    );
+    void loadSheetMeta(nodeId);
   }
 
   function toggleCompany(company: string, checked: boolean) {
@@ -460,6 +619,15 @@ export default function AdminProductsView({
                 <SheetDescription>{t("columnsSheetLede")}</SheetDescription>
               </SheetHeader>
               <div className="grid gap-4 overflow-y-auto">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={showStatusColumn}
+                    onCheckedChange={(value) =>
+                      setShowStatusColumn(value === true)
+                    }
+                  />
+                  {t("status")}
+                </label>
                 {tableAttributes.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {t("columnsEmpty")}
@@ -621,6 +789,9 @@ export default function AdminProductsView({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("productName")}</TableHead>
+                  {showStatusColumn ? (
+                    <TableHead>{t("status")}</TableHead>
+                  ) : null}
                   {visibleAttributes.map((attribute) => (
                     <TableHead key={attribute.key}>{attribute.name}</TableHead>
                   ))}
@@ -641,6 +812,11 @@ export default function AdminProductsView({
                         <Link href={`/products/${item.id}`}>{item.name}</Link>
                       </Button>
                     </TableCell>
+                    {showStatusColumn ? (
+                      <TableCell>
+                        <ProductStatusBadge status={item.status} />
+                      </TableCell>
+                    ) : null}
                     {visibleAttributes.map((attribute) => (
                       <TableCell key={attribute.key}>
                         {formatSpecCell(
@@ -676,7 +852,7 @@ export default function AdminProductsView({
         </Card>
       )}
 
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+      <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <div className="grid gap-6">
             <SheetHeader>
@@ -684,16 +860,17 @@ export default function AdminProductsView({
               <SheetDescription>{t("createSheetLede")}</SheetDescription>
             </SheetHeader>
             <FormContainer
-              key={createOpen ? "create-open" : "create-closed"}
+              key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createProductAction}
             >
               <div className="grid gap-6">
                 <ProductSheetFields
                   tree={tree}
-                  selectedNodeId={selectedNodeId}
+                  selectedNodeId={folderNodeId}
                   onFolderChange={onFolderChange}
-                  attributes={attributes}
-                  nameFromDisplayGroup={nameFromDisplayGroup}
+                  attributes={sheetAttributes}
+                  nameWriterGroup={sheetNameWriterGroup}
+                  onNameSettingsSaved={() => void loadSheetMeta(folderNodeId ?? null)}
                 />
                 <SubmitButton text={t("submitCreate")} className="w-fit" />
               </div>
@@ -722,11 +899,14 @@ export default function AdminProductsView({
                   <div className="grid gap-6">
                     <ProductSheetFields
                       tree={tree}
-                      selectedNodeId={selectedNodeId}
+                      selectedNodeId={folderNodeId}
                       onFolderChange={onFolderChange}
-                      attributes={attributes}
+                      attributes={sheetAttributes}
                       product={editProduct}
-                      nameFromDisplayGroup={nameFromDisplayGroup}
+                      nameWriterGroup={sheetNameWriterGroup}
+                      onNameSettingsSaved={() =>
+                        void loadSheetMeta(folderNodeId ?? null)
+                      }
                     />
                     <SheetFormActions
                       saveLabel={t("submitUpdate")}

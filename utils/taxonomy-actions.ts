@@ -1,7 +1,7 @@
 "use server";
 
 import db from "@/utils/db";
-import { getAdminUser } from "@/utils/session";
+import { getAdminUser, getStaffUser } from "@/utils/session";
 import { validateWithZodSchema } from "@/utils/schemas";
 import {
   attributeIdSchema,
@@ -10,6 +10,7 @@ import {
   createDisplayGroupSchema,
   createTaxonomyNodeSchema,
   displayGroupIdSchema,
+  saveProductNameTemplateSchema,
   moveTaxonomyNodeSchema,
   nodeIdSchema,
   optionIdSchema,
@@ -129,6 +130,7 @@ async function assertMembersAllowed(
   taxonomyNodeId: string,
   memberAttributeIds: string[]
 ) {
+  if (memberAttributeIds.length === 0) return;
   const t = await getTranslations("CatalogAdmin");
   const path = await getPathNodes(taxonomyNodeId);
   const pathIds = new Set(path.map((node) => node.id));
@@ -553,6 +555,110 @@ export const deleteDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
     return { message: t("displayGroupDeleted"), ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+const PRODUCT_NAME_TEMPLATE_KEY = "product_name";
+
+/** Upsert the single name-compose template on a folder (existing attributes only). */
+export const saveProductNameTemplateAction: TaxonomyAction = async (
+  _prev,
+  formData
+) => {
+  await getStaffUser();
+  try {
+    const memberAttributeIds = memberAttributeIdsFromForm(formData);
+    const data = validateWithZodSchema(saveProductNameTemplateSchema, {
+      taxonomyNodeId: formData.get("taxonomyNodeId"),
+      separator: formData.get("separator") ?? " ",
+      memberAttributeIds,
+    });
+    const node = await db.taxonomyNode.findUnique({
+      where: { id: data.taxonomyNodeId },
+      select: { id: true },
+    });
+    const t = await getTranslations("CatalogAdmin");
+    if (!node) throw new Error(t("parentMissing"));
+    await assertMembersAllowed(data.taxonomyNodeId, memberAttributeIds);
+
+    const existing =
+      (await db.displayGroup.findFirst({
+        where: {
+          taxonomyNodeId: data.taxonomyNodeId,
+          writesProductName: true,
+        },
+        select: { id: true },
+      })) ??
+      (await db.displayGroup.findUnique({
+        where: {
+          taxonomyNodeId_key: {
+            taxonomyNodeId: data.taxonomyNodeId,
+            key: PRODUCT_NAME_TEMPLATE_KEY,
+          },
+        },
+        select: { id: true },
+      }));
+
+    // Empty members → remove name template; sheet falls back to manual name.
+    if (memberAttributeIds.length === 0) {
+      if (existing) {
+        await db.displayGroup.delete({ where: { id: existing.id } });
+      }
+      revalidateCatalog();
+      revalidatePath("/admin/products");
+      return { message: t("productNameTemplateCleared"), ok: true };
+    }
+
+    await db.displayGroup.updateMany({
+      where: {
+        taxonomyNodeId: data.taxonomyNodeId,
+        writesProductName: true,
+        ...(existing ? { NOT: { id: existing.id } } : {}),
+      },
+      data: { writesProductName: false },
+    });
+
+    if (existing) {
+      await db.$transaction([
+        db.displayGroupMember.deleteMany({ where: { groupId: existing.id } }),
+        db.displayGroup.update({
+          where: { id: existing.id },
+          data: {
+            separator: data.separator,
+            writesProductName: true,
+            members: {
+              create: memberAttributeIds.map((attributeId, index) => ({
+                attributeId,
+                sortOrder: index,
+              })),
+            },
+          },
+        }),
+      ]);
+    } else {
+      await db.displayGroup.create({
+        data: {
+          taxonomyNodeId: data.taxonomyNodeId,
+          name: t("productNameTemplateGroupName"),
+          key: PRODUCT_NAME_TEMPLATE_KEY,
+          separator: data.separator,
+          writesProductName: true,
+          sortOrder: await nextDisplayGroupSort(data.taxonomyNodeId),
+          members: {
+            create: memberAttributeIds.map((attributeId, index) => ({
+              attributeId,
+              sortOrder: index,
+            })),
+          },
+        },
+      });
+    }
+
+    revalidateCatalog();
+    revalidatePath("/admin/products");
+    return { message: t("productNameTemplateSaved"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }

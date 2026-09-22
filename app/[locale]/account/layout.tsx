@@ -10,5 +10,9 @@ export default async function AccountLayout({
   const user = await getAuthUser();
   const userCode = await ensureUserCode(user.id);
 
-  return <AccountShell userCode={userCode}>{children}</AccountShell>;
+  return (
+    <AccountShell userCode={userCode} showTabs={false}>
+      {children}
+    </AccountShell>
+  );
 }

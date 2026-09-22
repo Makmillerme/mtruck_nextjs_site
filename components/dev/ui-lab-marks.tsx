@@ -68,6 +68,8 @@ export default function UiLabMarks() {
             <LuTag className="mr-1 size-3.5" aria-hidden />
             MAN
           </Badge>
+          <Badge variant="tag">Марка</Badge>
+          <Badge variant="tag">Модель</Badge>
           <Badge variant="soft">Featured</Badge>
           <Badge variant="destructive">destructive</Badge>
         </div>

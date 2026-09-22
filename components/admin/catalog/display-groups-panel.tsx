@@ -23,12 +23,12 @@ import {
   updateDisplayGroupAction,
 } from "@/utils/taxonomy-actions";
 import { LuArrowDown, LuArrowUp, LuPen, LuPlus, LuTrash2, LuX } from "react-icons/lu";
+import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import CatalogForm from "./catalog-form";
 import {
   CatalogField,
   CatalogFlag,
   CatalogSubmit,
-  catalogSelectClassName,
 } from "./catalog-fields";
 
 type GroupSheet =
@@ -37,14 +37,16 @@ type GroupSheet =
   | { mode: "delete"; groupId: string }
   | null;
 
-function MemberOrderPicker({
+export function MemberOrderPicker({
   attributes,
   value,
   onChange,
+  allowEmpty = false,
 }: {
   attributes: CatalogAttribute[];
   value: string[];
   onChange: (next: string[]) => void;
+  allowEmpty?: boolean;
 }) {
   const t = useTranslations("CatalogAdmin");
   const [pick, setPick] = useState("");
@@ -115,39 +117,36 @@ function MemberOrderPicker({
         );
       })}
       {available.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className={catalogSelectClassName}
-            value={pick}
-            onChange={(event) => setPick(event.target.value)}
-            aria-label={t("displayGroupAddMember")}
-          >
-            <option value="">{t("displayGroupPickField")}</option>
-            {available.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.inherited
-                  ? `${item.name} (${item.source.name})`
-                  : item.name}
-              </option>
-            ))}
-          </select>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!pick}
-            onClick={() => {
-              if (!pick) return;
-              onChange([...value, pick]);
+        <SearchableEntityPicker
+          name="memberAttributePick"
+          label={t("displayGroupAddMember")}
+          placeholder={t("displayGroupPickField")}
+          searchPlaceholder={t("displayGroupPickField")}
+          emptyLabel="—"
+          options={available.map((item) => ({
+            value: item.id,
+            label: item.inherited
+              ? `${item.name} (${item.source.name})`
+              : item.name,
+            keywords: [
+              item.name,
+              item.key,
+              item.source.name,
+            ],
+          }))}
+          value={pick}
+          onValueChange={(next) => {
+            if (!next) {
               setPick("");
-            }}
-          >
-            <LuPlus className="size-4" />
-            {t("displayGroupAddMember")}
-          </Button>
-        </div>
+              return;
+            }
+            onChange([...value, next]);
+            setPick("");
+          }}
+          allowClear={false}
+        />
       ) : null}
-      {value.length === 0 ? (
+      {value.length === 0 && !allowEmpty ? (
         <p className="text-sm text-muted-foreground">
           {t("displayGroupMembersHint")}
         </p>

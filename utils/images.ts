@@ -1,21 +1,82 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
+import {
+  PRODUCT_IMAGE_MAX,
+  PRODUCT_IMAGE_MAX_EDGE,
+  PRODUCT_IMAGE_TARGET_BYTES,
+} from "@/lib/catalog/product-image-limits";
 
-const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products");
+export {
+  PRODUCT_IMAGE_MAX,
+  PRODUCT_IMAGE_MAX_EDGE,
+  PRODUCT_IMAGE_TARGET_BYTES,
+  PRODUCT_IMAGE_UPLOAD_MAX_BYTES,
+} from "@/lib/catalog/product-image-limits";
+
+const PRODUCT_UPLOAD_DIR = path.join(
+  process.cwd(),
+  "public",
+  "uploads",
+  "products"
+);
 const PRODUCT_PUBLIC_PREFIX = "/uploads/products";
-const AVATAR_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "avatars");
+const AVATAR_UPLOAD_DIR = path.join(
+  process.cwd(),
+  "public",
+  "uploads",
+  "avatars"
+);
 const AVATAR_PUBLIC_PREFIX = "/uploads/avatars";
 
-function sanitizeFileName(name: string) {
-  const base = path.basename(name).replace(/[^a-zA-Z0-9._-]/g, "_");
+function sanitizeBaseName(name: string) {
+  const base = path
+    .basename(name, path.extname(name))
+    .replace(/[^a-zA-Z0-9._-]/g, "_");
   return base.length > 0 ? base : "image";
 }
 
+/**
+ * Normalize EXIF orientation, fit inside max edge, encode WebP.
+ * If output stays over 1 MB, lower quality then shrink edges until under target.
+ */
+async function optimizeImageBuffer(input: Buffer): Promise<Buffer> {
+  let quality = 82;
+  let edge = PRODUCT_IMAGE_MAX_EDGE;
+
+  const render = async (maxEdge: number, q: number) =>
+    sharp(input)
+      .rotate()
+      .resize({
+        width: maxEdge,
+        height: maxEdge,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: q, effort: 4 })
+      .toBuffer();
+
+  let out = await render(edge, quality);
+
+  while (out.length > PRODUCT_IMAGE_TARGET_BYTES && quality > 50) {
+    quality -= 8;
+    out = await render(edge, quality);
+  }
+
+  while (out.length > PRODUCT_IMAGE_TARGET_BYTES && edge > 1200) {
+    edge = Math.round(edge * 0.85);
+    out = await render(edge, Math.min(quality, 75));
+  }
+
+  return out;
+}
+
 async function writeUpload(image: File, dir: string, publicPrefix: string) {
-  const bytes = Buffer.from(await image.arrayBuffer());
-  const fileName = `${Date.now()}-${sanitizeFileName(image.name)}`;
+  const raw = Buffer.from(await image.arrayBuffer());
+  const optimized = await optimizeImageBuffer(raw);
+  const fileName = `${Date.now()}-${sanitizeBaseName(image.name)}.webp`;
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, fileName), bytes);
+  await writeFile(path.join(dir, fileName), optimized);
   return `${publicPrefix}/${fileName}`;
 }
 
@@ -34,8 +95,6 @@ async function removeUpload(url: string, publicPrefix: string, dir: string) {
 export const uploadImage = async (image: File) => {
   return writeUpload(image, PRODUCT_UPLOAD_DIR, PRODUCT_PUBLIC_PREFIX);
 };
-
-export const PRODUCT_IMAGE_MAX = 15;
 
 export const uploadProductImages = async (files: File[]) => {
   const urls: string[] = [];

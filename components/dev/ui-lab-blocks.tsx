@@ -1,3 +1,4 @@
+import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PhotoCarousel from "@/components/media/photo-carousel";
 import VehicleCard from "@/components/vehicles/vehicle-card";
 
@@ -83,6 +84,26 @@ export default async function UiLabBlocks() {
               variant="page"
               images={DEMO_IMAGES}
               sizes="(max-width: 768px) 100vw, 36rem"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <h3 className="text-sm font-semibold tracking-tight">
+            Admin gallery (DnD)
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            `ProductImageGalleryField`: PhotoCarousel + перетягування thumbs + кнопка
+            додати в кінці. Без видимого file input.
+          </p>
+          <div className="w-full max-w-xl rounded-sm border border-border bg-background p-4">
+            <ProductImageGalleryField
+              existing={DEMO_IMAGES.map((image, index) => ({
+                id: `lab-${index}`,
+                url: image.src,
+              }))}
+              resetKey="ui-lab"
+              alt="UI Lab"
             />
           </div>
         </div>

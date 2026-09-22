@@ -28,8 +28,9 @@ export default function ProductFolderPicker({
         onValueChange={(id) => onNodeChange?.(id)}
         placeholder={t("templateFolderPlaceholder")}
         emptyLabel={t("emptyFolders")}
-        allowEmpty
-        emptyOptionLabel={t("productFolderNone")}
+        allowEmpty={false}
+        required
+        variant="tree"
       />
     </div>
   );

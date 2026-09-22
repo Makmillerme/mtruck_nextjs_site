@@ -255,15 +255,28 @@ export async function fetchRootCatalogAttributes() {
   );
 }
 
-/** Closest folder wins when the same key exists on parent and child. */
+/**
+ * Closest folder wins when the same key exists on parent and child.
+ * Order: senior folder first (input path order), then each folder's sortOrder.
+ */
 export function resolveAttributesByKey(attributes: CatalogAttribute[]) {
   const byKey = new Map<string, CatalogAttribute>();
   for (const attribute of attributes) {
     byKey.set(attribute.key, attribute);
   }
-  return [...byKey.values()].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "uk")
-  );
+  const folderRank = new Map<string, number>();
+  for (const attribute of attributes) {
+    if (!folderRank.has(attribute.taxonomyNodeId)) {
+      folderRank.set(attribute.taxonomyNodeId, folderRank.size);
+    }
+  }
+  return [...byKey.values()].sort((a, b) => {
+    const folder =
+      (folderRank.get(a.taxonomyNodeId) ?? 0) -
+      (folderRank.get(b.taxonomyNodeId) ?? 0);
+    if (folder !== 0) return folder;
+    return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "uk");
+  });
 }
 
 export async function fetchDisplayGroupsForNode(nodeId: string) {

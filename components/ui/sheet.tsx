@@ -63,7 +63,10 @@ function isFloatingLayer(target: EventTarget | null) {
     target.closest("[data-radix-popper-content-wrapper]") ||
       target.closest("[data-radix-menu-content]") ||
       target.closest("[data-radix-select-content]") ||
-      target.closest("[role='menu']")
+      target.closest("[data-radix-popover-content]") ||
+      target.closest("[cmdk-root]") ||
+      target.closest("[role='menu']") ||
+      target.closest("[role='listbox']")
   )
 }
 

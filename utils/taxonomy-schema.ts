@@ -102,6 +102,17 @@ export const updateDisplayGroupSchema = z.object({
     .max(20),
 });
 
+/** Product sheet name gear — upsert writer template, no new CMS fields. */
+export const saveProductNameTemplateSchema = z.object({
+  taxonomyNodeId: z.string().uuid(),
+  separator: z
+    .string()
+    .max(16)
+    .optional()
+    .transform((value) => (value == null || value.length === 0 ? " " : value)),
+  memberAttributeIds: z.array(z.string().uuid()).max(20),
+});
+
 export const displayGroupIdSchema = z.object({
   groupId: z.string().uuid(),
 });

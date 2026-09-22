@@ -7,7 +7,9 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
   ],
+  safelist: ["col-span-2", "col-span-3", "col-span-6"],
   prefix: "",
   theme: {
   	container: {

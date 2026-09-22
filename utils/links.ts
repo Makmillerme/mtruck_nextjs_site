@@ -14,15 +14,15 @@ export const siteNav = [
 ] as const;
 
 export const accountCabinetNav = [
-  { href: "/account/orders", key: "orders", match: "prefix" },
-  { href: "/account/favorites", key: "favorites", match: "prefix" },
-  { href: "/account/settings", key: "settings", match: "prefix" },
+  { href: "/account?tab=orders", key: "orders", match: "prefix" },
+  { href: "/account?tab=favorites", key: "favorites", match: "prefix" },
+  { href: "/account?tab=settings", key: "settings", match: "prefix" },
 ] as const;
 
 export const accountNav: NavLink[] = [
-  { href: "/account/favorites", key: "favorites" },
+  { href: "/account?tab=favorites", key: "favorites" },
   { href: "/reviews", key: "reviews" },
-  { href: "/account/orders", key: "orders" },
+  { href: "/account?tab=orders", key: "orders" },
   { href: "/admin/sales", key: "admin" },
 ];
 

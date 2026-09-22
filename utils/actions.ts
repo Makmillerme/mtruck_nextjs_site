@@ -30,11 +30,11 @@ import {
   deleteAvatarImage,
   deleteImage,
   deleteImages,
-  PRODUCT_IMAGE_MAX,
   uploadAvatarImage,
   uploadImage,
   uploadProductImages,
 } from './images';
+import { PRODUCT_IMAGE_MAX } from '@/lib/catalog/product-image-limits';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { revalidatePath, unstable_cache } from 'next/cache';
@@ -50,8 +50,26 @@ import {
   specsFromFormData,
   toPrismaSpecCreates,
 } from '@/lib/catalog/product-specs';
-import { resolveProductNameFromDisplayGroups } from '@/lib/catalog/display-group';
+import { resolveProductNameWithExtra } from '@/lib/catalog/display-group';
 import type { ProductAvailability, ProductStatus } from '@prisma/client';
+
+type ImageOrderEntry = { t: 'e'; id?: string } | { t: 'n' } | { t: 'c' };
+
+function parseImageOrder(raw: FormDataEntryValue | null): ImageOrderEntry[] {
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is ImageOrderEntry => {
+      if (!entry || typeof entry !== 'object') return false;
+      const t = (entry as { t?: string }).t;
+      return t === 'e' || t === 'n' || t === 'c';
+    });
+  } catch {
+    return [];
+  }
+}
+
 const renderError = async (error: unknown): Promise<{ message: string }> => {
   console.error(error);
   const t = await getTranslations('Actions');
@@ -257,6 +275,10 @@ export const createProductAction = async (
   try {
     const rawData = Object.fromEntries(formData);
     const taxonomyNodeId = String(formData.get('taxonomyNodeId') ?? '').trim();
+    if (!taxonomyNodeId) {
+      const catalogT = await getTranslations('CatalogAdmin');
+      throw new Error(catalogT('productFolderRequired'));
+    }
     let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
     if (taxonomyNodeId) {
       const node = await db.taxonomyNode.findUnique({
@@ -272,15 +294,22 @@ export const createProductAction = async (
       if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
         rawData.company = parsed.companyFromIdentity;
       }
-      const composedName = await resolveProductNameFromDisplayGroups(
+      const composedName = await resolveProductNameWithExtra(
         taxonomyNodeId,
-        parsed.specs
+        parsed.specs,
+        {
+          prefix: String(formData.get('namePrefix') ?? ''),
+          suffix: String(formData.get('nameSuffix') ?? ''),
+        }
       );
       if (composedName) {
         rawData.name = composedName;
       }
     }
-    const validatedFields = validateWithZodSchema(productSchema, rawData);
+    const validatedFields = validateWithZodSchema(productSchema, {
+      ...rawData,
+      featured: false,
+    });
     const files = formData
       .getAll('images')
       .filter((item): item is File => item instanceof File && item.size > 0);
@@ -288,22 +317,19 @@ export const createProductAction = async (
     if (legacy instanceof File && legacy.size > 0 && files.length === 0) {
       files.push(legacy);
     }
-    if (files.length === 0) {
-      throw new Error('At least one image is required');
-    }
     if (files.length > PRODUCT_IMAGE_MAX) {
       throw new Error(`Maximum ${PRODUCT_IMAGE_MAX} images allowed`);
     }
     for (const file of files) {
       validateWithZodSchema(imageSchema, { image: file });
     }
-    const imageUrls = await uploadProductImages(files);
-    const cover = imageUrls[0]!;
-    const statusRaw = String(formData.get('status') ?? 'PUBLISHED');
+    const imageUrls = files.length ? await uploadProductImages(files) : [];
+    const cover = imageUrls[0] ?? '/logo_mtruck.svg';
+    const statusRaw = String(formData.get('status') ?? 'DRAFT');
     const availabilityRaw = String(formData.get('availability') ?? 'IN_STOCK');
     const status = PRODUCT_STATUSES.includes(statusRaw as ProductStatus)
       ? (statusRaw as ProductStatus)
-      : 'PUBLISHED';
+      : 'DRAFT';
     const availability = PRODUCT_AVAILABILITIES.includes(
       availabilityRaw as ProductAvailability
     )
@@ -345,6 +371,10 @@ export const fetchAdminProducts = async () => {
       createdAt: 'desc',
     },
     include: {
+      images: {
+        orderBy: { sortOrder: 'asc' },
+        select: { id: true, url: true, sortOrder: true },
+      },
       specs: {
         include: {
           option: { select: { id: true, label: true } },
@@ -466,6 +496,10 @@ export const updateProductAction = async (
 
     const rawData = Object.fromEntries(formData);
     const taxonomyNodeId = String(formData.get('taxonomyNodeId') ?? '').trim();
+    if (!taxonomyNodeId) {
+      const catalogT = await getTranslations('CatalogAdmin');
+      throw new Error(catalogT('productFolderRequired'));
+    }
     let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
     if (taxonomyNodeId) {
       const node = await db.taxonomyNode.findUnique({
@@ -481,15 +515,22 @@ export const updateProductAction = async (
       if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
         rawData.company = parsed.companyFromIdentity;
       }
-      const composedName = await resolveProductNameFromDisplayGroups(
+      const composedName = await resolveProductNameWithExtra(
         taxonomyNodeId,
-        parsed.specs
+        parsed.specs,
+        {
+          prefix: String(formData.get('namePrefix') ?? ''),
+          suffix: String(formData.get('nameSuffix') ?? ''),
+        }
       );
       if (composedName) {
         rawData.name = composedName;
       }
     }
-    const validatedFields = validateWithZodSchema(productSchema, rawData);
+    const validatedFields = validateWithZodSchema(productSchema, {
+      ...rawData,
+      featured: existing.featured,
+    });
     const statusRaw = String(formData.get('status') ?? existing.status);
     const availabilityRaw = String(
       formData.get('availability') ?? existing.availability
@@ -506,15 +547,74 @@ export const updateProductAction = async (
     const files = formData
       .getAll('images')
       .filter((item): item is File => item instanceof File && item.size > 0);
-    if (files.length + existing.images.length > PRODUCT_IMAGE_MAX) {
+    const imageOrderRaw = formData.get('imageOrder');
+    const hasImageOrderField = typeof imageOrderRaw === 'string';
+    const imageOrder = parseImageOrder(imageOrderRaw);
+    const existingCount = existing.images.length;
+    const projected = hasImageOrderField
+      ? imageOrder.length
+      : existingCount + files.length;
+    if (projected > PRODUCT_IMAGE_MAX) {
       throw new Error(`Maximum ${PRODUCT_IMAGE_MAX} images allowed`);
     }
     for (const file of files) {
       validateWithZodSchema(imageSchema, { image: file });
     }
     const newUrls = files.length ? await uploadProductImages(files) : [];
-    const cover = existing.image || newUrls[0] || existing.image;
-    const startOrder = existing.images.length;
+
+    let cover = existing.image;
+    const creates: { url: string; sortOrder: number }[] = [];
+
+    if (hasImageOrderField) {
+      const byId = new Map(existing.images.map((image) => [image.id, image]));
+      const keptIds = new Set<
+        string
+      >();
+      let newIdx = 0;
+      let sortOrder = 0;
+      for (const entry of imageOrder) {
+        if (entry.t === 'e' && entry.id && byId.has(entry.id)) {
+          const row = byId.get(entry.id)!;
+          keptIds.add(row.id);
+          await db.productImage.update({
+            where: { id: row.id },
+            data: { sortOrder },
+          });
+          if (sortOrder === 0) cover = row.url;
+          sortOrder += 1;
+          continue;
+        }
+        if (entry.t === 'c' && existing.image) {
+          creates.push({ url: existing.image, sortOrder });
+          if (sortOrder === 0) cover = existing.image;
+          sortOrder += 1;
+          continue;
+        }
+        if (entry.t === 'n') {
+          const url = newUrls[newIdx++];
+          if (!url) continue;
+          creates.push({ url, sortOrder });
+          if (sortOrder === 0) cover = url;
+          sortOrder += 1;
+        }
+      }
+      const removed = existing.images.filter((image) => !keptIds.has(image.id));
+      if (removed.length > 0) {
+        await db.productImage.deleteMany({
+          where: { id: { in: removed.map((image) => image.id) } },
+        });
+        await deleteImages(removed.map((image) => image.url));
+      }
+      if (sortOrder === 0 && creates.length === 0) {
+        cover = '/logo_mtruck.svg';
+      }
+    } else if (newUrls.length > 0) {
+      const startOrder = existing.images.length;
+      for (let index = 0; index < newUrls.length; index += 1) {
+        creates.push({ url: newUrls[index]!, sortOrder: startOrder + index });
+      }
+      if (!existing.image && newUrls[0]) cover = newUrls[0];
+    }
 
     await db.product.update({
       where: { id: productId },
@@ -529,12 +629,9 @@ export const updateProductAction = async (
           create: specCreates,
         },
         images:
-          newUrls.length > 0
+          creates.length > 0
             ? {
-                create: newUrls.map((url, index) => ({
-                  url,
-                  sortOrder: startOrder + index,
-                })),
+                create: creates,
               }
             : undefined,
       },

@@ -9,23 +9,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
-const PAGE_KEYS = {
-  "/account/orders": "orders",
-  "/account/favorites": "favorites",
-  "/account/settings": "settings",
-} as const;
+type PageKey = "orders" | "favorites" | "settings";
 
-type PageKey = (typeof PAGE_KEYS)[keyof typeof PAGE_KEYS];
-
-function resolvePageKey(pathname: string): PageKey {
-  if (pathname in PAGE_KEYS) {
-    return PAGE_KEYS[pathname as keyof typeof PAGE_KEYS];
-  }
-  if (pathname.startsWith("/account/favorites")) return "favorites";
-  if (pathname.startsWith("/account/settings")) return "settings";
+function resolvePageKey(tab: string | null): PageKey {
+  if (tab === "favorites" || tab === "settings") return tab;
   return "orders";
 }
 
@@ -35,8 +26,8 @@ export default function AccountBreadcrumbs({
   userCode?: string | null;
 }) {
   const t = useTranslations("AccountCabinet");
-  const pathname = usePathname();
-  const pageKey = resolvePageKey(pathname);
+  const searchParams = useSearchParams();
+  const pageKey = resolvePageKey(searchParams.get("tab"));
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -50,7 +41,7 @@ export default function AccountBreadcrumbs({
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/account/orders">{t("title")}</Link>
+              <Link href="/account?tab=orders">{t("title")}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
