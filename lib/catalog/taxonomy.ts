@@ -108,6 +108,30 @@ export function flattenTaxonomyTree(
   ]);
 }
 
+/** Collect a node id and all descendant ids from a taxonomy tree. */
+export function collectSubtreeNodeIds(
+  tree: TaxonomyTreeNode[],
+  rootId: string
+): Set<string> {
+  const ids = new Set<string>();
+  const walk = (nodes: TaxonomyTreeNode[]): boolean => {
+    for (const node of nodes) {
+      if (node.id === rootId) {
+        const take = (n: TaxonomyTreeNode) => {
+          ids.add(n.id);
+          for (const child of n.children) take(child);
+        };
+        take(node);
+        return true;
+      }
+      if (walk(node.children)) return true;
+    }
+    return false;
+  };
+  walk(tree);
+  return ids;
+}
+
 /** Map taxonomy tree into CascadeSelect items. */
 export function taxonomyToCascadeItems(
   nodes: TaxonomyTreeNode[]

@@ -83,12 +83,14 @@ function syncProductsSheetUrl(next: {
 }) {
   if (typeof window === "undefined") return;
   const url = new URL(window.location.href);
+  const root = url.searchParams.get("root");
   url.searchParams.delete("create");
   url.searchParams.delete("edit");
   url.searchParams.delete("node");
   if (next.create) url.searchParams.set("create", "1");
   if (next.edit) url.searchParams.set("edit", next.edit);
   if (next.node) url.searchParams.set("node", next.node);
+  if (root) url.searchParams.set("root", root);
   window.history.replaceState(null, "", url.toString());
 }
 
@@ -401,6 +403,7 @@ export default function AdminProductsView({
   createOpen,
   editId,
   selectedNodeId,
+  listRootId,
   nameWriterGroup = null,
   canDelete = false,
 }: {
@@ -412,6 +415,7 @@ export default function AdminProductsView({
   createOpen: boolean;
   editId?: string;
   selectedNodeId?: string;
+  listRootId?: string;
   nameWriterGroup?: CatalogDisplayGroup | null;
   canDelete?: boolean;
 }) {
@@ -426,12 +430,18 @@ export default function AdminProductsView({
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
   const [folderNodeId, setFolderNodeId] = useState<string | undefined>(
-    selectedNodeId
+    selectedNodeId ?? listRootId
   );
   const [sheetAttributes, setSheetAttributes] =
     useState<CatalogAttribute[]>(attributes);
   const [sheetNameWriterGroup, setSheetNameWriterGroup] =
     useState<CatalogDisplayGroup | null>(nameWriterGroup);
+
+  useEffect(() => {
+    if (sheetEditId) return;
+    if (!listRootId) return;
+    setFolderNodeId(listRootId);
+  }, [listRootId, sheetEditId]);
 
   const editProduct = useMemo(
     () => items.find((item) => item.id === sheetEditId) ?? null,
@@ -545,8 +555,10 @@ export default function AdminProductsView({
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
-      syncProductsSheetUrl({ create: true, node: folderNodeId ?? null });
-      if (folderNodeId) void loadSheetMeta(folderNodeId);
+      const node = folderNodeId ?? listRootId ?? null;
+      if (node && node !== folderNodeId) setFolderNodeId(node);
+      syncProductsSheetUrl({ create: true, node });
+      if (node) void loadSheetMeta(node);
       return;
     }
     syncProductsSheetUrl({});

@@ -1,5 +1,6 @@
 import AdminProductsView from "@/components/admin/products/admin-products-view";
 import {
+  collectSubtreeNodeIds,
   fetchAttributesForNode,
   fetchDisplayGroupsForNode,
   fetchRootCatalogAttributes,
@@ -13,7 +14,12 @@ import { getLocale } from "next-intl/server";
 import { getStaffUser, isAdminRole } from "@/utils/session";
 
 async function AdminProductsPage(props: {
-  searchParams: Promise<{ create?: string; edit?: string; node?: string }>;
+  searchParams: Promise<{
+    create?: string;
+    edit?: string;
+    node?: string;
+    root?: string;
+  }>;
 }) {
   const searchParams = await props.searchParams;
   const locale = await getLocale();
@@ -24,14 +30,30 @@ async function AdminProductsPage(props: {
     fetchRootCatalogAttributes(),
   ]);
   const flatFolders = flattenTaxonomyTree(tree);
+  const rootParam = searchParams.root?.trim() || undefined;
+  const listRootId =
+    rootParam && tree.some((node) => node.id === rootParam)
+      ? rootParam
+      : undefined;
+  const subtreeIds = listRootId
+    ? collectSubtreeNodeIds(tree, listRootId)
+    : null;
+  const scopedItems = subtreeIds
+    ? items.filter(
+        (item) =>
+          item.taxonomyNodeId != null && subtreeIds.has(item.taxonomyNodeId)
+      )
+    : items;
   const createOpen = searchParams.create === "1";
   const editId = searchParams.edit?.trim() || undefined;
   const editProduct = editId
-    ? items.find((item) => item.id === editId)
+    ? scopedItems.find((item) => item.id === editId) ??
+      items.find((item) => item.id === editId)
     : undefined;
   const selectedId =
     searchParams.node ||
-    (editProduct?.taxonomyNodeId ?? undefined);
+    (editProduct?.taxonomyNodeId ?? undefined) ||
+    (createOpen ? listRootId : undefined);
   const selectedExists = selectedId
     ? flatFolders.some((folder) => folder.id === selectedId)
     : false;
@@ -54,12 +76,13 @@ async function AdminProductsPage(props: {
       createOpen={createOpen}
       editId={editProduct?.id}
       selectedNodeId={selectedExists ? selectedId : undefined}
+      listRootId={listRootId}
       tree={tree}
       attributes={attributes}
       tableAttributes={tableAttributes}
       nameWriterGroup={nameWriterGroup}
       canDelete={isAdminRole(role)}
-      items={items.map((item) => ({
+      items={scopedItems.map((item) => ({
         id: item.id,
         name: item.name,
         company: item.company,
