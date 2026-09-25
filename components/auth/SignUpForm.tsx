@@ -5,6 +5,12 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
@@ -63,73 +69,76 @@ export default function SignUpForm() {
   };
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-muted p-8 rounded-lg">
-        <div className="space-y-2 mb-6">
-          <h1 className="text-2xl font-bold">{t("createAccount")}</h1>
-          <p className="text-muted-foreground">{t("signUpSubtitle")}</p>
-        </div>
+    <div className="max-w-md">
+      <Card className="rounded-sm shadow-sm">
+        <CardHeader className="pb-4">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("createAccount")}
+          </h1>
+          <CardDescription>{t("signUpSubtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("name")}</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder={t("name")}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">{t("name")}</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder={t("name")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="email">{t("email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder={t("email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">{t("password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={t("passwordHint")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? t("creatingAccount") : t("signUp")}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                {t("or")}
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">{t("email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={t("email")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">{t("password")}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t("passwordHint")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? t("creatingAccount") : t("signUp")}
-          </Button>
-        </form>
-
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-muted px-2 text-muted-foreground">{t("or")}</span>
-          </div>
-        </div>
-
-        <div className="space-y-4 mb-4">
           <Button
             type="button"
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
           >
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden>
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -149,18 +158,18 @@ export default function SignUpForm() {
             </svg>
             {t("continueGoogle")}
           </Button>
-        </div>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          {t("haveAccount")}{" "}
-          <Link
-            href="/sign-in"
-            className="text-primary font-medium hover:underline"
-          >
-            {t("signIn")}
-          </Link>
-        </p>
-      </div>
+          <p className="text-center text-sm text-muted-foreground">
+            {t("haveAccount")}{" "}
+            <Link
+              href="/sign-in"
+              className="font-medium text-primary hover:underline"
+            >
+              {t("signIn")}
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
