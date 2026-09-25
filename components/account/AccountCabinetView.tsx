@@ -12,10 +12,9 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
-import { cn } from "@/lib/utils";
 import { toggleFavoriteAction } from "@/utils/actions";
 import { useTranslations } from "next-intl";
-import { useTransition, type ReactNode } from "react";
+import { useTransition } from "react";
 import { LuHeart } from "react-icons/lu";
 
 export type AccountCabinetTab = "orders" | "favorites" | "settings";
@@ -126,25 +125,6 @@ function AccountFavoritesPanel({
   );
 }
 
-function SoftNavPanel({
-  isPending,
-  children,
-}: {
-  isPending: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        "transition-opacity duration-200",
-        isPending && "pointer-events-none opacity-60"
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
 export default function AccountCabinetView({
   tab,
   locale,
@@ -166,7 +146,7 @@ export default function AccountCabinetView({
 }) {
   const t = useTranslations("AccountCabinet");
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   function setTab(value: string) {
     const next: AccountCabinetTab =
@@ -197,24 +177,22 @@ export default function AccountCabinetView({
         </TabsTrigger>
       </TabsList>
 
-      <SoftNavPanel isPending={isPending}>
-        <TabsContent value="orders" className="mt-0">
-          <AccountOrdersView
-            locale={locale}
-            items={orders}
-            tree={tree}
-            createOpen={createOpen && tab === "orders"}
-            editId={tab === "orders" ? editId : undefined}
-            onSheetUrlChange={onSheetUrlChange}
-          />
-        </TabsContent>
-        <TabsContent value="favorites" className="mt-0">
-          <AccountFavoritesPanel favorites={favorites} />
-        </TabsContent>
-        <TabsContent value="settings" className="mt-0">
-          {settings ? <AccountSettingsForms {...settings} /> : null}
-        </TabsContent>
-      </SoftNavPanel>
+      <TabsContent value="orders" className="mt-0">
+        <AccountOrdersView
+          locale={locale}
+          items={orders}
+          tree={tree}
+          createOpen={createOpen && tab === "orders"}
+          editId={tab === "orders" ? editId : undefined}
+          onSheetUrlChange={onSheetUrlChange}
+        />
+      </TabsContent>
+      <TabsContent value="favorites" className="mt-0">
+        <AccountFavoritesPanel favorites={favorites} />
+      </TabsContent>
+      <TabsContent value="settings" className="mt-0">
+        {settings ? <AccountSettingsForms {...settings} /> : null}
+      </TabsContent>
     </Tabs>
   );
 }

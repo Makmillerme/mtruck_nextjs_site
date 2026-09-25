@@ -14,7 +14,8 @@
 
 ## Lazy / cache-first
 - `account/page.tsx` fetches **only active tab** (favorites | orders+tree | settings)
-- Tab change: `startTransition` + `router.replace(/account?tab=)` + opacity pending (no `loading.tsx`)
+- Tab change: `startTransition` + `router.replace(/account?tab=)` (no opacity dim; no `loading.tsx`)
+- Settings: full-width `lg:grid-cols-2` cards (profile | form) + full-width sign-out row (no `max-w-2xl`)
 - Orders row delete: same optimistic hook
 - `VehicleCard` converted to client (`useTranslations` / `FavoriteToggleForm`)
 
