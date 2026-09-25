@@ -7,6 +7,15 @@ function isAdminPath(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
+function isAuthPath(pathname: string) {
+  return (
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname.startsWith("/sign-in/") ||
+    pathname.startsWith("/sign-up/")
+  );
+}
+
 export default function SiteChrome({
   header,
   footer,
@@ -17,7 +26,7 @@ export default function SiteChrome({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const hideFooter = isAdminPath(pathname);
+  const hideFooter = isAdminPath(pathname) || isAuthPath(pathname);
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col">

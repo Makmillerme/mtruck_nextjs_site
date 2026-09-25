@@ -9,7 +9,7 @@ export default async function SignInPage(props: SignInPageProps) {
   const redirectUrl = searchParams?.redirect_url || "/products";
 
   return (
-    <div className="page-content">
+    <div className="page-content flex flex-1 flex-col items-center justify-center">
       <SignInForm redirectUrl={redirectUrl} />
     </div>
   );

@@ -73,7 +73,7 @@ export default function SignInForm({
   };
 
   return (
-    <div className="max-w-md">
+    <div className="w-full max-w-md">
       <Card className="rounded-sm shadow-sm">
         <CardHeader className="pb-4">
           <h1 className="text-2xl font-bold tracking-tight">

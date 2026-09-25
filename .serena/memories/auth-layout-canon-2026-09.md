@@ -4,16 +4,17 @@ Sign-in / sign-up aligned to site layout + account Card pattern.
 
 ## Pages
 - `app/[locale]/sign-in/page.tsx`, `sign-up/page.tsx`
-- Wrapper: `.page-content` (opts out of `main > .page-container` fallback padding-top; layout `page-container` becomes `contents`)
-- Removed: `min-h-[60vh] flex items-center justify-center`
+- Wrapper: `.page-content flex flex-1 flex-col items-center justify-center`
+  - keeps layout gutters; fills `main` under sticky header; centers card
+- `SiteChrome`: hide footer on `/sign-in` and `/sign-up` (like admin) so main ≈ remaining viewport — true optical center, no tall footer scroll
 
 ## Forms
-- `components/auth/SignInForm.tsx`, `SignUpForm.tsx`
-- `max-w-md` + `Card className="rounded-sm shadow-sm"` (same as account settings)
-- Header: `h1` + `CardDescription`; body `CardContent space-y-4`
-- OR divider mask: `bg-card` (not `bg-muted`)
-- Dropped template `bg-muted p-8 rounded-lg` plate
+- `w-full max-w-md` + `Card rounded-sm shadow-sm`
+- Header: `h1` + `CardDescription`; `CardContent space-y-4`
+- OR divider mask: `bg-card`
 
-## Verify
-- Gutter ~28–30px; vertical pad from `.page-content` clamp
-- Card top-left under content, not vertically centered in 60vh
+## Soft nav / no full reload
+- Navbar uses next-intl `Link` → App Router client navigation (no document reload)
+- First visit in `next dev` may compile the route once (feels like a jump) — production/warm is instant
+- Avoid `loading.tsx` skeleton on auth (static form; no DB wait)
+- After login: `router.push` + `router.refresh()` revalidates session chrome (navbar) — intentional, not a hard reload
