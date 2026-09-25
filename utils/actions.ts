@@ -731,12 +731,14 @@ export const toggleFavoriteAction = async (prevState: {
       });
     }
     revalidatePath(pathname);
+    revalidatePath('/account');
     const t = await getTranslations('Actions');
     return {
       message: favoriteId ? t('removedFromFavorites') : t('addedToFavorites'),
+      ok: true as const,
     };
   } catch (error) {
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false as const };
   }
 };
 
@@ -1093,15 +1095,16 @@ export const deleteUserOrderAction = async (prevState: {
     }
     if (existing.status !== 'NEW') {
       const t = await getTranslations('Actions');
-      return { message: t('orderLocked') };
+      return { message: t('orderLocked'), ok: false as const };
     }
     await db.order.delete({ where: { id: existing.id } });
+    revalidatePath('/account');
     revalidatePath('/account/orders');
     revalidatePath('/admin/sales');
     const t = await getTranslations('Actions');
-    return { message: t('orderRemoved') };
+    return { message: t('orderRemoved'), ok: true as const };
   } catch (error) {
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false as const };
   }
 };
 

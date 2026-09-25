@@ -1,11 +1,14 @@
-import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
+"use client";
+
+import { CardSignInButton } from "@/components/form/Buttons";
 import PhotoCarousel from "@/components/media/photo-carousel";
+import FavoriteToggleForm from "@/components/products/FavoriteToggleForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatMileage } from "@/utils/format";
-import { getLocale, getTranslations } from "next-intl/server";
+import { useLocale, useTranslations } from "next-intl";
 import {
   LuChevronRight,
   LuLeaf,
@@ -74,21 +77,23 @@ const STATUS_DOT: Record<VehicleStatus, string> = {
   SOLD: "bg-red-500",
 };
 
-export default async function VehicleCard({
+export default function VehicleCard({
   vehicle,
   priority = false,
   favoriteId,
   isAuthenticated,
   layout = "grid",
+  showFavorite = true,
 }: {
   vehicle: VehicleCardModel;
   priority?: boolean;
   favoriteId?: string | null;
   isAuthenticated?: boolean;
   layout?: "grid" | "list";
+  showFavorite?: boolean;
 }) {
-  const locale = await getLocale();
-  const t = await getTranslations("VehicleCard");
+  const locale = useLocale();
+  const t = useTranslations("VehicleCard");
   const status = vehicle.status ?? "PUBLISHED";
   const euro = vehicle.euro?.trim() || t("euroFallback");
   const price = formatCurrency(vehicle.price, locale);
@@ -153,13 +158,18 @@ export default async function VehicleCard({
                     {t(`status.${status}`)}
                   </span>
                 </Badge>
-                <div className="pointer-events-auto shrink-0">
-                  <FavoriteToggleButton
-                    productId={vehicle.id}
-                    favoriteId={favoriteId}
-                    isAuthenticated={isAuthenticated}
-                  />
-                </div>
+                {showFavorite ? (
+                  <div className="pointer-events-auto shrink-0">
+                    {isAuthenticated ? (
+                      <FavoriteToggleForm
+                        productId={vehicle.id}
+                        favoriteId={favoriteId ?? null}
+                      />
+                    ) : (
+                      <CardSignInButton />
+                    )}
+                  </div>
+                ) : null}
               </div>
             }
           />

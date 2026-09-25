@@ -3,5 +3,5 @@ import { getLocale } from "next-intl/server";
 
 export default async function FavoritesRedirectPage() {
   const locale = await getLocale();
-  redirect({ href: "/account/favorites", locale });
+  redirect({ href: "/account?tab=favorites", locale });
 }

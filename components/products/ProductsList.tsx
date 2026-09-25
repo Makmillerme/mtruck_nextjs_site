@@ -2,7 +2,7 @@ import VehicleCard from "@/components/vehicles/vehicle-card";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { ProductListItem } from "@/utils/product-list";
 
-async function ProductsList({
+function ProductsList({
   products,
   favoriteByProductId,
   isAuthenticated,

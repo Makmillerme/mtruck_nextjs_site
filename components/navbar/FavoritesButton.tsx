@@ -20,7 +20,7 @@ export default function FavoritesButton({
       size="icon"
       className={cn("hidden size-9 shrink-0 lg:inline-flex", className)}
     >
-      <Link href="/account/favorites">
+      <Link href="/account?tab=favorites">
         <LuHeart className="size-5" />
         <span className="sr-only">{t("favorites")}</span>
       </Link>

@@ -7,8 +7,9 @@ import ProductFolderPicker from "@/components/admin/catalog/product-folder-picke
 import AdminListToolbar from "@/components/admin/admin-list-toolbar";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { SubmitButton } from "@/components/form/Buttons";
-import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import FormContainer from "@/components/form/FormContainer";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import EmptyList from "@/components/global/EmptyList";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -61,11 +62,16 @@ function canEditOrder(order: AccountOrderRow) {
   return order.status === "NEW";
 }
 
-function DeleteOrder({ orderId }: { orderId: string }) {
-  const deleteOrder = deleteUserOrderAction.bind(null, {
-    orderId,
-  }) as unknown as actionFunction;
-  return <ConfirmDeleteIcon action={deleteOrder} />;
+function DeleteOrder({
+  orderId,
+  onDelete,
+}: {
+  orderId: string;
+  onDelete: (orderId: string) => void;
+}) {
+  return (
+    <ConfirmDeleteCallbackIcon onConfirm={() => onDelete(orderId)} />
+  );
 }
 
 function OrderRequestFields({
@@ -120,24 +126,26 @@ export default function AccountOrdersView({
   const t = useTranslations("AccountCabinet");
   const tOrders = useTranslations("Orders");
   const tAdmin = useTranslations("Admin");
+  const { optimisticItems, removeOptimistically } =
+    useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
   const editOrder = useMemo(
-    () => items.find((item) => item.id === sheetEditId) ?? null,
-    [items, sheetEditId]
+    () => optimisticItems.find((item) => item.id === sheetEditId) ?? null,
+    [optimisticItems, sheetEditId]
   );
   const editAllowed = editOrder ? canEditOrder(editOrder) : false;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => {
+    if (!q) return optimisticItems;
+    return optimisticItems.filter((item) => {
       const hay = `${item.productName ?? ""} ${item.taxonomyNodeName ?? ""} ${item.note ?? ""}`;
       return hay.toLowerCase().includes(q);
     });
-  }, [items, search]);
+  }, [optimisticItems, search]);
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -249,7 +257,14 @@ export default function AccountOrdersView({
                           >
                             <LuPen />
                           </Button>
-                          <DeleteOrder orderId={order.id} />
+                          <DeleteOrder
+                            orderId={order.id}
+                            onDelete={(orderId) =>
+                              removeOptimistically(orderId, () =>
+                                deleteUserOrderAction({ orderId })
+                              )
+                            }
+                          />
                         </div>
                       ) : null}
                     </TableCell>

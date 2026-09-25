@@ -5,39 +5,49 @@ import AccountOrdersView, {
   type AccountOrderRow,
 } from "@/components/account/account-orders-view";
 import AccountSettingsForms from "@/components/account/AccountSettingsForms";
-import RemoveFavoriteButton from "@/components/account/RemoveFavoriteButton";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  tableActionsClassName,
-  tableLinkClassName,
-} from "@/components/ui/table";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "@/i18n/navigation";
+import VehicleCard from "@/components/vehicles/vehicle-card";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
+import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/utils/format";
+import { toggleFavoriteAction } from "@/utils/actions";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useTransition, type ReactNode } from "react";
 import { LuHeart } from "react-icons/lu";
 
 export type AccountCabinetTab = "orders" | "favorites" | "settings";
 
+export type AccountFavoriteProduct = {
+  id: string;
+  name: string;
+  company: string;
+  featured: boolean;
+  image: string;
+  price: number;
+  createdAt: string;
+  status: string;
+  taxonomyNode: { name: string; slug: string } | null;
+  specs: {
+    attribute: {
+      key: string;
+      unit: string | null;
+      name: string;
+      sortOrder: number;
+    };
+    option: { label: string } | null;
+    numberValue: number | null;
+    textValue: string | null;
+    booleanValue: boolean | null;
+  }[];
+  images: { url: string }[];
+};
+
 export type AccountFavoriteRow = {
   id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    status: string;
-  };
+  product: AccountFavoriteProduct;
 };
 
 export type AccountSettingsProps = {
@@ -48,37 +58,28 @@ export type AccountSettingsProps = {
   canChangePassword: boolean;
 };
 
-function syncAccountTabUrl(
+function accountHref(
   tab: AccountCabinetTab,
   sheet?: { create?: boolean; edit?: string }
 ) {
-  if (typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  const parts = url.pathname.split("/");
-  const accountIdx = parts.lastIndexOf("account");
-  if (accountIdx >= 0) {
-    url.pathname = parts.slice(0, accountIdx + 1).join("/") || "/account";
-  }
-  url.searchParams.set("tab", tab);
-  url.searchParams.delete("create");
-  url.searchParams.delete("edit");
-  if (sheet?.create) url.searchParams.set("create", "1");
-  if (sheet?.edit) url.searchParams.set("edit", sheet.edit);
-  window.history.replaceState(null, "", url.toString());
+  const params = new URLSearchParams();
+  params.set("tab", tab);
+  if (sheet?.create) params.set("create", "1");
+  if (sheet?.edit) params.set("edit", sheet.edit);
+  return `/account?${params.toString()}`;
 }
 
 function AccountFavoritesPanel({
   favorites,
-  locale,
 }: {
   favorites: AccountFavoriteRow[];
-  locale: string;
 }) {
   const t = useTranslations("AccountCabinet");
-  const tOrders = useTranslations("Orders");
-  const tVehicle = useTranslations("VehicleCard");
+  const pathname = usePathname();
+  const { optimisticItems, removeOptimistically } =
+    useOptimisticListRemove(favorites);
 
-  if (favorites.length === 0) {
+  if (optimisticItems.length === 0) {
     return (
       <AccountEmptyState
         icon={LuHeart}
@@ -92,68 +93,54 @@ function AccountFavoritesPanel({
   return (
     <div className="grid w-full min-w-0 grid-cols-1 gap-3">
       <p className="text-sm text-muted-foreground">
-        {t("favoritesTotal", { count: favorites.length })}
+        {t("favoritesTotal", { count: optimisticItems.length })}
       </p>
-      <Card className="shadow-sm">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tOrders("products")}</TableHead>
-                <TableHead>{t("orderTotal")}</TableHead>
-                <TableHead>{t("status")}</TableHead>
-                <TableHead className={tableActionsClassName}>
-                  {t("actions")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {favorites.map((favorite) => {
-                const product = favorite.product;
-                const statusKey =
-                  `status.${product.status}` as Parameters<
-                    typeof tVehicle
-                  >[0];
-                return (
-                  <TableRow key={favorite.id}>
-                    <TableCell>
-                      <Link
-                        href={`/products/${product.id}`}
-                        className={cn(
-                          buttonVariants({ variant: "link" }),
-                          tableLinkClassName
-                        )}
-                      >
-                        {product.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(product.price, locale)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          product.status === "PUBLISHED"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {tVehicle(statusKey)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className={tableActionsClassName}>
-                      <RemoveFavoriteButton
-                        productId={product.id}
-                        favoriteId={favorite.id}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
+        {optimisticItems.map((favorite, index) => (
+          <div key={favorite.id} className="relative">
+            <VehicleCard
+              vehicle={productWithSpecsToVehicle(favorite.product)}
+              priority={index < 3}
+              favoriteId={favorite.id}
+              isAuthenticated
+              showFavorite={false}
+            />
+            <div className="absolute right-2.5 top-2.5 z-10 sm:right-3 sm:top-3">
+              <ConfirmDeleteCallbackIcon
+                className="rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+                onConfirm={() =>
+                  removeOptimistically(favorite.id, () =>
+                    toggleFavoriteAction({
+                      productId: favorite.product.id,
+                      favoriteId: favorite.id,
+                      pathname,
+                    })
+                  )
+                }
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SoftNavPanel({
+  isPending,
+  children,
+}: {
+  isPending: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "transition-opacity duration-200",
+        isPending && "pointer-events-none opacity-60"
+      )}
+    >
+      {children}
     </div>
   );
 }
@@ -173,22 +160,31 @@ export default function AccountCabinetView({
   orders: AccountOrderRow[];
   favorites: AccountFavoriteRow[];
   tree: TaxonomyTreeNode[];
-  settings: AccountSettingsProps;
+  settings: AccountSettingsProps | null;
   createOpen: boolean;
   editId?: string;
 }) {
   const t = useTranslations("AccountCabinet");
-  const [activeTab, setActiveTab] = useState<AccountCabinetTab>(tab);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   function setTab(value: string) {
     const next: AccountCabinetTab =
       value === "favorites" || value === "settings" ? value : "orders";
-    setActiveTab(next);
-    syncAccountTabUrl(next);
+    if (next === tab) return;
+    startTransition(() => {
+      router.replace(accountHref(next));
+    });
+  }
+
+  function onSheetUrlChange(sheet: { create?: boolean; edit?: string }) {
+    startTransition(() => {
+      router.replace(accountHref("orders", sheet));
+    });
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={setTab}>
+    <Tabs value={tab} onValueChange={setTab}>
       <TabsList className="mb-6 w-full sm:w-full" aria-label={t("navLabel")}>
         <TabsTrigger value="orders" className="sm:flex-1">
           {t("orders")}
@@ -201,22 +197,24 @@ export default function AccountCabinetView({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="orders" className="mt-0">
-        <AccountOrdersView
-          locale={locale}
-          items={orders}
-          tree={tree}
-          createOpen={createOpen && activeTab === "orders"}
-          editId={activeTab === "orders" ? editId : undefined}
-          onSheetUrlChange={(sheet) => syncAccountTabUrl("orders", sheet)}
-        />
-      </TabsContent>
-      <TabsContent value="favorites" className="mt-0">
-        <AccountFavoritesPanel favorites={favorites} locale={locale} />
-      </TabsContent>
-      <TabsContent value="settings" className="mt-0">
-        <AccountSettingsForms {...settings} />
-      </TabsContent>
+      <SoftNavPanel isPending={isPending}>
+        <TabsContent value="orders" className="mt-0">
+          <AccountOrdersView
+            locale={locale}
+            items={orders}
+            tree={tree}
+            createOpen={createOpen && tab === "orders"}
+            editId={tab === "orders" ? editId : undefined}
+            onSheetUrlChange={onSheetUrlChange}
+          />
+        </TabsContent>
+        <TabsContent value="favorites" className="mt-0">
+          <AccountFavoritesPanel favorites={favorites} />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-0">
+          {settings ? <AccountSettingsForms {...settings} /> : null}
+        </TabsContent>
+      </SoftNavPanel>
     </Tabs>
   );
 }
