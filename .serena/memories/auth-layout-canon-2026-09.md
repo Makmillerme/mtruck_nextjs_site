@@ -9,7 +9,7 @@ Sign-in / sign-up aligned to site layout + account Card pattern.
 - `SiteChrome`: hide footer on `/sign-in` and `/sign-up` (like admin) so main ≈ remaining viewport — true optical center, no tall footer scroll
 
 ## Forms
-- `w-full max-w-md` + `Card rounded-sm shadow-sm`
+- `w-full max-w-md` + `Card rounded-sm border-0 bg-muted shadow-none` (muted plate like pre-refactor auth)
 - Header: `h1` + `CardDescription`; `CardContent space-y-4`
 - OR divider mask: `bg-card`
 

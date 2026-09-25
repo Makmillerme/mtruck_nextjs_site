@@ -74,7 +74,7 @@ export default function SignInForm({
 
   return (
     <div className="w-full max-w-md">
-      <Card className="rounded-sm shadow-sm">
+      <Card className="rounded-sm border-0 bg-muted shadow-none">
         <CardHeader className="pb-4">
           <h1 className="text-2xl font-bold tracking-tight">
             {t("welcomeBack")}
@@ -117,7 +117,7 @@ export default function SignInForm({
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
+              <span className="bg-muted px-2 text-muted-foreground">
                 {t("or")}
               </span>
             </div>
