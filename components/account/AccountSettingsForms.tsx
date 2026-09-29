@@ -169,16 +169,13 @@ export default function AccountSettingsForms({
                 label={t("nameLabel")}
                 defaultValue={name}
               />
-              <div className="grid gap-1">
-                <FormInput
-                  name="phone"
-                  type="tel"
-                  label={t("phoneLabel")}
-                  defaultValue={phone ?? ""}
-                  required={false}
-                />
-                <p className="text-xs text-muted-foreground">{t("phoneHint")}</p>
-              </div>
+              <FormInput
+                name="phone"
+                type="tel"
+                label={t("phoneLabel")}
+                defaultValue={phone ?? ""}
+                required={false}
+              />
             </div>
             <div className="mt-4 flex justify-end">
               <SubmitButton text={t("save")} />
