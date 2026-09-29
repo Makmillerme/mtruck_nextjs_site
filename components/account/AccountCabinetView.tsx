@@ -8,6 +8,7 @@ import AccountSettingsForms from "@/components/account/AccountSettingsForms";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VehicleCard from "@/components/vehicles/vehicle-card";
+import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
@@ -146,7 +147,7 @@ export default function AccountCabinetView({
 }) {
   const t = useTranslations("AccountCabinet");
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   function setTab(value: string) {
     const next: AccountCabinetTab =
@@ -177,22 +178,24 @@ export default function AccountCabinetView({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="orders" className="mt-0">
-        <AccountOrdersView
-          locale={locale}
-          items={orders}
-          tree={tree}
-          createOpen={createOpen && tab === "orders"}
-          editId={tab === "orders" ? editId : undefined}
-          onSheetUrlChange={onSheetUrlChange}
-        />
-      </TabsContent>
-      <TabsContent value="favorites" className="mt-0">
-        <AccountFavoritesPanel favorites={favorites} />
-      </TabsContent>
-      <TabsContent value="settings" className="mt-0">
-        {settings ? <AccountSettingsForms {...settings} /> : null}
-      </TabsContent>
+      <SoftNavPending isPending={isPending}>
+        <TabsContent value="orders" className="mt-0">
+          <AccountOrdersView
+            locale={locale}
+            items={orders}
+            tree={tree}
+            createOpen={createOpen && tab === "orders"}
+            editId={tab === "orders" ? editId : undefined}
+            onSheetUrlChange={onSheetUrlChange}
+          />
+        </TabsContent>
+        <TabsContent value="favorites" className="mt-0">
+          <AccountFavoritesPanel favorites={favorites} />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-0">
+          {settings ? <AccountSettingsForms {...settings} /> : null}
+        </TabsContent>
+      </SoftNavPending>
     </Tabs>
   );
 }

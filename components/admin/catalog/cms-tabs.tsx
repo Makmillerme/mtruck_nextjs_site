@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "@/i18n/navigation";
 
 type CmsTab = "folders" | "fields";
 
@@ -19,24 +21,27 @@ export default function CmsTabs({
   fields: ReactNode;
 }) {
   const t = useTranslations("CatalogAdmin");
-  const [activeTab, setActiveTab] = useState<CmsTab>(tab);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   function openTab(value: string) {
     const next: CmsTab = value === "fields" ? "fields" : "folders";
-    setActiveTab(next);
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", next);
+    if (next === tab) return;
+    const params = new URLSearchParams();
+    params.set("tab", next);
     if (next === "fields" && nodeId) {
-      url.searchParams.set("node", nodeId);
-    } else if (next === "folders") {
-      // keep node in URL for fields deep-link, but don't require it for folders
+      params.set("node", nodeId);
+    } else if (nodeId) {
+      // keep node for fields deep-link when switching back
+      params.set("node", nodeId);
     }
-    window.history.replaceState(null, "", url.toString());
+    startTransition(() => {
+      router.replace(`/admin/catalog?${params.toString()}`);
+    });
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={openTab}>
+    <Tabs value={tab} onValueChange={openTab}>
       <TabsList className="w-full sm:w-full">
         <TabsTrigger value="folders" className="sm:flex-1">
           {t("tabFolders")}
@@ -45,12 +50,14 @@ export default function CmsTabs({
           {t("tabFields")}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="folders" className="mt-6">
-        {folders}
-      </TabsContent>
-      <TabsContent value="fields" className="mt-6">
-        {fields}
-      </TabsContent>
+      <SoftNavPending isPending={isPending}>
+        <TabsContent value="folders" className="mt-6">
+          {folders}
+        </TabsContent>
+        <TabsContent value="fields" className="mt-6">
+          {fields}
+        </TabsContent>
+      </SoftNavPending>
     </Tabs>
   );
 }
