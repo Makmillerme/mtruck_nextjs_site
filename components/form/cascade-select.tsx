@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,7 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { sheetFieldTriggerClassName } from "@/lib/ui/sheet-field";
-import { LuCheck, LuChevronsUpDown, LuChevronRight } from "react-icons/lu";
+import { LuCheck, LuChevronsUpDown } from "react-icons/lu";
 
 export type CascadeItem = {
   id: string;
@@ -105,86 +113,171 @@ function CascadeMenuItems({
   });
 }
 
-function CascadeTreeRows({
+/**
+ * Cascading menu panels for Sheet/Dialog.
+ * Same UX as DropdownMenu Sub (hover opens next column, click selects),
+ * but plain buttons inside one Popover — Radix Sub is flaky when Sheet
+ * sets body { pointer-events: none }.
+ */
+function CascadePanels({
   items,
   value,
-  depth,
-  expanded,
-  onToggle,
   onSelect,
+  leading,
 }: {
   items: CascadeItem[];
   value?: string | null;
-  depth: number;
-  expanded: Set<string>;
-  onToggle: (id: string) => void;
   onSelect: (id: string) => void;
+  leading?: ReactNode;
 }) {
-  const rows = items.map((item) => {
-    const hasChildren = Boolean(item.children?.length);
-    const isSelected = item.id === value;
-    const isOpen = expanded.has(item.id);
+  const [activePath, setActivePath] = useState<CascadeItem[]>([]);
+  const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [offsets, setOffsets] = useState<number[]>([0]);
+  const pointerTypeRef = useRef("mouse");
 
-    return (
-      <div key={item.id} className="grid gap-0.5">
-        <div className="flex items-center gap-0.5">
-          {hasChildren ? (
-            <button
-              type="button"
-              className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-expanded={isOpen}
-              aria-label={item.label}
-              onClick={() => onToggle(item.id)}
-            >
-              <LuChevronRight
-                className={cn(
-                  "size-3.5 transition-transform",
-                  isOpen && "rotate-90"
-                )}
-              />
-            </button>
-          ) : (
-            <span className="size-7 shrink-0" />
-          )}
-          <button
-            type="button"
-            data-cascade-id={item.id}
-            className={cn(
-              "flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent",
-              isSelected && "bg-accent"
-            )}
-            onClick={() => onSelect(item.id)}
-          >
-            <span className="min-w-0 flex-1 truncate">{item.label}</span>
-            {isSelected ? <LuCheck className="size-4 shrink-0" /> : null}
-          </button>
-        </div>
-        {hasChildren && isOpen ? (
-          <div className="ml-3 grid gap-0.5 border-l border-border pl-2">
-            <CascadeTreeRows
-              items={item.children!}
-              value={value}
-              depth={depth + 1}
-              expanded={expanded}
-              onToggle={onToggle}
-              onSelect={onSelect}
-            />
-          </div>
-        ) : null}
-      </div>
+  const isActive = (depth: number, item: CascadeItem) =>
+    activePath[depth]?.id === item.id && activePath.length === depth + 1;
+
+  const openAt = (depth: number, item: CascadeItem) => {
+    setActivePath((current) => [...current.slice(0, depth), item]);
+  };
+
+  const rowsOf = (depth: number) =>
+    Array.from(
+      columnRefs.current[depth]?.querySelectorAll<HTMLElement>(
+        '[role="menuitem"]'
+      ) ?? []
     );
-  });
 
-  return <>{rows}</>;
-}
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    depth: number,
+    item: CascadeItem
+  ) => {
+    const rows = rowsOf(depth);
+    const index = rows.indexOf(event.currentTarget);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      rows[(index + step + rows.length) % rows.length]?.focus();
+    } else if (event.key === "ArrowRight" && item.children?.length) {
+      event.preventDefault();
+      openAt(depth, item);
+      requestAnimationFrame(() => rowsOf(depth + 1)[0]?.focus());
+    } else if (event.key === "ArrowLeft" && depth > 0) {
+      event.preventDefault();
+      const parentId = activePath[depth - 1]?.id;
+      rowsOf(depth - 1)
+        .find((row) => row.dataset.cascadeId === parentId)
+        ?.focus();
+    }
+  };
 
-/** Expand only ancestors on the selected path (not every branch). */
-function initialExpanded(_items: CascadeItem[], path: CascadeItem[] | null) {
-  const ids = new Set<string>();
-  if (path) {
-    for (const item of path.slice(0, -1)) ids.add(item.id);
-  }
-  return ids;
+  const columns = useMemo(() => {
+    const cols: CascadeItem[][] = [items];
+    for (const item of activePath) {
+      if (!item.children?.length) break;
+      cols.push(item.children);
+    }
+    return cols;
+  }, [items, activePath]);
+
+  // Align each submenu top with its trigger row, like Radix SubContent.
+  useLayoutEffect(() => {
+    const next = [0];
+    for (let depth = 1; depth < columns.length; depth += 1) {
+      const parent = columnRefs.current[depth - 1];
+      const triggerId = activePath[depth - 1]?.id;
+      const trigger = parent?.querySelector<HTMLElement>(
+        `[data-cascade-id="${triggerId}"]`
+      );
+      next.push(
+        parent && trigger
+          ? next[depth - 1] +
+              parent.clientTop +
+              trigger.offsetTop -
+              parent.scrollTop
+          : next[depth - 1]
+      );
+    }
+    setOffsets((current) =>
+      current.length === next.length &&
+      current.every((offset, index) => offset === next[index])
+        ? current
+        : next
+    );
+  }, [columns, activePath]);
+
+  return (
+    <div className="flex items-start">
+      {columns.map((columnItems, depth) => (
+        <div
+          key={depth}
+          ref={(node) => {
+            columnRefs.current[depth] = node;
+          }}
+          role="menu"
+          style={{ marginTop: offsets[depth] ?? 0 }}
+          className={cn(
+            "relative max-h-[min(24rem,var(--radix-popover-content-available-height))] w-max min-w-[10rem] max-w-sm overflow-y-auto rounded-sm border bg-popover p-1 text-popover-foreground",
+            depth > 0 && "-ml-1"
+          )}
+        >
+          {depth === 0 ? leading : null}
+          {columnItems.map((item) => {
+            const hasChildren = Boolean(item.children?.length);
+            const isOpen = hasChildren && activePath[depth]?.id === item.id;
+            const isSelected = item.id === value;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="menuitem"
+                aria-haspopup={hasChildren ? "menu" : undefined}
+                aria-expanded={hasChildren ? isOpen : undefined}
+                data-cascade-id={item.id}
+                className={cn(
+                  "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent",
+                  isOpen && "bg-accent"
+                )}
+                onPointerMove={(event) => {
+                  if (event.pointerType === "mouse" && !isActive(depth, item)) {
+                    openAt(depth, item);
+                  }
+                }}
+                onPointerDown={(event) => {
+                  pointerTypeRef.current = event.pointerType;
+                }}
+                onFocus={() => {
+                  if (!isActive(depth, item)) openAt(depth, item);
+                }}
+                onKeyDown={(event) => handleKeyDown(event, depth, item)}
+                onClick={() => {
+                  const touch = pointerTypeRef.current !== "mouse";
+                  pointerTypeRef.current = "mouse";
+                  if (hasChildren && touch && !isOpen) {
+                    openAt(depth, item);
+                    return;
+                  }
+                  onSelect(item.id);
+                }}
+              >
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {isSelected ? (
+                  <LuCheck
+                    className={cn("size-4 shrink-0", hasChildren && "mr-1")}
+                  />
+                ) : null}
+                {hasChildren ? (
+                  <ChevronRightIcon className="ml-auto h-4 w-4 shrink-0" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function CascadeSelect({
@@ -201,8 +294,8 @@ export default function CascadeSelect({
   className,
   triggerClassName,
   /**
-   * `menu` — UI Lab / CMS (hover submenus).
-   * `tree` — Popover tree for use inside Sheet/Dialog (Radix Sub is flaky there).
+   * `menu` — Radix DropdownMenu Sub (CMS page — no Sheet overlay).
+   * `tree` — same cascade UX via Popover panels (Sheet/Dialog-safe).
    */
   variant = "menu",
 }: {
@@ -226,26 +319,10 @@ export default function CascadeSelect({
     [items, value]
   );
   const label = formatCascadePath(path);
-  const [expanded, setExpanded] = useState(() =>
-    initialExpanded(items, path)
-  );
-
-  useEffect(() => {
-    setExpanded(initialExpanded(items, path));
-  }, [items, path]);
 
   function select(id: string | null) {
     onValueChange?.(id);
     setOpen(false);
-  }
-
-  function toggle(id: string) {
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   }
 
   const trigger = (
@@ -275,6 +352,20 @@ export default function CascadeSelect({
       </p>
     ) : null;
 
+  const emptyRow = allowEmpty ? (
+    <button
+      type="button"
+      role="menuitem"
+      className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent"
+      onClick={() => select(null)}
+    >
+      <span className="min-w-0 flex-1 truncate">
+        {emptyOptionLabel ?? placeholder}
+      </span>
+      {!value ? <LuCheck className="size-4 shrink-0" /> : null}
+    </button>
+  ) : null;
+
   return (
     <div className={cn("grid gap-2", className)}>
       {name ? (
@@ -291,34 +382,22 @@ export default function CascadeSelect({
           <PopoverTrigger asChild>{trigger}</PopoverTrigger>
           <PopoverContent
             align="start"
-            className="w-[var(--radix-popover-trigger-width)] max-w-sm p-1"
+            className="w-auto rounded-none border-0 bg-transparent p-0 shadow-none"
             collisionPadding={12}
           >
-            <div className="max-h-72 overflow-y-auto py-1">
-              {allowEmpty ? (
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground outline-none hover:bg-accent"
-                  onClick={() => select(null)}
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {emptyOptionLabel ?? placeholder}
-                  </span>
-                  {!value ? <LuCheck className="size-4 shrink-0" /> : null}
-                </button>
-              ) : null}
-              {emptyBlock}
-              {items.length > 0 ? (
-                <CascadeTreeRows
-                  items={items}
-                  value={value}
-                  depth={0}
-                  expanded={expanded}
-                  onToggle={toggle}
-                  onSelect={(id) => select(id)}
-                />
-              ) : null}
-            </div>
+            {items.length === 0 ? (
+              <div className="w-max min-w-[10rem] rounded-sm border bg-popover p-1 text-popover-foreground">
+                {emptyRow}
+                {emptyBlock}
+              </div>
+            ) : (
+              <CascadePanels
+                items={items}
+                value={value}
+                onSelect={(id) => select(id)}
+                leading={emptyRow}
+              />
+            )}
           </PopoverContent>
         </Popover>
       ) : (
