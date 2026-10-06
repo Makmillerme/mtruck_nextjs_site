@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogField } from "@/components/admin/catalog/catalog-fields";
@@ -18,8 +20,11 @@ import {
   countSalesFilter,
   EMPTY_SALES_FILTER,
   orderMatchesSalesFilter,
+  SALES_FILTER_URL_KEYS,
   SalesFilterFields,
+  salesFilterFromParams,
   salesFiltersEqual,
+  salesFilterToParams,
   type SalesFilterDraft,
 } from "@/components/admin/sales/sales-filter-fields";
 import {
@@ -260,11 +265,22 @@ export default function AdminSalesView({
   const tOrders = useTranslations("Orders");
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
-  const [search, setSearch] = useState("");
-  const [appliedFilter, setAppliedFilter] =
-    useState<SalesFilterDraft>(EMPTY_SALES_FILTER);
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(
+    () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
+  );
+  const [appliedFilter, setAppliedFilter] = useState<SalesFilterDraft>(() =>
+    salesFilterFromParams(new URLSearchParams(searchParams.toString()))
+  );
   const [draftFilter, setDraftFilter] =
-    useState<SalesFilterDraft>(EMPTY_SALES_FILTER);
+    useState<SalesFilterDraft>(appliedFilter);
+
+  useEffect(() => {
+    syncAdminListUrl([...SALES_FILTER_URL_KEYS, ADMIN_LIST_SEARCH_KEY], {
+      ...salesFilterToParams(appliedFilter),
+      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+    });
+  }, [appliedFilter, search]);
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
