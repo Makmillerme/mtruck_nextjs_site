@@ -44,6 +44,7 @@ async function SalesPage(props: {
         status: order.status,
         productId: order.productId,
         productName: order.product?.name ?? null,
+        folderName: order.taxonomyNode?.name ?? null,
         products: order.products,
         orderTotal: order.orderTotal,
         tax: order.tax,

@@ -92,10 +92,10 @@ async function redirectLocalized(
   throw new Error("Redirect failed");
 }
 
+/** Latest published products for homepage grid (no featured flag). */
 export const fetchFeaturedProducts = async (take = 6) => {
   return db.product.findMany({
     where: {
-      featured: true,
       status: "PUBLISHED",
       archivedAt: null,
     },
@@ -108,7 +108,6 @@ export const fetchFeaturedProducts = async (take = 6) => {
 async function fetchAllProductsUncached({
   search = "",
   sort = "newest",
-  featuredOnly = false,
   folders = [],
   facets = {},
   ranges = {},
@@ -119,7 +118,6 @@ async function fetchAllProductsUncached({
 }: {
   search?: string;
   sort?: CatalogSort;
-  featuredOnly?: boolean;
   folders?: string[];
   facets?: CatalogQuery["facets"];
   ranges?: CatalogQuery["ranges"];
@@ -139,7 +137,6 @@ async function fetchAllProductsUncached({
 
   const and = await catalogQueryToWhere({
     search,
-    featuredOnly,
     folders,
     facets,
     ranges,
@@ -167,7 +164,6 @@ async function fetchAllProductsUncached({
 export const fetchAllProducts = async (args: {
   search?: string;
   sort?: CatalogSort;
-  featuredOnly?: boolean;
   folders?: string[];
   facets?: CatalogQuery["facets"];
   ranges?: CatalogQuery["ranges"];
@@ -179,7 +175,6 @@ export const fetchAllProducts = async (args: {
   const key = JSON.stringify({
     search: args.search ?? "",
     sort: args.sort ?? "newest",
-    featuredOnly: args.featuredOnly ?? false,
     folders: args.folders ?? [],
     facets: args.facets ?? {},
     ranges: args.ranges ?? {},
@@ -212,18 +207,6 @@ export const fetchUserFavoriteIds = async () => {
     isAuthenticated: true as const,
     favoriteByProductId: new Map(rows.map((row) => [row.productId, row.id])),
   };
-};
-
-export const fetchProductBrands = async () => {
-  const rows = await db.product.findMany({
-    where: { status: "PUBLISHED", archivedAt: null },
-    distinct: ["company"],
-    select: { company: true },
-    orderBy: { company: "asc" },
-  });
-  return rows
-    .filter((row) => Boolean(row.company))
-    .map((row) => row.company);
 };
 
 export const fetchSingleProduct = async (productId: string) => {
@@ -291,9 +274,6 @@ export const createProductAction = async (
       }
       const parsed = await specsFromFormData(taxonomyNodeId, formData);
       specCreates = toPrismaSpecCreates(parsed.specs);
-      if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
-        rawData.company = parsed.companyFromIdentity;
-      }
       const composedName = await resolveProductNameWithExtra(
         taxonomyNodeId,
         parsed.specs,
@@ -306,10 +286,7 @@ export const createProductAction = async (
         rawData.name = composedName;
       }
     }
-    const validatedFields = validateWithZodSchema(productSchema, {
-      ...rawData,
-      featured: false,
-    });
+    const validatedFields = validateWithZodSchema(productSchema, rawData);
     const files = formData
       .getAll('images')
       .filter((item): item is File => item instanceof File && item.size > 0);
@@ -340,7 +317,10 @@ export const createProductAction = async (
     const productCode = await generateUniqueProductCode();
     await db.product.create({
       data: {
-        ...validatedFields,
+        name: validatedFields.name,
+        price: validatedFields.price,
+        currency: validatedFields.currency ?? "USD",
+        description: validatedFields.description ?? "",
         image: cover,
         productCode,
         userId: user.id,
@@ -377,7 +357,7 @@ export const fetchAdminProducts = async () => {
       },
       specs: {
         include: {
-          option: { select: { id: true, label: true } },
+          option: { select: { id: true, label: true, slug: true } },
           attribute: {
             select: { id: true, key: true, name: true, type: true, unit: true },
           },
@@ -512,9 +492,6 @@ export const updateProductAction = async (
       }
       const parsed = await specsFromFormData(taxonomyNodeId, formData);
       specCreates = toPrismaSpecCreates(parsed.specs);
-      if (parsed.companyFromIdentity && !String(rawData.company ?? '').trim()) {
-        rawData.company = parsed.companyFromIdentity;
-      }
       const composedName = await resolveProductNameWithExtra(
         taxonomyNodeId,
         parsed.specs,
@@ -527,10 +504,7 @@ export const updateProductAction = async (
         rawData.name = composedName;
       }
     }
-    const validatedFields = validateWithZodSchema(productSchema, {
-      ...rawData,
-      featured: existing.featured,
-    });
+    const validatedFields = validateWithZodSchema(productSchema, rawData);
     const statusRaw = String(formData.get('status') ?? existing.status);
     const availabilityRaw = String(
       formData.get('availability') ?? existing.availability
@@ -619,7 +593,10 @@ export const updateProductAction = async (
     await db.product.update({
       where: { id: productId },
       data: {
-        ...validatedFields,
+        name: validatedFields.name,
+        price: validatedFields.price,
+        currency: validatedFields.currency ?? "USD",
+        description: validatedFields.description ?? "",
         image: cover,
         taxonomyNodeId: taxonomyNodeId || null,
         status,
@@ -965,7 +942,7 @@ export const fetchUserOrders = async () => {
     },
     include: {
       product: {
-        select: { id: true, name: true, company: true },
+        select: { id: true, name: true },
       },
       taxonomyNode: {
         select: { id: true, name: true },
@@ -1118,7 +1095,10 @@ export const fetchAdminOrders = async () => {
         select: { id: true, name: true, email: true },
       },
       product: {
-        select: { id: true, name: true, company: true, price: true },
+        select: { id: true, name: true, price: true },
+      },
+      taxonomyNode: {
+        select: { id: true, name: true },
       },
     },
     orderBy: {
@@ -1150,7 +1130,6 @@ export const fetchAdminOrderFormOptions = async () => {
       select: {
         id: true,
         name: true,
-        company: true,
         price: true,
         productCode: true,
         status: true,
@@ -1262,7 +1241,6 @@ export const updateAdminOrderAction = async (
       data: {
         userId: user.id,
         email: user.email,
-        kind: 'CATALOG',
         productId,
         products: data.products,
         orderTotal: data.orderTotal,
@@ -1752,7 +1730,6 @@ export const fetchArchivedAdminProducts = async () => {
     select: {
       id: true,
       name: true,
-      company: true,
       price: true,
       productCode: true,
       status: true,
@@ -1771,7 +1748,7 @@ export const fetchArchivedAdminOrders = async () => {
         select: { id: true, name: true, email: true },
       },
       product: {
-        select: { id: true, name: true, company: true, price: true },
+        select: { id: true, name: true, price: true },
       },
     },
     orderBy: { archivedAt: 'desc' },

@@ -15,6 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  countSalesFilter,
+  EMPTY_SALES_FILTER,
+  orderMatchesSalesFilter,
+  SalesFilterFields,
+  salesFiltersEqual,
+  type SalesFilterDraft,
+} from "@/components/admin/sales/sales-filter-fields";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -54,6 +62,7 @@ export type AdminOrderRow = {
   status: "NEW" | "IN_PROGRESS" | "CLOSED";
   productId: string | null;
   productName: string | null;
+  folderName: string | null;
   products: number;
   orderTotal: number;
   tax: number;
@@ -73,7 +82,6 @@ export type AdminOrderUserOption = {
 export type AdminOrderProductOption = {
   id: string;
   name: string;
-  company: string;
   price: number;
   productCode: string;
   status: string;
@@ -144,11 +152,10 @@ function OrderFormFields({
     () =>
       products.map((product) => ({
         value: product.id,
-        label: `${product.productCode} · ${product.name} · ${product.company}`,
+        label: `${product.productCode} · ${product.name}`,
         keywords: [
           product.productCode,
           product.name,
-          product.company,
           product.status,
         ],
       })),
@@ -254,9 +261,10 @@ export default function AdminSalesView({
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
-  const [paidFilter, setPaidFilter] = useState<"all" | "paid" | "unpaid">(
-    "all"
-  );
+  const [appliedFilter, setAppliedFilter] =
+    useState<SalesFilterDraft>(EMPTY_SALES_FILTER);
+  const [draftFilter, setDraftFilter] =
+    useState<SalesFilterDraft>(EMPTY_SALES_FILTER);
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
@@ -265,21 +273,22 @@ export default function AdminSalesView({
     [items, sheetEditId]
   );
 
-  const activeFilterCount = paidFilter === "all" ? 0 : 1;
+  const activeFilterCount = countSalesFilter(appliedFilter);
+  const isFilterDirty = !salesFiltersEqual(draftFilter, appliedFilter);
+  const canClearFilter =
+    activeFilterCount > 0 || countSalesFilter(draftFilter) > 0;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return optimisticItems.filter((item) => {
       if (q) {
-        const hay = `${item.email} ${item.userName} ${item.productName ?? ""}`
+        const hay = `${item.email} ${item.userName} ${item.productName ?? ""} ${item.folderName ?? ""}`
           .toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (paidFilter === "paid" && !item.isPaid) return false;
-      if (paidFilter === "unpaid" && item.isPaid) return false;
-      return true;
+      return orderMatchesSalesFilter(item, appliedFilter);
     });
-  }, [optimisticItems, search, paidFilter]);
+  }, [optimisticItems, search, appliedFilter]);
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -318,36 +327,33 @@ export default function AdminSalesView({
             label={t("filter")}
             count={activeFilterCount}
             clearLabel={t("clearFilters")}
-            onClear={() => setPaidFilter("all")}
+            applyLabel={t("filterApply")}
+            onClear={() => {
+              setDraftFilter(EMPTY_SALES_FILTER);
+              setAppliedFilter(EMPTY_SALES_FILTER);
+            }}
+            hideFooter
+            onOpenChange={(open) => {
+              if (open) setDraftFilter(appliedFilter);
+            }}
           >
-            <div className="grid gap-3">
-              <p className="text-sm font-medium">{t("filterPayment")}</p>
-              {(
-                [
-                  ["all", t("filterPaymentAll")],
-                  ["paid", t("paid")],
-                  ["unpaid", t("unpaid")],
-                ] as const
-              ).map(([value, label]) => {
-                const id = `admin-order-paid-${value}`;
-                return (
-                  <label
-                    key={value}
-                    htmlFor={id}
-                    className="flex cursor-pointer items-center gap-3 text-sm"
-                  >
-                    <Checkbox
-                      id={id}
-                      checked={paidFilter === value}
-                      onCheckedChange={(checked) => {
-                        if (checked === true) setPaidFilter(value);
-                      }}
-                    />
-                    {label}
-                  </label>
-                );
-              })}
-            </div>
+            {({ close }) => (
+              <SalesFilterFields
+                draft={draftFilter}
+                onChange={setDraftFilter}
+                isDirty={isFilterDirty}
+                canClear={canClearFilter}
+                onApply={() => {
+                  setAppliedFilter(draftFilter);
+                  close();
+                }}
+                onClear={() => {
+                  setDraftFilter(EMPTY_SALES_FILTER);
+                  setAppliedFilter(EMPTY_SALES_FILTER);
+                  close();
+                }}
+              />
+            )}
           </AdminFilterSheet>
         }
       />
@@ -415,7 +421,9 @@ export default function AdminSalesView({
                           </Link>
                         </Button>
                       ) : (
-                        (order.productName ?? t("vehicleUnset"))
+                        (order.productName ??
+                        order.folderName ??
+                        t("vehicleUnset"))
                       )}
                     </TableCell>
                     <TableCell>
