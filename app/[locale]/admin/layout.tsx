@@ -1,5 +1,9 @@
 import { Suspense } from "react";
 import Sidebar from "./Sidebar";
+import {
+  SoftNavPending,
+  SoftNavProvider,
+} from "@/components/soft-nav/soft-nav";
 import { fetchTaxonomyTree } from "@/lib/catalog/taxonomy";
 import { getStaffUser, isAdminRole } from "@/utils/session";
 
@@ -20,10 +24,12 @@ async function DashboardLayout({ children }: { children: React.ReactNode }) {
     <section className="grid min-h-0 w-full min-w-0 flex-1 grid-cols-1 gap-8 pb-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
       {/* Static nav chrome immediately — never skeleton the aside.
           Product roots stream in when taxonomy resolves. */}
-      <Suspense fallback={<Sidebar isAdmin={isAdmin} productRoots={[]} />}>
-        <AdminSidebar isAdmin={isAdmin} />
-      </Suspense>
-      <div className="min-w-0 w-full">{children}</div>
+      <SoftNavProvider>
+        <Suspense fallback={<Sidebar isAdmin={isAdmin} productRoots={[]} />}>
+          <AdminSidebar isAdmin={isAdmin} />
+        </Suspense>
+        <SoftNavPending className="min-w-0 w-full">{children}</SoftNavPending>
+      </SoftNavProvider>
     </section>
   );
 }
