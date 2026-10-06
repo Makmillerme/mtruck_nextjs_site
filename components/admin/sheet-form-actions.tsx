@@ -18,7 +18,7 @@ export default function SheetFormActions({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <SubmitButton text={saveLabel} className="w-fit" />
+      <SubmitButton text={saveLabel} size="default" className="w-fit" />
       {deleteFormId ? (
         <ConfirmDeleteFormButton
           formId={deleteFormId}

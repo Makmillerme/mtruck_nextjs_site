@@ -47,8 +47,8 @@ export function productToVehicle(product: {
   name: string;
   price: number;
   image: string;
-  company: string;
   images?: { url: string }[];
+  categoryLabel?: string | null;
 }): VehicleCardModel {
   const urls = [
     ...new Set(
@@ -65,7 +65,7 @@ export function productToVehicle(product: {
     images: urls,
     href: `/products/${product.id}`,
     status: "PUBLISHED",
-    categoryLabel: product.company,
+    categoryLabel: product.categoryLabel ?? null,
   };
 }
 

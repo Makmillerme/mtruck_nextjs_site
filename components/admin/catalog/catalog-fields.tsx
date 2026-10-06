@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { ReloadIcon } from "@radix-ui/react-icons";
@@ -9,6 +9,7 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import AdminInfoTip from "./admin-info-tip";
 
 export function CatalogField({
   name,
@@ -74,22 +75,33 @@ export function CatalogFlag({
   name,
   label,
   defaultChecked,
+  hint,
+  hintLabel,
 }: {
   name: string;
   label: string;
   defaultChecked?: boolean;
+  hint?: ReactNode;
+  hintLabel?: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <input
-        type="checkbox"
-        name={name}
-        value="true"
-        defaultChecked={defaultChecked}
-        className="h-4 w-4 shrink-0 rounded-sm border border-primary accent-primary"
-      />
-      {label}
-    </label>
+    <div className="flex items-center gap-1.5 text-sm">
+      <label className="flex min-w-0 items-center gap-2">
+        <input
+          type="checkbox"
+          name={name}
+          value="true"
+          defaultChecked={defaultChecked}
+          className="h-4 w-4 shrink-0 rounded-sm border border-primary accent-primary"
+        />
+        <span>{label}</span>
+      </label>
+      {hint ? (
+        <AdminInfoTip label={hintLabel ?? label} size="sm">
+          {hint}
+        </AdminInfoTip>
+      ) : null}
+    </div>
   );
 }
 
@@ -115,7 +127,7 @@ export function CatalogMenuSelect({
   className,
   hideLabel = false,
   required = false,
-  searchable = false,
+  searchable,
 }: {
   name: string;
   label: string;
@@ -129,7 +141,11 @@ export function CatalogMenuSelect({
   className?: string;
   hideLabel?: boolean;
   required?: boolean;
-  /** Default off — short sheet lists (status, currency). Opt-in for long lists. */
+  /**
+   * Explicit on/off. When omitted, search shows only if
+   * `options.length >= SHEET_COMBOBOX_SEARCH_MIN` (10).
+   * Pass `false` for short enums (status, currency, type).
+   */
   searchable?: boolean;
 }) {
   const hasDefault =

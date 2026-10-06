@@ -247,10 +247,11 @@ html body[data-scroll-locked] {
 
 /*
   Modal Sheet sets body { pointer-events: none }. Menus/popovers portal to body,
-  so the Popper wrapper must re-enable hits and sit above the sheet (z-50).
+  so the Popper wrapper must re-enable hits and sit above Sheet (z-50) and
+  Dialog (z-[110]). Keep in sync with PopoverContent z-[220].
 */
 body [data-radix-popper-content-wrapper] {
-  z-index: 100 !important;
+  z-index: 220 !important;
   pointer-events: auto !important;
 }
 

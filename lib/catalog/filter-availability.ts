@@ -33,13 +33,19 @@ function buildPathSlugs(
   return path;
 }
 
-async function loadFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
+async function loadFilterAvailabilityIndex(options?: {
+  /** When true, include every non-archived product (admin lists). */
+  includeAllStatuses?: boolean;
+}): Promise<FilterAvailabilityIndex> {
+  const includeAllStatuses = options?.includeAllStatuses === true;
   const [nodes, products] = await Promise.all([
     db.taxonomyNode.findMany({
       select: { id: true, slug: true, parentId: true },
     }),
     db.product.findMany({
-      where: { status: "PUBLISHED", archivedAt: null },
+      where: includeAllStatuses
+        ? { archivedAt: null }
+        : { status: "PUBLISHED", archivedAt: null },
       select: {
         taxonomyNodeId: true,
         specs: {
@@ -84,10 +90,10 @@ async function loadFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
   return { rows };
 }
 
-/** Cached inventory × facet index for live draft narrowing. */
+/** Cached inventory × facet index for live draft narrowing (public catalog). */
 export async function fetchFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
   return unstable_cache(
-    loadFilterAvailabilityIndex,
+    () => loadFilterAvailabilityIndex(),
     ["filter-availability-index"],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -95,3 +101,18 @@ export async function fetchFilterAvailabilityIndex(): Promise<FilterAvailability
     }
   )();
 }
+
+/** Admin products list — all non-archived statuses for facet narrowing. */
+export async function fetchAdminFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
+  return unstable_cache(
+    () => loadFilterAvailabilityIndex({ includeAllStatuses: true }),
+    ["admin-filter-availability-index"],
+    {
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+      tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.availability],
+    }
+  )();
+}
+
+/** Export path helper for client-side admin row matching. */
+export { buildPathSlugs };

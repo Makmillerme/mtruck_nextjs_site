@@ -62,7 +62,6 @@ export type CatalogAttribute = {
   dependsOn: { id: string; name: string; key: string } | null;
   isRequired: boolean;
   isFacet: boolean;
-  isIdentity: boolean;
   unit: string | null;
   sheetWidth: SheetWidthName;
   sortOrder: number;

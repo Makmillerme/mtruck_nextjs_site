@@ -91,12 +91,17 @@ export default function ProductSpecFields({
             const disabled = Boolean(
               attribute.dependsOnAttributeId && !parentValue
             );
+            const dependsPlaceholder = attribute.dependsOn?.name
+              ? t("dependsOnPlaceholder", {
+                  field: attribute.dependsOn.name,
+                })
+              : t("dependsOn");
             return (
               <div key={attribute.id} className={className}>
                 <SearchableEntityPicker
                   name={specInputName("option", attribute.id)}
                   label={label}
-                  placeholder={disabled ? t("dependsOn") : "—"}
+                  placeholder={disabled ? dependsPlaceholder : "—"}
                   searchPlaceholder={label}
                   emptyLabel="—"
                   options={options.map((option) => ({

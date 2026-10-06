@@ -1,5 +1,7 @@
 "use client";
 
+import * as React from "react";
+import { type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +12,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import type { ReactNode } from "react";
+import { sheetScrollBodyClassName } from "@/lib/ui/sheet-field";
+import { cn } from "@/lib/utils";
 import { LuListFilter, LuPlus, LuSearch } from "react-icons/lu";
 
 export default function AdminListToolbar({
@@ -60,20 +63,25 @@ export default function AdminListToolbar({
   );
 }
 
-export function AdminFilterTrigger({
-  label,
-  count,
-}: {
-  label: string;
-  count: number;
-}) {
+export const AdminFilterTrigger = React.forwardRef<
+  HTMLButtonElement,
+  {
+    label: string;
+    count: number;
+  } & React.ComponentPropsWithoutRef<typeof Button>
+>(function AdminFilterTrigger(
+  { label, count, className, ...props },
+  ref
+) {
   return (
     <Button
+      ref={ref}
       type="button"
       variant="default"
       size="sm"
-      className="relative h-9 gap-2 whitespace-nowrap"
+      className={cn("relative h-9 gap-2 whitespace-nowrap", className)}
       aria-label={label}
+      {...props}
     >
       <LuListFilter className="size-4 shrink-0" />
       <span className="hidden sm:inline">{label}</span>
@@ -84,39 +92,90 @@ export function AdminFilterTrigger({
       ) : null}
     </Button>
   );
-}
+});
+AdminFilterTrigger.displayName = "AdminFilterTrigger";
 
-/** Shared filter Sheet chrome for admin list toolbars. */
+type AdminFilterSheetHelpers = { close: () => void };
+
+/**
+ * Admin list filter — same controlled Sheet chrome as catalog mobile filter
+ * (`CatalogFilterSheet`: title header, scroll body, apply + clear footer).
+ * Pass `hideFooter` when children own Apply/Clear (e.g. CatalogFilterFields).
+ */
 export function AdminFilterSheet({
   label,
   count,
   clearLabel,
+  applyLabel,
   onClear,
+  hideFooter = false,
+  onOpenChange,
   children,
 }: {
   label: string;
   count: number;
   clearLabel: string;
+  applyLabel: string;
   onClear: () => void;
-  children: ReactNode;
+  /** Body includes its own apply/clear (catalog tree). */
+  hideFooter?: boolean;
+  /** Sync draft from applied when the sheet opens. */
+  onOpenChange?: (open: boolean) => void;
+  children: ReactNode | ((helpers: AdminFilterSheetHelpers) => ReactNode);
 }) {
+  const [open, setOpen] = React.useState(false);
+  const close = () => setOpen(false);
+  const body =
+    typeof children === "function" ? children({ close }) : children;
+
   return (
-    <Sheet>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        onOpenChange?.(next);
+      }}
+    >
       <SheetTrigger asChild>
         <AdminFilterTrigger label={label} count={count} />
       </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
+      {/*
+        Admin sheet canon: default SheetContent (p-6 pt-8 gap-6).
+        overflow-hidden + flex contain keep sticky footer; p-px gutter
+        (sheetScrollBodyClassName) prevents border/ring clip.
+      */}
+      <SheetContent className="overflow-hidden">
+        <SheetHeader className="shrink-0">
           <SheetTitle>{label}</SheetTitle>
         </SheetHeader>
-        <div className="grid gap-6 overflow-y-auto">
-          {children}
-          {count > 0 ? (
-            <Button type="button" variant="outline" onClick={onClear}>
-              {clearLabel}
-            </Button>
-          ) : null}
-        </div>
+        {hideFooter ? (
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {body}
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
+            <div className={cn(sheetScrollBodyClassName, "pr-1")}>{body}</div>
+            <div className="mt-auto shrink-0 space-y-2 p-px">
+              <Button
+                type="button"
+                variant="default"
+                className="h-11 w-full"
+                onClick={close}
+              >
+                {applyLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full"
+                disabled={count === 0}
+                onClick={onClear}
+              >
+                {clearLabel}
+              </Button>
+            </div>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

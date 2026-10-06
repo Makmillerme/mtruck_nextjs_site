@@ -134,7 +134,7 @@ export default function SearchableEntityPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="z-[200] w-[var(--radix-popover-trigger-width)] p-0"
+          className="z-[220] w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
           onOpenAutoFocus={(event) => {
             // Let the plain search Input take focus when present.
@@ -154,9 +154,10 @@ export default function SearchableEntityPicker({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={(event) => {
-                    // Keep typing out of Sheet focus trap / dismiss handlers.
+                    // Keep typing out of Sheet/Dialog focus trap / dismiss handlers.
                     event.stopPropagation();
                   }}
+                  onPointerDown={(event) => event.stopPropagation()}
                   placeholder={searchPlaceholder}
                   className="h-10 border-0 bg-transparent px-0 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
                   aria-label={searchPlaceholder}

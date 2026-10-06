@@ -1,31 +1,50 @@
 "use client";
 
+import { SHEET_COMBOBOX_SEARCH_MIN } from "@/components/admin/searchable-entity-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import type {
   PublicFilterFacet,
   PublicFilterNode,
   PublicFilterOption,
 } from "@/lib/catalog/public-filter";
-import { useEdgeMenuAlign } from "@/lib/use-edge-menu-align";
+import { sheetFieldTriggerClassName } from "@/lib/ui/sheet-field";
 import { cn } from "@/lib/utils";
 import type { CatalogRange } from "@/utils/catalog-query";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { LuChevronDown } from "react-icons/lu";
+import {
+  LuCheck,
+  LuChevronDown,
+  LuChevronsUpDown,
+  LuSearch,
+} from "react-icons/lu";
 
 /** Visible thin scroll — paired with `.app-scroll` in globals.css. */
 export const FILTER_SCROLL_CLASS = "app-scroll";
+
+/**
+ * Hairlines via border (not bg on h-px/w-px): at DPR 1.25 a 1px
+ * background often rounds to 1 or 2 device px depending on offset,
+ * so separators looked thicker/thinner when the accordion reflowed.
+ */
+const FILTER_RULE_H = "h-0 w-full shrink-0 border-t border-border";
+const FILTER_RULE_V = "w-0 shrink-0 self-stretch border-l border-border";
 
 export type FilterTreeLabels = {
   from: string;
@@ -55,6 +74,14 @@ export type FilterTreeProps = {
 
 export function nodeContainsSlug(node: PublicFilterNode, slug: string): boolean {
   if (node.slug === slug) return true;
+  return node.children.some((child) => nodeContainsSlug(child, slug));
+}
+
+/** True if slug is under node (children only — not self). */
+export function nodeHasDescendantSlug(
+  node: PublicFilterNode,
+  slug: string
+): boolean {
   return node.children.some((child) => nodeContainsSlug(child, slug));
 }
 
@@ -119,8 +146,9 @@ function FacetDropdown({
   parentOptions: PublicFilterOption[];
   onToggle: (value: string, checked: boolean) => void;
 }) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const { align, onOpenChange, collisionPadding } = useEdgeMenuAlign("start");
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
   const visible = facet.dependsOnKey
     ? parentSelected.length
       ? facet.options.filter(
@@ -130,9 +158,9 @@ function FacetDropdown({
         )
       : facet.options
     : facet.options;
+
   const groups = groupOptions(visible, parentOptions);
   const showHeadings = groups.some((group) => group.label);
-  const menuOptions = visible;
   const count = selected.length;
   const summary =
     count === 0
@@ -142,66 +170,121 @@ function FacetDropdown({
           facet.name)
         : `${facet.name} · ${count}`;
 
+  const showSearch = visible.length >= SHEET_COMBOBOX_SEARCH_MIN;
+  const queryTrimmed = query.trim().toLocaleLowerCase();
+
+  const filteredGroups =
+    !showSearch || !queryTrimmed
+      ? groups
+      : groups
+          .map((group) => ({
+            ...group,
+            options: group.options.filter((option) => {
+              const hay = [option.label, option.slug, group.label ?? ""]
+                .join(" ")
+                .toLocaleLowerCase();
+              return hay.includes(queryTrimmed);
+            }),
+          }))
+          .filter((group) => group.options.length > 0);
+
   return (
-    <DropdownMenu
+    <Popover
       modal={false}
-      onOpenChange={(open) => onOpenChange(open, triggerRef.current)}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery("");
+      }}
     >
-      <DropdownMenuTrigger asChild>
+      <PopoverTrigger asChild>
         <Button
-          ref={triggerRef}
           type="button"
           variant="outline"
+          role="combobox"
+          aria-expanded={open}
           className={cn(
-            "h-10 w-full justify-between border-border/70 px-3 text-sm font-normal tracking-normal",
+            sheetFieldTriggerClassName,
             count > 0 && "border-foreground/30"
           )}
         >
           <span className="min-w-0 truncate text-left">{summary}</span>
-          <LuChevronDown className="size-4 shrink-0 opacity-70" />
+          <LuChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align={align}
-        collisionPadding={collisionPadding}
-        className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+      </PopoverTrigger>
+      <PopoverContent
+        className="z-[200] w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+        onOpenAutoFocus={(event) => {
+          if (!showSearch) event.preventDefault();
+        }}
+        onCloseAutoFocus={(event) => event.preventDefault()}
       >
-        {menuOptions.length === 0 ? (
-          <p className="px-2 py-1.5 text-sm text-muted-foreground">—</p>
-        ) : (
-          groups.map((group, index) => (
-            <div key={group.key}>
-              {showHeadings && group.label ? (
-                <>
-                  {index > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {group.label}
-                  </DropdownMenuLabel>
-                </>
-              ) : null}
-              {group.options.map((option) => {
-                const checked = selected.includes(option.slug);
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={`${group.key}-${option.slug}`}
-                    checked={checked}
-                    onCheckedChange={(value) =>
-                      onToggle(option.slug, value === true)
-                    }
-                    onSelect={(event) => event.preventDefault()}
-                  >
-                    {option.label}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+        <Command shouldFilter={false} className="rounded-sm border-0">
+          {showSearch ? (
+            <div className="flex items-center gap-2 border-b px-3">
+              <LuSearch
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder={facet.name}
+                className="h-10 border-0 bg-transparent px-0 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
+                aria-label={facet.name}
+              />
             </div>
-          ))
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          ) : null}
+          <CommandList>
+            <CommandEmpty>—</CommandEmpty>
+            {filteredGroups.map((group, index) => (
+              <div key={group.key}>
+                {showHeadings && group.label ? (
+                  <>
+                    {index > 0 ? <CommandSeparator /> : null}
+                    <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      {group.label}
+                    </p>
+                  </>
+                ) : null}
+                <CommandGroup>
+                  {group.options.map((option) => {
+                    const checked = selected.includes(option.slug);
+                    return (
+                      <CommandItem
+                        key={`${group.key}-${option.slug}`}
+                        value={option.slug}
+                        keywords={[option.label]}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onSelect={() => onToggle(option.slug, !checked)}
+                      >
+                        <LuCheck
+                          className={cn(
+                            "mr-2 size-4",
+                            checked ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="truncate">{option.label}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </div>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
+/**
+ * Numeric from/to + slider — catalog facets (year, mileage, power).
+ * Calendar dates use SheetDateField (`components/form/sheet-date-field.tsx`).
+ */
 function RangeFacet({
   facet,
   range,
@@ -250,7 +333,7 @@ function RangeFacet({
           value={local.min ?? ""}
           placeholder={labels.from}
           aria-label={`${facet.name} ${labels.from}`}
-          className={cn("h-10 rounded-sm border-border/70", filled && "border-foreground/30")}
+          className={cn("h-11 rounded-sm border-border/70", filled && "border-foreground/30")}
           onChange={(event) => {
             const raw = event.target.value.replace(/\D/g, "");
             commit({
@@ -265,7 +348,7 @@ function RangeFacet({
           value={local.max ?? ""}
           placeholder={labels.to}
           aria-label={`${facet.name} ${labels.to}`}
-          className={cn("h-10 rounded-sm border-border/70", filled && "border-foreground/30")}
+          className={cn("h-11 rounded-sm border-border/70", filled && "border-foreground/30")}
           onChange={(event) => {
             const raw = event.target.value.replace(/\D/g, "");
             commit({
@@ -319,7 +402,7 @@ function FacetFields({
   const byKey = new Map(facets.map((facet) => [facet.key, facet]));
 
   return (
-    <div className="mt-3 grid gap-3 border-t border-border/40 pt-3">
+    <div className="grid gap-3">
       {facets.map((facet) => {
         if (facet.type === "NUMBER" || facet.type === "YEAR") {
           return (
@@ -382,6 +465,7 @@ function FacetFields({
 function CatalogFilterBranch({
   nodes,
   depth,
+  parentSlug,
   selected,
   initialOpenSlug,
   scopedFacets,
@@ -391,7 +475,7 @@ function CatalogFilterBranch({
   onSelectFolder,
   onToggleFacet,
   onSetRange,
-}: FilterTreeProps & { depth: number }) {
+}: FilterTreeProps & { depth: number; parentSlug?: string }) {
   const defaultOpen = initialOpenSlug
     ? nodes.find((node) => nodeContainsSlug(node, initialOpenSlug))?.slug
     : undefined;
@@ -418,14 +502,31 @@ function CatalogFilterBranch({
     typeof onSelectFolder === "function" ? onSelectFolder : () => undefined;
 
   return (
-    <div className="grid w-full gap-3">
-      {nodes.map((node) => {
+    <div className="grid w-full">
+      {nodes.map((node, index) => {
         const isLeaf = node.children.length === 0;
         const isSelected = selected.includes(node.slug);
-        const isOpen = openSlug === node.slug;
+        const hasSelectedDescendant =
+          !isLeaf &&
+          selected.some((slug) => nodeHasDescendantSlug(node, slug));
+        const hasOpenDescendant =
+          !isLeaf &&
+          openSlug != null &&
+          nodeHasDescendantSlug(node, openSlug);
+        /** Keep ancestors + selected leaf expanded so nested facets stay usable. */
+        const isOpen =
+          openSlug === node.slug ||
+          (isLeaf && isSelected) ||
+          hasSelectedDescendant ||
+          hasOpenDescendant;
         const active = isOpen || isSelected;
         return (
           <div key={node.id} className="grid">
+            {index > 0 ? (
+              <div className="py-1.5" aria-hidden>
+                <div className={FILTER_RULE_H} />
+              </div>
+            ) : null}
             <Button
               type="button"
               variant="ghost"
@@ -433,8 +534,8 @@ function CatalogFilterBranch({
               aria-pressed={isSelected}
               aria-label={`${isOpen ? labels.collapse : labels.expand}: ${node.name}`}
               className={cn(
-                "h-10 w-full justify-between gap-2 px-3 text-sm font-medium tracking-normal",
-                active && "bg-muted/70 font-semibold text-foreground",
+                "h-10 w-full justify-between gap-2 px-3 text-sm font-medium tracking-normal hover:bg-foreground/10 hover:text-inherit aria-expanded:bg-foreground/10 aria-expanded:font-semibold aria-expanded:text-foreground",
+                active && "bg-foreground/10 font-semibold text-foreground",
                 depth === 1 && "pl-5",
                 depth === 2 && "pl-8",
                 depth >= 3 && "pl-11"
@@ -443,6 +544,16 @@ function CatalogFilterBranch({
                 if (isOpen) {
                   setOpenSlug(undefined);
                   setChildEpoch((epoch) => epoch + 1);
+                  // Keep ancestors open: collapse only this node; move
+                  // selection to parent (root → clear) when it owns selection.
+                  const selectionUnderNode =
+                    isSelected ||
+                    selected.some((slug) =>
+                      nodeHasDescendantSlug(node, slug)
+                    );
+                  if (selectionUnderNode) {
+                    selectFolder(parentSlug ?? "");
+                  }
                   return;
                 }
                 setOpenSlug(node.slug);
@@ -457,30 +568,49 @@ function CatalogFilterBranch({
                 )}
               />
             </Button>
+            {/* Outside grid-rows anim — keeps 1px hairline from being squashed. */}
+            {!isLeaf && isOpen ? (
+              <div className={cn(FILTER_RULE_H, "my-1.5")} aria-hidden />
+            ) : null}
             <div
               className={cn(
-                "grid transition-[grid-template-rows] duration-200 ease-out",
+                "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
                 isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
               )}
+              // Keep closed panels out of a11y + hit-testing (ghost facets looked "dead").
+              inert={isOpen ? undefined : true}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className={cn("pb-1 pt-3", depth === 0 && "pl-1", depth >= 1 && "pl-2")}>
-                  {isLeaf ? (
-                    <FacetFields
-                      folderSlug={node.slug}
-                      facets={node.facets}
-                      idPrefix={`${idPrefix}-${node.slug}`}
-                      scopedFacets={scopedFacets[node.slug] ?? {}}
-                      scopedRanges={scopedRanges[node.slug] ?? {}}
-                      labels={labels}
-                      onToggleFacet={onToggleFacet}
-                      onSetRange={onSetRange}
-                    />
-                  ) : (
+                <div className="p-px">
+                {isLeaf ? (
+                  <div className="flex gap-3 pb-1 pt-3">
+                    <div className={FILTER_RULE_V} aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <FacetFields
+                        folderSlug={node.slug}
+                        facets={node.facets}
+                        idPrefix={`${idPrefix}-${node.slug}`}
+                        scopedFacets={scopedFacets[node.slug] ?? {}}
+                        scopedRanges={scopedRanges[node.slug] ?? {}}
+                        labels={labels}
+                        onToggleFacet={onToggleFacet}
+                        onSetRange={onSetRange}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "pb-1",
+                      depth === 0 && "pl-1",
+                      depth >= 1 && "pl-2"
+                    )}
+                  >
                     <CatalogFilterBranch
                       key={`${node.slug}-${childEpoch}`}
                       nodes={node.children}
                       depth={depth + 1}
+                      parentSlug={node.slug}
                       selected={selected}
                       initialOpenSlug={isOpen ? initialOpenSlug : null}
                       scopedFacets={scopedFacets}
@@ -491,7 +621,8 @@ function CatalogFilterBranch({
                       onToggleFacet={onToggleFacet}
                       onSetRange={onSetRange}
                     />
-                  )}
+                  </div>
+                )}
                 </div>
               </div>
             </div>

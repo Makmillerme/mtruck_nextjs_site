@@ -2,26 +2,31 @@ import { z, ZodSchema } from "zod";
 import { PRODUCT_IMAGE_UPLOAD_MAX_BYTES } from "@/lib/catalog/product-image-limits";
 
 export const productSchema = z.object({
-  name: z.string().max(100, {
-    message: "name must be less than 100 characters.",
-  }),
-  company: z.string(),
-  featured: z.coerce.boolean(),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "name is required." })
+    .max(100, {
+      message: "name must be less than 100 characters.",
+    }),
   price: z.coerce.number().int().min(0, {
     message: "price must be a positive number.",
   }),
   currency: z.enum(["USD", "EUR", "UAH"]).default("USD"),
-  description: z.string().refine(
-    (description) => {
-      const wordCount = description.trim()
-        ? description.trim().split(/\s+/).length
-        : 0;
-      return wordCount <= 1000;
-    },
-    {
-      message: "description must be at most 1000 words.",
-    }
-  ),
+  description: z
+    .string()
+    .default("")
+    .refine(
+      (description) => {
+        const wordCount = description.trim()
+          ? description.trim().split(/\s+/).length
+          : 0;
+        return wordCount <= 1000;
+      },
+      {
+        message: "description must be at most 1000 words.",
+      }
+    ),
 });
 export const imageSchema = z.object({
   image: validateImageFile(),

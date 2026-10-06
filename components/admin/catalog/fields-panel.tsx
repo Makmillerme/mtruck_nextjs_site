@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -27,9 +27,10 @@ import {
   updateAttributeAction,
 } from "@/utils/taxonomy-actions";
 import type { actionFunction } from "@/utils/types";
-import { LuPen, LuPlus } from "react-icons/lu";
+import { LuPen } from "react-icons/lu";
 import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
+import CmsPanelToolbar from "./cms-panel-toolbar";
 import {
   CatalogField,
   CatalogFlag,
@@ -43,6 +44,35 @@ type FieldSheet =
   | { mode: "create" }
   | { mode: "edit"; attributeId: string }
   | null;
+
+function FieldFlags({
+  defaults,
+}: {
+  defaults?: {
+    isRequired?: boolean;
+    isFacet?: boolean;
+  };
+}) {
+  const t = useTranslations("CatalogAdmin");
+  return (
+    <div className="grid gap-2">
+      <CatalogFlag
+        name="isRequired"
+        label={t("flagRequired")}
+        defaultChecked={defaults?.isRequired}
+        hintLabel={t("helpLabel")}
+        hint={<p>{t("flagRequiredHint")}</p>}
+      />
+      <CatalogFlag
+        name="isFacet"
+        label={t("flagFacet")}
+        defaultChecked={defaults?.isFacet ?? true}
+        hintLabel={t("helpLabel")}
+        hint={<p>{t("flagFacetHint")}</p>}
+      />
+    </div>
+  );
+}
 
 function FieldRow({
   attribute,
@@ -79,9 +109,6 @@ function FieldRow({
           ) : null}
           {attribute.isFacet ? (
             <Badge variant="secondary">{t("flagFacet")}</Badge>
-          ) : null}
-          {attribute.isIdentity ? (
-            <Badge variant="secondary">{t("flagIdentity")}</Badge>
           ) : null}
           <Badge variant="outline">
             {t(`sheetWidth.${attribute.sheetWidth}`)}
@@ -130,6 +157,35 @@ export default function FieldsPanel({
 }) {
   const t = useTranslations("CatalogAdmin");
   const [sheet, setSheet] = useState<FieldSheet>(null);
+  const [query, setQuery] = useState("");
+
+  const searching = query.trim().length > 0;
+  const queryLower = query.trim().toLowerCase();
+
+  const own = useMemo(
+    () => attributes.filter((item) => !item.inherited),
+    [attributes]
+  );
+  const inherited = useMemo(
+    () => attributes.filter((item) => item.inherited),
+    [attributes]
+  );
+  const filteredOwn = useMemo(
+    () =>
+      searching
+        ? own.filter((item) => item.name.toLowerCase().includes(queryLower))
+        : own,
+    [own, searching, queryLower]
+  );
+  const filteredInherited = useMemo(
+    () =>
+      searching
+        ? inherited.filter((item) =>
+            item.name.toLowerCase().includes(queryLower)
+          )
+        : inherited,
+    [inherited, searching, queryLower]
+  );
 
   if (!node) {
     return (
@@ -137,71 +193,83 @@ export default function FieldsPanel({
     );
   }
 
-  const own = attributes.filter((item) => !item.inherited);
-  const inherited = attributes.filter((item) => item.inherited);
   const selectFields = attributes.filter((item) => item.type === "SELECT");
   const active =
     sheet && sheet.mode !== "create"
       ? attributes.find((item) => item.id === sheet.attributeId) ?? null
       : null;
   const parentOptions = active?.dependsOnAttributeId
-    ? attributes.find((item) => item.id === active.dependsOnAttributeId)?.options ??
-      []
+    ? attributes.find((item) => item.id === active.dependsOnAttributeId)
+        ?.options ?? []
     : [];
+
+  const searchEmpty =
+    searching &&
+    filteredOwn.length === 0 &&
+    filteredInherited.length === 0;
 
   return (
     <>
       <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={() => setSheet({ mode: "create" })}
-          >
-            <LuPlus className="size-4" />
-            {t("addField")}
-          </Button>
-          <AdminInfoTip label={t("helpLabel")}>
-            <p>{t("fieldsHelp.p1")}</p>
-            <p>{t("fieldsHelp.p2")}</p>
-            <p>{t("fieldsHelp.p3")}</p>
-          </AdminInfoTip>
-        </CardHeader>
-        <CardContent className="grid gap-6">
+        <CardContent className="grid gap-6 pt-6">
+          <CmsPanelToolbar
+            search={query}
+            onSearchChange={setQuery}
+            searchPlaceholder={t("fieldSearchPlaceholder")}
+            createLabel={t("addField")}
+            onCreate={() => setSheet({ mode: "create" })}
+            infoTip={
+              <AdminInfoTip label={t("helpLabel")}>
+                <p>{t("fieldsHelp.p1")}</p>
+                <p>{t("fieldsHelp.p2")}</p>
+                <p>{t("fieldsHelp.p3")}</p>
+              </AdminInfoTip>
+            }
+          />
 
-          <div className="grid gap-3">
-            <p className="text-sm font-medium">{t("ownFields")}</p>
-            {own.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noOwnFields")}</p>
-            ) : (
-              own.map((attribute) => (
-                <FieldRow
-                  key={attribute.id}
-                  attribute={attribute}
-                  onEdit={() =>
-                    setSheet({ mode: "edit", attributeId: attribute.id })
-                  }
-                />
-              ))
-            )}
-          </div>
-
-          {inherited.length > 0 ? (
-            <div className="grid gap-3">
-              <Separator />
-              <div className="grid gap-1">
-                <p className="text-sm font-medium">{t("inheritedFields")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("inheritedHint")}
-                </p>
+          {searchEmpty ? (
+            <p className="text-sm text-muted-foreground">
+              {t("panelSearchEmpty")}
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-3">
+                <p className="text-sm font-medium">{t("ownFields")}</p>
+                {filteredOwn.length === 0 ? (
+                  !searching ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("noOwnFields")}
+                    </p>
+                  ) : null
+                ) : (
+                  filteredOwn.map((attribute) => (
+                    <FieldRow
+                      key={attribute.id}
+                      attribute={attribute}
+                      onEdit={() =>
+                        setSheet({ mode: "edit", attributeId: attribute.id })
+                      }
+                    />
+                  ))
+                )}
               </div>
-              {inherited.map((attribute) => (
-                <FieldRow key={attribute.id} attribute={attribute} />
-              ))}
-            </div>
-          ) : null}
+
+              {filteredInherited.length > 0 ? (
+                <div className="grid gap-3">
+                  <Separator />
+                  <div className="grid gap-1">
+                    <p className="text-sm font-medium">{t("inheritedFields")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("inheritedHint")}
+                    </p>
+                  </div>
+                  {filteredInherited.map((attribute) => (
+                    <FieldRow key={attribute.id} attribute={attribute} />
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -230,6 +298,7 @@ export default function FieldsPanel({
                 <CatalogMenuSelect
                   name="type"
                   label={t("fieldType")}
+                  searchable={false}
                   defaultValue="SELECT"
                   options={ATTRIBUTE_TYPES.map((type) => ({
                     value: type,
@@ -257,21 +326,14 @@ export default function FieldsPanel({
                 <CatalogMenuSelect
                   name="sheetWidth"
                   label={t("sheetWidthLabel")}
+                  searchable={false}
                   defaultValue="FULL"
                   options={SHEET_WIDTHS.map((width) => ({
                     value: width,
                     label: t(`sheetWidth.${width}`),
                   }))}
                 />
-                <div className="flex flex-wrap gap-4">
-                  <CatalogFlag name="isRequired" label={t("flagRequired")} />
-                  <CatalogFlag
-                    name="isFacet"
-                    label={t("flagFacet")}
-                    defaultChecked
-                  />
-                  <CatalogFlag name="isIdentity" label={t("flagIdentity")} />
-                </div>
+                <FieldFlags />
                 <CatalogSubmit text={t("addField")} className="w-fit" />
               </CatalogForm>
             </div>
@@ -281,12 +343,7 @@ export default function FieldsPanel({
             <div className="grid gap-6">
               <SheetHeader>
                 <SheetTitle>{active.name}</SheetTitle>
-                <SheetDescription>
-                  {active.key} · {t(`type.${active.type}`)}
-                  {active.dependsOn
-                    ? ` · ${t("dependsOnLabel", { field: active.dependsOn.name })}`
-                    : ""}
-                </SheetDescription>
+                <SheetDescription>{active.key}</SheetDescription>
               </SheetHeader>
               <CatalogForm
                 className="grid gap-4"
@@ -298,6 +355,31 @@ export default function FieldsPanel({
                   label={t("fieldName")}
                   defaultValue={active.name}
                 />
+                <CatalogMenuSelect
+                  name="type"
+                  label={t("fieldType")}
+                  searchable={false}
+                  defaultValue={active.type}
+                  options={ATTRIBUTE_TYPES.map((type) => ({
+                    value: type,
+                    label: t(`type.${type}`),
+                  }))}
+                />
+                <CatalogMenuSelect
+                  name="dependsOnAttributeId"
+                  label={t("dependsOn")}
+                  defaultValue={active.dependsOnAttributeId ?? ""}
+                  allowClear
+                  clearLabel={t("dependsOnNone")}
+                  options={selectFields
+                    .filter((item) => item.id !== active.id)
+                    .map((item) => ({
+                      value: item.id,
+                      label: item.inherited
+                        ? `${item.name} (${item.source.name})`
+                        : item.name,
+                    }))}
+                />
                 <CatalogField
                   name="unit"
                   label={t("unit")}
@@ -307,29 +389,19 @@ export default function FieldsPanel({
                 <CatalogMenuSelect
                   name="sheetWidth"
                   label={t("sheetWidthLabel")}
+                  searchable={false}
                   defaultValue={active.sheetWidth}
                   options={SHEET_WIDTHS.map((width) => ({
                     value: width,
                     label: t(`sheetWidth.${width}`),
                   }))}
                 />
-                <div className="flex flex-wrap gap-4">
-                  <CatalogFlag
-                    name="isRequired"
-                    label={t("flagRequired")}
-                    defaultChecked={active.isRequired}
-                  />
-                  <CatalogFlag
-                    name="isFacet"
-                    label={t("flagFacet")}
-                    defaultChecked={active.isFacet}
-                  />
-                  <CatalogFlag
-                    name="isIdentity"
-                    label={t("flagIdentity")}
-                    defaultChecked={active.isIdentity}
-                  />
-                </div>
+                <FieldFlags
+                  defaults={{
+                    isRequired: active.isRequired,
+                    isFacet: active.isFacet,
+                  }}
+                />
                 <CatalogSubmit text={t("saveField")} className="w-fit" />
               </CatalogForm>
               {active.type === "SELECT" ? (
@@ -343,8 +415,6 @@ export default function FieldsPanel({
               ) : null}
             </div>
           ) : null}
-
-
         </SheetContent>
       </Sheet>
 

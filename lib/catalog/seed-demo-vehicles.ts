@@ -13,10 +13,8 @@ const DEMO_GALLERY = [
 
 type DemoVehicle = {
   name: string;
-  company: string;
   price: number;
   description: string;
-  featured: boolean;
   makeSlug: string;
   modelSlug: string;
   year: number;
@@ -35,11 +33,11 @@ type DemoVehicle = {
 const DEMO_VEHICLES: DemoVehicle[] = [
   {
     name: "Scania R450 контейнеровоз",
-    company: "Scania",
+
     price: 68500,
     description:
       "Контейнеровоз Scania R450 у робочому стані. Підходить під 40′ контейнер, обслуговування за регламентом, готовність до роботи з портами та логістичними хабами України.",
-    featured: true,
+
     makeSlug: "scania",
     modelSlug: "r450",
     year: 2019,
@@ -56,11 +54,11 @@ const DEMO_VEHICLES: DemoVehicle[] = [
   },
   {
     name: "Volvo FH460 контейнеровоз",
-    company: "Volvo",
+
     price: 72900,
     description:
       "Volvo FH460 для контейнерних перевезень. АКПП, Euro 6, комфортна кабіна. Техніка перевірена, документи в порядку.",
-    featured: true,
+
     makeSlug: "volvo",
     modelSlug: "fh460",
     year: 2020,
@@ -77,11 +75,11 @@ const DEMO_VEHICLES: DemoVehicle[] = [
   },
   {
     name: "Mercedes-Benz Actros 1845",
-    company: "Mercedes-Benz",
+
     price: 65500,
     description:
       "Actros 1845 під 40′ контейнер. Надійна платформа для регулярних рейсів Європа — Україна. Твістлоки в комплекті.",
-    featured: false,
+
     makeSlug: "mercedes-benz",
     modelSlug: "actros-1845",
     year: 2018,
@@ -98,11 +96,11 @@ const DEMO_VEHICLES: DemoVehicle[] = [
   },
   {
     name: "DAF XF контейнеровоз",
-    company: "DAF",
+
     price: 58900,
     description:
       "DAF XF для 2×20′ або 40′. Економічний варіант для флоту. Пробіг реальний, технічний стан відповідає року.",
-    featured: false,
+
     makeSlug: "daf",
     modelSlug: "xf",
     year: 2017,
@@ -186,9 +184,9 @@ export async function wipeAndSeedDemoVehicles(
     await prisma.product.create({
       data: {
         name: demo.name,
-        company: demo.company,
+
         description: demo.description,
-        featured: demo.featured,
+
         image: cover,
         price: demo.price,
         productCode,

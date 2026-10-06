@@ -24,7 +24,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     getTranslations('Product'),
     getSession(),
   ]);
-  const { name, company, description, price } = product;
+  const { name, description, price } = product;
   const dollarsAmount = formatCurrency(price, locale);
   const user = session?.user;
   const userId = user?.id;
@@ -64,7 +64,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
                 </p>
               ) : null}
               <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
-              <p className="text-lg text-muted-foreground">{company}</p>
             </div>
             <div className="flex items-center gap-2">
               <FavoriteToggleButton

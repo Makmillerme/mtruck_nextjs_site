@@ -11,11 +11,13 @@ export default function CatalogForm({
   action,
   onSuccess,
   className,
+  id,
   children,
 }: {
   action: TaxonomyAction;
   onSuccess?: () => void;
   className?: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(action, initialTaxonomyActionState);
@@ -38,7 +40,7 @@ export default function CatalogForm({
   }, [state, toast]);
 
   return (
-    <form action={formAction} className={className}>
+    <form id={id} action={formAction} className={className}>
       {children}
     </form>
   );

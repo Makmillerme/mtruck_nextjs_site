@@ -22,7 +22,6 @@ async function ProductsPage(props: {
       query={{
         search: parsed.search,
         sort: parsed.sort,
-        featuredOnly: parsed.featuredOnly,
         folders: parsed.folders,
         facets: parsed.facets,
         ranges: parsed.ranges,

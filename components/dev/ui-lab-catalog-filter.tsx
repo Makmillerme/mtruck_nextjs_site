@@ -14,6 +14,7 @@ import {
   pruneDependentFacetValues,
   type PublicFilterNode,
 } from "@/lib/catalog/public-filter";
+import { sheetScrollBodyClassName } from "@/lib/ui/sheet-field";
 import { cn } from "@/lib/utils";
 import {
   serializeCatalogFilterDraft,
@@ -291,7 +292,7 @@ export function UiLabCatalogFilterDemo() {
         Живе звуження по демо-індексу MAN/Mercedes. Кілька марок + кілька
         типів контейнера — sticky multi-select; зняли марку — модель зникає.
       </p>
-      <Card className="flex w-full min-w-[16rem] max-h-[28rem] max-w-[22rem] flex-col border-border/60 shadow-sm">
+      <Card className="flex w-full min-w-[16rem] max-h-[28rem] max-w-[22rem] flex-col overflow-hidden border-border/60 shadow-sm">
         <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-base">Фільтр</CardTitle>
           <Button
@@ -300,15 +301,15 @@ export function UiLabCatalogFilterDemo() {
             size="icon"
             className="size-8"
             disabled={!canClear}
-            aria-label="Скинути фільтри"
-            title="Скинути фільтри"
+            aria-label="Очистити"
+            title="Очистити"
             onClick={clearAll}
           >
             <LuTrash2 className="size-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col pt-0">
-          <div className={cn("min-h-0 flex-1 pr-3", FILTER_SCROLL_CLASS)}>
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pt-0">
+          <div className={cn(sheetScrollBodyClassName, "pr-3", FILTER_SCROLL_CLASS)}>
             <CatalogFilterTree
               nodes={displayTree}
               selected={draft.folders}
@@ -322,7 +323,7 @@ export function UiLabCatalogFilterDemo() {
               onSetRange={setRange}
             />
           </div>
-          <div className="shrink-0 pt-3">
+          <div className="shrink-0 space-y-2 p-px pt-3">
             <Button
               type="button"
               variant={isDirty ? "default" : "outline"}
@@ -335,6 +336,25 @@ export function UiLabCatalogFilterDemo() {
           </div>
         </CardContent>
       </Card>
+      <div className="grid max-w-[22rem] gap-2 rounded-sm border border-dashed border-border/80 p-4">
+        <p className="text-xs text-muted-foreground">
+          Мобільний Sheet: без іконки в хедері; під «Фільтрувати» — outline
+          «Очистити» (h-10 w-full).
+        </p>
+        <p className="text-base font-semibold tracking-tight">Фільтр</p>
+        <Button type="button" variant="default" className="h-10 w-full text-sm">
+          Фільтрувати
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full text-sm"
+          disabled={!canClear}
+          onClick={clearAll}
+        >
+          Очистити
+        </Button>
+      </div>
       <p className="text-xs text-muted-foreground">
         Застосовано:{" "}
         <span className="font-medium text-foreground">

@@ -42,6 +42,7 @@ export function ConfirmDeleteIcon({
   description,
   confirmLabel,
   className,
+  iconClassName,
   mode = "delete",
 }: {
   action: actionFunction;
@@ -50,6 +51,7 @@ export function ConfirmDeleteIcon({
   description?: string;
   confirmLabel?: string;
   className?: string;
+  iconClassName?: string;
   mode?: "delete" | "archive";
 }) {
   const [open, setOpen] = useState(false);
@@ -77,7 +79,11 @@ export function ConfirmDeleteIcon({
         aria-label={resolvedTitle}
         onClick={() => setOpen(true)}
       >
-        {isArchive ? <LuArchive /> : <LuTrash2 />}
+        {isArchive ? (
+          <LuArchive className={iconClassName} aria-hidden />
+        ) : (
+          <LuTrash2 className={iconClassName} aria-hidden />
+        )}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="z-[110]">
@@ -190,7 +196,7 @@ export function ConfirmDeleteFormButton({
   title,
   description,
   confirmLabel,
-  size = "lg",
+  size = "default",
   mode = "delete",
 }: {
   formId: string;
@@ -220,7 +226,7 @@ export function ConfirmDeleteFormButton({
     <>
       <Button
         type="button"
-        variant={isArchive ? "outline" : "destructive"}
+        variant="destructive"
         size={size}
         className="w-fit"
         onClick={() => setOpen(true)}
@@ -241,6 +247,7 @@ export function ConfirmDeleteFormButton({
               type="submit"
               form={formId}
               variant="destructive"
+              size="default"
               onClick={() => setOpen(false)}
             >
               {resolvedConfirm}

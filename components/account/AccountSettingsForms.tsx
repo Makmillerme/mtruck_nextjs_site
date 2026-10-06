@@ -18,6 +18,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -98,9 +99,15 @@ export default function AccountSettingsForms({
                       {t("avatarDescription")}
                     </DialogDescription>
                   </DialogHeader>
-                  <FormContainer action={updateAvatarAction}>
+                  <FormContainer action={updateAvatarAction} className="grid gap-4">
                     <ImageInput />
-                    <SubmitButton text={t("saveAvatar")} className="mt-3" />
+                    <DialogFooter>
+                      <SubmitButton
+                        text={t("saveAvatar")}
+                        size="default"
+                        className="w-fit"
+                      />
+                    </DialogFooter>
                   </FormContainer>
                 </DialogContent>
               </Dialog>
@@ -127,7 +134,10 @@ export default function AccountSettingsForms({
                     {t("passwordDescription")}
                   </DialogDescription>
                 </DialogHeader>
-                <FormContainer action={changePasswordAction}>
+                <FormContainer
+                  action={changePasswordAction}
+                  className="grid gap-4"
+                >
                   <FormInput
                     name="currentPassword"
                     type="password"
@@ -143,7 +153,13 @@ export default function AccountSettingsForms({
                     type="password"
                     label={t("confirmPassword")}
                   />
-                  <SubmitButton text={t("savePassword")} className="mt-3" />
+                  <DialogFooter>
+                    <SubmitButton
+                      text={t("savePassword")}
+                      size="default"
+                      className="w-fit"
+                    />
+                  </DialogFooter>
                 </FormContainer>
               </DialogContent>
             </Dialog>

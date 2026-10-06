@@ -12,10 +12,13 @@ import {
 export default function AdminInfoTip({
   label,
   children,
+  size = "default",
 }: {
   label: string;
   children: ReactNode;
+  size?: "default" | "sm";
 }) {
+  const compact = size === "sm";
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
@@ -24,10 +27,22 @@ export default function AdminInfoTip({
             type="button"
             variant="outline"
             size="icon"
-            className="size-8 shrink-0 rounded-full"
+            className={
+              compact
+                ? "size-3.5 shrink-0 rounded-full p-0"
+                : "size-8 shrink-0 rounded-full"
+            }
             aria-label={label}
           >
-            <span className="text-xs font-semibold leading-none">i</span>
+            <span
+              className={
+                compact
+                  ? "text-[10px] font-semibold leading-none"
+                  : "text-xs font-semibold leading-none"
+              }
+            >
+              i
+            </span>
           </Button>
         </TooltipTrigger>
         <TooltipContent

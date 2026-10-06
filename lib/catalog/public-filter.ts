@@ -137,6 +137,33 @@ export function findFilterNode(
   return null;
 }
 
+export function findFilterNodeById(
+  nodes: PublicFilterNode[],
+  id: string
+): PublicFilterNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const nested = findFilterNodeById(node.children, id);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+/**
+ * Admin products filter: when a sidebar root is selected, show that folder's
+ * children (not the whole catalog). Leaf root → the leaf itself for facets.
+ */
+export function scopeFilterSchemaToRoot(
+  schema: PublicFilterSchema,
+  rootId: string | undefined
+): PublicFilterSchema {
+  if (!rootId) return schema;
+  const node = findFilterNodeById(schema.tree, rootId);
+  if (!node) return schema;
+  if (node.children.length === 0) return { tree: [node] };
+  return { tree: node.children };
+}
+
 export function sortPublicFacets(facets: PublicFilterFacet[]) {
   const remaining = [...facets];
   const ordered: PublicFilterFacet[] = [];
@@ -287,7 +314,6 @@ async function productWhereForLeaf(
   query: Pick<
     CatalogQuery,
     | "search"
-    | "featuredOnly"
     | "facets"
     | "ranges"
     | "scopedFacets"
@@ -312,13 +338,9 @@ async function productWhereForLeaf(
 
   if (query.search) {
     and.push({
-      OR: [
-        { name: { contains: query.search, mode: "insensitive" } },
-        { company: { contains: query.search, mode: "insensitive" } },
-      ],
+      name: { contains: query.search, mode: "insensitive" },
     });
   }
-  if (query.featuredOnly) and.push({ featured: true });
 
   and.push(...(await specClausesFor(query.facets ?? {}, query.ranges ?? {})));
   and.push(...(await specClausesFor(scopedFacets, scopedRanges)));
@@ -338,7 +360,6 @@ export async function enrichFilterSchemaForQuery(
     | "scopedFacets"
     | "scopedRanges"
     | "search"
-    | "featuredOnly"
     | "facets"
     | "ranges"
   >
@@ -556,7 +577,6 @@ export async function catalogQueryToWhere(
     | "ranges"
     | "scopedFacets"
     | "scopedRanges"
-    | "featuredOnly"
     | "search"
   >
 ): Promise<Prisma.ProductWhereInput[]> {
@@ -567,15 +587,8 @@ export async function catalogQueryToWhere(
 
   if (query.search) {
     clauses.push({
-      OR: [
-        { name: { contains: query.search, mode: "insensitive" } },
-        { company: { contains: query.search, mode: "insensitive" } },
-      ],
+      name: { contains: query.search, mode: "insensitive" },
     });
-  }
-
-  if (query.featuredOnly) {
-    clauses.push({ featured: true });
   }
 
   clauses.push(

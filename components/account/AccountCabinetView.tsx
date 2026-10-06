@@ -23,8 +23,6 @@ export type AccountCabinetTab = "orders" | "favorites" | "settings";
 export type AccountFavoriteProduct = {
   id: string;
   name: string;
-  company: string;
-  featured: boolean;
   image: string;
   price: number;
   createdAt: string;

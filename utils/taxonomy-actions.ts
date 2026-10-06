@@ -7,6 +7,7 @@ import {
   attributeIdSchema,
   createAttributeOptionSchema,
   createAttributeSchema,
+  updateAttributeOptionSchema,
   createDisplayGroupSchema,
   createTaxonomyNodeSchema,
   displayGroupIdSchema,
@@ -15,7 +16,7 @@ import {
   nodeIdSchema,
   optionIdSchema,
   renameTaxonomyNodeSchema,
-  updateAttributeFlagsSchema,
+  updateAttributeSchema,
   updateDisplayGroupSchema,
 } from "@/utils/taxonomy-schema";
 import { keyify, uniqueSlug } from "@/lib/catalog/slug";
@@ -73,12 +74,17 @@ async function uniqueAttributeKey(taxonomyNodeId: string, name: string) {
   return key;
 }
 
-async function uniqueOptionSlug(attributeId: string, label: string) {
+async function uniqueOptionSlug(
+  attributeId: string,
+  label: string,
+  excludeOptionId?: string
+) {
   return uniqueSlug(label, async (slug) => {
     const found = await db.attributeOption.findUnique({
       where: { attributeId_slug: { attributeId, slug } },
     });
-    return Boolean(found);
+    if (!found) return false;
+    return found.id !== excludeOptionId;
   });
 }
 
@@ -307,7 +313,6 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
       unit: formData.get("unit") ?? undefined,
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
-      isIdentity: checkbox(formData, "isIdentity"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
     await assertDependsOnAllowed(data.taxonomyNodeId, data.dependsOnAttributeId);
@@ -325,7 +330,6 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
         unit: data.unit ?? null,
         isRequired: data.isRequired,
         isFacet: data.isFacet,
-        isIdentity: data.isIdentity,
         sheetWidth: data.sheetWidth,
         sortOrder: await nextAttributeSort(data.taxonomyNodeId),
       },
@@ -341,28 +345,68 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
 export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
-    const data = validateWithZodSchema(updateAttributeFlagsSchema, {
+    const data = validateWithZodSchema(updateAttributeSchema, {
       attributeId: formData.get("attributeId"),
       name: formData.get("name"),
+      type: formData.get("type"),
+      dependsOnAttributeId: formData.get("dependsOnAttributeId") ?? undefined,
       unit: formData.get("unit") ?? undefined,
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
-      isIdentity: checkbox(formData, "isIdentity"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
-    await db.attributeDefinition.update({
-      where: { id: data.attributeId },
-      data: {
-        name: data.name,
-        unit: data.unit ?? null,
-        isRequired: data.isRequired,
-        isFacet: data.isFacet,
-        isIdentity: data.isIdentity,
-        sheetWidth: data.sheetWidth,
-      },
-    });
-    revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
+    const existing = await db.attributeDefinition.findUnique({
+      where: { id: data.attributeId },
+    });
+    if (!existing) throw new Error(t("fieldMissing"));
+
+    const nextType = data.type;
+    const nextDependsOn =
+      nextType === "SELECT" ? (data.dependsOnAttributeId ?? null) : null;
+
+    if (nextDependsOn === data.attributeId) {
+      throw new Error(t("invalidDependsOn"));
+    }
+
+    await assertDependsOnAllowed(
+      existing.taxonomyNodeId,
+      nextDependsOn ?? undefined
+    );
+
+    if (nextType !== "SELECT") {
+      const dependents = await db.attributeDefinition.count({
+        where: { dependsOnAttributeId: data.attributeId },
+      });
+      if (dependents > 0) throw new Error(t("fieldHasDependents"));
+    }
+
+    const structureChanged =
+      existing.type !== nextType ||
+      (existing.dependsOnAttributeId ?? null) !== nextDependsOn;
+
+    await db.$transaction(async (tx) => {
+      if (structureChanged) {
+        await tx.productSpec.deleteMany({ where: { attributeId: data.attributeId } });
+        await tx.attributeOption.deleteMany({
+          where: { attributeId: data.attributeId },
+        });
+      }
+      await tx.attributeDefinition.update({
+        where: { id: data.attributeId },
+        data: {
+          name: data.name,
+          type: nextType,
+          dependsOnAttributeId: nextDependsOn,
+          unit: data.unit ?? null,
+          isRequired: data.isRequired,
+          isFacet: data.isFacet,
+          sheetWidth: data.sheetWidth,
+        },
+      });
+    });
+
+    revalidateCatalog();
     return { message: t("fieldUpdated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
@@ -427,6 +471,55 @@ export const createAttributeOptionAction: TaxonomyAction = async (_prev, formDat
     });
     revalidateCatalog();
     return { message: t("optionCreated"), ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+};
+
+export const updateAttributeOptionAction: TaxonomyAction = async (_prev, formData) => {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(updateAttributeOptionSchema, {
+      optionId: formData.get("optionId"),
+      label: formData.get("label"),
+      parentOptionId: formData.get("parentOptionId") ?? undefined,
+    });
+    const t = await getTranslations("CatalogAdmin");
+    const option = await db.attributeOption.findUnique({
+      where: { id: data.optionId },
+      include: { attribute: true },
+    });
+    if (!option) throw new Error(t("optionMissing"));
+    const attribute = option.attribute;
+    if (attribute.type !== "SELECT") throw new Error(t("optionsOnlySelect"));
+    if (attribute.dependsOnAttributeId) {
+      if (!data.parentOptionId) throw new Error(t("optionNeedsParent"));
+      const parentOption = await db.attributeOption.findUnique({
+        where: { id: data.parentOptionId },
+      });
+      if (
+        !parentOption ||
+        parentOption.attributeId !== attribute.dependsOnAttributeId
+      ) {
+        throw new Error(t("optionParentMismatch"));
+      }
+    } else if (data.parentOptionId) {
+      throw new Error(t("optionParentNotAllowed"));
+    }
+    const slug =
+      data.label === option.label
+        ? option.slug
+        : await uniqueOptionSlug(attribute.id, data.label, option.id);
+    await db.attributeOption.update({
+      where: { id: option.id },
+      data: {
+        label: data.label,
+        slug,
+        parentOptionId: data.parentOptionId ?? null,
+      },
+    });
+    revalidateCatalog();
+    return { message: t("optionUpdated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }

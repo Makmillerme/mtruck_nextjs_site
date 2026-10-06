@@ -1,4 +1,6 @@
 import AdminProductsView from "@/components/admin/products/admin-products-view";
+import { fetchAdminFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import { fetchPublicFilterSchema } from "@/lib/catalog/public-filter";
 import {
   collectSubtreeNodeIds,
   fetchAttributesForNode,
@@ -24,11 +26,14 @@ async function AdminProductsPage(props: {
   const searchParams = await props.searchParams;
   const locale = await getLocale();
   const { role } = await getStaffUser();
-  const [items, tree, tableAttributes] = await Promise.all([
-    fetchAdminProducts(),
-    fetchTaxonomyTree(),
-    fetchRootCatalogAttributes(),
-  ]);
+  const [items, tree, tableAttributes, filterSchema, filterAvailability] =
+    await Promise.all([
+      fetchAdminProducts(),
+      fetchTaxonomyTree(),
+      fetchRootCatalogAttributes(),
+      fetchPublicFilterSchema(),
+      fetchAdminFilterAvailabilityIndex(),
+    ]);
   const flatFolders = flattenTaxonomyTree(tree);
   const rootParam = searchParams.root?.trim() || undefined;
   const listRootId =
@@ -82,13 +87,13 @@ async function AdminProductsPage(props: {
       tableAttributes={tableAttributes}
       nameWriterGroup={nameWriterGroup}
       canDelete={isAdminRole(role)}
+      filterSchema={filterSchema}
+      filterAvailability={filterAvailability}
       items={scopedItems.map((item) => ({
         id: item.id,
         name: item.name,
-        company: item.company,
         price: item.price,
         currency: item.currency,
-        featured: item.featured,
         status: item.status,
         availability: item.availability,
         description: item.description,
@@ -105,6 +110,7 @@ async function AdminProductsPage(props: {
           textValue: spec.textValue,
           booleanValue: spec.booleanValue,
           optionLabel: spec.option?.label ?? null,
+          optionSlug: spec.option?.slug ?? null,
           attributeKey: spec.attribute?.key ?? null,
           unit: spec.attribute?.unit ?? null,
           type: spec.attribute?.type ?? null,

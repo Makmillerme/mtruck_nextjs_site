@@ -31,7 +31,6 @@ async function CatalogResults({
     fetchAllProducts({
       search: query.search,
       sort: query.sort,
-      featuredOnly: query.featuredOnly,
       folders: query.folders,
       facets: query.facets,
       ranges: query.ranges,

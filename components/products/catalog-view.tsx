@@ -215,12 +215,14 @@ function CatalogFilterSheet({
           availability={availability}
           onApplied={() => setOpen(false)}
         >
-          <SheetHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 px-6 pt-6 pr-14">
+          <SheetHeader className="flex shrink-0 flex-row items-center space-y-0 px-6 pt-6 pr-14">
             <SheetTitle>{t("filter")}</SheetTitle>
-            <CatalogFilterClearButton />
           </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
-            <CatalogFilterFields idPrefix="catalog-mobile" />
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-6 pt-4">
+            <CatalogFilterFields
+              idPrefix="catalog-mobile"
+              clearBelowApply
+            />
           </div>
         </CatalogFilterProvider>
       </SheetContent>
@@ -241,7 +243,7 @@ function CatalogFilterSidebar({
     <aside className="hidden min-w-0 lg:block">
       {/* Aside stretches with the main column so sticky has a tall track;
           Card height follows content, capped by max-h. */}
-      <Card className="sticky top-16 flex w-full max-h-[calc(100vh-5rem)] flex-col border-border/60 shadow-none lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
+      <Card className="sticky top-16 flex w-full max-h-[calc(100vh-5rem)] flex-col overflow-hidden border-border/60 shadow-none lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
         <CatalogFilterProvider schema={schema} availability={availability}>
           <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-base font-semibold tracking-tight">

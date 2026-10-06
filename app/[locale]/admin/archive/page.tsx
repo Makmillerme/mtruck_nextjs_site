@@ -46,7 +46,6 @@ async function AdminArchivePage(props: {
       products={products.map((item) => ({
         id: item.id,
         name: item.name,
-        company: item.company,
         price: item.price,
         productCode: item.productCode,
         status: item.status,

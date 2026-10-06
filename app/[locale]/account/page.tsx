@@ -46,8 +46,6 @@ function mapFavorites(
     product: {
       id: favorite.product.id,
       name: favorite.product.name,
-      company: favorite.product.company,
-      featured: favorite.product.featured,
       image: favorite.product.image,
       price: favorite.product.price,
       createdAt: favorite.product.createdAt.toISOString(),

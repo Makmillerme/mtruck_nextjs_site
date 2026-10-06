@@ -24,7 +24,7 @@ function inFolder(row: FilterAvailabilityRow, folderSlug: string | null) {
   return row.pathSlugs.includes(folderSlug);
 }
 
-function matchesOtherFilters(
+export function matchesOtherFilters(
   row: FilterAvailabilityRow,
   facets: Record<string, string[]>,
   ranges: Record<string, CatalogRange>,
@@ -45,6 +45,25 @@ function matchesOtherFilters(
     if (range.max != null && value > range.max) return false;
   }
   return true;
+}
+
+/** Whether an availability row passes an applied catalog filter draft. */
+export function productMatchesCatalogDraft(
+  row: FilterAvailabilityRow,
+  draft: {
+    folders: string[];
+    scopedFacets: CatalogScopedFacets;
+    scopedRanges: CatalogScopedRanges;
+  }
+): boolean {
+  const folder = draft.folders.find((slug) => slug.length > 0) ?? null;
+  if (!folder) return true;
+  if (!inFolder(row, folder)) return false;
+  return matchesOtherFilters(
+    row,
+    draft.scopedFacets[folder] ?? {},
+    draft.scopedRanges[folder] ?? {}
+  );
 }
 
 function firstIndependentSelectKey(facets: PublicFilterFacet[]) {

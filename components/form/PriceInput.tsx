@@ -51,6 +51,7 @@ function PriceInput({
           hideLabel
           required
           allowClear={false}
+          searchable={false}
           defaultValue={defaultCurrency}
           options={[...CURRENCY_OPTIONS]}
           className="w-[4.75rem] shrink-0"

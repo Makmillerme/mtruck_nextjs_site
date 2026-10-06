@@ -135,9 +135,7 @@ model Verification {
 model Product {
   id             String               @id @default(uuid())
   name           String
-  company        String
   description    String
-  featured       Boolean
   image          String
   price          Int
   currency       ProductCurrency      @default(USD)
@@ -206,7 +204,6 @@ model AttributeDefinition {
   dependents           AttributeDefinition[] @relation("AttributeDepends")
   isRequired           Boolean       @default(false)
   isFacet              Boolean       @default(true)
-  isIdentity           Boolean       @default(false)
   unit                 String?
   sheetWidth           SheetWidth    @default(FULL)
   sortOrder            Int           @default(0)

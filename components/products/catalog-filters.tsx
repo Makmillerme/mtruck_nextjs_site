@@ -14,6 +14,7 @@ import {
   type PublicFilterSchema,
 } from "@/lib/catalog/public-filter";
 import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
+import { sheetScrollBodyClassName } from "@/lib/ui/sheet-field";
 import { cn } from "@/lib/utils";
 import { useCatalogSoftNavOptional } from "@/components/products/catalog-soft-nav";
 import { useRouter } from "@/i18n/navigation";
@@ -45,7 +46,37 @@ type FilterDraft = {
   scopedRanges: CatalogScopedRanges;
 };
 
-type CatalogFilterApi = ReturnType<typeof useCatalogFilters>;
+export type CatalogFilterDraft = FilterDraft;
+
+export const EMPTY_CATALOG_FILTER_DRAFT: CatalogFilterDraft = {
+  folders: [],
+  scopedFacets: {},
+  scopedRanges: {},
+};
+
+type CatalogFilterApi = {
+  t: ReturnType<typeof useTranslations>;
+  schema: PublicFilterSchema;
+  displayTree: PublicFilterNode[];
+  availability: FilterAvailabilityIndex;
+  query: unknown;
+  draft: FilterDraft;
+  activeCount: number;
+  draftActiveCount: number;
+  isDirty: boolean;
+  canClear: boolean;
+  isPending: boolean;
+  selectFolder: (slug: string) => void;
+  toggleFacet: (
+    folderSlug: string,
+    key: string,
+    value: string,
+    checked: boolean
+  ) => void;
+  setRange: (folderSlug: string, key: string, range: CatalogRange) => void;
+  applyFilters: () => void;
+  clearFilters: () => void;
+};
 
 const CatalogFilterContext = createContext<CatalogFilterApi | null>(null);
 
@@ -126,7 +157,6 @@ export function useCatalogFilters(
     scopedRanges: draft.scopedRanges,
     facets: {},
     ranges: {},
-    featuredOnly: false,
   });
   const isDirty =
     serializeCatalogFilterDraft(draft) !==
@@ -149,6 +179,10 @@ export function useCatalogFilters(
   }
 
   function selectFolder(slug: string) {
+    if (!slug) {
+      setDraft(EMPTY_CATALOG_FILTER_DRAFT);
+      return;
+    }
     setDraft((currentDraft) => ({
       folders: [slug],
       scopedFacets: currentDraft.scopedFacets[slug]
@@ -254,6 +288,201 @@ export function CatalogFilterProvider({
   );
 }
 
+/**
+ * Catalog filter UI without URL sync — admin sheet / embedded surfaces.
+ * Parent owns `applied`; draft is local until Apply.
+ */
+export function useLocalCatalogFilters(
+  schema: PublicFilterSchema,
+  availability: FilterAvailabilityIndex,
+  applied: CatalogFilterDraft,
+  onAppliedChange: (draft: CatalogFilterDraft) => void,
+  onSheetApplied?: () => void
+) {
+  const t = useTranslations("Products");
+  const appliedKey = serializeCatalogFilterDraft(applied);
+  const [draft, setDraft] = useState<CatalogFilterDraft>(applied);
+  const [prevAppliedKey, setPrevAppliedKey] = useState(appliedKey);
+
+  if (appliedKey !== prevAppliedKey) {
+    setPrevAppliedKey(appliedKey);
+    setDraft(applied);
+  }
+
+  const narrowed = useMemo(
+    () =>
+      narrowDraftAgainstIndex(
+        schema.tree,
+        draft.folders,
+        draft.scopedFacets,
+        draft.scopedRanges,
+        availability
+      ),
+    [
+      schema.tree,
+      draft.folders,
+      draft.scopedFacets,
+      draft.scopedRanges,
+      availability,
+    ]
+  );
+
+  const narrowedKey = serializeCatalogFilterDraft({
+    folders: draft.folders,
+    scopedFacets: narrowed.scopedFacets,
+    scopedRanges: narrowed.scopedRanges,
+  });
+  const draftKey = serializeCatalogFilterDraft(draft);
+  if (narrowedKey !== draftKey && draft.folders.length > 0) {
+    setDraft({
+      folders: draft.folders,
+      scopedFacets: narrowed.scopedFacets,
+      scopedRanges: narrowed.scopedRanges,
+    });
+  }
+
+  const displayTree = useMemo(
+    () => applyFacetOverrides(schema.tree, narrowed.leafFacetsBySlug),
+    [schema.tree, narrowed.leafFacetsBySlug]
+  );
+
+  const activeCount = countActiveCatalogFilters({
+    folders: applied.folders,
+    scopedFacets: applied.scopedFacets,
+    scopedRanges: applied.scopedRanges,
+    facets: {},
+    ranges: {},
+  });
+  const draftActiveCount = countActiveCatalogFilters({
+    folders: draft.folders,
+    scopedFacets: draft.scopedFacets,
+    scopedRanges: draft.scopedRanges,
+    facets: {},
+    ranges: {},
+  });
+  const isDirty =
+    serializeCatalogFilterDraft(draft) !==
+    serializeCatalogFilterDraft(applied);
+  const canClear = draftActiveCount > 0 || activeCount > 0;
+
+  function selectFolder(slug: string) {
+    if (!slug) {
+      setDraft(EMPTY_CATALOG_FILTER_DRAFT);
+      return;
+    }
+    setDraft((currentDraft) => ({
+      folders: [slug],
+      scopedFacets: currentDraft.scopedFacets[slug]
+        ? { [slug]: currentDraft.scopedFacets[slug] }
+        : {},
+      scopedRanges: currentDraft.scopedRanges[slug]
+        ? { [slug]: currentDraft.scopedRanges[slug] }
+        : {},
+    }));
+  }
+
+  function toggleFacet(
+    folderSlug: string,
+    key: string,
+    value: string,
+    checked: boolean
+  ) {
+    setDraft((currentDraft) => {
+      const bucket = currentDraft.scopedFacets[folderSlug] ?? {};
+      const list = bucket[key] ?? [];
+      const nextValues = checked
+        ? [...list, value]
+        : list.filter((item) => item !== value);
+      const node = findFilterNode(schema.tree, folderSlug);
+      const nextBucket = pruneDependentFacetValues(node?.facets ?? [], {
+        ...bucket,
+        [key]: nextValues,
+      });
+      return {
+        folders: [folderSlug],
+        scopedFacets: { [folderSlug]: nextBucket },
+        scopedRanges: currentDraft.scopedRanges[folderSlug]
+          ? { [folderSlug]: currentDraft.scopedRanges[folderSlug] }
+          : {},
+      };
+    });
+  }
+
+  function setRange(folderSlug: string, key: string, range: CatalogRange) {
+    setDraft((currentDraft) => ({
+      folders: [folderSlug],
+      scopedFacets: currentDraft.scopedFacets[folderSlug]
+        ? { [folderSlug]: currentDraft.scopedFacets[folderSlug] }
+        : currentDraft.scopedFacets,
+      scopedRanges: {
+        [folderSlug]: {
+          ...(currentDraft.scopedRanges[folderSlug] ?? {}),
+          [key]: range,
+        },
+      },
+    }));
+  }
+
+  function applyFilters() {
+    if (!isDirty) return;
+    onAppliedChange(draft);
+    onSheetApplied?.();
+  }
+
+  function clearFilters() {
+    setDraft(EMPTY_CATALOG_FILTER_DRAFT);
+    onAppliedChange(EMPTY_CATALOG_FILTER_DRAFT);
+  }
+
+  return {
+    t,
+    schema,
+    displayTree,
+    availability,
+    query: applied,
+    draft,
+    activeCount,
+    draftActiveCount,
+    isDirty,
+    canClear,
+    isPending: false,
+    selectFolder,
+    toggleFacet,
+    setRange,
+    applyFilters,
+    clearFilters,
+  };
+}
+
+export function LocalCatalogFilterProvider({
+  schema,
+  availability,
+  applied,
+  onAppliedChange,
+  onSheetApplied,
+  children,
+}: {
+  schema: PublicFilterSchema;
+  availability: FilterAvailabilityIndex;
+  applied: CatalogFilterDraft;
+  onAppliedChange: (draft: CatalogFilterDraft) => void;
+  onSheetApplied?: () => void;
+  children: ReactNode;
+}) {
+  const api = useLocalCatalogFilters(
+    schema,
+    availability,
+    applied,
+    onAppliedChange,
+    onSheetApplied
+  );
+  return (
+    <CatalogFilterContext.Provider value={api}>
+      {children}
+    </CatalogFilterContext.Provider>
+  );
+}
+
 function useCatalogFilterContext() {
   const ctx = useContext(CatalogFilterContext);
   if (!ctx) {
@@ -289,9 +518,12 @@ export function CatalogFilterClearButton({
 export function CatalogFilterFields({
   idPrefix,
   className,
+  clearBelowApply = false,
 }: {
   idPrefix: string;
   className?: string;
+  /** Mobile sheet: full-width clear under apply (desktop keeps header trash). */
+  clearBelowApply?: boolean;
 }) {
   const {
     t,
@@ -299,10 +531,12 @@ export function CatalogFilterFields({
     draft,
     isDirty,
     isPending,
+    canClear,
     selectFolder,
     toggleFacet,
     setRange,
     applyFilters,
+    clearFilters,
   } = useCatalogFilterContext();
 
   const empty = displayTree.length === 0;
@@ -315,8 +549,14 @@ export function CatalogFilterFields({
   };
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className={cn("min-h-0 flex-1 pr-3", FILTER_SCROLL_CLASS)}>
+    <div className={cn("flex h-full min-h-0 flex-1 flex-col gap-6", className)}>
+      <div
+        className={cn(
+          sheetScrollBodyClassName,
+          "pb-2 pr-3",
+          FILTER_SCROLL_CLASS
+        )}
+      >
         {empty ? (
           <p className="text-sm text-muted-foreground">
             {t("filterEmptyFacets")}
@@ -337,16 +577,27 @@ export function CatalogFilterFields({
         )}
       </div>
 
-      <div className="shrink-0 pt-3">
+      <div className="mt-auto shrink-0 space-y-2 p-px">
         <Button
           type="button"
           variant={isDirty ? "default" : "outline"}
-          className="h-10 w-full text-sm"
+          className="h-11 w-full"
           disabled={!isDirty || isPending}
           onClick={applyFilters}
         >
           {t("filterApply")}
         </Button>
+        {clearBelowApply ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full"
+            disabled={!canClear || isPending}
+            onClick={clearFilters}
+          >
+            {t("filterClear")}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

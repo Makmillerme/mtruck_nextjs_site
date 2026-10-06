@@ -46,7 +46,6 @@ export function productWithSpecsToVehicle(product: {
   name: string;
   price: number;
   image: string;
-  company: string;
   status?: string;
   taxonomyNode?: { name: string } | null;
   specs?: SpecForCard[];
@@ -72,9 +71,7 @@ export function productWithSpecsToVehicle(product: {
     feature: textValue(specs, "feature"),
     location: textValue(specs, "location"),
     categoryLabel:
-      product.taxonomyNode?.name ??
-      optionLabel(specs, "make") ??
-      product.company,
+      product.taxonomyNode?.name ?? optionLabel(specs, "make") ?? null,
   };
 }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import CascadeSelect from "@/components/form/cascade-select";
+import { SheetDateField } from "@/components/form/sheet-date-field";
 
 /**
  * Sheet field canon: one combobox chrome for every sheet dropdown
@@ -12,6 +13,9 @@ import CascadeSelect from "@/components/form/cascade-select";
 export function UiLabSheetFieldsCanon() {
   const [client, setClient] = useState("");
   const [folder, setFolder] = useState<string | null>(null);
+  const [dateSingle, setDateSingle] = useState<string | undefined>();
+  const [dateFrom, setDateFrom] = useState<string | undefined>();
+  const [dateTo, setDateTo] = useState<string | undefined>();
 
   return (
     <div className="grid max-w-lg gap-6 rounded-sm border border-dashed p-4">
@@ -20,11 +24,14 @@ export function UiLabSheetFieldsCanon() {
         <code className="text-xs">Button outline</code> +{" "}
         <code className="text-xs">h-11</code> +{" "}
         <code className="text-xs">role=combobox</code> +{" "}
-        <code className="text-xs">LuChevronsUpDown</code>. Компоненти:{" "}
+        <code className="text-xs">LuChevronsUpDown</code> /{" "}
+        <code className="text-xs">LuCalendar</code>. Компоненти:{" "}
         <code className="text-xs">SearchableEntityPicker</code>,{" "}
-        <code className="text-xs">CatalogMenuSelect</code>, cascade{" "}
+        <code className="text-xs">CatalogMenuSelect</code>,{" "}
+        <code className="text-xs">SheetDateField</code>, cascade{" "}
         <code className="text-xs">variant=&quot;tree&quot;</code> у Sheet. Toolbar
-        dropdowns лишаються <code className="text-xs">h-9</code>.
+        dropdowns лишаються <code className="text-xs">h-9</code>. Не
+        використовувати native <code className="text-xs">type=&quot;date&quot;</code>. Календарні дати — <code className="text-xs">SheetDateField</code> (<code className="text-xs">Calendar</code> бере мову з <code className="text-xs">useLocale</code>: uk/en/de); числові діапазони (рік / пробіг) у каталозі — ручний from/to + slider (<code className="text-xs">RangeFacet</code>).
       </p>
       <CatalogMenuSelect
         name="lab-status"
@@ -39,9 +46,9 @@ export function UiLabSheetFieldsCanon() {
         ]}
       />
       <p className="text-xs text-muted-foreground">
-        `CatalogMenuSelect` за замовчуванням без пошуку. Довгі списки —{" "}
-        <code className="text-[11px]">SearchableEntityPicker</code> або{" "}
-        <code className="text-[11px]">searchable</code>.
+        Пошук у combobox зʼявляється лише якщо опцій ≥{" "}
+        <code className="text-[11px]">SHEET_COMBOBOX_SEARCH_MIN</code> (10).
+        Короткі enum — явно <code className="text-[11px]">searchable=false</code>.
       </p>
       <SearchableEntityPicker
         name="lab-client"
@@ -111,6 +118,34 @@ export function UiLabSheetFieldsCanon() {
         allowClear
         clearLabel="Без клієнта"
       />
+      <SheetDateField
+        label="Дата (одна)"
+        placeholder="Оберіть дату"
+        value={dateSingle}
+        onValueChange={setDateSingle}
+        clearLabel="Скинути дату"
+      />
+      <div className="grid gap-2">
+        <p className="text-sm font-medium">Період (Від / До)</p>
+        <div className="grid grid-cols-2 gap-2">
+          <SheetDateField
+            label="Від"
+            hideLabel
+            placeholder="Від"
+            value={dateFrom}
+            onValueChange={setDateFrom}
+            clearLabel="Скинути"
+          />
+          <SheetDateField
+            label="До"
+            hideLabel
+            placeholder="До"
+            value={dateTo}
+            onValueChange={setDateTo}
+            clearLabel="Скинути"
+          />
+        </div>
+      </div>
       <div className="grid gap-2">
         <p className="text-sm font-medium">Папка (tree у Sheet)</p>
         <CascadeSelect
@@ -135,6 +170,14 @@ export function UiLabSheetFieldsCanon() {
       <p className="text-xs text-muted-foreground">
         Demo: client={" "}
         <span className="font-medium text-foreground">{client || "—"}</span>
+        {" · "}date={" "}
+        <span className="font-medium text-foreground">
+          {dateSingle ?? "—"}
+        </span>
+        {" · "}period={" "}
+        <span className="font-medium text-foreground">
+          {dateFrom ?? "—"}…{dateTo ?? "—"}
+        </span>
         {" · "}folder={" "}
         <span className="font-medium text-foreground">{folder ?? "—"}</span>
       </p>

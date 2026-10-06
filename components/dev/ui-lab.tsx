@@ -108,6 +108,7 @@ import {
 } from "@/components/dev/ui-lab-catalog-filter";
 import { UiLabDropdownCanon } from "@/components/dev/ui-lab-dropdown-canon";
 import { UiLabSheetFieldsCanon } from "@/components/dev/ui-lab-sheet-fields";
+import { UiLabDialogFooterCanon } from "@/components/dev/ui-lab-dialog-footer";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -325,7 +326,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="catalog-filter"
               title="Фільтр каталогу"
-              hint="Рядок розкриває й обирає папку. Модель залежить від марки."
+              hint="Папки: hover як навбар. Риски єдиної товщини. Admin /products Filter Sheet = той самий mobile chrome."
             >
               <UiLabCatalogFilterDemo />
             </Section>
@@ -691,9 +692,15 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 footer — <code className="text-xs">ConfirmDeleteFormButton</code>
                 (через <code className="text-xs">SheetFormActions</code>). AlertDialog
                 z-[110], щоб бути над Sheet. CMS folders/fields — двокрокове
-                підтвердження в sheet, не окремий dialog.
+                підтвердження в sheet, не окремий dialog. Dialog/AlertDialog
+                footer: усі кнопки <code className="text-xs">h-11</code>, в ряд,
+                справа (<code className="text-xs">sm:justify-end</code>).
               </p>
               <div className="mb-8 grid gap-8">
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Dialog / AlertDialog footer (канон)</p>
+                  <UiLabDialogFooterCanon />
+                </div>
                 <div className="grid gap-2">
                   <p className="text-sm font-medium">Sheet fields (канон)</p>
                   <UiLabSheetFieldsCanon />
@@ -773,7 +780,9 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                      <AlertDialogAction>Видалити</AlertDialogAction>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Видалити
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

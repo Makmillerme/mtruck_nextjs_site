@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -139,10 +140,12 @@ export default function ProductNameSettingsDialog({
                 onChange={setMemberIds}
                 allowEmpty
               />
-              <CatalogSubmit
-                text={t("productNameTemplateSave")}
-                className="w-fit"
-              />
+              <DialogFooter>
+                <CatalogSubmit
+                  text={t("productNameTemplateSave")}
+                  className="w-fit"
+                />
+              </DialogFooter>
             </CatalogForm>
           ) : null}
         </DialogContent>

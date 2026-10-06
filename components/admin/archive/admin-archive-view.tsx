@@ -48,7 +48,6 @@ export type ArchiveUserRow = {
 export type ArchiveProductRow = {
   id: string;
   name: string;
-  company: string;
   price: number;
   productCode: string;
   status: "DRAFT" | "PUBLISHED" | "RESERVED" | "PREPARING" | "SOLD";
@@ -262,7 +261,6 @@ export default function AdminArchiveView({
                 <TableRow>
                   <TableHead>{t("userCode")}</TableHead>
                   <TableHead>{t("productName")}</TableHead>
-                  <TableHead>{t("company")}</TableHead>
                   <TableHead>{t("price")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{t("archivedAt")}</TableHead>
@@ -280,7 +278,6 @@ export default function AdminArchiveView({
                       {item.productCode}
                     </TableCell>
                     <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.company}</TableCell>
                     <TableCell>
                       {formatCurrency(item.price, locale)}
                     </TableCell>

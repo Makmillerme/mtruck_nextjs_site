@@ -41,7 +41,6 @@ async function ensureAttribute(
     type: "SELECT" | "NUMBER" | "TEXT" | "BOOLEAN" | "YEAR";
     unit?: string | null;
     dependsOnAttributeId?: string | null;
-    isIdentity?: boolean;
     isFacet?: boolean;
     isRequired?: boolean;
     sortOrder: number;
@@ -61,7 +60,6 @@ async function ensureAttribute(
       type: data.type,
       unit: data.unit ?? null,
       dependsOnAttributeId: data.dependsOnAttributeId ?? null,
-      isIdentity: data.isIdentity ?? false,
       isFacet: data.isFacet ?? true,
       isRequired: data.isRequired ?? false,
       sortOrder: data.sortOrder,
@@ -71,7 +69,6 @@ async function ensureAttribute(
       type: data.type,
       unit: data.unit ?? null,
       dependsOnAttributeId: data.dependsOnAttributeId ?? null,
-      isIdentity: data.isIdentity ?? false,
       isFacet: data.isFacet ?? true,
       isRequired: data.isRequired ?? false,
       sortOrder: data.sortOrder,
@@ -92,7 +89,6 @@ export async function ensureTruckCatalogFields(prisma: PrismaClient) {
     key: "make",
     name: "Марка",
     type: "SELECT",
-    isIdentity: true,
     isFacet: true,
     isRequired: true,
     sortOrder: 0,
@@ -102,7 +98,6 @@ export async function ensureTruckCatalogFields(prisma: PrismaClient) {
     name: "Модель",
     type: "SELECT",
     dependsOnAttributeId: make.id,
-    isIdentity: true,
     isFacet: true,
     isRequired: true,
     sortOrder: 1,

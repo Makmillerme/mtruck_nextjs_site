@@ -22,7 +22,6 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
   const attributes = resolveAttributesByKey(await fetchAttributesForNode(nodeId));
   const specs: SpecCreateInput[] = [];
   const chosenOptions: Record<string, string> = {};
-  let companyFromIdentity: string | null = null;
 
   for (const attribute of sortByDependency(attributes)) {
     if (attribute.type === "SELECT") {
@@ -49,9 +48,6 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
         optionId: option.id,
         optionLabel: option.label,
       });
-      if (attribute.isIdentity && !companyFromIdentity) {
-        companyFromIdentity = option.label;
-      }
       continue;
     }
 
@@ -96,7 +92,7 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
     specs.push({ attributeId: attribute.id, booleanValue });
   }
 
-  return { specs, companyFromIdentity, attributes };
+  return { specs, attributes };
 }
 
 

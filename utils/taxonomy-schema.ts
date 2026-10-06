@@ -47,13 +47,14 @@ export const createAttributeSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
-  isIdentity: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
 });
 
-export const updateAttributeFlagsSchema = z.object({
+export const updateAttributeSchema = z.object({
   attributeId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
+  type: z.enum(["SELECT", "NUMBER", "TEXT", "BOOLEAN", "YEAR"]),
+  dependsOnAttributeId: optionalUuid,
   unit: z
     .string()
     .trim()
@@ -62,9 +63,10 @@ export const updateAttributeFlagsSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
-  isIdentity: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
 });
+
+
 
 export const createDisplayGroupSchema = z.object({
   taxonomyNodeId: z.string().uuid(),
@@ -123,6 +125,12 @@ export const attributeIdSchema = z.object({
 
 export const createAttributeOptionSchema = z.object({
   attributeId: z.string().uuid(),
+  label: z.string().trim().min(1).max(80),
+  parentOptionId: optionalUuid,
+});
+
+export const updateAttributeOptionSchema = z.object({
+  optionId: z.string().uuid(),
   label: z.string().trim().min(1).max(80),
   parentOptionId: optionalUuid,
 });

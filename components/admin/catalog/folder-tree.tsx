@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,36 @@ import {
 import AdminInfoTip from "./admin-info-tip";
 import CatalogForm from "./catalog-form";
 import { CatalogField, CatalogFlag, CatalogSubmit } from "./catalog-fields";
+import CmsPanelToolbar from "./cms-panel-toolbar";
+
+function filterTaxonomyTree(
+  nodes: TaxonomyTreeNode[],
+  query: string
+): TaxonomyTreeNode[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return nodes;
+
+  const result: TaxonomyTreeNode[] = [];
+  for (const node of nodes) {
+    if (node.name.toLowerCase().includes(q)) {
+      result.push(node);
+      continue;
+    }
+    const children = filterTaxonomyTree(node.children, query);
+    if (children.length > 0) {
+      result.push({ ...node, children });
+    }
+  }
+  return result;
+}
+
+function collectExpandIds(nodes: TaxonomyTreeNode[], into: Set<string>) {
+  for (const node of nodes) {
+    if (node.children.length === 0) continue;
+    into.add(node.id);
+    collectExpandIds(node.children, into);
+  }
+}
 
 type FolderSheet =
   | { mode: "create"; parent: TaxonomyTreeNode | null }
@@ -213,8 +243,24 @@ export default function FolderTree({
   const [movePending, startMove] = useTransition();
   const [sheet, setSheet] = useState<FolderSheet>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [query, setQuery] = useState("");
+
+  const filteredTree = useMemo(
+    () => filterTaxonomyTree(tree, query),
+    [tree, query]
+  );
+
+  const searching = query.trim().length > 0;
+
+  const visibleExpanded = useMemo(() => {
+    if (!searching) return expanded;
+    const ids = new Set<string>();
+    collectExpandIds(filteredTree, ids);
+    return ids;
+  }, [searching, expanded, filteredTree]);
 
   function toggle(id: string) {
+    if (searching) return;
     setExpanded((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
@@ -244,35 +290,34 @@ export default function FolderTree({
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          onClick={() => setSheet({ mode: "create", parent: null })}
-        >
-          <LuPlus className="size-4" />
-          {t("addRootFolder")}
-        </Button>
-        <AdminInfoTip label={t("helpLabel")}>
-          <p>{t("foldersHelp.p1")}</p>
-          <p>{t("foldersHelp.p2")}</p>
-          <p>{t("foldersHelp.p3")}</p>
-        </AdminInfoTip>
-      </div>
+      <CmsPanelToolbar
+        search={query}
+        onSearchChange={setQuery}
+        searchPlaceholder={t("folderSearchPlaceholder")}
+        createLabel={t("addRootFolder")}
+        onCreate={() => setSheet({ mode: "create", parent: null })}
+        infoTip={
+          <AdminInfoTip label={t("helpLabel")}>
+            <p>{t("foldersHelp.p1")}</p>
+            <p>{t("foldersHelp.p2")}</p>
+            <p>{t("foldersHelp.p3")}</p>
+          </AdminInfoTip>
+        }
+      />
 
       {tree.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("emptyFolders")}</p>
+      ) : filteredTree.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("panelSearchEmpty")}</p>
       ) : (
         <ul className="grid gap-0.5">
-          {tree.map((node, index) => (
+          {filteredTree.map((node, index) => (
             <FolderRow
               key={node.id}
               node={node}
               index={index}
-              siblingCount={tree.length}
-              expanded={expanded}
+              siblingCount={filteredTree.length}
+              expanded={visibleExpanded}
               onToggle={toggle}
               onSelect={select}
               onMove={move}
@@ -318,14 +363,11 @@ export default function FolderTree({
               </CatalogForm>
             </div>
           ) : null}
-
           {sheet?.mode === "edit" ? (
             <div className="grid gap-6">
               <SheetHeader>
-                <SheetTitle>{t("renameFolder")}</SheetTitle>
-                <SheetDescription>
-                  {t("slugLabel", { slug: sheet.node.slug })}
-                </SheetDescription>
+                <SheetTitle>{t("renameFolderTitle")}</SheetTitle>
+                <SheetDescription>{sheet.node.name}</SheetDescription>
               </SheetHeader>
               <CatalogForm
                 className="grid gap-4"
@@ -347,8 +389,6 @@ export default function FolderTree({
               </CatalogForm>
             </div>
           ) : null}
-
-
         </SheetContent>
       </Sheet>
     </div>

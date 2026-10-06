@@ -19,8 +19,10 @@ export const formatMileage = (km: number) => {
   return `${km} км`;
 };
 
-export const formatDate = (date: Date, _locale = "uk") => {
-  return new Intl.DateTimeFormat("uk-UA", {
+export const formatDate = (date: Date, locale = "uk") => {
+  const intlLocale =
+    locale === "uk" ? "uk-UA" : locale === "de" ? "de-DE" : "en-GB";
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
