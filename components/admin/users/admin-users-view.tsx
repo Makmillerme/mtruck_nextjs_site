@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
+import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
@@ -38,9 +41,26 @@ import {
 } from "@/utils/actions";
 import type { actionFunction } from "@/utils/types";
 import { formatDate } from "@/utils/format";
-import AdminListToolbar from "@/components/admin/admin-list-toolbar";
+import AdminListToolbar, {
+  AdminFilterSheet,
+} from "@/components/admin/admin-list-toolbar";
 import { canMutateUserArchive } from "@/utils/user-roles";
 import { LuArchive, LuPen, LuShoppingBag } from "react-icons/lu";
+
+type UserRoleFilter = "all" | AdminUserRow["role"];
+
+const USER_ROLE_FILTERS: readonly UserRoleFilter[] = [
+  "all",
+  "USER",
+  "MANAGER",
+  "ADMIN",
+];
+
+function parseRoleFilter(value: string | null): UserRoleFilter {
+  return USER_ROLE_FILTERS.includes(value as UserRoleFilter)
+    ? (value as UserRoleFilter)
+    : "all";
+}
 
 export type AdminUserRow = {
   id: string;
@@ -105,6 +125,7 @@ function UserFormFields({
         <CatalogMenuSelect
           name="role"
           label={t("role")}
+          searchable={false}
           defaultValue={user?.role ?? "USER"}
           options={[
             { value: "USER", label: t("roleUser") },
@@ -155,8 +176,30 @@ export default function AdminUsersView({
   const t = useTranslations("Admin");
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(
+    () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
+  );
+  const [roleFilter, setRoleFilter] = useState<UserRoleFilter>(() =>
+    parseRoleFilter(searchParams.get("role"))
+  );
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+
+  useEffect(() => {
+    syncAdminListUrl(["role", ADMIN_LIST_SEARCH_KEY], {
+      role: roleFilter === "all" ? undefined : roleFilter,
+      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+    });
+  }, [roleFilter, search]);
+
+  const roleOptions = [
+    { value: "all", label: t("filterRoleAll"), keywords: [] as string[] },
+    { value: "USER", label: t("roleUser"), keywords: [] },
+    { value: "MANAGER", label: t("roleManager"), keywords: [] },
+    ...(canManageRoles
+      ? [{ value: "ADMIN", label: t("roleAdmin"), keywords: [] }]
+      : []),
+  ];
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
 
   function canEditUser(user: AdminUserRow) {
@@ -177,13 +220,14 @@ export default function AdminUsersView({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return optimisticItems;
     return optimisticItems.filter((item) => {
+      if (roleFilter !== "all" && item.role !== roleFilter) return false;
+      if (!q) return true;
       const hay = `${item.name} ${item.email} ${item.phone ?? ""} ${item.userCode}`
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [optimisticItems, search]);
+  }, [optimisticItems, search, roleFilter]);
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -221,6 +265,27 @@ export default function AdminUsersView({
         searchPlaceholder={t("searchUsersPlaceholder")}
         createLabel={t("createUser")}
         onCreate={() => setCreateOpen(true)}
+        filterSheet={
+          <AdminFilterSheet
+            label={t("filter")}
+            count={roleFilter === "all" ? 0 : 1}
+            clearLabel={t("clearFilters")}
+            applyLabel={t("filterApply")}
+            onClear={() => setRoleFilter("all")}
+          >
+            <SearchableEntityPicker
+              name="users-filter-role"
+              label={t("role")}
+              placeholder={t("filterRoleAll")}
+              searchPlaceholder={t("role")}
+              emptyLabel="—"
+              options={roleOptions}
+              value={roleFilter}
+              onValueChange={(value) => setRoleFilter(parseRoleFilter(value))}
+              allowClear={false}
+            />
+          </AdminFilterSheet>
+        }
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
