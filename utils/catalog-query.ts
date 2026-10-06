@@ -25,7 +25,6 @@ export type CatalogQuery = {
   layout: CatalogLayout;
   search: string;
   sort: CatalogSort;
-  featuredOnly: boolean;
   folders: string[];
   /** Per-folder fields: f.{slug}.{key} */
   scopedFacets: CatalogScopedFacets;
@@ -61,10 +60,6 @@ export function parseCatalogPage(value?: string | null): number {
 export function parseCsvParam(value?: string | string[] | null): string[] {
   const raw = Array.isArray(value) ? value.join(",") : value ?? "";
   return [...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean))];
-}
-
-export function parseFeaturedOnly(value?: string | null): boolean {
-  return value === "1" || value === "true";
 }
 
 function firstParam(value?: string | string[] | undefined): string {
@@ -193,7 +188,6 @@ export function parseCatalogQuery(
     layout: layoutRaw ? parseCatalogLayout(layoutRaw) : undefined,
     search: get("search")?.trim() ?? "",
     sort: parseCatalogSort(get("sort")),
-    featuredOnly: parseFeaturedOnly(get("featured")),
     folders,
     scopedFacets,
     scopedRanges,
@@ -208,7 +202,6 @@ export type CatalogHrefPatch = {
   layout?: CatalogLayout;
   search?: string;
   sort?: CatalogSort | "newest";
-  featuredOnly?: boolean;
   folders?: string[];
   /** Add or remove a folder without wiping others. Removing also drops f.{slug}.* */
   toggleFolder?: string;
@@ -236,7 +229,6 @@ function clearFacetParams(params: URLSearchParams) {
       key === "category" ||
       key === "brand" ||
       key === "make" ||
-      key === "featured" ||
       key === "yearFrom" ||
       key === "yearTo" ||
       key === "kmFrom" ||
@@ -280,11 +272,6 @@ export function buildCatalogHref(
   if (patch.sort !== undefined) {
     if (patch.sort && patch.sort !== "newest") params.set("sort", patch.sort);
     else params.delete("sort");
-  }
-
-  if (patch.featuredOnly !== undefined) {
-    if (patch.featuredOnly) params.set("featured", "1");
-    else params.delete("featured");
   }
 
   if (patch.folders) {
@@ -398,7 +385,6 @@ export function buildCatalogHref(
         patch.rangeKey !== undefined ||
         patch.search !== undefined ||
         patch.sort !== undefined ||
-        patch.featuredOnly !== undefined ||
         patch.pageSize !== undefined));
 
   if (patch.pageSize !== undefined) {
@@ -459,6 +445,33 @@ export function buildCatalogHrefFromDraft(
   return href;
 }
 
+export function isCatalogFilterParam(key: string): boolean {
+  return key === "folder" || key.startsWith(FACET_PREFIX);
+}
+
+/** Flat `folder` + `f.{slug}.*` params; read back with `parseCatalogQuery`. */
+export function catalogDraftToParams(draft: {
+  folders: string[];
+  scopedFacets: CatalogScopedFacets;
+  scopedRanges: CatalogScopedRanges;
+}): Record<string, string> {
+  const out: Record<string, string> = {};
+  const folders = [...new Set(draft.folders.filter(Boolean))];
+  if (folders.length) out.folder = folders.join(",");
+  for (const [slug, bucket] of Object.entries(draft.scopedFacets)) {
+    for (const [key, values] of Object.entries(bucket)) {
+      if (values.length) out[`${scopedPrefix(slug)}${key}`] = values.join(",");
+    }
+  }
+  for (const [slug, bucket] of Object.entries(draft.scopedRanges)) {
+    for (const [key, range] of Object.entries(bucket)) {
+      if (range.min != null) out[`${scopedPrefix(slug)}${key}Min`] = String(range.min);
+      if (range.max != null) out[`${scopedPrefix(slug)}${key}Max`] = String(range.max);
+    }
+  }
+  return out;
+}
+
 export function serializeCatalogFilterDraft(draft: {
   folders: string[];
   scopedFacets: CatalogScopedFacets;
@@ -498,9 +511,8 @@ export function countActiveCatalogFilters(query: {
   scopedRanges?: CatalogScopedRanges;
   facets: Record<string, string[]>;
   ranges: Record<string, CatalogRange>;
-  featuredOnly: boolean;
 }): number {
-  let count = query.folders.length + (query.featuredOnly ? 1 : 0);
+  let count = query.folders.length;
   for (const values of Object.values(query.facets)) count += values.length;
   for (const range of Object.values(query.ranges)) {
     if (range.min != null) count += 1;
@@ -521,7 +533,6 @@ export function countActiveCatalogFilters(query: {
 export function catalogQueryIsFiltered(query: {
   search: string;
   folders: string[];
-  featuredOnly: boolean;
   facets: Record<string, string[]>;
   ranges: Record<string, CatalogRange>;
   scopedFacets?: CatalogScopedFacets;
@@ -530,7 +541,6 @@ export function catalogQueryIsFiltered(query: {
   return Boolean(
     query.search ||
       query.folders.length ||
-      query.featuredOnly ||
       Object.keys(query.facets).length ||
       Object.keys(query.ranges).length ||
       Object.keys(query.scopedFacets ?? {}).length ||

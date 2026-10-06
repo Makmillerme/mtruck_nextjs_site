@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
+import {
+  catalogDraftToParams,
+  isCatalogFilterParam,
+  parseCatalogQuery,
+} from "@/utils/catalog-query";
+import { formatCurrency } from "@/utils/format";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
@@ -107,10 +115,46 @@ import type { actionFunction } from "@/utils/types";
 import AdminListToolbar, {
   AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
+import {
+  CatalogFilterFields,
+  EMPTY_CATALOG_FILTER_DRAFT,
+  LocalCatalogFilterProvider,
+  type CatalogFilterDraft,
+} from "@/components/products/catalog-filters";
+import {
+  buildPathSlugs,
+  type FilterAvailabilityIndex,
+  type FilterAvailabilityRow,
+} from "@/lib/catalog/filter-availability";
+import { productMatchesCatalogDraft } from "@/lib/catalog/narrow-facets";
+import {
+  scopeFilterSchemaToRoot,
+  type PublicFilterSchema,
+} from "@/lib/catalog/public-filter";
+import { flattenTaxonomyTree } from "@/lib/catalog/taxonomy";
+import { countActiveCatalogFilters } from "@/utils/catalog-query";
 import { LuArchive, LuArrowRight, LuColumns3, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
+const SYSTEM_COLUMNS_STORAGE_KEY =
+  "mtruck.admin.products.visibleSystemColumns";
+/** Legacy single-flag prefs — migrated once into SYSTEM_COLUMNS_STORAGE_KEY. */
 const STATUS_COLUMN_STORAGE_KEY = "mtruck.admin.products.showStatusColumn";
+
+const SYSTEM_COLUMN_IDS = ["status", "availability", "price"] as const;
+
+type SystemColumnId = (typeof SYSTEM_COLUMN_IDS)[number];
+
+const SYSTEM_COLUMN_LABEL: Record<SystemColumnId, string> = {
+  status: "status",
+  availability: "availability",
+  price: "price",
+};
+
+const AVAILABILITY_LABEL: Record<string, string> = {
+  IN_STOCK: "availabilityStock",
+  TRANSIT: "availabilityTransit",
+};
 
 export type AdminProductSpec = {
   attributeId: string;
@@ -119,6 +163,7 @@ export type AdminProductSpec = {
   textValue: string | null;
   booleanValue: boolean | null;
   optionLabel?: string | null;
+  optionSlug?: string | null;
   attributeKey?: string | null;
   unit?: string | null;
   type?: AttributeTypeName | null;
@@ -127,10 +172,8 @@ export type AdminProductSpec = {
 export type AdminProductRow = {
   id: string;
   name: string;
-  company: string;
   price: number;
   currency: string;
-  featured: boolean;
   status: string;
   availability: string;
   description: string;
@@ -139,6 +182,31 @@ export type AdminProductRow = {
   taxonomyNodeId: string | null;
   specs: AdminProductSpec[];
 };
+
+function adminItemToFilterRow(
+  item: AdminProductRow,
+  byId: Map<string, { id: string; slug: string; parentId: string | null }>
+): FilterAvailabilityRow {
+  const specs: Record<string, string | number | boolean> = {};
+  for (const spec of item.specs) {
+    const key = spec.attributeKey;
+    if (!key) continue;
+    if (spec.optionSlug) {
+      specs[key] = spec.optionSlug;
+    } else if (
+      (spec.type === "NUMBER" || spec.type === "YEAR") &&
+      spec.numberValue != null
+    ) {
+      specs[key] = spec.numberValue;
+    } else if (spec.type === "BOOLEAN" && spec.booleanValue != null) {
+      specs[key] = spec.booleanValue;
+    }
+  }
+  return {
+    pathSlugs: buildPathSlugs(item.taxonomyNodeId, byId),
+    specs,
+  };
+}
 
 const STATUS_KEYS = [
   "DRAFT",
@@ -376,6 +444,7 @@ function ProductSheetFields({
         <CatalogMenuSelect
           name="status"
           label={t("status")}
+          searchable={false}
           defaultValue={product?.status ?? "DRAFT"}
           options={STATUS_KEYS.map((status) => ({
             value: status,
@@ -385,6 +454,7 @@ function ProductSheetFields({
         <CatalogMenuSelect
           name="availability"
           label={t("availability")}
+          searchable={false}
           defaultValue={product?.availability ?? "IN_STOCK"}
           options={[
             { value: "IN_STOCK", label: t("availabilityStock") },
@@ -431,6 +501,7 @@ function ProductSheetFields({
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                required
                 className="min-w-0 flex-1"
               />
             )}
@@ -451,7 +522,6 @@ function ProductSheetFields({
           defaultValue={product?.price}
           defaultCurrency={product?.currency ?? "USD"}
         />
-        <input type="hidden" name="company" value={product?.company ?? ""} />
         <TextAreaInput
           name="description"
           labelText={t("description")}
@@ -498,6 +568,8 @@ export default function AdminProductsView({
   listRootId,
   nameWriterGroup = null,
   canDelete = false,
+  filterSchema,
+  filterAvailability,
 }: {
   items: AdminProductRow[];
   locale: string;
@@ -510,16 +582,43 @@ export default function AdminProductsView({
   listRootId?: string;
   nameWriterGroup?: CatalogDisplayGroup | null;
   canDelete?: boolean;
+  filterSchema: PublicFilterSchema;
+  filterAvailability: FilterAvailabilityIndex;
 }) {
   const t = useTranslations("Admin");
+  const locale = useLocale();
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
-  const [search, setSearch] = useState("");
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(
+    () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
+  );
+  const [appliedFilter, setAppliedFilter] = useState<CatalogFilterDraft>(() => {
+    const parsed = parseCatalogQuery(
+      new URLSearchParams(searchParams.toString())
+    );
+    return {
+      folders: parsed.folders,
+      scopedFacets: parsed.scopedFacets,
+      scopedRanges: parsed.scopedRanges,
+    };
+  });
+  const filterRootRef = useRef(listRootId);
+
+  useEffect(() => {
+    syncAdminListUrl(
+      [ADMIN_LIST_SEARCH_KEY],
+      {
+        ...catalogDraftToParams(appliedFilter),
+        [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+      },
+      isCatalogFilterParam
+    );
+  }, [appliedFilter, search]);
   const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
-  const [showStatusColumn, setShowStatusColumn] = useState(true);
+  const [visibleSystemKeys, setVisibleSystemKeys] = useState<SystemColumnId[]>(
+    () => [...SYSTEM_COLUMN_IDS]
+  );
   const [columnsReady, setColumnsReady] = useState(false);
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
@@ -537,6 +636,17 @@ export default function AdminProductsView({
       resolveScopedFolderId(tree, listRootId, current ?? selectedNodeId)
     );
   }, [listRootId, sheetEditId, tree, selectedNodeId]);
+
+  useEffect(() => {
+    if (filterRootRef.current === listRootId) return;
+    filterRootRef.current = listRootId;
+    setAppliedFilter(EMPTY_CATALOG_FILTER_DRAFT);
+  }, [listRootId]);
+
+  const scopedFilterSchema = useMemo(
+    () => scopeFilterSchemaToRoot(filterSchema, listRootId),
+    [filterSchema, listRootId]
+  );
 
   const editProduct = useMemo(
     () => items.find((item) => item.id === sheetEditId) ?? null,
@@ -562,9 +672,26 @@ export default function AdminProductsView({
           );
         }
       }
-      const statusRaw = window.localStorage.getItem(STATUS_COLUMN_STORAGE_KEY);
-      if (statusRaw === "0") setShowStatusColumn(false);
-      if (statusRaw === "1") setShowStatusColumn(true);
+      const systemRaw = window.localStorage.getItem(SYSTEM_COLUMNS_STORAGE_KEY);
+      if (systemRaw) {
+        const parsed = JSON.parse(systemRaw) as unknown;
+        if (Array.isArray(parsed)) {
+          setVisibleSystemKeys(
+            parsed.filter((key): key is SystemColumnId =>
+              SYSTEM_COLUMN_IDS.includes(key as SystemColumnId)
+            )
+          );
+        }
+      } else {
+        const statusRaw = window.localStorage.getItem(STATUS_COLUMN_STORAGE_KEY);
+        if (statusRaw === "0") {
+          setVisibleSystemKeys(
+            SYSTEM_COLUMN_IDS.filter((id) => id !== "status")
+          );
+        } else {
+          setVisibleSystemKeys([...SYSTEM_COLUMN_IDS]);
+        }
+      }
     } catch {
       // ignore invalid prefs
     }
@@ -582,10 +709,10 @@ export default function AdminProductsView({
   useEffect(() => {
     if (!columnsReady) return;
     window.localStorage.setItem(
-      STATUS_COLUMN_STORAGE_KEY,
-      showStatusColumn ? "1" : "0"
+      SYSTEM_COLUMNS_STORAGE_KEY,
+      JSON.stringify(visibleSystemKeys)
     );
-  }, [showStatusColumn, columnsReady]);
+  }, [visibleSystemKeys, columnsReady]);
 
   const visibleAttributes = useMemo(
     () =>
@@ -595,16 +722,32 @@ export default function AdminProductsView({
     [tableAttributes, visibleKeys]
   );
 
-  const companies = useMemo(() => {
-    const set = new Set(items.map((item) => item.company).filter(Boolean));
-    return [...set].sort((a, b) => a.localeCompare(b, "uk"));
-  }, [items]);
+  const taxonomyById = useMemo(() => {
+    const map = new Map<
+      string,
+      { id: string; slug: string; parentId: string | null }
+    >();
+    for (const node of flattenTaxonomyTree(tree)) {
+      map.set(node.id, {
+        id: node.id,
+        slug: node.slug,
+        parentId: node.parentId,
+      });
+    }
+    return map;
+  }, [tree]);
 
-  const activeFilterCount =
-    selectedCompanies.length + selectedStatuses.length + (featuredOnly ? 1 : 0);
+  const activeFilterCount = countActiveCatalogFilters({
+    folders: appliedFilter.folders,
+    scopedFacets: appliedFilter.scopedFacets,
+    scopedRanges: appliedFilter.scopedRanges,
+    facets: {},
+    ranges: {},
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const catalogActive = activeFilterCount > 0;
     return optimisticItems.filter((item) => {
       if (q) {
         const specHay = item.specs
@@ -615,30 +758,21 @@ export default function AdminProductsView({
           )
           .join(" ")
           .toLowerCase();
-        const hay = `${item.name} ${item.company} ${specHay}`.toLowerCase();
+        const hay = `${item.name} ${specHay}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (
-        selectedCompanies.length > 0 &&
-        !selectedCompanies.includes(item.company)
-      ) {
-        return false;
+      if (catalogActive) {
+        const row = adminItemToFilterRow(item, taxonomyById);
+        if (!productMatchesCatalogDraft(row, appliedFilter)) return false;
       }
-      if (
-        selectedStatuses.length > 0 &&
-        !selectedStatuses.includes(item.status)
-      ) {
-        return false;
-      }
-      if (featuredOnly && !item.featured) return false;
       return true;
     });
   }, [
     optimisticItems,
     search,
-    selectedCompanies,
-    selectedStatuses,
-    featuredOnly,
+    appliedFilter,
+    activeFilterCount,
+    taxonomyById,
   ]);
 
   async function loadSheetMeta(nodeId: string | null) {
@@ -691,26 +825,8 @@ export default function AdminProductsView({
     void loadSheetMeta(nodeId);
   }
 
-  function toggleCompany(company: string, checked: boolean) {
-    setSelectedCompanies((current) =>
-      checked
-        ? [...current, company]
-        : current.filter((item) => item !== company)
-    );
-  }
-
-  function toggleStatus(status: string, checked: boolean) {
-    setSelectedStatuses((current) =>
-      checked
-        ? [...current, status]
-        : current.filter((item) => item !== status)
-    );
-  }
-
   function clearFilters() {
-    setSelectedCompanies([]);
-    setSelectedStatuses([]);
-    setFeaturedOnly(false);
+    setAppliedFilter(EMPTY_CATALOG_FILTER_DRAFT);
   }
 
   function toggleColumn(key: string, checked: boolean) {
@@ -721,6 +837,46 @@ export default function AdminProductsView({
           : [...current, key]
         : current.filter((item) => item !== key)
     );
+  }
+
+  function toggleSystemColumn(id: SystemColumnId, checked: boolean) {
+    setVisibleSystemKeys((current) =>
+      checked
+        ? current.includes(id)
+          ? current
+          : [...current, id]
+        : current.filter((item) => item !== id)
+    );
+  }
+
+  function selectAllColumns() {
+    setVisibleSystemKeys([...SYSTEM_COLUMN_IDS]);
+    setVisibleKeys(tableAttributes.map((attribute) => attribute.key));
+  }
+
+  function clearAllColumns() {
+    setVisibleSystemKeys([]);
+    setVisibleKeys([]);
+  }
+
+  function renderSystemCell(id: SystemColumnId, item: AdminProductRow) {
+    switch (id) {
+      case "status":
+        return <ProductStatusBadge status={item.status} />;
+      case "availability": {
+        const key = AVAILABILITY_LABEL[item.availability];
+        return key ? t(key) : item.availability;
+      }
+      case "price": {
+        const currency =
+          item.currency === "EUR" || item.currency === "UAH"
+            ? item.currency
+            : "USD";
+        return formatCurrency(item.price, locale, currency);
+      }
+      default:
+        return t("columnsEmptyCell");
+    }
   }
 
   const archiveProduct =
@@ -757,66 +913,74 @@ export default function AdminProductsView({
                 <SheetDescription>{t("columnsSheetLede")}</SheetDescription>
               </SheetHeader>
               <div className="grid gap-4 overflow-y-auto">
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={showStatusColumn}
-                    onCheckedChange={(value) =>
-                      setShowStatusColumn(value === true)
-                    }
-                  />
-                  {t("status")}
-                </label>
-                {tableAttributes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t("columnsEmpty")}
-                  </p>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setVisibleKeys(
-                            tableAttributes.map((attribute) => attribute.key)
-                          )
-                        }
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAllColumns}
+                  >
+                    {t("columnsSelectAll")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearAllColumns}
+                  >
+                    {t("columnsClear")}
+                  </Button>
+                </div>
+                <div className="grid gap-3">
+                  <p className="text-sm font-medium">{t("columnsSystemSection")}</p>
+                  {SYSTEM_COLUMN_IDS.map((columnId) => {
+                    const id = `admin-sys-col-${columnId}`;
+                    return (
+                      <label
+                        key={columnId}
+                        htmlFor={id}
+                        className="flex cursor-pointer items-center gap-3 text-sm"
                       >
-                        {t("columnsSelectAll")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setVisibleKeys([])}
-                      >
-                        {t("columnsClear")}
-                      </Button>
-                    </div>
-                    <div className="grid gap-3">
-                      {tableAttributes.map((attribute) => {
-                        const id = `admin-col-${attribute.key}`;
-                        return (
-                          <label
-                            key={attribute.key}
-                            htmlFor={id}
-                            className="flex cursor-pointer items-center gap-3 text-sm"
-                          >
-                            <Checkbox
-                              id={id}
-                              checked={visibleKeys.includes(attribute.key)}
-                              onCheckedChange={(value) =>
-                                toggleColumn(attribute.key, value === true)
-                              }
-                            />
-                            {attribute.name}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                        <Checkbox
+                          id={id}
+                          checked={visibleSystemKeys.includes(columnId)}
+                          onCheckedChange={(value) =>
+                            toggleSystemColumn(columnId, value === true)
+                          }
+                        />
+                        {t(SYSTEM_COLUMN_LABEL[columnId])}
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="grid gap-3">
+                  <p className="text-sm font-medium">{t("columnsCatalogSection")}</p>
+                  {tableAttributes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("columnsEmpty")}
+                    </p>
+                  ) : (
+                    tableAttributes.map((attribute) => {
+                      const id = `admin-col-${attribute.key}`;
+                      return (
+                        <label
+                          key={attribute.key}
+                          htmlFor={id}
+                          className="flex cursor-pointer items-center gap-3 text-sm"
+                        >
+                          <Checkbox
+                            id={id}
+                            checked={visibleKeys.includes(attribute.key)}
+                            onCheckedChange={(value) =>
+                              toggleColumn(attribute.key, value === true)
+                            }
+                          />
+                          {attribute.name}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -826,69 +990,25 @@ export default function AdminProductsView({
             label={t("filter")}
             count={activeFilterCount}
             clearLabel={t("clearFilters")}
+            applyLabel={t("filterApply")}
             onClear={clearFilters}
+            hideFooter
           >
-            <div className="grid gap-3">
-              <p className="text-sm font-medium">{t("filterCompany")}</p>
-              {companies.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("filterEmptyCompanies")}
-                </p>
-              ) : (
-                companies.map((company) => {
-                  const id = `admin-company-${company}`;
-                  return (
-                    <label
-                      key={company}
-                      htmlFor={id}
-                      className="flex cursor-pointer items-center gap-3 text-sm"
-                    >
-                      <Checkbox
-                        id={id}
-                        checked={selectedCompanies.includes(company)}
-                        onCheckedChange={(value) =>
-                          toggleCompany(company, value === true)
-                        }
-                      />
-                      {company}
-                    </label>
-                  );
-                })
-              )}
-            </div>
-            <div className="grid gap-3">
-              <p className="text-sm font-medium">{t("filterStatus")}</p>
-              {STATUS_KEYS.map((status) => {
-                const id = `admin-status-${status}`;
-                return (
-                  <label
-                    key={status}
-                    htmlFor={id}
-                    className="flex cursor-pointer items-center gap-3 text-sm"
-                  >
-                    <Checkbox
-                      id={id}
-                      checked={selectedStatuses.includes(status)}
-                      onCheckedChange={(value) =>
-                        toggleStatus(status, value === true)
-                      }
-                    />
-                    {t(STATUS_LABEL[status])}
-                  </label>
-                );
-              })}
-            </div>
-            <label
-              htmlFor="admin-featured"
-              className="flex cursor-pointer items-center gap-3 text-sm"
-            >
-              <Checkbox
-                id="admin-featured"
-                checked={featuredOnly}
-                onCheckedChange={(value) => setFeaturedOnly(value === true)}
-              />
-              {t("filterFeatured")}
-            </label>
+            {({ close }) => (
+              <LocalCatalogFilterProvider
+                key={listRootId ?? "all"}
+                schema={scopedFilterSchema}
+                availability={filterAvailability}
+                applied={appliedFilter}
+                onAppliedChange={setAppliedFilter}
+                onSheetApplied={close}
+              >
+                <CatalogFilterFields
+                  idPrefix="admin-filter"
+                  clearBelowApply
+                />
+              </LocalCatalogFilterProvider>
+            )}
           </AdminFilterSheet>
         }
       />
@@ -914,9 +1034,13 @@ export default function AdminProductsView({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("productName")}</TableHead>
-                  {showStatusColumn ? (
-                    <TableHead>{t("status")}</TableHead>
-                  ) : null}
+                  {SYSTEM_COLUMN_IDS.filter((id) =>
+                    visibleSystemKeys.includes(id)
+                  ).map((columnId) => (
+                    <TableHead key={columnId}>
+                      {t(SYSTEM_COLUMN_LABEL[columnId])}
+                    </TableHead>
+                  ))}
                   {visibleAttributes.map((attribute) => (
                     <TableHead key={attribute.key}>{attribute.name}</TableHead>
                   ))}
@@ -937,11 +1061,13 @@ export default function AdminProductsView({
                         <Link href={`/products/${item.id}`}>{item.name}</Link>
                       </Button>
                     </TableCell>
-                    {showStatusColumn ? (
-                      <TableCell>
-                        <ProductStatusBadge status={item.status} />
+                    {SYSTEM_COLUMN_IDS.filter((id) =>
+                      visibleSystemKeys.includes(id)
+                    ).map((columnId) => (
+                      <TableCell key={columnId}>
+                        {renderSystemCell(columnId, item)}
                       </TableCell>
-                    ) : null}
+                    ))}
                     {visibleAttributes.map((attribute) => (
                       <TableCell key={attribute.key}>
                         {formatSpecCell(
