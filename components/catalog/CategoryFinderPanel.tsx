@@ -6,14 +6,15 @@ import SectionIntro from "@/components/section-intro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
 import {
-  FINDER_BRANDS,
-  FINDER_CATEGORIES,
-  buildProductsHref,
-  getMockOfferCount,
-  type CategoryId,
-} from "@/lib/home/category-finder";
+  buildHomeFinderProductsHref,
+  resolveHomeFinderDefaults,
+  type HomeFinderChild,
+  type HomeFinderFacet,
+  type HomeFinderPayload,
+  type HomeFinderRoot,
+} from "@/lib/home/home-finder-shared";
+import { cn } from "@/lib/utils";
 import { LuChevronRight } from "react-icons/lu";
 
 function sanitizeDigits(value: string) {
@@ -68,7 +69,10 @@ function RangeInputs({
       setter(maxLength ? next.slice(0, maxLength) : next);
     };
 
-  const blockStepping = (event: { key: string; preventDefault: () => void }) => {
+  const blockStepping = (event: {
+    key: string;
+    preventDefault: () => void;
+  }) => {
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
     }
@@ -109,33 +113,188 @@ function RangeInputs({
   );
 }
 
+function FacetField({
+  facet,
+  chipValue,
+  onChip,
+  rangeFrom,
+  rangeTo,
+  onRangeFrom,
+  onRangeTo,
+  allLabel,
+  fromPlaceholder,
+  toPlaceholder,
+}: {
+  facet: HomeFinderFacet;
+  chipValue: string | null;
+  onChip: (slug: string | null) => void;
+  rangeFrom: string;
+  rangeTo: string;
+  onRangeFrom: (value: string) => void;
+  onRangeTo: (value: string) => void;
+  allLabel: string;
+  fromPlaceholder: string;
+  toPlaceholder: string;
+}) {
+  if (facet.type === "NUMBER" || facet.type === "YEAR") {
+    return (
+      <RangeInputs
+        label={facet.unit ? `${facet.name}, ${facet.unit}` : facet.name}
+        from={rangeFrom}
+        to={rangeTo}
+        onFrom={onRangeFrom}
+        onTo={onRangeTo}
+        fromPlaceholder={fromPlaceholder}
+        toPlaceholder={toPlaceholder}
+        maxLength={facet.type === "YEAR" ? 4 : undefined}
+      />
+    );
+  }
+
+  if (facet.type === "BOOLEAN") {
+    return (
+      <div className="min-w-0">
+        <p className={fieldLabelClass}>{facet.name}</p>
+        <div className={chipRowClass}>
+          <button
+            type="button"
+            onClick={() => onChip(null)}
+            className={chipClass(chipValue === null)}
+          >
+            {allLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onChip(chipValue === "true" ? null : "true")
+            }
+            className={chipClass(chipValue === "true")}
+          >
+            {facet.options[0]?.label ?? "Yes"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-0">
+      <p className={fieldLabelClass}>{facet.name}</p>
+      <div className={chipRowClass}>
+        <button
+          type="button"
+          onClick={() => onChip(null)}
+          className={chipClass(chipValue === null)}
+        >
+          {allLabel}
+        </button>
+        {facet.options.map((option) => (
+          <button
+            key={option.slug}
+            type="button"
+            onClick={() =>
+              onChip(chipValue === option.slug ? null : option.slug)
+            }
+            className={chipClass(chipValue === option.slug)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Filter UI only — shell/background lives in CatalogBlock. */
-export default function CategoryFinderPanel() {
+export default function CategoryFinderPanel({
+  payload,
+}: {
+  payload: HomeFinderPayload;
+}) {
   const t = useTranslations("CategoryFinder");
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryId>("tractors");
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [yearFrom, setYearFrom] = useState("");
-  const [yearTo, setYearTo] = useState("");
-  const [kmFrom, setKmFrom] = useState("");
-  const [kmTo, setKmTo] = useState("");
+  const defaults = resolveHomeFinderDefaults(payload);
+  const roots = payload.roots;
 
-  const ranges = useMemo(
-    () => ({
-      yearFrom: parsePositiveInt(yearFrom),
-      yearTo: parsePositiveInt(yearTo),
-      kmFrom: parsePositiveInt(kmFrom),
-      kmTo: parsePositiveInt(kmTo),
-    }),
-    [yearFrom, yearTo, kmFrom, kmTo]
+  const [selectedRootId, setSelectedRootId] = useState<string | null>(
+    defaults.rootId
   );
-
-  const count = useMemo(
-    () => getMockOfferCount(selectedCategory, selectedBrand, "all"),
-    [selectedCategory, selectedBrand]
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(
+    defaults.childId
   );
+  const [chipFacets, setChipFacets] = useState<Record<string, string | null>>(
+    {}
+  );
+  const [rangeFrom, setRangeFrom] = useState<Record<string, string>>({});
+  const [rangeTo, setRangeTo] = useState<Record<string, string>>({});
 
-  const href = buildProductsHref(selectedCategory, selectedBrand, "all", ranges);
+  const selectedRoot: HomeFinderRoot | null = useMemo(() => {
+    if (roots.length === 0) return null;
+    return (
+      roots.find((root) => root.id === selectedRootId) ?? roots[0] ?? null
+    );
+  }, [roots, selectedRootId]);
+
+  const children = selectedRoot?.children ?? [];
+
+  const selectedChild: HomeFinderChild | null = useMemo(() => {
+    if (children.length === 0) return null;
+    return (
+      children.find((child) => child.id === selectedChildId) ??
+      children[0] ??
+      null
+    );
+  }, [children, selectedChildId]);
+
+  const facets = selectedChild?.facets ?? [];
+
+  const count = selectedChild?.productCount ?? selectedRoot?.productCount ?? 0;
+
+  const href = useMemo(() => {
+    if (!selectedChild) return "/products";
+    const ranges: Record<string, { from?: number; to?: number }> = {};
+    for (const facet of facets) {
+      if (facet.type !== "NUMBER" && facet.type !== "YEAR") continue;
+      const from = parsePositiveInt(rangeFrom[facet.key] ?? "");
+      const to = parsePositiveInt(rangeTo[facet.key] ?? "");
+      if (from != null || to != null) {
+        ranges[facet.key] = { from, to };
+      }
+    }
+    return buildHomeFinderProductsHref({
+      folderSlug: selectedChild.slug,
+      facets: chipFacets,
+      ranges,
+    });
+  }, [selectedChild, facets, chipFacets, rangeFrom, rangeTo]);
+
+  function selectRoot(root: HomeFinderRoot) {
+    setSelectedRootId(root.id);
+    setSelectedChildId(root.children[0]?.id ?? null);
+    setChipFacets({});
+    setRangeFrom({});
+    setRangeTo({});
+  }
+
+  function selectChild(child: HomeFinderChild) {
+    setSelectedChildId(child.id);
+    setChipFacets({});
+    setRangeFrom({});
+    setRangeTo({});
+  }
+
+  const showRoots =
+    payload.settings.showRootsBlock && roots.length > 0;
+
+  const childCols =
+    children.length >= 5
+      ? "md:grid-cols-5"
+      : children.length === 4
+        ? "md:grid-cols-4"
+        : children.length === 3
+          ? "md:grid-cols-3"
+          : children.length === 2
+            ? "md:grid-cols-2"
+            : "md:grid-cols-1";
 
   return (
     <div>
@@ -146,106 +305,123 @@ export default function CategoryFinderPanel() {
         className="mb-8 lg:mb-10"
       />
 
-      <div
-        className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {FINDER_CATEGORIES.map((category) => {
-          const Icon = category.icon;
-          const active = selectedCategory === category.id;
-          return (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => {
-                setSelectedCategory(category.id);
-                setSelectedBrand(null);
-              }}
-              className={cn(
-                "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:gap-3 sm:px-4 sm:py-4 md:min-w-0",
-                active
-                  ? "border-foreground text-foreground"
-                  : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-              )}
-            >
-              <Icon
+      {showRoots ? (
+        <div className="mb-5 flex flex-wrap gap-2 md:mb-6">
+          {roots.map((root) => {
+            const active = selectedRoot?.id === root.id;
+            return (
+              <button
+                key={root.id}
+                type="button"
+                onClick={() => selectRoot(root)}
                 className={cn(
-                  "size-5 shrink-0",
-                  active ? "text-foreground" : "text-muted-foreground"
-                )}
-                aria-hidden
-              />
-              <span className="text-sm font-medium leading-snug text-foreground">
-                {t(`categories.${category.id}`)}
-              </span>
-              <span
-                className={cn(
-                  "font-mono text-[10px] tabular-nums tracking-wide",
-                  active ? "text-foreground" : "text-muted-foreground"
+                  "rounded-sm border px-4 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors",
+                  active
+                    ? "border-foreground bg-foreground text-background shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"
                 )}
               >
-                {category.baseCount}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span className="block">{root.name}</span>
+                <span
+                  className={cn(
+                    "mt-0.5 block font-mono text-[10px] tabular-nums tracking-wide",
+                    active ? "text-background/70" : "text-muted-foreground"
+                  )}
+                >
+                  {root.productCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {children.length > 0 ? (
+        <div
+          className={cn(
+            "-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden",
+            childCols
+          )}
+          style={{ scrollbarWidth: "none" }}
+        >
+          {children.map((child) => {
+            const active = selectedChild?.id === child.id;
+            return (
+              <button
+                key={child.id}
+                type="button"
+                onClick={() => selectChild(child)}
+                className={cn(
+                  "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:px-4 sm:py-4 md:min-w-0",
+                  active
+                    ? "border-foreground text-foreground"
+                    : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                )}
+              >
+                <span className="text-sm font-medium leading-snug text-foreground">
+                  {child.name}
+                </span>
+                <span
+                  className={cn(
+                    "font-mono text-[10px] tabular-nums tracking-wide",
+                    active ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {child.productCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">{t("emptyChildren")}</p>
+      )}
 
       <div className="mt-6 rounded-sm border border-border bg-background p-4 shadow-sm md:mt-8 md:p-5">
-        <div className="flex flex-col gap-5">
-          <div className="min-w-0">
-            <p className={fieldLabelClass}>{t("brandsLabel")}</p>
-            <div className={chipRowClass}>
-              <button
-                type="button"
-                onClick={() => setSelectedBrand(null)}
-                className={chipClass(selectedBrand === null)}
-              >
-                {t("allBrands")}
-              </button>
-              {FINDER_BRANDS.map((brand) => (
-                <button
-                  key={brand.id}
-                  type="button"
-                  onClick={() =>
-                    setSelectedBrand((prev) =>
-                      prev === brand.id ? null : brand.id
-                    )
-                  }
-                  className={chipClass(selectedBrand === brand.id)}
-                >
-                  {brand.label}
-                </button>
-              ))}
-            </div>
+        {facets.length === 0 ? (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">{t("emptyFacets")}</p>
+            <Button asChild className="w-full sm:w-auto">
+              <Link href={href}>
+                {t("cta", { count })}
+                <LuChevronRight aria-hidden />
+              </Link>
+            </Button>
           </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
-            <div className="lg:col-span-4">
-              <RangeInputs
-                label={t("yearLabel")}
-                from={yearFrom}
-                to={yearTo}
-                onFrom={setYearFrom}
-                onTo={setYearTo}
+        ) : (
+          <div className="flex flex-col gap-5">
+            {facets.map((facet) => (
+              <FacetField
+                key={facet.key}
+                facet={facet}
+                chipValue={chipFacets[facet.key] ?? null}
+                onChip={(slug) =>
+                  setChipFacets((current) => ({
+                    ...current,
+                    [facet.key]: slug,
+                  }))
+                }
+                rangeFrom={rangeFrom[facet.key] ?? ""}
+                rangeTo={rangeTo[facet.key] ?? ""}
+                onRangeFrom={(value) =>
+                  setRangeFrom((current) => ({
+                    ...current,
+                    [facet.key]: value,
+                  }))
+                }
+                onRangeTo={(value) =>
+                  setRangeTo((current) => ({
+                    ...current,
+                    [facet.key]: value,
+                  }))
+                }
+                allLabel={t("allOption")}
                 fromPlaceholder={t("rangeFrom")}
                 toPlaceholder={t("rangeTo")}
-                maxLength={4}
               />
-            </div>
-            <div className="lg:col-span-4">
-              <RangeInputs
-                label={t("mileageLabel")}
-                from={kmFrom}
-                to={kmTo}
-                onFrom={setKmFrom}
-                onTo={setKmTo}
-                fromPlaceholder={t("rangeFrom")}
-                toPlaceholder={t("rangeTo")}
-              />
-            </div>
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Button asChild className="w-full">
+            ))}
+            <div className="flex justify-end">
+              <Button asChild className="w-full sm:w-auto sm:min-w-[14rem]">
                 <Link href={href}>
                   {t("cta", { count })}
                   <LuChevronRight aria-hidden />
@@ -253,7 +429,7 @@ export default function CategoryFinderPanel() {
               </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

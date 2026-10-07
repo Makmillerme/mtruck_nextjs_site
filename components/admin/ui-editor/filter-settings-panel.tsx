@@ -1,229 +1,250 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import CascadeSelect from "@/components/form/cascade-select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { SoftNavPending } from "@/components/soft-nav/soft-nav";
-import { useRouter } from "@/i18n/navigation";
-import { findNodeInTree, taxonomyToCascadeItems } from "@/lib/catalog/taxonomy";
-import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
-import { cn } from "@/lib/utils";
 import {
-  setAttributeIsFacetAction,
-  setNodeShowInFilterAction,
-} from "@/utils/taxonomy-actions";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "@/i18n/navigation";
+import type { HomeFinderSettingsRow } from "@/lib/home/home-finder-shared";
+import { cn } from "@/lib/utils";
+import { updateHomeFinderSettingsAction } from "@/utils/home-finder-actions";
+import { Button } from "@/components/ui/button";
 
-export type FilterSettingsAttribute = Pick<
-  CatalogAttribute,
-  "id" | "name" | "key" | "type" | "isFacet"
->;
+export type HomeFinderRootOption = {
+  id: string;
+  name: string;
+  showInFilter: boolean;
+  children: Array<{ id: string; name: string; showInFilter: boolean }>;
+};
 
 export default function FilterSettingsPanel({
-  tree,
-  selectedNodeId,
-  attributes,
-  tab,
+  settings,
+  roots,
 }: {
-  tree: TaxonomyTreeNode[];
-  selectedNodeId?: string;
-  attributes: FilterSettingsAttribute[];
-  tab: string;
+  settings: HomeFinderSettingsRow;
+  roots: HomeFinderRootOption[];
 }) {
   const t = useTranslations("UiEditor");
-  const tCatalog = useTranslations("CatalogAdmin");
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-  const [folderBusy, setFolderBusy] = useState(false);
-  const [facetBusyId, setFacetBusyId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const selectedNode = useMemo(
-    () =>
-      selectedNodeId ? findNodeInTree(tree, selectedNodeId) : null,
-    [tree, selectedNodeId]
+  const [showRootsBlock, setShowRootsBlock] = useState(settings.showRootsBlock);
+  const [selectedRootIds, setSelectedRootIds] = useState<string[]>(
+    settings.rootIds.length > 0
+      ? settings.rootIds
+      : roots.map((root) => root.id)
+  );
+  const [defaultRootId, setDefaultRootId] = useState<string | null>(
+    settings.defaultRootId
+  );
+  const [defaultChildId, setDefaultChildId] = useState<string | null>(
+    settings.defaultChildId
   );
 
-  const [showInFilter, setShowInFilter] = useState(
-    selectedNode?.showInFilter ?? true
-  );
-  const [facetMap, setFacetMap] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(attributes.map((item) => [item.id, item.isFacet]))
+  const selectableRoots = useMemo(
+    () => roots.filter((root) => selectedRootIds.includes(root.id)),
+    [roots, selectedRootIds]
   );
 
-  const attributesSignature = attributes
-    .map((item) => `${item.id}:${item.isFacet ? 1 : 0}`)
-    .join(",");
+  const defaultRootChildren = useMemo(() => {
+    const rootId =
+      defaultRootId && selectableRoots.some((root) => root.id === defaultRootId)
+        ? defaultRootId
+        : selectableRoots[0]?.id;
+    return roots.find((root) => root.id === rootId)?.children ?? [];
+  }, [defaultRootId, selectableRoots, roots]);
 
-  useEffect(() => {
-    setShowInFilter(selectedNode?.showInFilter ?? true);
-  }, [selectedNode?.id, selectedNode?.showInFilter]);
-
-  useEffect(() => {
-    setFacetMap(
-      Object.fromEntries(attributes.map((item) => [item.id, item.isFacet]))
-    );
-  }, [selectedNode?.id, attributesSignature, attributes]);
-
-  function selectFolder(nodeId: string | null) {
-    const params = new URLSearchParams();
-    params.set("tab", tab);
-    if (nodeId) params.set("node", nodeId);
-    startTransition(() => {
-      router.replace(`/admin/ui?${params.toString()}`);
+  function toggleRoot(rootId: string, next: boolean) {
+    setSelectedRootIds((current) => {
+      const set = new Set(current);
+      if (next) set.add(rootId);
+      else set.delete(rootId);
+      const list = [...set];
+      if (defaultRootId && !set.has(defaultRootId)) {
+        setDefaultRootId(list[0] ?? null);
+        setDefaultChildId(null);
+      }
+      return list;
     });
   }
 
-  async function onToggleFolder(next: boolean) {
-    if (!selectedNode) return;
-    const prev = showInFilter;
-    setShowInFilter(next);
-    setFolderBusy(true);
-    const result = await setNodeShowInFilterAction({
-      nodeId: selectedNode.id,
-      showInFilter: next,
+  async function onSave() {
+    setBusy(true);
+    const rootIds =
+      selectedRootIds.length === roots.length ? [] : selectedRootIds;
+    const result = await updateHomeFinderSettingsAction({
+      showRootsBlock,
+      rootIds,
+      defaultRootId:
+        defaultRootId && selectedRootIds.includes(defaultRootId)
+          ? defaultRootId
+          : selectedRootIds[0] ?? null,
+      defaultChildId:
+        defaultChildId &&
+        defaultRootChildren.some((child) => child.id === defaultChildId)
+          ? defaultChildId
+          : null,
     });
-    setFolderBusy(false);
+    setBusy(false);
     if (!result.ok) {
-      setShowInFilter(prev);
       toast({ variant: "destructive", description: result.message });
       return;
     }
-    startTransition(() => router.refresh());
-  }
-
-  async function onToggleFacet(attribute: FilterSettingsAttribute, next: boolean) {
-    if (attribute.type === "TEXT") return;
-    const prev = facetMap[attribute.id] ?? attribute.isFacet;
-    setFacetMap((current) => ({ ...current, [attribute.id]: next }));
-    setFacetBusyId(attribute.id);
-    const result = await setAttributeIsFacetAction({
-      attributeId: attribute.id,
-      isFacet: next,
-    });
-    setFacetBusyId(null);
-    if (!result.ok) {
-      setFacetMap((current) => ({ ...current, [attribute.id]: prev }));
-      toast({ variant: "destructive", description: result.message });
-      return;
-    }
-    startTransition(() => router.refresh());
+    toast({ description: t("homeFinderSaved") });
+    router.refresh();
   }
 
   return (
-    <SoftNavPending isPending={isPending}>
-      <Card className="shadow-sm">
-        <CardContent className="grid gap-6 pt-6">
-          <div className="grid gap-2">
-            <h2 className="text-base font-semibold tracking-tight">
-              {t("filterTitle")}
-            </h2>
-            <p className="text-sm text-muted-foreground">{t("filterLede")}</p>
-          </div>
+    <Card className="shadow-sm">
+      <CardContent className="grid gap-6 pt-6">
+        <div className="grid gap-2">
+          <h2 className="text-base font-semibold tracking-tight">
+            {t("filterTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t("filterLede")}</p>
+        </div>
 
-          <div className="grid gap-2">
-            <Label>{t("filterFolder")}</Label>
-            <CascadeSelect
-              items={taxonomyToCascadeItems(tree)}
-              value={selectedNodeId ?? null}
-              onValueChange={selectFolder}
-              placeholder={tCatalog("templateFolderPlaceholder")}
-              emptyLabel={tCatalog("emptyFolders")}
-              allowEmpty
-              emptyOptionLabel={t("filterFolderUnset")}
-              variant="tree"
-            />
-          </div>
-
-          {!selectedNode ? (
-            <p className="text-sm text-muted-foreground">{t("filterPickFolder")}</p>
-          ) : (
-            <>
-              <label
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-sm border p-3",
-                  folderBusy && "pointer-events-none opacity-60"
-                )}
-              >
-                <Checkbox
-                  checked={showInFilter}
-                  disabled={folderBusy}
-                  onCheckedChange={(value) => onToggleFolder(value === true)}
-                  className="mt-0.5"
-                />
-                <span className="grid min-w-0 gap-1">
-                  <span className="text-sm font-medium">
-                    {tCatalog("flagShowInFilter")}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t("filterFolderHint")}
-                  </span>
-                </span>
-              </label>
-
-              <div className="grid gap-3">
-                <div className="grid gap-1">
-                  <p className="text-sm font-medium">{t("filterFieldsTitle")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("filterFieldsLede")}
-                  </p>
-                </div>
-
-                {attributes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t("filterNoFields")}
-                  </p>
-                ) : (
-                  <ul className="grid gap-2">
-                    {attributes.map((attribute) => {
-                      const isText = attribute.type === "TEXT";
-                      const checked = isText
-                        ? false
-                        : (facetMap[attribute.id] ?? attribute.isFacet);
-                      const busy = facetBusyId === attribute.id;
-                      return (
-                        <li key={attribute.id}>
-                          <label
-                            className={cn(
-                              "flex items-start gap-3 rounded-sm border p-3",
-                              isText
-                                ? "cursor-not-allowed opacity-70"
-                                : "cursor-pointer",
-                              busy && "pointer-events-none opacity-60"
-                            )}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              disabled={isText || busy}
-                              onCheckedChange={(value) =>
-                                onToggleFacet(attribute, value === true)
-                              }
-                              className="mt-0.5"
-                            />
-                            <span className="grid min-w-0 flex-1 gap-0.5">
-                              <span className="text-sm font-medium">
-                                {attribute.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {attribute.key} ·{" "}
-                                {tCatalog(`type.${attribute.type}`)}
-                                {isText ? ` · ${t("filterTextBlocked")}` : null}
-                              </span>
-                            </span>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </>
+        <label
+          className={cn(
+            "flex cursor-pointer items-start gap-3 rounded-sm border p-3",
+            busy && "pointer-events-none opacity-60"
           )}
-        </CardContent>
-      </Card>
-    </SoftNavPending>
+        >
+          <Checkbox
+            checked={showRootsBlock}
+            disabled={busy}
+            onCheckedChange={(value) => setShowRootsBlock(value === true)}
+            className="mt-0.5"
+          />
+          <span className="grid min-w-0 gap-1">
+            <span className="text-sm font-medium">{t("homeRootsToggle")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("homeRootsToggleHint")}
+            </span>
+          </span>
+        </label>
+
+        {showRootsBlock ? (
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">{t("homeRootsListTitle")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("homeRootsListLede")}
+              </p>
+            </div>
+            {roots.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("homeNoRoots")}</p>
+            ) : (
+              <ul className="grid gap-2">
+                {roots.map((root) => {
+                  const checked = selectedRootIds.includes(root.id);
+                  return (
+                    <li key={root.id}>
+                      <label
+                        className={cn(
+                          "flex cursor-pointer items-start gap-3 rounded-sm border p-3",
+                          busy && "pointer-events-none opacity-60"
+                        )}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          disabled={busy}
+                          onCheckedChange={(value) =>
+                            toggleRoot(root.id, value === true)
+                          }
+                          className="mt-0.5"
+                        />
+                        <span className="grid min-w-0 gap-0.5">
+                          <span className="text-sm font-medium">{root.name}</span>
+                          {!root.showInFilter ? (
+                            <span className="text-xs text-muted-foreground">
+                              {t("homeRootHiddenInCatalog")}
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        ) : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label>{t("homeDefaultRoot")}</Label>
+            <Select
+              value={defaultRootId ?? selectableRoots[0]?.id ?? ""}
+              disabled={busy || selectableRoots.length === 0}
+              onValueChange={(value) => {
+                setDefaultRootId(value || null);
+                setDefaultChildId(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("homeDefaultRootUnset")} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectableRoots.map((root) => (
+                  <SelectItem key={root.id} value={root.id}>
+                    {root.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>{t("homeDefaultChild")}</Label>
+            <Select
+              value={defaultChildId ?? "__none__"}
+              disabled={busy || defaultRootChildren.length === 0}
+              onValueChange={(value) =>
+                setDefaultChildId(value === "__none__" ? null : value)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("homeDefaultChildUnset")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">
+                  {t("homeDefaultChildUnset")}
+                </SelectItem>
+                {defaultRootChildren.map((child) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.name}
+                    {!child.showInFilter
+                      ? ` (${t("homeChildHidden")})`
+                      : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="rounded-sm border border-dashed p-3 text-xs text-muted-foreground">
+          <p>{t("homeChildrenHint")}</p>
+          <p className="mt-1">{t("homeFacetsHint")}</p>
+        </div>
+
+        <div className="flex justify-end">
+          <Button type="button" disabled={busy} onClick={onSave}>
+            {t("homeFinderSave")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

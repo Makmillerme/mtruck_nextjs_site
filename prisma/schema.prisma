@@ -342,3 +342,14 @@ model Order {
   @@index([origin])
   @@index([archivedAt])
 }
+
+/// Singleton layout for homepage quick finder (CategoryFinderPanel).
+model HomeFinderSettings {
+  id             String   @id @default("default")
+  showRootsBlock Boolean  @default(true)
+  /// Empty JSON array = all active roots with showInFilter.
+  rootIds        Json     @default("[]")
+  defaultRootId  String?
+  defaultChildId String?
+  updatedAt      DateTime @updatedAt
+}

@@ -25,6 +25,8 @@ export function revalidatePublicCatalog(
   updateTag(CATALOG_CACHE_TAGS.root);
   updateTag(CATALOG_CACHE_TAGS.filterSchema);
   updateTag(CATALOG_CACHE_TAGS.availability);
+  updateTag(CATALOG_CACHE_TAGS.homeFinder);
+  revalidatePath("/");
   revalidatePath("/products");
   if (options?.productId) {
     revalidatePath(`/products/${options.productId}`);

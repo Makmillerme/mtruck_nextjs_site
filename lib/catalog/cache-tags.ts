@@ -8,6 +8,7 @@ export const CATALOG_CACHE_TAGS = {
   products: "catalog-products",
   filterSchema: "catalog-filter-schema",
   availability: "catalog-filter-availability",
+  homeFinder: "catalog-home-finder",
 } as const;
 
 /** TTL for visitor traffic when no on-demand invalidation ran. */

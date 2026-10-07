@@ -423,7 +423,64 @@ export default function UiLab({ children }: { children?: ReactNode }) {
               hint="Живий CategoryFinder: біла плитка без заголовка. Марка, рік від/до, пробіг від/до, CTA. Наявність — лише в каталозі."
             >
               <div className="rounded-sm bg-secondary p-5 md:p-10">
-                <CategoryFinderPanel />
+                <CategoryFinderPanel
+                  payload={{
+                    settings: {
+                      id: "default",
+                      showRootsBlock: true,
+                      rootIds: [],
+                      defaultRootId: null,
+                      defaultChildId: null,
+                    },
+                    roots: [
+                      {
+                        id: "lab-root",
+                        slug: "lab-root",
+                        name: "Комерційна техніка",
+                        productCount: 74,
+                        children: [
+                          {
+                            id: "lab-tractors",
+                            slug: "sidelni-tyagachi",
+                            name: "Сідельні тягачі",
+                            productCount: 28,
+                            facets: [
+                              {
+                                key: "make",
+                                name: "Марка",
+                                type: "SELECT",
+                                unit: null,
+                                options: [
+                                  { slug: "daf", label: "DAF" },
+                                  { slug: "scania", label: "Scania" },
+                                  { slug: "volvo", label: "Volvo" },
+                                ],
+                                minBound: null,
+                                maxBound: null,
+                              },
+                              {
+                                key: "year",
+                                name: "Рік випуску",
+                                type: "YEAR",
+                                unit: null,
+                                options: [],
+                                minBound: 2015,
+                                maxBound: 2024,
+                              },
+                            ],
+                          },
+                          {
+                            id: "lab-trailers",
+                            slug: "napivprichepy",
+                            name: "Напівпричепи",
+                            productCount: 16,
+                            facets: [],
+                          },
+                        ],
+                      },
+                    ],
+                  }}
+                />
               </div>
             </Section>
           </LabGate>

@@ -56,9 +56,11 @@
 
 **Дата:** 2026-09-09
 
+**Оновлено:** 2026-10-07
+
 **Суть:** `getMockOfferCount` / `baseCount` у CategoryFinder — mock. Замінити на Prisma-агрегації по категоріях/марках.
 
-**Статус:** Відкладено
+**Статус:** Готово — `fetchHomeFinderPayload` рахує PUBLISHED у subtree; мок лишився лише для UI Lab brands.
 
 ## Живий flow замовлень
 
@@ -150,4 +152,4 @@
 - Картки: `components/vehicles/vehicle-card.tsx`, `mem:catalog-preview-cards`, `mem:marketing-vehicle-card-ui-spec-2026-09`.
 - Display groups уже є в CMS — можлива точка розширення для UI-конфігу.
 
-**Статус:** Фаза 0–1 частково готові — сайдбар CMS; `/admin/ui` таби (Фільтр / Превʼю / Картка / Розкладка); таб Фільтр керує `showInFilter` + `isFacet`. Далі: превʼю картки, картка товару, visual layout.
+**Статус:** Фаза 0–2 частково — сайдбар CMS; `/admin/ui` таб Фільтр = швидкий фільтр головної (`HomeFinderSettings`); каталог `/products` лишається CMS `showInFilter`/`isFacet`. Далі: превʼю картки, картка товару, visual layout.

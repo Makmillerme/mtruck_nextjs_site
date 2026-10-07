@@ -16,14 +16,12 @@ export { parseUiEditorTab };
 
 export default function UiEditorTabs({
   tab,
-  nodeId,
   filter,
   cardPreview,
   productCard,
   layout,
 }: {
   tab: UiEditorTab;
-  nodeId?: string;
   filter: ReactNode;
   cardPreview: ReactNode;
   productCard: ReactNode;
@@ -38,7 +36,6 @@ export default function UiEditorTabs({
     if (next === tab) return;
     const params = new URLSearchParams();
     params.set("tab", next);
-    if (nodeId) params.set("node", nodeId);
     startTransition(() => {
       router.replace(`/admin/ui?${params.toString()}`);
     });
