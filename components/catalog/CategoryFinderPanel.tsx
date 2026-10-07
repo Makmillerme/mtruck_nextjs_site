@@ -443,6 +443,7 @@ export default function CategoryFinderPanel({
                 count={child.productCount}
                 active={selectedChild?.id === child.id}
                 onClick={() => selectChild(child)}
+                size="sm"
               />
             ))}
           </div>
@@ -459,7 +460,6 @@ export default function CategoryFinderPanel({
                     count={child.productCount}
                     active={selectedGrandchild?.id === child.id}
                     onClick={() => selectGrandchild(child)}
-                    size="sm"
                   />
                 ))}
               </div>
@@ -477,7 +477,6 @@ export default function CategoryFinderPanel({
               count={child.productCount}
               active={selectedGrandchild?.id === child.id}
               onClick={() => selectGrandchild(child)}
-              size="sm"
             />
           ))}
         </div>
