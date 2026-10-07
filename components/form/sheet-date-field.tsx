@@ -82,11 +82,7 @@ export function SheetDateField({
       {name ? (
         <input type="hidden" name={name} value={value ?? ""} />
       ) : null}
-      <Popover
-        modal={false}
-        open={open}
-        onOpenChange={setOpen}
-      >
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"

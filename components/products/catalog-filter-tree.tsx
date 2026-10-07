@@ -190,7 +190,6 @@ function FacetDropdown({
 
   return (
     <Popover
-      modal={false}
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
@@ -232,6 +231,10 @@ function FacetDropdown({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                  event.currentTarget.focus();
+                }}
                 placeholder={facet.name}
                 className="h-10 border-0 bg-transparent px-0 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
                 aria-label={facet.name}

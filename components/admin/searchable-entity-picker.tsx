@@ -106,12 +106,7 @@ export default function SearchableEntityPicker({
         value={value}
         required={required}
       />
-      {/*
-        modal={false}: nested inside Sheet (Dialog). modal Popover traps/overlays
-        and leaves the search field gray + unclickable.
-      */}
       <Popover
-        modal={false}
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
@@ -153,11 +148,11 @@ export default function SearchableEntityPicker({
                   autoFocus
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    // Keep typing out of Sheet/Dialog focus trap / dismiss handlers.
+                  onKeyDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => {
                     event.stopPropagation();
+                    event.currentTarget.focus();
                   }}
-                  onPointerDown={(event) => event.stopPropagation()}
                   placeholder={searchPlaceholder}
                   className="h-10 border-0 bg-transparent px-0 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
                   aria-label={searchPlaceholder}

@@ -378,7 +378,7 @@ export default function CascadeSelect({
       ) : null}
 
       {variant === "tree" ? (
-        <Popover modal={false} open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>{trigger}</PopoverTrigger>
           <PopoverContent
             align="start"

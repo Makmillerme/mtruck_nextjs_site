@@ -6,7 +6,12 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { useFloatingScrollRef } from "@/lib/ui/floating-scroll"
 import { cn } from "@/lib/utils"
 
-const Popover = PopoverPrimitive.Root
+function Popover({
+  modal = true,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>) {
+  return <PopoverPrimitive.Root modal={modal} {...props} />
+}
 
 const PopoverTrigger = PopoverPrimitive.Trigger
 
