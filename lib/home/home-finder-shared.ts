@@ -34,7 +34,7 @@ export type HomeFinderRoot = {
 };
 
 export type HomeFinderPayload = {
-  /** True when more than one home root — premium roots row. */
+  /** True when at least one home-visible root should render as cards. */
   showRootsBlock: boolean;
   roots: HomeFinderRoot[];
 };

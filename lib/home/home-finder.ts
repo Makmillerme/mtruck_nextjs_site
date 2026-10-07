@@ -166,7 +166,7 @@ export async function fetchHomeFinderPayload(): Promise<HomeFinderPayload> {
       const homeTree = mapHomeFilterNodes(tree);
       const roots = await Promise.all(homeTree.map(mapRoot));
       return {
-        showRootsBlock: roots.length > 1,
+        showRootsBlock: roots.length > 0,
         roots,
       };
     },

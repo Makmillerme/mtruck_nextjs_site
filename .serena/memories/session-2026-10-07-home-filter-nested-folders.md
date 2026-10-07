@@ -1,12 +1,7 @@
 # Homepage finder nested folders (2026-10-07)
 
-## Bug
-`showInHomeFilter` hoist kept full tree, but `mapRoot` only mapped **one** child level. Deeper folders (Тягачі, Фургони…) never became cards — unlike catalog filter.
+`HomeFinderChild.children` recursive; panel has grandchild card row.
 
-## Fix
-- `HomeFinderChild.children` recursive
-- `mapFolderNode` maps full depth after hoist
-- `CategoryFinderPanel`: third card row for grandchildren; facets/CTA from deepest selection
-- defaults include `grandchildId`
-
-Tree example: Техніка → Вантажні/Причепи/Спецтехніка → leaf cards.
+## Root row (follow-up)
+Single home-visible root (e.g. Техніка) was hidden: `showRootsBlock: roots.length > 1`.
+Now `roots.length > 0` so the root card shows when `showInHomeFilter` is on. Hide the root in the folder sheet flag to hoist children instead.
