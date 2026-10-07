@@ -701,6 +701,25 @@
     "editOrderSheetLede": "Kunde, Fahrzeug, Summe oder Zahlungsstatus aktualisieren.",
     "submitCreateOrder": "Bestellung erstellen"
   },
+  "UiEditor": {
+    "tabFilter": "Filter",
+    "tabCardPreview": "Kartenvorschau",
+    "tabProductCard": "Produktkarte",
+    "tabLayout": "Layout",
+    "filterTitle": "Katalogfilter",
+    "filterLede": "Ordner und Felder für den öffentlichen Filter steuern. Felddefinitionen bleiben im Datenmodell.",
+    "filterFolder": "Ordner",
+    "filterFolderUnset": "Nicht gewählt",
+    "filterPickFolder": "Wählen Sie einen Ordner, um Sichtbarkeit und Felder im Filter einzustellen.",
+    "filterFolderHint": "Ein ausgeblendeter Ordner fehlt im Filterbaum; sichtbare Nachkommen rücken nach oben.",
+    "filterFieldsTitle": "Felder im Filter",
+    "filterFieldsLede": "Nur eigene Felder dieses Ordners. TEXT erscheint nicht im Filter.",
+    "filterNoFields": "Dieser Ordner hat noch keine eigenen Felder.",
+    "filterTextBlocked": "TEXT kann keine Filterfacette sein",
+    "stubCardPreview": "Demnächst: welche Specs in Listen-/Rastervorschau erscheinen.",
+    "stubProductCard": "Demnächst: Layout der Produktdetailkarte und Optionen.",
+    "stubLayout": "Demnächst: visueller Layout-Editor für Komponenten."
+  },
   "CatalogAdmin": {
     "title": "CMS",
     "lede": "Ordner sind der Ort des Angebots. Felder sind das Formular. Ein abhängiges Feld oder Wert erscheint nach der Elternauswahl.",
@@ -771,6 +790,7 @@
     "hiddenFromFilter": "nicht im Filter",
     "flagRequiredHint": "Ohne Wert für dieses Feld lässt sich das Angebot nicht speichern.",
     "flagFacetHint": "Das Feld erscheint im öffentlichen Katalogfilter des passenden Ordners.",
+    "textCannotBeFacet": "Ein Textfeld kann keine Filterfacette sein.",
     "addField": "Feld hinzufügen",
     "saveField": "Feld speichern",
     "editField": "Feldeinstellungen",

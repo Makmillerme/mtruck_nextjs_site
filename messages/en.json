@@ -701,6 +701,25 @@
     "editOrderSheetLede": "Update the customer, vehicle, total, or payment status.",
     "submitCreateOrder": "Create order"
   },
+  "UiEditor": {
+    "tabFilter": "Filter",
+    "tabCardPreview": "Card preview",
+    "tabProductCard": "Product card",
+    "tabLayout": "Layout",
+    "filterTitle": "Catalog filter",
+    "filterLede": "Choose which folders and fields appear in the public filter. Field definitions stay in the data model.",
+    "filterFolder": "Folder",
+    "filterFolderUnset": "Not selected",
+    "filterPickFolder": "Select a folder to configure its filter visibility and fields.",
+    "filterFolderHint": "A hidden folder is omitted from the filter tree; visible descendants hoist up.",
+    "filterFieldsTitle": "Fields in filter",
+    "filterFieldsLede": "Own fields on this folder only. TEXT cannot appear in the filter.",
+    "filterNoFields": "This folder has no own fields yet.",
+    "filterTextBlocked": "TEXT cannot be a filter facet",
+    "stubCardPreview": "Coming soon: which specs show on list / grid card previews.",
+    "stubProductCard": "Coming soon: product detail card layout and options.",
+    "stubLayout": "Coming soon: visual component layout editor."
+  },
   "CatalogAdmin": {
     "title": "CMS",
     "lede": "Folders are where a listing lives. Fields are the listing form. A dependent field or value appears after the parent choice.",
@@ -771,6 +790,7 @@
     "hiddenFromFilter": "hidden from filter",
     "flagRequiredHint": "The product cannot be saved without a value for this field.",
     "flagFacetHint": "The field appears in the public catalog filter for the matching folder.",
+    "textCannotBeFacet": "A text field cannot be a filter facet.",
     "addField": "Add field",
     "saveField": "Save field",
     "editField": "Field settings",

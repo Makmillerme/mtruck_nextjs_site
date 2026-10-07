@@ -23,6 +23,8 @@ export function revalidatePublicCatalog(
   options?: RevalidatePublicCatalogOptions
 ) {
   updateTag(CATALOG_CACHE_TAGS.root);
+  updateTag(CATALOG_CACHE_TAGS.filterSchema);
+  updateTag(CATALOG_CACHE_TAGS.availability);
   revalidatePath("/products");
   if (options?.productId) {
     revalidatePath(`/products/${options.productId}`);

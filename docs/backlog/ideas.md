@@ -150,4 +150,4 @@
 - Картки: `components/vehicles/vehicle-card.tsx`, `mem:catalog-preview-cards`, `mem:marketing-vehicle-card-ui-spec-2026-09`.
 - Display groups уже є в CMS — можлива точка розширення для UI-конфігу.
 
-**Статус:** Фаза 0 в роботі / частково — сайдбар CMS → Модель даних (`/admin/catalog`) + UI редактор (`/admin/ui` заглушка). Далі: конфіг фільтра / карток / visual editor.
+**Статус:** Фаза 0–1 частково готові — сайдбар CMS; `/admin/ui` таби (Фільтр / Превʼю / Картка / Розкладка); таб Фільтр керує `showInFilter` + `isFacet`. Далі: превʼю картки, картка товару, visual layout.

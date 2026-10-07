@@ -16,6 +16,8 @@ import {
   nodeIdSchema,
   optionIdSchema,
   renameTaxonomyNodeSchema,
+  setAttributeIsFacetSchema,
+  setNodeShowInFilterSchema,
   updateAttributeSchema,
   updateDisplayGroupSchema,
 } from "@/utils/taxonomy-schema";
@@ -47,6 +49,7 @@ async function renderTaxonomyError(error: unknown): Promise<TaxonomyActionState>
 function revalidateCatalog() {
   revalidatePath("/admin");
   revalidatePath("/admin/catalog");
+  revalidatePath("/admin/ui");
   revalidatePath("/admin/products");
   revalidatePath("/admin/products/create");
   revalidatePublicCatalog();
@@ -758,3 +761,56 @@ export const saveProductNameTemplateAction: TaxonomyAction = async (
     return renderTaxonomyError(error);
   }
 };
+
+/** UI editor: toggle folder visibility in the public catalog filter. */
+export async function setNodeShowInFilterAction(input: {
+  nodeId: string;
+  showInFilter: boolean;
+}): Promise<TaxonomyActionState> {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(setNodeShowInFilterSchema, input);
+    const t = await getTranslations("CatalogAdmin");
+    const existing = await db.taxonomyNode.findUnique({
+      where: { id: data.nodeId },
+      select: { id: true },
+    });
+    if (!existing) throw new Error(t("folderMissing"));
+    await db.taxonomyNode.update({
+      where: { id: data.nodeId },
+      data: { showInFilter: data.showInFilter },
+    });
+    revalidateCatalog();
+    return { message: "", ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+}
+
+/** UI editor: toggle attribute as a public filter facet. */
+export async function setAttributeIsFacetAction(input: {
+  attributeId: string;
+  isFacet: boolean;
+}): Promise<TaxonomyActionState> {
+  await getAdminUser();
+  try {
+    const data = validateWithZodSchema(setAttributeIsFacetSchema, input);
+    const t = await getTranslations("CatalogAdmin");
+    const existing = await db.attributeDefinition.findUnique({
+      where: { id: data.attributeId },
+      select: { id: true, type: true },
+    });
+    if (!existing) throw new Error(t("fieldMissing"));
+    if (existing.type === "TEXT" && data.isFacet) {
+      throw new Error(t("textCannotBeFacet"));
+    }
+    await db.attributeDefinition.update({
+      where: { id: data.attributeId },
+      data: { isFacet: data.isFacet },
+    });
+    revalidateCatalog();
+    return { message: "", ok: true };
+  } catch (error) {
+    return renderTaxonomyError(error);
+  }
+}
