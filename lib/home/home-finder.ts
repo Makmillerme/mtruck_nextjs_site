@@ -122,10 +122,26 @@ async function mapChild(node: TaxonomyTreeNode): Promise<HomeFinderChild> {
   };
 }
 
+/**
+ * Same hoist rules as catalog `mapFilterNodes`, but for `showInHomeFilter`:
+ * hidden folders omit themselves; visible descendants rise to this level.
+ */
+function mapHomeFilterNodes(nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] {
+  const result: TaxonomyTreeNode[] = [];
+  for (const node of nodes) {
+    if (!node.isActive) continue;
+    const children = mapHomeFilterNodes(node.children);
+    if (!node.showInHomeFilter) {
+      result.push(...children);
+      continue;
+    }
+    result.push({ ...node, children });
+  }
+  return result;
+}
+
 async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
-  const visibleChildren = node.children.filter(
-    (child) => child.isActive && child.showInHomeFilter
-  );
+  const visibleChildren = node.children;
   const children =
     visibleChildren.length > 0
       ? await Promise.all(visibleChildren.map(mapChild))
@@ -144,10 +160,8 @@ export async function fetchHomeFinderPayload(): Promise<HomeFinderPayload> {
   const cached = unstable_cache(
     async () => {
       const tree = await fetchTaxonomyTree();
-      const rootNodes = tree.filter(
-        (node) => node.isActive && node.showInHomeFilter
-      );
-      const roots = await Promise.all(rootNodes.map(mapRoot));
+      const homeTree = mapHomeFilterNodes(tree);
+      const roots = await Promise.all(homeTree.map(mapRoot));
       return {
         showRootsBlock: roots.length > 1,
         roots,

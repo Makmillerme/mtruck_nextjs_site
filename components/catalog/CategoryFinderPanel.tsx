@@ -278,6 +278,12 @@ export default function CategoryFinderPanel({
   }, [roots, selectedRootId]);
 
   const children = selectedRoot?.children ?? [];
+  /** Leaf root: children is [self] — show only one card row (roots or self), not a duplicate. */
+  const childIsSelf =
+    Boolean(selectedRoot) &&
+    children.length === 1 &&
+    children[0]?.id === selectedRoot?.id;
+  const showChildRow = children.length > 0 && !childIsSelf;
 
   const selectedChild: HomeFinderChild | null = useMemo(() => {
     if (children.length === 0) return null;
@@ -361,7 +367,9 @@ export default function CategoryFinderPanel({
     setRangeTo({});
   }
 
-  const showRoots = payload.showRootsBlock && roots.length > 0;
+  const showRoots =
+    (payload.showRootsBlock || childIsSelf || !showChildRow) &&
+    roots.length > 0;
 
   return (
     <div>
@@ -386,7 +394,7 @@ export default function CategoryFinderPanel({
         </div>
       ) : null}
 
-      {children.length > 0 ? (
+      {showChildRow ? (
         <div className={folderRowClass} style={{ scrollbarWidth: "none" }}>
           {children.map((child) => (
             <FinderFolderCard
@@ -398,9 +406,11 @@ export default function CategoryFinderPanel({
             />
           ))}
         </div>
-      ) : (
+      ) : null}
+
+      {roots.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("emptyChildren")}</p>
-      )}
+      ) : null}
 
       <div className="mt-6 rounded-sm border border-border bg-background p-4 shadow-sm md:mt-8 md:p-5">
         {facets.length === 0 ? (
