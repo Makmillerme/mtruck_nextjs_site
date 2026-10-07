@@ -264,6 +264,9 @@ export default function CategoryFinderPanel({
   const [selectedChildId, setSelectedChildId] = useState<string | null>(
     defaults.childId
   );
+  const [selectedGrandchildId, setSelectedGrandchildId] = useState<
+    string | null
+  >(defaults.grandchildId);
   const [chipFacets, setChipFacets] = useState<Record<string, string | null>>(
     {}
   );
@@ -294,7 +297,22 @@ export default function CategoryFinderPanel({
     );
   }, [children, selectedChildId]);
 
-  const facets = selectedChild?.facets ?? [];
+  const grandchildren = selectedChild?.children ?? [];
+  const showGrandchildRow = grandchildren.length > 0;
+
+  const selectedGrandchild: HomeFinderChild | null = useMemo(() => {
+    if (grandchildren.length === 0) return null;
+    return (
+      grandchildren.find((child) => child.id === selectedGrandchildId) ??
+      grandchildren[0] ??
+      null
+    );
+  }, [grandchildren, selectedGrandchildId]);
+
+  /** Deepest selected folder drives facets / CTA (catalog folder semantics). */
+  const activeFolder = selectedGrandchild ?? selectedChild;
+
+  const facets = activeFolder?.facets ?? [];
   /** Homepage plate canon: one chip row (prefer make) + two ranges (prefer year/mileage) + CTA. */
   const chipFacetsList = (() => {
     const chips = facets.filter(
@@ -332,10 +350,11 @@ export default function CategoryFinderPanel({
   const primaryRanges = rangeFacets;
   const extraRanges: HomeFinderFacet[] = [];
 
-  const count = selectedChild?.productCount ?? selectedRoot?.productCount ?? 0;
+  const count =
+    activeFolder?.productCount ?? selectedRoot?.productCount ?? 0;
 
   const href = useMemo(() => {
-    if (!selectedChild) return "/products";
+    if (!activeFolder) return "/products";
     const ranges: Record<string, { from?: number; to?: number }> = {};
     for (const facet of facets) {
       if (facet.type !== "NUMBER" && facet.type !== "YEAR") continue;
@@ -346,25 +365,35 @@ export default function CategoryFinderPanel({
       }
     }
     return buildHomeFinderProductsHref({
-      folderSlug: selectedChild.slug,
+      folderSlug: activeFolder.slug,
       facets: chipFacets,
       ranges,
     });
-  }, [selectedChild, facets, chipFacets, rangeFrom, rangeTo]);
+  }, [activeFolder, facets, chipFacets, rangeFrom, rangeTo]);
 
-  function selectRoot(root: HomeFinderRoot) {
-    setSelectedRootId(root.id);
-    setSelectedChildId(root.children[0]?.id ?? null);
+  function resetFacets() {
     setChipFacets({});
     setRangeFrom({});
     setRangeTo({});
   }
 
+  function selectRoot(root: HomeFinderRoot) {
+    setSelectedRootId(root.id);
+    const firstChild = root.children[0] ?? null;
+    setSelectedChildId(firstChild?.id ?? null);
+    setSelectedGrandchildId(firstChild?.children[0]?.id ?? null);
+    resetFacets();
+  }
+
   function selectChild(child: HomeFinderChild) {
     setSelectedChildId(child.id);
-    setChipFacets({});
-    setRangeFrom({});
-    setRangeTo({});
+    setSelectedGrandchildId(child.children[0]?.id ?? null);
+    resetFacets();
+  }
+
+  function selectGrandchild(child: HomeFinderChild) {
+    setSelectedGrandchildId(child.id);
+    resetFacets();
   }
 
   const showRoots =
@@ -381,7 +410,10 @@ export default function CategoryFinderPanel({
       />
 
       {showRoots ? (
-        <div className={cn(folderRowClass, "mb-5 md:mb-6")} style={{ scrollbarWidth: "none" }}>
+        <div
+          className={cn(folderRowClass, "mb-5 md:mb-6")}
+          style={{ scrollbarWidth: "none" }}
+        >
           {roots.map((root) => (
             <FinderFolderCard
               key={root.id}
@@ -395,7 +427,10 @@ export default function CategoryFinderPanel({
       ) : null}
 
       {showChildRow ? (
-        <div className={folderRowClass} style={{ scrollbarWidth: "none" }}>
+        <div
+          className={cn(folderRowClass, showGrandchildRow && "mb-5 md:mb-6")}
+          style={{ scrollbarWidth: "none" }}
+        >
           {children.map((child) => (
             <FinderFolderCard
               key={child.id}
@@ -403,6 +438,20 @@ export default function CategoryFinderPanel({
               count={child.productCount}
               active={selectedChild?.id === child.id}
               onClick={() => selectChild(child)}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {showGrandchildRow ? (
+        <div className={folderRowClass} style={{ scrollbarWidth: "none" }}>
+          {grandchildren.map((child) => (
+            <FinderFolderCard
+              key={child.id}
+              name={child.name}
+              count={child.productCount}
+              active={selectedGrandchild?.id === child.id}
+              onClick={() => selectGrandchild(child)}
             />
           ))}
         </div>
@@ -534,3 +583,4 @@ export default function CategoryFinderPanel({
     </div>
   );
 }
+

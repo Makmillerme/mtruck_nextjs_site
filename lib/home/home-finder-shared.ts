@@ -21,6 +21,8 @@ export type HomeFinderChild = {
   name: string;
   productCount: number;
   facets: HomeFinderFacet[];
+  /** Nested folders still visible via showInHomeFilter (catalog-parity depth). */
+  children: HomeFinderChild[];
 };
 
 export type HomeFinderRoot = {
@@ -61,9 +63,20 @@ export function buildHomeFinderProductsHref(input: {
 
 export function resolveHomeFinderDefaults(
   payload: HomeFinderPayload
-): { rootId: string | null; childId: string | null } {
+): {
+  rootId: string | null;
+  childId: string | null;
+  grandchildId: string | null;
+} {
   const { roots } = payload;
-  if (roots.length === 0) return { rootId: null, childId: null };
+  if (roots.length === 0) {
+    return { rootId: null, childId: null, grandchildId: null };
+  }
   const root = roots[0];
-  return { rootId: root.id, childId: root.children[0]?.id ?? null };
+  const child = root.children[0] ?? null;
+  return {
+    rootId: root.id,
+    childId: child?.id ?? null,
+    grandchildId: child?.children[0]?.id ?? null,
+  };
 }

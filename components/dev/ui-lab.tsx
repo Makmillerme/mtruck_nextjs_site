@@ -462,6 +462,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                 maxBound: 2024,
                               },
                             ],
+                            children: [],
                           },
                           {
                             id: "lab-trailers",
@@ -469,6 +470,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                             name: "Напівпричепи",
                             productCount: 16,
                             facets: [],
+                            children: [],
                           },
                         ],
                       },

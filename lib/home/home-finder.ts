@@ -112,13 +112,17 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
   return facets;
 }
 
-async function mapChild(node: TaxonomyTreeNode): Promise<HomeFinderChild> {
+async function mapFolderNode(
+  node: TaxonomyTreeNode
+): Promise<HomeFinderChild> {
+  const children = await Promise.all(node.children.map(mapFolderNode));
   return {
     id: node.id,
     slug: node.slug,
     name: node.name,
     productCount: await subtreePublishedCount(node.id),
     facets: await facetsForNode(node.id),
+    children,
   };
 }
 
@@ -141,11 +145,10 @@ function mapHomeFilterNodes(nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] {
 }
 
 async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
-  const visibleChildren = node.children;
+  const nested = await Promise.all(node.children.map(mapFolderNode));
+  /** Leaf root: expose self as the only child so facets/CTA still bind. */
   const children =
-    visibleChildren.length > 0
-      ? await Promise.all(visibleChildren.map(mapChild))
-      : [await mapChild(node)];
+    nested.length > 0 ? nested : [await mapFolderNode(node)];
 
   return {
     id: node.id,
