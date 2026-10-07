@@ -118,7 +118,10 @@ const folderCardClass = (
   tone: "outline" | "fill"
 ) =>
   cn(
-    "relative flex w-[9.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border px-3 py-3 text-left shadow-sm transition-colors sm:w-[10.5rem] sm:gap-3 sm:px-4 sm:py-4",
+    "relative flex w-[9.5rem] shrink-0 flex-col items-start rounded-sm border px-3 text-left shadow-sm transition-colors sm:w-[10.5rem]",
+    tone === "fill"
+      ? "gap-1.5 py-2.5 sm:py-3"
+      : "gap-2.5 py-3 sm:gap-3 sm:px-4 sm:py-4",
     tone === "fill"
       ? active
         ? "border-primary bg-primary text-primary-foreground"
