@@ -532,16 +532,19 @@ export default function CategoryFinderPanel({
       {showRoots ? (
         <div className="mb-5 md:mb-6">
           <p className={fieldLabelClass}>{t("catalogLabel")}</p>
-          <div className={chipRowClass} style={{ scrollbarWidth: "none" }}>
+          <div
+            className={folderRowClass}
+            style={{ scrollbarWidth: "none" }}
+          >
             {roots.map((root) => (
-              <button
+              <FinderFolderCard
                 key={root.id}
-                type="button"
+                name={root.name}
+                count={root.productCount}
+                active={selectedRoot?.id === root.id}
                 onClick={() => selectRoot(root)}
-                className={chipClass(selectedRoot?.id === root.id)}
-              >
-                {root.name}
-              </button>
+                tone="fill"
+              />
             ))}
           </div>
         </div>
@@ -560,7 +563,6 @@ export default function CategoryFinderPanel({
                 count={child.productCount}
                 active={selectedChild?.id === child.id}
                 onClick={() => selectChild(child)}
-                tone="fill"
               />
             ))}
           </div>
