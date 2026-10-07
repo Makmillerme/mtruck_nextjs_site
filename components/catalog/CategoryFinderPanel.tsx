@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import { narrowFacetsForFolder } from "@/lib/catalog/narrow-facets";
+import { pruneDependentFacetValues } from "@/lib/catalog/public-filter";
+import type { PublicFilterFacet } from "@/lib/catalog/public-filter";
 import {
   buildHomeFinderProductsHref,
   resolveHomeFinderDefaults,
   type HomeFinderChild,
   type HomeFinderFacet,
+  type HomeFinderFacetOption,
   type HomeFinderPayload,
   type HomeFinderRoot,
 } from "@/lib/home/home-finder-shared";
@@ -172,9 +175,21 @@ function FinderFolderCard({
   );
 }
 
+function selectOptionsForHierarchy(
+  facet: HomeFinderFacet,
+  parentChipValue: string | null
+): HomeFinderFacetOption[] {
+  if (!facet.dependsOnKey) return facet.options;
+  if (!parentChipValue) return [];
+  return facet.options.filter(
+    (option) => option.parentSlug === parentChipValue
+  );
+}
+
 function FacetField({
   facet,
   chipValue,
+  parentChipValue,
   onChip,
   rangeFrom,
   rangeTo,
@@ -186,6 +201,8 @@ function FacetField({
 }: {
   facet: HomeFinderFacet;
   chipValue: string | null;
+  /** Parent SELECT value when this facet has dependsOnKey (catalog cascade). */
+  parentChipValue?: string | null;
   onChip: (slug: string | null) => void;
   rangeFrom: string;
   rangeTo: string;
@@ -236,6 +253,11 @@ function FacetField({
     );
   }
 
+  const options = selectOptionsForHierarchy(
+    facet,
+    parentChipValue ?? null
+  );
+
   return (
     <div className="min-w-0">
       <p className={fieldLabelClass}>{facet.name}</p>
@@ -247,7 +269,7 @@ function FacetField({
         >
           {allLabel}
         </button>
-        {facet.options.map((option) => (
+        {options.map((option) => (
           <button
             key={option.slug}
             type="button"
@@ -363,22 +385,46 @@ export default function CategoryFinderPanel({
   }, [activeFolder, scopedFacets, scopedRanges, payload.availability]);
 
   /**
-   * Homepage plate: all home-visible chip facets as rows; ranges fill a 12-col
-   * grid; CTA takes leftover cells in the last range row (or a full row).
+   * Homepage plate chip rows: SELECT/BOOLEAN in catalog dependency order.
+   * Dependent SELECT appears only after parent is chosen (make → model).
    */
-  const chipFacetsList = (() => {
-    const chips = facets.filter(
-      (facet) =>
-        (facet.type === "SELECT" || facet.type === "BOOLEAN") &&
-        facet.options.length > 0
-    );
-    const preferredKey = (facet: HomeFinderFacet) => {
-      if (facet.key === "make" || facet.key === "brand") return 0;
-      if (facet.dependsOnKey) return 2;
-      return 1;
-    };
-    return [...chips].sort((a, b) => preferredKey(a) - preferredKey(b));
-  })();
+  const chipFacetsList = useMemo(() => {
+    return facets.filter((facet) => {
+      if (facet.type !== "SELECT" && facet.type !== "BOOLEAN") return false;
+      if (facet.type === "BOOLEAN") return facet.options.length > 0;
+      if (!facet.dependsOnKey) return facet.options.length > 0;
+      const parentValue = chipFacets[facet.dependsOnKey] ?? null;
+      if (!parentValue) return false;
+      return selectOptionsForHierarchy(facet, parentValue).length > 0;
+    });
+  }, [facets, chipFacets]);
+
+  function setChipWithHierarchy(key: string, slug: string | null) {
+    setChipFacets((current) => {
+      const merged: Record<string, string | null> = { ...current, [key]: slug };
+      const bucket: Record<string, string[]> = {};
+      for (const [facetKey, value] of Object.entries(merged)) {
+        if (value) bucket[facetKey] = [value];
+      }
+      const pruned = pruneDependentFacetValues(
+        facets as PublicFilterFacet[],
+        bucket
+      );
+      /** Drop children when parent is empty (catalog prune skips that case). */
+      for (const facet of facets) {
+        if (!facet.dependsOnKey) continue;
+        if (!(pruned[facet.dependsOnKey]?.length)) {
+          delete pruned[facet.key];
+        }
+      }
+      const next: Record<string, string | null> = {};
+      for (const facet of facets) {
+        if (facet.type !== "SELECT" && facet.type !== "BOOLEAN") continue;
+        next[facet.key] = pruned[facet.key]?.[0] ?? null;
+      }
+      return next;
+    });
+  }
   const rangeFacets = (() => {
     const ranges = facets.filter(
       (facet) => facet.type === "NUMBER" || facet.type === "YEAR"
@@ -575,12 +621,12 @@ export default function CategoryFinderPanel({
                 key={facet.key}
                 facet={facet}
                 chipValue={chipFacets[facet.key] ?? null}
-                onChip={(slug) =>
-                  setChipFacets((current) => ({
-                    ...current,
-                    [facet.key]: slug,
-                  }))
+                parentChipValue={
+                  facet.dependsOnKey
+                    ? (chipFacets[facet.dependsOnKey] ?? null)
+                    : null
                 }
+                onChip={(slug) => setChipWithHierarchy(facet.key, slug)}
                 rangeFrom=""
                 rangeTo=""
                 onRangeFrom={() => undefined}
