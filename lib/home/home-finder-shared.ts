@@ -1,15 +1,5 @@
 import type { AttributeTypeName } from "@/lib/catalog/types";
 
-export const HOME_FINDER_SETTINGS_ID = "default";
-
-export type HomeFinderSettingsRow = {
-  id: string;
-  showRootsBlock: boolean;
-  rootIds: string[];
-  defaultRootId: string | null;
-  defaultChildId: string | null;
-};
-
 export type HomeFinderFacetOption = {
   slug: string;
   label: string;
@@ -42,7 +32,8 @@ export type HomeFinderRoot = {
 };
 
 export type HomeFinderPayload = {
-  settings: HomeFinderSettingsRow;
+  /** True when more than one home root — premium roots row. */
+  showRootsBlock: boolean;
   roots: HomeFinderRoot[];
 };
 
@@ -71,24 +62,8 @@ export function buildHomeFinderProductsHref(input: {
 export function resolveHomeFinderDefaults(
   payload: HomeFinderPayload
 ): { rootId: string | null; childId: string | null } {
-  const { settings, roots } = payload;
+  const { roots } = payload;
   if (roots.length === 0) return { rootId: null, childId: null };
-
-  let root =
-    (settings.defaultRootId
-      ? roots.find((item) => item.id === settings.defaultRootId)
-      : null) ?? roots[0];
-
-  if (settings.showRootsBlock === false && roots.length === 1) {
-    root = roots[0];
-  }
-
-  const child =
-    (settings.defaultChildId
-      ? root.children.find((item) => item.id === settings.defaultChildId)
-      : null) ??
-    root.children[0] ??
-    null;
-
-  return { rootId: root.id, childId: child?.id ?? null };
+  const root = roots[0];
+  return { rootId: root.id, childId: root.children[0]?.id ?? null };
 }

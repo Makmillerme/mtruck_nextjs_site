@@ -20,6 +20,7 @@ export type TaxonomyNodeRow = {
   sortOrder: number;
   isActive: boolean;
   showInFilter: boolean;
+  showInHomeFilter: boolean;
 };
 
 export type TaxonomyTreeNode = TaxonomyNodeRow & {

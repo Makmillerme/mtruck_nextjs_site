@@ -197,6 +197,7 @@ export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
       name: formData.get("name"),
       parentId: formData.get("parentId") ?? undefined,
       showInFilter: checkbox(formData, "showInFilter"),
+      showInHomeFilter: checkbox(formData, "showInHomeFilter"),
     });
     if (data.parentId) {
       const parent = await db.taxonomyNode.findUnique({
@@ -214,6 +215,7 @@ export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
         parentId: data.parentId ?? null,
         sortOrder: await nextSiblingSort(data.parentId ?? null),
         showInFilter: data.showInFilter,
+        showInHomeFilter: data.showInHomeFilter,
       },
     });
     revalidateCatalog();
@@ -231,10 +233,15 @@ export const renameTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
       nodeId: formData.get("nodeId"),
       name: formData.get("name"),
       showInFilter: checkbox(formData, "showInFilter"),
+      showInHomeFilter: checkbox(formData, "showInHomeFilter"),
     });
     await db.taxonomyNode.update({
       where: { id: data.nodeId },
-      data: { name: data.name, showInFilter: data.showInFilter },
+      data: {
+        name: data.name,
+        showInFilter: data.showInFilter,
+        showInHomeFilter: data.showInHomeFilter,
+      },
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");

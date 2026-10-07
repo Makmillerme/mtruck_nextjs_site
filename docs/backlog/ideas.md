@@ -152,4 +152,4 @@
 - Картки: `components/vehicles/vehicle-card.tsx`, `mem:catalog-preview-cards`, `mem:marketing-vehicle-card-ui-spec-2026-09`.
 - Display groups уже є в CMS — можлива точка розширення для UI-конфігу.
 
-**Статус:** Фаза 0–2 частково — сайдбар CMS; `/admin/ui` таб Фільтр = швидкий фільтр головної (`HomeFinderSettings`); каталог `/products` лишається CMS `showInFilter`/`isFacet`. Далі: превʼю картки, картка товару, visual layout.
+**Статус:** Фаза 0–2 — сайдбар CMS; фільтри (головна + каталог) у моделі даних (`showInFilter` / `showInHomeFilter` / `isFacet`); `/admin/ui` Filter — заглушка. Далі: превʼю картки, картка товару, visual layout.

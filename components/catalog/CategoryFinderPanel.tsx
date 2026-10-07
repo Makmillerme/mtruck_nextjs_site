@@ -318,8 +318,7 @@ export default function CategoryFinderPanel({
     setRangeTo({});
   }
 
-  const showRoots =
-    payload.settings.showRootsBlock && roots.length > 0;
+  const showRoots = payload.showRootsBlock && roots.length > 0;
 
   return (
     <div>

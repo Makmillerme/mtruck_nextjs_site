@@ -1,12 +1,6 @@
-import FilterSettingsPanel from "@/components/admin/ui-editor/filter-settings-panel";
 import UiEditorStubPanel from "@/components/admin/ui-editor/ui-editor-stub-panel";
 import UiEditorTabs from "@/components/admin/ui-editor/ui-editor-tabs";
 import { parseUiEditorTab } from "@/lib/admin/ui-editor-tab";
-import { fetchTaxonomyTree } from "@/lib/catalog/taxonomy";
-import {
-  ensureHomeFinderSettings,
-  listHomeFinderRootOptions,
-} from "@/lib/home/home-finder";
 import { getTranslations } from "next-intl/server";
 import { getAdminUser } from "@/utils/session";
 
@@ -17,18 +11,16 @@ async function AdminUiEditorPage(props: {
   const searchParams = await props.searchParams;
   const t = await getTranslations("UiEditor");
   const tab = parseUiEditorTab(searchParams.tab);
-  const [settings, tree] = await Promise.all([
-    ensureHomeFinderSettings(),
-    fetchTaxonomyTree(),
-  ]);
-  const roots = listHomeFinderRootOptions(tree);
 
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
       <UiEditorTabs
         tab={tab}
         filter={
-          <FilterSettingsPanel settings={settings} roots={roots} />
+          <UiEditorStubPanel
+            title={t("tabFilter")}
+            description={t("stubFilter")}
+          />
         }
         cardPreview={
           <UiEditorStubPanel

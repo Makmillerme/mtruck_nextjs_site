@@ -11,12 +11,14 @@ export const createTaxonomyNodeSchema = z.object({
   name: z.string().trim().min(2).max(80),
   parentId: optionalUuid,
   showInFilter: z.coerce.boolean().optional().default(true),
+  showInHomeFilter: z.coerce.boolean().optional().default(true),
 });
 
 export const renameTaxonomyNodeSchema = z.object({
   nodeId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
   showInFilter: z.coerce.boolean().optional().default(false),
+  showInHomeFilter: z.coerce.boolean().optional().default(false),
 });
 
 export const setNodeShowInFilterSchema = z.object({

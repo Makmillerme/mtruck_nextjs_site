@@ -65,6 +65,7 @@ export async function fetchTaxonomyNodes() {
       sortOrder: true,
       isActive: true,
       showInFilter: true,
+      showInHomeFilter: true,
     },
   });
 }
@@ -202,6 +203,7 @@ export async function getPathNodes(nodeId: string) {
       sortOrder: true,
       isActive: true,
       showInFilter: true,
+      showInHomeFilter: true,
     },
   });
   while (current) {
@@ -217,6 +219,7 @@ export async function getPathNodes(nodeId: string) {
         sortOrder: true,
         isActive: true,
         showInFilter: true,
+      showInHomeFilter: true,
       },
     });
   }

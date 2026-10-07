@@ -129,6 +129,11 @@ function FolderRow({
               {t("hiddenFromFilter")}
             </span>
           ) : null}
+          {!node.showInHomeFilter ? (
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {t("hiddenFromHomeFilter")}
+            </span>
+          ) : null}
           {node.productCount > 0 ? (
             <span className="shrink-0 text-xs text-muted-foreground">
               {node.productCount}
@@ -359,6 +364,11 @@ export default function FolderTree({
                   label={t("flagShowInFilter")}
                   defaultChecked
                 />
+                <CatalogFlag
+                  name="showInHomeFilter"
+                  label={t("flagShowInHomeFilter")}
+                  defaultChecked
+                />
                 <CatalogSubmit text={t("createFolder")} className="w-fit" />
               </CatalogForm>
             </div>
@@ -384,6 +394,11 @@ export default function FolderTree({
                   name="showInFilter"
                   label={t("flagShowInFilter")}
                   defaultChecked={sheet.node.showInFilter}
+                />
+                <CatalogFlag
+                  name="showInHomeFilter"
+                  label={t("flagShowInHomeFilter")}
+                  defaultChecked={sheet.node.showInHomeFilter}
                 />
                 <CatalogSubmit text={t("saveFolder")} className="w-fit" />
               </CatalogForm>

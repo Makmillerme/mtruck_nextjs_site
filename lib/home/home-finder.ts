@@ -10,17 +10,14 @@ import {
 } from "@/lib/catalog/taxonomy";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import {
-  HOME_FINDER_SETTINGS_ID,
   type HomeFinderChild,
   type HomeFinderFacet,
   type HomeFinderPayload,
   type HomeFinderRoot,
-  type HomeFinderSettingsRow,
 } from "@/lib/home/home-finder-shared";
 import db from "@/utils/db";
 
 export {
-  HOME_FINDER_SETTINGS_ID,
   buildHomeFinderProductsHref,
   resolveHomeFinderDefaults,
   type HomeFinderChild,
@@ -28,28 +25,7 @@ export {
   type HomeFinderFacetOption,
   type HomeFinderPayload,
   type HomeFinderRoot,
-  type HomeFinderSettingsRow,
 } from "@/lib/home/home-finder-shared";
-
-function parseRootIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
-}
-
-export async function ensureHomeFinderSettings(): Promise<HomeFinderSettingsRow> {
-  const row = await db.homeFinderSettings.upsert({
-    where: { id: HOME_FINDER_SETTINGS_ID },
-    create: { id: HOME_FINDER_SETTINGS_ID },
-    update: {},
-  });
-  return {
-    id: row.id,
-    showRootsBlock: row.showRootsBlock,
-    rootIds: parseRootIds(row.rootIds),
-    defaultRootId: row.defaultRootId,
-    defaultChildId: row.defaultChildId,
-  };
-}
 
 async function publishedCountByNodeIds(
   nodeIds: string[]
@@ -136,29 +112,24 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
   return facets;
 }
 
-function pickRoots(
-  tree: TaxonomyTreeNode[],
-  settings: HomeFinderSettingsRow
-): TaxonomyTreeNode[] {
-  const active = tree.filter((node) => node.isActive && node.showInFilter);
-  if (settings.rootIds.length === 0) return active;
-  const allowed = new Set(settings.rootIds);
-  return active.filter((node) => allowed.has(node.id));
+async function mapChild(node: TaxonomyTreeNode): Promise<HomeFinderChild> {
+  return {
+    id: node.id,
+    slug: node.slug,
+    name: node.name,
+    productCount: await subtreePublishedCount(node.id),
+    facets: await facetsForNode(node.id),
+  };
 }
 
 async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
   const visibleChildren = node.children.filter(
-    (child) => child.isActive && child.showInFilter
+    (child) => child.isActive && child.showInHomeFilter
   );
-  const children: HomeFinderChild[] = await Promise.all(
-    visibleChildren.map(async (child) => ({
-      id: child.id,
-      slug: child.slug,
-      name: child.name,
-      productCount: await subtreePublishedCount(child.id),
-      facets: await facetsForNode(child.id),
-    }))
-  );
+  const children =
+    visibleChildren.length > 0
+      ? await Promise.all(visibleChildren.map(mapChild))
+      : [await mapChild(node)];
 
   return {
     id: node.id,
@@ -172,13 +143,15 @@ async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
 export async function fetchHomeFinderPayload(): Promise<HomeFinderPayload> {
   const cached = unstable_cache(
     async () => {
-      const [settings, tree] = await Promise.all([
-        ensureHomeFinderSettings(),
-        fetchTaxonomyTree(),
-      ]);
-      const rootNodes = pickRoots(tree, settings);
+      const tree = await fetchTaxonomyTree();
+      const rootNodes = tree.filter(
+        (node) => node.isActive && node.showInHomeFilter
+      );
       const roots = await Promise.all(rootNodes.map(mapRoot));
-      return { settings, roots };
+      return {
+        showRootsBlock: roots.length > 1,
+        roots,
+      };
     },
     ["home-finder-payload"],
     {
@@ -187,22 +160,4 @@ export async function fetchHomeFinderPayload(): Promise<HomeFinderPayload> {
     }
   );
   return cached();
-}
-
-/** Admin helpers: root options from taxonomy tree. */
-export function listHomeFinderRootOptions(tree: TaxonomyTreeNode[]) {
-  return tree
-    .filter((node) => node.isActive)
-    .map((node) => ({
-      id: node.id,
-      name: node.name,
-      showInFilter: node.showInFilter,
-      children: node.children
-        .filter((child) => child.isActive)
-        .map((child) => ({
-          id: child.id,
-          name: child.name,
-          showInFilter: child.showInFilter,
-        })),
-    }));
 }

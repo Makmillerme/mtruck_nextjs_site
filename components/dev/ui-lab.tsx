@@ -425,13 +425,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
               <div className="rounded-sm bg-secondary p-5 md:p-10">
                 <CategoryFinderPanel
                   payload={{
-                    settings: {
-                      id: "default",
-                      showRootsBlock: true,
-                      rootIds: [],
-                      defaultRootId: null,
-                      defaultChildId: null,
-                    },
+                    showRootsBlock: true,
                     roots: [
                       {
                         id: "lab-root",
