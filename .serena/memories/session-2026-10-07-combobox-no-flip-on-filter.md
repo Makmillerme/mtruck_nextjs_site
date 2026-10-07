@@ -1,9 +1,11 @@
-# Combobox jump on filter (2026-10-07)
+# Combobox shrink without jump (2026-10-07)
 
-First attempt (`sticky="always"` + CommandList `h-[300px]`) failed:
-- Radix `sticky` only changes **shift** limiter, not **flip**. Flip still re-runs when size/space changes.
-- Command `h-full` on a parent with auto height can collapse the 300px list so the popover still shrinks. When `side=top`, shrinking moves the **top** edge down — looks like a jump top→bottom.
+User: list may shrink on filter, but must not flip/jump.
 
-## Actual fix
-- `PopoverContent` freezes `data-side` after first layout, then `avoidCollisions={false}` so flip cannot run again this open.
-- Search pickers: `min-h-[21.25rem]` on **Content** (the node floating-ui measures) + Command `h-auto`.
+Flip lock: freeze `data-side`, then `avoidCollisions={false}`.
+
+Jump when `side=top`: floating-ui keeps the **bottom** on the trigger, so shorter content moves the **top** (search) down.
+
+Fix: after first placement, pin the popper wrapper to `position:fixed; top/left` from the first `getBoundingClientRect()`, `transform:none`. Filter can change height; origin stays. Re-applied in `useLayoutEffect` each commit so Radix cannot overwrite transform.
+
+Removed `min-h-[21.25rem]` / `h-[300px]` so the list actually shrinks (`max-h-[300px]` remains).
