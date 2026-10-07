@@ -50,11 +50,12 @@ export type PublicFilterSchema = {
   tree: PublicFilterNode[];
 };
 
-function toFacet(
+/** Build a public facet from an attribute (caller decides isFacet / showInHomeFilter). */
+export function toPublicFacet(
   attribute: CatalogAttribute,
   byId: Map<string, CatalogAttribute>
 ): PublicFilterFacet | null {
-  if (!attribute.isFacet || attribute.type === "TEXT") return null;
+  if (attribute.type === "TEXT") return null;
   const parent = attribute.dependsOnAttributeId
     ? byId.get(attribute.dependsOnAttributeId)
     : undefined;
@@ -79,7 +80,7 @@ function toFacet(
   };
 }
 
-async function numberBoundsForAttribute(
+export async function numberBoundsForAttribute(
   attributeKey: string,
   taxonomyNodeIds: string[] | null
 ): Promise<{ minBound: number | null; maxBound: number | null }> {
@@ -250,7 +251,8 @@ async function mapFilterNodes(
       const seen = new Set<string>();
       const subtreeIds = await collectSubtreeIds(node.id);
       for (const attribute of attributes) {
-        const facet = toFacet(attribute, byId);
+        if (!attribute.isFacet) continue;
+        const facet = toPublicFacet(attribute, byId);
         if (!facet || seen.has(facet.key)) continue;
         seen.add(facet.key);
         if (facet.type === "NUMBER" || facet.type === "YEAR") {

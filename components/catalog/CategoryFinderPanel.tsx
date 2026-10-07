@@ -6,6 +6,7 @@ import SectionIntro from "@/components/section-intro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
+import { narrowFacetsForFolder } from "@/lib/catalog/narrow-facets";
 import {
   buildHomeFinderProductsHref,
   resolveHomeFinderDefaults,
@@ -15,6 +16,7 @@ import {
   type HomeFinderRoot,
 } from "@/lib/home/home-finder-shared";
 import { cn } from "@/lib/utils";
+import type { CatalogRange } from "@/utils/catalog-query";
 import { LuChevronRight } from "react-icons/lu";
 
 function sanitizeDigits(value: string) {
@@ -326,17 +328,53 @@ export default function CategoryFinderPanel({
   /** Deepest selected folder drives facets / CTA (catalog folder semantics). */
   const activeFolder = selectedGrandchild ?? selectedChild;
 
-  const facets = activeFolder?.facets ?? [];
+  const scopedFacets = useMemo(() => {
+    const next: Record<string, string[]> = {};
+    for (const [key, value] of Object.entries(chipFacets)) {
+      if (value) next[key] = [value];
+    }
+    return next;
+  }, [chipFacets]);
+
+  const scopedRanges = useMemo(() => {
+    const next: Record<string, CatalogRange> = {};
+    for (const [key, fromRaw] of Object.entries(rangeFrom)) {
+      const from = parsePositiveInt(fromRaw);
+      const to = parsePositiveInt(rangeTo[key] ?? "");
+      if (from != null || to != null) {
+        next[key] = { min: from, max: to };
+      }
+    }
+    return next;
+  }, [rangeFrom, rangeTo]);
+
+  /** Same narrowing as catalog filter — options/bounds from published products. */
+  const facets = useMemo(() => {
+    const base = activeFolder?.facets ?? [];
+    if (!activeFolder || base.length === 0) return base;
+    const narrowed = narrowFacetsForFolder(
+      activeFolder.slug,
+      base,
+      scopedFacets,
+      scopedRanges,
+      payload.availability
+    );
+    return narrowed.facets as HomeFinderFacet[];
+  }, [activeFolder, scopedFacets, scopedRanges, payload.availability]);
+
   /**
    * Homepage plate: all home-visible chip facets as rows; ranges fill a 12-col
    * grid; CTA takes leftover cells in the last range row (or a full row).
    */
   const chipFacetsList = (() => {
     const chips = facets.filter(
-      (facet) => facet.type === "SELECT" || facet.type === "BOOLEAN"
+      (facet) =>
+        (facet.type === "SELECT" || facet.type === "BOOLEAN") &&
+        facet.options.length > 0
     );
     const preferredKey = (facet: HomeFinderFacet) => {
       if (facet.key === "make" || facet.key === "brand") return 0;
+      if (facet.dependsOnKey) return 2;
       return 1;
     };
     return [...chips].sort((a, b) => preferredKey(a) - preferredKey(b));

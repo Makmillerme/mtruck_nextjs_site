@@ -1,8 +1,10 @@
+import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import type { AttributeTypeName } from "@/lib/catalog/types";
 
 export type HomeFinderFacetOption = {
   slug: string;
   label: string;
+  parentSlug: string | null;
 };
 
 export type HomeFinderFacet = {
@@ -10,6 +12,7 @@ export type HomeFinderFacet = {
   name: string;
   type: Exclude<AttributeTypeName, "TEXT">;
   unit: string | null;
+  dependsOnKey: string | null;
   options: HomeFinderFacetOption[];
   minBound: number | null;
   maxBound: number | null;
@@ -40,6 +43,8 @@ export type HomeFinderPayload = {
   /** True when at least one home-visible root should render as catalog chips. */
   showRootsBlock: boolean;
   roots: HomeFinderRoot[];
+  /** Same published-product index as the catalog filter (client narrowing). */
+  availability: FilterAvailabilityIndex;
 };
 
 /** Build /products href from homepage finder selection. */

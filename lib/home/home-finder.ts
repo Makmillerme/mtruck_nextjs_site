@@ -3,10 +3,17 @@ import {
   CATALOG_CACHE_REVALIDATE_SECONDS,
   CATALOG_CACHE_TAGS,
 } from "@/lib/catalog/cache-tags";
+import { fetchFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import {
+  numberBoundsForAttribute,
+  sortPublicFacets,
+  toPublicFacet,
+} from "@/lib/catalog/public-filter";
 import {
   collectSubtreeIds,
   fetchAttributesForNode,
   fetchTaxonomyTree,
+  resolveAttributesByKey,
 } from "@/lib/catalog/taxonomy";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import {
@@ -57,61 +64,41 @@ async function subtreePublishedCount(nodeId: string): Promise<number> {
   return total;
 }
 
+/** Same facet build as catalog `mapFilterNodes`, gated by showInHomeFilter. */
 async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
-  const attributes = await fetchAttributesForNode(nodeId);
+  const attributes = resolveAttributesByKey(
+    await fetchAttributesForNode(nodeId)
+  );
+  const byId = new Map(attributes.map((item) => [item.id, item]));
+  const subtreeIds = await collectSubtreeIds(nodeId);
   const facets: HomeFinderFacet[] = [];
+  const seen = new Set<string>();
 
   for (const attribute of attributes) {
-    if (!attribute.showInHomeFilter || attribute.type === "TEXT") continue;
-    if (attribute.dependsOnAttributeId) continue;
+    if (!attribute.showInHomeFilter) continue;
+    const facet = toPublicFacet(attribute, byId);
+    if (!facet || seen.has(facet.key)) continue;
+    seen.add(facet.key);
 
-    if (attribute.type === "NUMBER" || attribute.type === "YEAR") {
-      const subtreeIds = await collectSubtreeIds(nodeId);
-      const agg = await db.productSpec.aggregate({
-        where: {
-          attribute: { key: attribute.key },
-          numberValue: { not: null },
-          product: {
-            status: "PUBLISHED",
-            archivedAt: null,
-            taxonomyNodeId: { in: subtreeIds },
-          },
-        },
-        _min: { numberValue: true },
-        _max: { numberValue: true },
-      });
-      facets.push({
-        key: attribute.key,
-        name: attribute.name,
-        type: attribute.type,
-        unit: attribute.unit,
-        options: [],
-        minBound:
-          agg._min.numberValue != null
-            ? Math.floor(agg._min.numberValue)
-            : null,
-        maxBound:
-          agg._max.numberValue != null
-            ? Math.ceil(agg._max.numberValue)
-            : null,
-      });
-      continue;
+    if (facet.type === "NUMBER" || facet.type === "YEAR") {
+      const bounds = await numberBoundsForAttribute(facet.key, subtreeIds);
+      facet.minBound = bounds.minBound;
+      facet.maxBound = bounds.maxBound;
     }
 
     facets.push({
-      key: attribute.key,
-      name: attribute.name,
-      type: attribute.type,
-      unit: attribute.unit,
-      options: attribute.options
-        .filter((option) => !option.parentOptionId)
-        .map((option) => ({ slug: option.slug, label: option.label })),
-      minBound: null,
-      maxBound: null,
+      key: facet.key,
+      name: facet.name,
+      type: facet.type as HomeFinderFacet["type"],
+      unit: facet.unit,
+      dependsOnKey: facet.dependsOnKey,
+      options: facet.options,
+      minBound: facet.minBound ?? null,
+      maxBound: facet.maxBound ?? null,
     });
   }
 
-  return facets;
+  return sortPublicFacets(facets) as HomeFinderFacet[];
 }
 
 async function mapFolderNode(
@@ -169,22 +156,26 @@ async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
   };
 }
 
+async function loadHomeFinderTree(): Promise<
+  Omit<HomeFinderPayload, "availability">
+> {
+  const tree = await fetchTaxonomyTree();
+  const homeTree = mapHomeFilterNodes(tree);
+  const roots = await Promise.all(homeTree.map(mapRoot));
+  return {
+    showRootsBlock: roots.length > 0,
+    roots,
+  };
+}
+
 export async function fetchHomeFinderPayload(): Promise<HomeFinderPayload> {
-  const cached = unstable_cache(
-    async () => {
-      const tree = await fetchTaxonomyTree();
-      const homeTree = mapHomeFilterNodes(tree);
-      const roots = await Promise.all(homeTree.map(mapRoot));
-      return {
-        showRootsBlock: roots.length > 0,
-        roots,
-      };
-    },
-    ["home-finder-payload"],
-    {
-      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
-      tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.homeFinder],
-    }
-  );
-  return cached();
+  const cachedTree = unstable_cache(loadHomeFinderTree, ["home-finder-payload"], {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.homeFinder],
+  });
+  const [tree, availability] = await Promise.all([
+    cachedTree(),
+    fetchFilterAvailabilityIndex(),
+  ]);
+  return { ...tree, availability };
 }

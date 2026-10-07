@@ -49,7 +49,11 @@ async function loadFilterAvailabilityIndex(options?: {
       select: {
         taxonomyNodeId: true,
         specs: {
-          where: { attribute: { isFacet: true } },
+          where: {
+            attribute: {
+              OR: [{ isFacet: true }, { showInHomeFilter: true }],
+            },
+          },
           select: {
             numberValue: true,
             booleanValue: true,

@@ -426,6 +426,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 <CategoryFinderPanel
                   payload={{
                     showRootsBlock: true,
+                    availability: { rows: [] },
                     roots: [
                       {
                         id: "lab-root",
@@ -444,10 +445,11 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                 name: "Марка",
                                 type: "SELECT",
                                 unit: null,
+                                dependsOnKey: null,
                                 options: [
-                                  { slug: "daf", label: "DAF" },
-                                  { slug: "scania", label: "Scania" },
-                                  { slug: "volvo", label: "Volvo" },
+                                  { slug: "daf", label: "DAF", parentSlug: null },
+                                  { slug: "scania", label: "Scania", parentSlug: null },
+                                  { slug: "volvo", label: "Volvo", parentSlug: null },
                                 ],
                                 minBound: null,
                                 maxBound: null,
@@ -457,6 +459,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                 name: "Рік випуску",
                                 type: "YEAR",
                                 unit: null,
+                                dependsOnKey: null,
                                 options: [],
                                 minBound: 2015,
                                 maxBound: 2024,
@@ -474,9 +477,10 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                     name: "Марка",
                                     type: "SELECT",
                                     unit: null,
+                                    dependsOnKey: null,
                                     options: [
-                                      { slug: "daf", label: "DAF" },
-                                      { slug: "scania", label: "Scania" },
+                                      { slug: "daf", label: "DAF", parentSlug: null },
+                                      { slug: "scania", label: "Scania", parentSlug: null },
                                     ],
                                     minBound: null,
                                     maxBound: null,
@@ -486,6 +490,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                     name: "Рік випуску",
                                     type: "YEAR",
                                     unit: null,
+                                    dependsOnKey: null,
                                     options: [],
                                     minBound: 2016,
                                     maxBound: 2024,
@@ -504,9 +509,10 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                     name: "Марка",
                                     type: "SELECT",
                                     unit: null,
+                                    dependsOnKey: null,
                                     options: [
-                                      { slug: "volvo", label: "Volvo" },
-                                      { slug: "scania", label: "Scania" },
+                                      { slug: "volvo", label: "Volvo", parentSlug: null },
+                                      { slug: "scania", label: "Scania", parentSlug: null },
                                     ],
                                     minBound: null,
                                     maxBound: null,
@@ -516,6 +522,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                     name: "Рік випуску",
                                     type: "YEAR",
                                     unit: null,
+                                    dependsOnKey: null,
                                     options: [],
                                     minBound: 2015,
                                     maxBound: 2023,
