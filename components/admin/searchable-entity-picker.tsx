@@ -159,7 +159,7 @@ export default function SearchableEntityPicker({
                 />
               </div>
             ) : null}
-            <CommandList>
+            <CommandList className={showSearch ? "h-[300px]" : undefined}>
               <CommandEmpty>{emptyLabel}</CommandEmpty>
               <CommandGroup>
                 {showClear ? (

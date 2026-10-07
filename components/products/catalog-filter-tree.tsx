@@ -241,7 +241,7 @@ function FacetDropdown({
               />
             </div>
           ) : null}
-          <CommandList>
+          <CommandList className={showSearch ? "h-[300px]" : undefined}>
             <CommandEmpty>—</CommandEmpty>
             {filteredGroups.map((group, index) => (
               <div key={group.key}>
