@@ -743,6 +743,7 @@
     "moveDown": "Nach unten",
     "addChildFolder": "Unterordner hinzufügen",
     "renameFolder": "Umbenennen",
+    "renameFolderTitle": "Ordner bearbeiten",
     "deleteFolder": "Ordner löschen",
     "newRootFolderTitle": "Neuer Stammordner",
     "newChildFolderTitle": "Neuer Ordner in {parent}",

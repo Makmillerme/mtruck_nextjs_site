@@ -743,6 +743,7 @@
     "moveDown": "Move down",
     "addChildFolder": "Add subfolder",
     "renameFolder": "Rename",
+    "renameFolderTitle": "Edit folder",
     "deleteFolder": "Delete folder",
     "newRootFolderTitle": "New root folder",
     "newChildFolderTitle": "New folder in {parent}",

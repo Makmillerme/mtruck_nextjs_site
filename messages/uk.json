@@ -743,6 +743,7 @@
     "moveDown": "Нижче",
     "addChildFolder": "Додати підпапку",
     "renameFolder": "Перейменувати",
+    "renameFolderTitle": "Редагувати папку",
     "deleteFolder": "Видалити папку",
     "newRootFolderTitle": "Нова коренева папка",
     "newChildFolderTitle": "Нова папка в «{parent}»",
