@@ -1,11 +1,8 @@
-# Combobox shrink without jump (2026-10-07)
+# Combobox shrink (2026-10-07)
 
-User: list may shrink on filter, but must not flip/jump.
+User asked again to shrink. Jump happened because `side=top` anchors the **bottom** of the panel; search was at the **top**, so shorter list pulled search down.
 
-Flip lock: freeze `data-side`, then `avoidCollisions={false}`.
-
-Jump when `side=top`: floating-ui keeps the **bottom** on the trigger, so shorter content moves the **top** (search) down.
-
-Fix: after first placement, pin the popper wrapper to `position:fixed; top/left` from the first `getBoundingClientRect()`, `transform:none`. Filter can change height; origin stays. Re-applied in `useLayoutEffect` each commit so Radix cannot overwrite transform.
-
-Removed `min-h-[21.25rem]` / `h-[300px]` so the list actually shrinks (`max-h-[300px]` remains).
+Fix (no position:fixed):
+- Keep freeze side + `avoidCollisions={false}`.
+- Remove min-height / `h-[300px]` so CommandList uses `max-h-[300px]` only.
+- When `data-side=top`, `[&_[cmdk-root]]:flex-col-reverse` so search sits next to the trigger; list shrinks away from the field. Search row: `data-combobox-search`, border-t when reversed.
