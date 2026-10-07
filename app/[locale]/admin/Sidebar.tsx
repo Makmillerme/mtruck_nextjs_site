@@ -27,6 +27,30 @@ function isActive(pathname: string, href: string) {
   return false;
 }
 
+function isCmsSection(pathname: string) {
+  return (
+    pathname === "/admin/catalog" ||
+    pathname.startsWith("/admin/catalog/") ||
+    pathname === "/admin/ui" ||
+    pathname.startsWith("/admin/ui/")
+  );
+}
+
+function isCmsDataModel(pathname: string) {
+  return (
+    pathname === "/admin/catalog" || pathname.startsWith("/admin/catalog/")
+  );
+}
+
+function isCmsUiEditor(pathname: string) {
+  return pathname === "/admin/ui" || pathname.startsWith("/admin/ui/");
+}
+
+const CMS_NAV_CHILDREN = [
+  { href: "/admin/catalog", labelKey: "cmsDataModel" as const },
+  { href: "/admin/ui", labelKey: "cmsUiEditor" as const },
+];
+
 function Sidebar({
   isAdmin = false,
   productRoots = [],
@@ -42,8 +66,10 @@ function Sidebar({
     : adminLinks.filter((link) => link.href !== "/admin/catalog");
   const onProducts =
     pathname === "/admin/products" || pathname.startsWith("/admin/products/");
+  const onCms = isCmsSection(pathname);
   const activeRoot = searchParams.get("root")?.trim() || "";
   const [productsOpen, setProductsOpen] = useState(onProducts);
+  const [cmsOpen, setCmsOpen] = useState(onCms);
   const router = useRouter();
   const softNav = useSoftNavOptional();
 
@@ -66,11 +92,64 @@ function Sidebar({
     if (onProducts) setProductsOpen(true);
   }, [onProducts]);
 
+  useEffect(() => {
+    if (onCms) setCmsOpen(true);
+  }, [onCms]);
+
   return (
     <aside className="min-w-0">
       <Card className="sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto shadow-sm lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
         <CardContent className="grid gap-1 p-3">
           {links.map((link) => {
+            if (link.href === "/admin/catalog") {
+              return (
+                <div key={link.href} className="grid gap-1">
+                  <Button
+                    type="button"
+                    className="w-full justify-between font-normal"
+                    variant={onCms ? "default" : "ghost"}
+                    aria-expanded={cmsOpen}
+                    onClick={() => setCmsOpen((open) => !open)}
+                  >
+                    <span>{t(link.key)}</span>
+                    <LuChevronDown
+                      className={cn(
+                        "size-4 shrink-0 transition-transform",
+                        cmsOpen && "rotate-180"
+                      )}
+                      aria-hidden
+                    />
+                  </Button>
+                  {cmsOpen ? (
+                    <div className="ml-3 grid gap-1 border-l border-border pl-2">
+                      {CMS_NAV_CHILDREN.map((child) => {
+                        const active =
+                          child.href === "/admin/ui"
+                            ? isCmsUiEditor(pathname)
+                            : isCmsDataModel(pathname);
+                        return (
+                          <Button
+                            key={child.href}
+                            asChild
+                            size="sm"
+                            className="h-9 w-full justify-start font-normal"
+                            variant={active ? "default" : "ghost"}
+                          >
+                            <Link
+                              href={child.href}
+                              onClick={(event) => navigate(event, child.href)}
+                            >
+                              {t(child.labelKey)}
+                            </Link>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            }
+
             if (link.href === "/admin/products" && productRoots.length > 0) {
               return (
                 <div key={link.href} className="grid gap-1">
