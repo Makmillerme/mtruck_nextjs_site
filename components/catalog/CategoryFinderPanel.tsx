@@ -113,12 +113,19 @@ function RangeInputs({
   );
 }
 
-const folderCardClass = (active: boolean) =>
+const folderCardClass = (
+  active: boolean,
+  tone: "outline" | "fill"
+) =>
   cn(
-    "relative flex w-[9.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:w-[10.5rem] sm:gap-3 sm:px-4 sm:py-4",
-    active
-      ? "border-foreground text-foreground"
-      : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+    "relative flex w-[9.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border px-3 py-3 text-left shadow-sm transition-colors sm:w-[10.5rem] sm:gap-3 sm:px-4 sm:py-4",
+    tone === "fill"
+      ? active
+        ? "border-primary bg-primary text-primary-foreground"
+        : "border-border bg-background text-muted-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground"
+      : active
+        ? "border-foreground bg-background text-foreground"
+        : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground"
   );
 
 const folderRowClass =
@@ -129,25 +136,29 @@ function FinderFolderCard({
   count,
   active,
   onClick,
+  tone = "outline",
 }: {
   name: string;
   count: number;
   active: boolean;
   onClick: () => void;
+  tone?: "outline" | "fill";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={folderCardClass(active)}
+      className={folderCardClass(active, tone)}
     >
-      <span className="text-sm font-medium leading-snug text-foreground">
-        {name}
-      </span>
+      <span className="text-sm font-medium leading-snug">{name}</span>
       <span
         className={cn(
           "font-mono text-[10px] tabular-nums tracking-wide",
-          active ? "text-foreground" : "text-muted-foreground"
+          tone === "fill"
+            ? "opacity-80"
+            : active
+              ? "text-foreground"
+              : "text-muted-foreground"
         )}
       >
         {count}
@@ -429,16 +440,19 @@ export default function CategoryFinderPanel({
 
       {showChildRow ? (
         <div>
-          <div className={chipRowClass} style={{ scrollbarWidth: "none" }}>
+          <div
+            className={folderRowClass}
+            style={{ scrollbarWidth: "none" }}
+          >
             {children.map((child) => (
-              <button
+              <FinderFolderCard
                 key={child.id}
-                type="button"
+                name={child.name}
+                count={child.productCount}
+                active={selectedChild?.id === child.id}
                 onClick={() => selectChild(child)}
-                className={chipClass(selectedChild?.id === child.id)}
-              >
-                {child.name}
-              </button>
+                tone="fill"
+              />
             ))}
           </div>
           {showGrandchildRow ? (

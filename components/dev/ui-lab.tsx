@@ -420,7 +420,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="finder"
               title="Підбір каталогу"
-              hint="Живий CategoryFinder: 3 рівні (каталог-чіпи → типи-картки → підтипи вкладені). Марка, рік, пробіг, CTA. Наявність — лише в каталозі."
+              hint="Живий CategoryFinder: 3 рівні (каталог/типи — чіпи з заливкою → підтипи — картки). Марка, рік, пробіг, CTA. Наявність — лише в каталозі."
             >
               <div className="rounded-sm bg-secondary p-5 md:p-10">
                 <CategoryFinderPanel
