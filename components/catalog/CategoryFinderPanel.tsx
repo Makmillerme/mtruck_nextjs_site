@@ -26,7 +26,7 @@ const chipClass = (active: boolean) =>
     "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
     active
       ? "border-primary bg-primary text-primary-foreground"
-      : "border-border bg-secondary text-muted-foreground hover:border-primary/30 hover:text-foreground"
+      : "border-border bg-secondary text-muted-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground"
   );
 
 const chipRowClass =
@@ -113,10 +113,9 @@ function RangeInputs({
   );
 }
 
-const folderCardClass = (active: boolean, size: "md" | "sm") =>
+const folderCardClass = (active: boolean) =>
   cn(
-    "relative flex w-[9.5rem] shrink-0 flex-col items-start rounded-sm border bg-background px-3 text-left shadow-sm transition-colors sm:w-[10.5rem]",
-    size === "sm" ? "gap-1.5 py-2.5 sm:py-3" : "gap-2.5 py-3 sm:gap-3 sm:px-4 sm:py-4",
+    "relative flex w-[9.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:w-[10.5rem] sm:gap-3 sm:px-4 sm:py-4",
     active
       ? "border-foreground text-foreground"
       : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
@@ -130,19 +129,17 @@ function FinderFolderCard({
   count,
   active,
   onClick,
-  size = "md",
 }: {
   name: string;
   count: number;
   active: boolean;
   onClick: () => void;
-  size?: "md" | "sm";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={folderCardClass(active, size)}
+      className={folderCardClass(active)}
     >
       <span className="text-sm font-medium leading-snug text-foreground">
         {name}
@@ -432,19 +429,16 @@ export default function CategoryFinderPanel({
 
       {showChildRow ? (
         <div>
-          <div
-            className={folderRowClass}
-            style={{ scrollbarWidth: "none" }}
-          >
+          <div className={chipRowClass} style={{ scrollbarWidth: "none" }}>
             {children.map((child) => (
-              <FinderFolderCard
+              <button
                 key={child.id}
-                name={child.name}
-                count={child.productCount}
-                active={selectedChild?.id === child.id}
+                type="button"
                 onClick={() => selectChild(child)}
-                size="sm"
-              />
+                className={chipClass(selectedChild?.id === child.id)}
+              >
+                {child.name}
+              </button>
             ))}
           </div>
           {showGrandchildRow ? (
