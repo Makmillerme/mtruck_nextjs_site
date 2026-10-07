@@ -15,13 +15,16 @@ export type HomeFinderFacet = {
   maxBound: number | null;
 };
 
+/** Homepage finder: catalog → type → subtype. Deeper CMS folders are omitted. */
+export const HOME_FILTER_MAX_DEPTH = 3;
+
 export type HomeFinderChild = {
   id: string;
   slug: string;
   name: string;
   productCount: number;
   facets: HomeFinderFacet[];
-  /** Nested folders still visible via showInHomeFilter (catalog-parity depth). */
+  /** Nested folders visible via showInHomeFilter, capped at HOME_FILTER_MAX_DEPTH. */
   children: HomeFinderChild[];
 };
 
@@ -34,7 +37,7 @@ export type HomeFinderRoot = {
 };
 
 export type HomeFinderPayload = {
-  /** True when at least one home-visible root should render as cards. */
+  /** True when at least one home-visible root should render as catalog chips. */
   showRootsBlock: boolean;
   roots: HomeFinderRoot[];
 };

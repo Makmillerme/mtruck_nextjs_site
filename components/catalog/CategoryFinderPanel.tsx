@@ -113,33 +113,36 @@ function RangeInputs({
   );
 }
 
-const folderCardClass = (active: boolean) =>
+const folderCardClass = (active: boolean, size: "md" | "sm") =>
   cn(
-    "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:gap-3 sm:px-4 sm:py-4 md:min-w-0",
+    "relative flex w-[9.5rem] shrink-0 flex-col items-start rounded-sm border bg-background px-3 text-left shadow-sm transition-colors sm:w-[10.5rem]",
+    size === "sm" ? "gap-1.5 py-2.5 sm:py-3" : "gap-2.5 py-3 sm:gap-3 sm:px-4 sm:py-4",
     active
       ? "border-foreground text-foreground"
       : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
   );
 
 const folderRowClass =
-  "-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden";
+  "-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden";
 
 function FinderFolderCard({
   name,
   count,
   active,
   onClick,
+  size = "md",
 }: {
   name: string;
   count: number;
   active: boolean;
   onClick: () => void;
+  size?: "md" | "sm";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={folderCardClass(active)}
+      className={folderCardClass(active, size)}
     >
       <span className="text-sm font-medium leading-snug text-foreground">
         {name}
@@ -410,40 +413,62 @@ export default function CategoryFinderPanel({
       />
 
       {showRoots ? (
-        <div
-          className={cn(folderRowClass, "mb-5 md:mb-6")}
-          style={{ scrollbarWidth: "none" }}
-        >
-          {roots.map((root) => (
-            <FinderFolderCard
-              key={root.id}
-              name={root.name}
-              count={root.productCount}
-              active={selectedRoot?.id === root.id}
-              onClick={() => selectRoot(root)}
-            />
-          ))}
+        <div className="mb-5 md:mb-6">
+          <p className={fieldLabelClass}>{t("catalogLabel")}</p>
+          <div className={chipRowClass} style={{ scrollbarWidth: "none" }}>
+            {roots.map((root) => (
+              <button
+                key={root.id}
+                type="button"
+                onClick={() => selectRoot(root)}
+                className={chipClass(selectedRoot?.id === root.id)}
+              >
+                {root.name}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {showChildRow ? (
-        <div
-          className={cn(folderRowClass, showGrandchildRow && "mb-5 md:mb-6")}
-          style={{ scrollbarWidth: "none" }}
-        >
-          {children.map((child) => (
-            <FinderFolderCard
-              key={child.id}
-              name={child.name}
-              count={child.productCount}
-              active={selectedChild?.id === child.id}
-              onClick={() => selectChild(child)}
-            />
-          ))}
+        <div>
+          <div
+            className={folderRowClass}
+            style={{ scrollbarWidth: "none" }}
+          >
+            {children.map((child) => (
+              <FinderFolderCard
+                key={child.id}
+                name={child.name}
+                count={child.productCount}
+                active={selectedChild?.id === child.id}
+                onClick={() => selectChild(child)}
+              />
+            ))}
+          </div>
+          {showGrandchildRow ? (
+            <div className="mt-3 border-l-2 border-border pl-3 sm:mt-4 sm:pl-4">
+              <div
+                className={folderRowClass}
+                style={{ scrollbarWidth: "none" }}
+              >
+                {grandchildren.map((child) => (
+                  <FinderFolderCard
+                    key={child.id}
+                    name={child.name}
+                    count={child.productCount}
+                    active={selectedGrandchild?.id === child.id}
+                    onClick={() => selectGrandchild(child)}
+                    size="sm"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
-      {showGrandchildRow ? (
+      {showGrandchildRow && !showChildRow ? (
         <div className={folderRowClass} style={{ scrollbarWidth: "none" }}>
           {grandchildren.map((child) => (
             <FinderFolderCard
@@ -452,6 +477,7 @@ export default function CategoryFinderPanel({
               count={child.productCount}
               active={selectedGrandchild?.id === child.id}
               onClick={() => selectGrandchild(child)}
+              size="sm"
             />
           ))}
         </div>

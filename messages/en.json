@@ -63,6 +63,7 @@
     "aria": "Browse vehicles by category",
     "eyebrow": "Vehicle catalog",
     "title": "Choose a vehicle category",
+    "catalogLabel": "Catalog",
     "brandsLabel": "Make",
     "allBrands": "All makes",
     "yearLabel": "Year",

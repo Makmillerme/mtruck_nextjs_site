@@ -10,6 +10,7 @@ import {
 } from "@/lib/catalog/taxonomy";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import {
+  HOME_FILTER_MAX_DEPTH,
   type HomeFinderChild,
   type HomeFinderFacet,
   type HomeFinderPayload,
@@ -18,6 +19,7 @@ import {
 import db from "@/utils/db";
 
 export {
+  HOME_FILTER_MAX_DEPTH,
   buildHomeFinderProductsHref,
   resolveHomeFinderDefaults,
   type HomeFinderChild,
@@ -113,9 +115,15 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
 }
 
 async function mapFolderNode(
-  node: TaxonomyTreeNode
+  node: TaxonomyTreeNode,
+  depth: number
 ): Promise<HomeFinderChild> {
-  const children = await Promise.all(node.children.map(mapFolderNode));
+  const children =
+    depth >= HOME_FILTER_MAX_DEPTH
+      ? []
+      : await Promise.all(
+          node.children.map((child) => mapFolderNode(child, depth + 1))
+        );
   return {
     id: node.id,
     slug: node.slug,
@@ -145,10 +153,12 @@ function mapHomeFilterNodes(nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] {
 }
 
 async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
-  const nested = await Promise.all(node.children.map(mapFolderNode));
+  const nested = await Promise.all(
+    node.children.map((child) => mapFolderNode(child, 2))
+  );
   /** Leaf root: expose self as the only child so facets/CTA still bind. */
   const children =
-    nested.length > 0 ? nested : [await mapFolderNode(node)];
+    nested.length > 0 ? nested : [await mapFolderNode(node, 2)];
 
   return {
     id: node.id,

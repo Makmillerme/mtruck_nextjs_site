@@ -420,7 +420,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="finder"
               title="Підбір каталогу"
-              hint="Живий CategoryFinder: біла плитка без заголовка. Марка, рік від/до, пробіг від/до, CTA. Наявність — лише в каталозі."
+              hint="Живий CategoryFinder: 3 рівні (каталог-чіпи → типи-картки → підтипи вкладені). Марка, рік, пробіг, CTA. Наявність — лише в каталозі."
             >
               <div className="rounded-sm bg-secondary p-5 md:p-10">
                 <CategoryFinderPanel
@@ -462,7 +462,68 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                                 maxBound: 2024,
                               },
                             ],
-                            children: [],
+                            children: [
+                              {
+                                id: "lab-4x2",
+                                slug: "4x2",
+                                name: "4x2",
+                                productCount: 12,
+                                facets: [
+                                  {
+                                    key: "make",
+                                    name: "Марка",
+                                    type: "SELECT",
+                                    unit: null,
+                                    options: [
+                                      { slug: "daf", label: "DAF" },
+                                      { slug: "scania", label: "Scania" },
+                                    ],
+                                    minBound: null,
+                                    maxBound: null,
+                                  },
+                                  {
+                                    key: "year",
+                                    name: "Рік випуску",
+                                    type: "YEAR",
+                                    unit: null,
+                                    options: [],
+                                    minBound: 2016,
+                                    maxBound: 2024,
+                                  },
+                                ],
+                                children: [],
+                              },
+                              {
+                                id: "lab-6x2",
+                                slug: "6x2",
+                                name: "6x2",
+                                productCount: 16,
+                                facets: [
+                                  {
+                                    key: "make",
+                                    name: "Марка",
+                                    type: "SELECT",
+                                    unit: null,
+                                    options: [
+                                      { slug: "volvo", label: "Volvo" },
+                                      { slug: "scania", label: "Scania" },
+                                    ],
+                                    minBound: null,
+                                    maxBound: null,
+                                  },
+                                  {
+                                    key: "year",
+                                    name: "Рік випуску",
+                                    type: "YEAR",
+                                    unit: null,
+                                    options: [],
+                                    minBound: 2015,
+                                    maxBound: 2023,
+                                  },
+                                ],
+                                children: [],
+                              },
+                            ],
                           },
                           {
                             id: "lab-trailers",
