@@ -237,6 +237,7 @@ function mapAttribute(
     dependsOn: { id: string; name: string; key: string } | null;
     isRequired: boolean;
     isFacet: boolean;
+    showInHomeFilter: boolean;
     unit: string | null;
     sheetWidth: CatalogAttribute["sheetWidth"];
     sortOrder: number;
@@ -262,6 +263,7 @@ function mapAttribute(
     dependsOn: def.dependsOn,
     isRequired: def.isRequired,
     isFacet: def.isFacet,
+    showInHomeFilter: def.showInHomeFilter,
     unit: def.unit,
     sheetWidth: def.sheetWidth,
     sortOrder: def.sortOrder,

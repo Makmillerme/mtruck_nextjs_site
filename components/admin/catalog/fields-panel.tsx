@@ -51,6 +51,7 @@ function FieldFlags({
   defaults?: {
     isRequired?: boolean;
     isFacet?: boolean;
+    showInHomeFilter?: boolean;
   };
 }) {
   const t = useTranslations("CatalogAdmin");
@@ -69,6 +70,13 @@ function FieldFlags({
         defaultChecked={defaults?.isFacet ?? true}
         hintLabel={t("helpLabel")}
         hint={<p>{t("flagFacetHint")}</p>}
+      />
+      <CatalogFlag
+        name="showInHomeFilter"
+        label={t("flagFieldShowInHomeFilter")}
+        defaultChecked={defaults?.showInHomeFilter ?? true}
+        hintLabel={t("helpLabel")}
+        hint={<p>{t("flagFieldShowInHomeFilterHint")}</p>}
       />
     </div>
   );
@@ -109,6 +117,9 @@ function FieldRow({
           ) : null}
           {attribute.isFacet ? (
             <Badge variant="secondary">{t("flagFacet")}</Badge>
+          ) : null}
+          {attribute.showInHomeFilter ? (
+            <Badge variant="secondary">{t("flagFieldShowInHomeFilter")}</Badge>
           ) : null}
           <Badge variant="outline">
             {t(`sheetWidth.${attribute.sheetWidth}`)}
@@ -400,6 +411,7 @@ export default function FieldsPanel({
                   defaults={{
                     isRequired: active.isRequired,
                     isFacet: active.isFacet,
+                    showInHomeFilter: active.showInHomeFilter,
                   }}
                 />
                 <CatalogSubmit text={t("saveField")} className="w-fit" />

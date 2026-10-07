@@ -323,6 +323,7 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
       unit: formData.get("unit") ?? undefined,
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
+      showInHomeFilter: checkbox(formData, "showInHomeFilter"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
     await assertDependsOnAllowed(data.taxonomyNodeId, data.dependsOnAttributeId);
@@ -340,6 +341,7 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
         unit: data.unit ?? null,
         isRequired: data.isRequired,
         isFacet: data.isFacet,
+        showInHomeFilter: data.showInHomeFilter,
         sheetWidth: data.sheetWidth,
         sortOrder: await nextAttributeSort(data.taxonomyNodeId),
       },
@@ -363,6 +365,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
       unit: formData.get("unit") ?? undefined,
       isRequired: checkbox(formData, "isRequired"),
       isFacet: checkbox(formData, "isFacet"),
+      showInHomeFilter: checkbox(formData, "showInHomeFilter"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
     });
     const t = await getTranslations("CatalogAdmin");
@@ -411,6 +414,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
           unit: data.unit ?? null,
           isRequired: data.isRequired,
           isFacet: data.isFacet,
+          showInHomeFilter: data.showInHomeFilter,
           sheetWidth: data.sheetWidth,
         },
       });

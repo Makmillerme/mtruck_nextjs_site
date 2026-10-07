@@ -205,6 +205,7 @@ model AttributeDefinition {
   dependents           AttributeDefinition[] @relation("AttributeDepends")
   isRequired           Boolean       @default(false)
   isFacet              Boolean       @default(true)
+  showInHomeFilter     Boolean       @default(true)
   unit                 String?
   sheetWidth           SheetWidth    @default(FULL)
   sortOrder            Int           @default(0)

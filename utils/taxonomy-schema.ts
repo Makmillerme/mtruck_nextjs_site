@@ -59,6 +59,7 @@ export const createAttributeSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
+  showInHomeFilter: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
 });
 
@@ -75,6 +76,7 @@ export const updateAttributeSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
   isRequired: z.coerce.boolean().optional().default(false),
   isFacet: z.coerce.boolean().optional().default(false),
+  showInHomeFilter: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
 });
 

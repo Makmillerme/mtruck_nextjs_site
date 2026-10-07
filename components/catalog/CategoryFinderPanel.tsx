@@ -327,42 +327,64 @@ export default function CategoryFinderPanel({
   const activeFolder = selectedGrandchild ?? selectedChild;
 
   const facets = activeFolder?.facets ?? [];
-  /** Homepage plate canon: one chip row (prefer make) + two ranges (prefer year/mileage) + CTA. */
+  /**
+   * Homepage plate: all home-visible chip facets as rows; ranges fill a 12-col
+   * grid; CTA takes leftover cells in the last range row (or a full row).
+   */
   const chipFacetsList = (() => {
     const chips = facets.filter(
       (facet) => facet.type === "SELECT" || facet.type === "BOOLEAN"
     );
-    const preferred =
-      chips.find((facet) => facet.key === "make" || facet.key === "brand") ??
-      chips[0];
-    return preferred ? [preferred] : [];
+    const preferredKey = (facet: HomeFinderFacet) => {
+      if (facet.key === "make" || facet.key === "brand") return 0;
+      return 1;
+    };
+    return [...chips].sort((a, b) => preferredKey(a) - preferredKey(b));
   })();
   const rangeFacets = (() => {
     const ranges = facets.filter(
       (facet) => facet.type === "NUMBER" || facet.type === "YEAR"
     );
-    const year =
-      ranges.find((facet) => facet.key === "year" || facet.type === "YEAR") ??
-      null;
-    const mileage =
-      ranges.find(
-        (facet) =>
-          facet.key === "mileage" ||
-          facet.key === "km" ||
-          facet.key.includes("prob") ||
-          facet.key.includes("mile")
-      ) ?? null;
-    const picked: HomeFinderFacet[] = [];
-    if (year) picked.push(year);
-    if (mileage && mileage.key !== year?.key) picked.push(mileage);
-    for (const facet of ranges) {
-      if (picked.length >= 2) break;
-      if (!picked.some((item) => item.key === facet.key)) picked.push(facet);
-    }
-    return picked;
+    const rank = (facet: HomeFinderFacet) => {
+      if (facet.key === "year" || facet.type === "YEAR") return 0;
+      if (
+        facet.key === "mileage" ||
+        facet.key === "km" ||
+        facet.key.includes("prob") ||
+        facet.key.includes("mile")
+      ) {
+        return 1;
+      }
+      return 2;
+    };
+    return [...ranges].sort((a, b) => rank(a) - rank(b));
   })();
-  const primaryRanges = rangeFacets;
-  const extraRanges: HomeFinderFacet[] = [];
+  /** Pack ranges into rows of up to 3; leave room for CTA on the last partial row. */
+  const rangeRows = (() => {
+    const rows: HomeFinderFacet[][] = [];
+    let index = 0;
+    while (index < rangeFacets.length) {
+      const left = rangeFacets.length - index;
+      if (left >= 3) {
+        rows.push(rangeFacets.slice(index, index + 3));
+        index += 3;
+      } else {
+        rows.push(rangeFacets.slice(index));
+        break;
+      }
+    }
+    return rows;
+  })();
+  const lastRangeRow = rangeRows[rangeRows.length - 1] ?? [];
+  const ctaWithRanges =
+    chipFacetsList.length > 0 || rangeFacets.length > 0;
+  const ctaColSpan =
+    rangeFacets.length === 0
+      ? 12
+      : lastRangeRow.length >= 3
+        ? 12
+        : 12 - lastRangeRow.length * 4;
+  const ctaOnNewRow = rangeFacets.length > 0 && lastRangeRow.length >= 3;
 
   const count =
     activeFolder?.productCount ?? selectedRoot?.productCount ?? 0;
@@ -535,40 +557,71 @@ export default function CategoryFinderPanel({
               />
             ))}
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
-              {primaryRanges.map((facet) => (
-                <div key={facet.key} className="lg:col-span-4">
-                  <FacetField
-                    facet={facet}
-                    chipValue={null}
-                    onChip={() => undefined}
-                    rangeFrom={rangeFrom[facet.key] ?? ""}
-                    rangeTo={rangeTo[facet.key] ?? ""}
-                    onRangeFrom={(value) =>
-                      setRangeFrom((current) => ({
-                        ...current,
-                        [facet.key]: value,
-                      }))
-                    }
-                    onRangeTo={(value) =>
-                      setRangeTo((current) => ({
-                        ...current,
-                        [facet.key]: value,
-                      }))
-                    }
-                    allLabel={t("allOption")}
-                    fromPlaceholder={t("rangeFrom")}
-                    toPlaceholder={t("rangeTo")}
-                  />
+            {rangeRows.map((row, rowIndex) => {
+              const isLast = rowIndex === rangeRows.length - 1;
+              const showCtaHere = isLast && ctaWithRanges && !ctaOnNewRow;
+              return (
+                <div
+                  key={row.map((facet) => facet.key).join("-")}
+                  className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end"
+                >
+                  {row.map((facet) => (
+                    <div key={facet.key} className="lg:col-span-4">
+                      <FacetField
+                        facet={facet}
+                        chipValue={null}
+                        onChip={() => undefined}
+                        rangeFrom={rangeFrom[facet.key] ?? ""}
+                        rangeTo={rangeTo[facet.key] ?? ""}
+                        onRangeFrom={(value) =>
+                          setRangeFrom((current) => ({
+                            ...current,
+                            [facet.key]: value,
+                          }))
+                        }
+                        onRangeTo={(value) =>
+                          setRangeTo((current) => ({
+                            ...current,
+                            [facet.key]: value,
+                          }))
+                        }
+                        allLabel={t("allOption")}
+                        fromPlaceholder={t("rangeFrom")}
+                        toPlaceholder={t("rangeTo")}
+                      />
+                    </div>
+                  ))}
+                  {showCtaHere ? (
+                    <div
+                      className={cn(
+                        "sm:col-span-2",
+                        ctaColSpan === 12
+                          ? "lg:col-span-12"
+                          : ctaColSpan === 8
+                            ? "lg:col-span-8"
+                            : "lg:col-span-4"
+                      )}
+                    >
+                      <Button asChild className="w-full">
+                        <Link href={href}>
+                          {t("cta", { count })}
+                          <LuChevronRight aria-hidden />
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-              ))}
-              {primaryRanges.length === 0 && chipFacetsList.length === 0 ? null : (
+              );
+            })}
+
+            {ctaWithRanges && (rangeFacets.length === 0 || ctaOnNewRow) ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
                 <div
                   className={cn(
                     "sm:col-span-2",
-                    primaryRanges.length === 0
+                    ctaColSpan === 12
                       ? "lg:col-span-12"
-                      : primaryRanges.length === 1
+                      : ctaColSpan === 8
                         ? "lg:col-span-8"
                         : "lg:col-span-4"
                   )}
@@ -580,37 +633,6 @@ export default function CategoryFinderPanel({
                     </Link>
                   </Button>
                 </div>
-              )}
-            </div>
-
-            {extraRanges.length > 0 ? (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12">
-                {extraRanges.map((facet) => (
-                  <div key={facet.key} className="lg:col-span-4">
-                    <FacetField
-                      facet={facet}
-                      chipValue={null}
-                      onChip={() => undefined}
-                      rangeFrom={rangeFrom[facet.key] ?? ""}
-                      rangeTo={rangeTo[facet.key] ?? ""}
-                      onRangeFrom={(value) =>
-                        setRangeFrom((current) => ({
-                          ...current,
-                          [facet.key]: value,
-                        }))
-                      }
-                      onRangeTo={(value) =>
-                        setRangeTo((current) => ({
-                          ...current,
-                          [facet.key]: value,
-                        }))
-                      }
-                      allLabel={t("allOption")}
-                      fromPlaceholder={t("rangeFrom")}
-                      toPlaceholder={t("rangeTo")}
-                    />
-                  </div>
-                ))}
               </div>
             ) : null}
           </div>

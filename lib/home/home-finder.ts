@@ -62,7 +62,7 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
   const facets: HomeFinderFacet[] = [];
 
   for (const attribute of attributes) {
-    if (!attribute.isFacet || attribute.type === "TEXT") continue;
+    if (!attribute.showInHomeFilter || attribute.type === "TEXT") continue;
     if (attribute.dependsOnAttributeId) continue;
 
     if (attribute.type === "NUMBER" || attribute.type === "YEAR") {
