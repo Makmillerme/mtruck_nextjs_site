@@ -5,12 +5,10 @@ import {
 } from "@/lib/catalog/cache-tags";
 import { fetchFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import {
-  numberBoundsForAttribute,
   sortPublicFacets,
   toPublicFacet,
 } from "@/lib/catalog/public-filter";
 import {
-  collectSubtreeIds,
   fetchAttributesForNode,
   fetchTaxonomyTree,
   resolveAttributesByKey,
@@ -36,14 +34,12 @@ export {
   type HomeFinderRoot,
 } from "@/lib/home/home-finder-shared";
 
-async function publishedCountByNodeIds(
-  nodeIds: string[]
-): Promise<Map<string, number>> {
-  if (nodeIds.length === 0) return new Map();
+/** One groupBy for the whole catalog — subtree totals are summed in memory. */
+async function publishedCountByNodeId(): Promise<Map<string, number>> {
   const rows = await db.product.groupBy({
     by: ["taxonomyNodeId"],
     where: {
-      taxonomyNodeId: { in: nodeIds },
+      taxonomyNodeId: { not: null },
       status: "PUBLISHED",
       archivedAt: null,
     },
@@ -56,21 +52,26 @@ async function publishedCountByNodeIds(
   );
 }
 
-async function subtreePublishedCount(nodeId: string): Promise<number> {
-  const ids = await collectSubtreeIds(nodeId);
-  const byNode = await publishedCountByNodeIds(ids);
-  let total = 0;
-  for (const id of ids) total += byNode.get(id) ?? 0;
+function subtreePublishedCount(
+  node: TaxonomyTreeNode,
+  byNode: Map<string, number>
+): number {
+  let total = byNode.get(node.id) ?? 0;
+  for (const child of node.children) {
+    total += subtreePublishedCount(child, byNode);
+  }
   return total;
 }
 
-/** Same facet build as catalog `mapFilterNodes`, gated by showInHomeFilter. */
+/**
+ * Facet definitions only — no per-attribute SQL aggregates.
+ * Bounds/options are narrowed client-side via availability (catalog parity).
+ */
 async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
   const attributes = resolveAttributesByKey(
     await fetchAttributesForNode(nodeId)
   );
   const byId = new Map(attributes.map((item) => [item.id, item]));
-  const subtreeIds = await collectSubtreeIds(nodeId);
   const facets: HomeFinderFacet[] = [];
   const seen = new Set<string>();
 
@@ -79,13 +80,6 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
     const facet = toPublicFacet(attribute, byId);
     if (!facet || seen.has(facet.key)) continue;
     seen.add(facet.key);
-
-    if (facet.type === "NUMBER" || facet.type === "YEAR") {
-      const bounds = await numberBoundsForAttribute(facet.key, subtreeIds);
-      facet.minBound = bounds.minBound;
-      facet.maxBound = bounds.maxBound;
-    }
-
     facets.push({
       key: facet.key,
       name: facet.name,
@@ -93,8 +87,8 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
       unit: facet.unit,
       dependsOnKey: facet.dependsOnKey,
       options: facet.options,
-      minBound: facet.minBound ?? null,
-      maxBound: facet.maxBound ?? null,
+      minBound: null,
+      maxBound: null,
     });
   }
 
@@ -103,20 +97,23 @@ async function facetsForNode(nodeId: string): Promise<HomeFinderFacet[]> {
 
 async function mapFolderNode(
   node: TaxonomyTreeNode,
-  depth: number
+  depth: number,
+  byNode: Map<string, number>
 ): Promise<HomeFinderChild> {
   const children =
     depth >= HOME_FILTER_MAX_DEPTH
       ? []
       : await Promise.all(
-          node.children.map((child) => mapFolderNode(child, depth + 1))
+          node.children.map((child) => mapFolderNode(child, depth + 1, byNode))
         );
+  /** Only leaves drive the plate — parents inherit selection via UI. */
+  const isLeaf = children.length === 0;
   return {
     id: node.id,
     slug: node.slug,
     name: node.name,
-    productCount: await subtreePublishedCount(node.id),
-    facets: await facetsForNode(node.id),
+    productCount: subtreePublishedCount(node, byNode),
+    facets: isLeaf ? await facetsForNode(node.id) : [],
     children,
   };
 }
@@ -139,19 +136,22 @@ function mapHomeFilterNodes(nodes: TaxonomyTreeNode[]): TaxonomyTreeNode[] {
   return result;
 }
 
-async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
+async function mapRoot(
+  node: TaxonomyTreeNode,
+  byNode: Map<string, number>
+): Promise<HomeFinderRoot> {
   const nested = await Promise.all(
-    node.children.map((child) => mapFolderNode(child, 2))
+    node.children.map((child) => mapFolderNode(child, 2, byNode))
   );
   /** Leaf root: expose self as the only child so facets/CTA still bind. */
   const children =
-    nested.length > 0 ? nested : [await mapFolderNode(node, 2)];
+    nested.length > 0 ? nested : [await mapFolderNode(node, 2, byNode)];
 
   return {
     id: node.id,
     slug: node.slug,
     name: node.name,
-    productCount: await subtreePublishedCount(node.id),
+    productCount: subtreePublishedCount(node, byNode),
     children,
   };
 }
@@ -159,9 +159,14 @@ async function mapRoot(node: TaxonomyTreeNode): Promise<HomeFinderRoot> {
 async function loadHomeFinderTree(): Promise<
   Omit<HomeFinderPayload, "availability">
 > {
-  const tree = await fetchTaxonomyTree();
+  const [tree, byNode] = await Promise.all([
+    fetchTaxonomyTree(),
+    publishedCountByNodeId(),
+  ]);
   const homeTree = mapHomeFilterNodes(tree);
-  const roots = await Promise.all(homeTree.map(mapRoot));
+  const roots = await Promise.all(
+    homeTree.map((root) => mapRoot(root, byNode))
+  );
   return {
     showRootsBlock: roots.length > 0,
     roots,

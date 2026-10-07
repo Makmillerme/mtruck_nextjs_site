@@ -96,29 +96,33 @@ export async function numberBoundsForAttribute(
     },
   };
 
-  const [agg, fallback] = await Promise.all([
-    db.productSpec.aggregate({
-      where: baseWhere,
+  const agg = await db.productSpec.aggregate({
+    where: baseWhere,
+    _min: { numberValue: true },
+    _max: { numberValue: true },
+  });
+
+  let min = agg._min.numberValue;
+  let max = agg._max.numberValue;
+
+  /** Global fallback only when the subtree has no numeric values yet. */
+  if (
+    (min == null || max == null) &&
+    taxonomyNodeIds != null &&
+    taxonomyNodeIds.length > 0
+  ) {
+    const fallback = await db.productSpec.aggregate({
+      where: {
+        attribute: { key: attributeKey },
+        numberValue: { not: null },
+        product: { status: "PUBLISHED", archivedAt: null },
+      },
       _min: { numberValue: true },
       _max: { numberValue: true },
-    }),
-    taxonomyNodeIds?.length
-      ? db.productSpec.aggregate({
-          where: {
-            attribute: { key: attributeKey },
-            numberValue: { not: null },
-            product: { status: "PUBLISHED", archivedAt: null },
-          },
-          _min: { numberValue: true },
-          _max: { numberValue: true },
-        })
-      : Promise.resolve(null),
-  ]);
-
-  const min =
-    agg._min.numberValue ?? fallback?._min.numberValue ?? null;
-  const max =
-    agg._max.numberValue ?? fallback?._max.numberValue ?? null;
+    });
+    min = min ?? fallback._min.numberValue;
+    max = max ?? fallback._max.numberValue;
+  }
 
   return {
     minBound: min != null ? Math.floor(min) : null,
@@ -250,22 +254,26 @@ async function mapFilterNodes(
       const byId = new Map(attributes.map((item) => [item.id, item]));
       const seen = new Set<string>();
       const subtreeIds = await collectSubtreeIds(node.id);
+      const built: PublicFilterFacet[] = [];
       for (const attribute of attributes) {
         if (!attribute.isFacet) continue;
         const facet = toPublicFacet(attribute, byId);
         if (!facet || seen.has(facet.key)) continue;
         seen.add(facet.key);
-        if (facet.type === "NUMBER" || facet.type === "YEAR") {
+        built.push(facet);
+      }
+      await Promise.all(
+        built.map(async (facet) => {
+          if (facet.type !== "NUMBER" && facet.type !== "YEAR") return;
           const bounds = await numberBoundsForAttribute(
             facet.key,
             subtreeIds
           );
           facet.minBound = bounds.minBound;
           facet.maxBound = bounds.maxBound;
-        }
-        facets.push(facet);
-      }
-      facets = sortPublicFacets(facets);
+        })
+      );
+      facets = sortPublicFacets(built);
     }
 
     result.push({
