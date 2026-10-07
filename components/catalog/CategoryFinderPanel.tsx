@@ -246,6 +246,42 @@ export default function CategoryFinderPanel({
   }, [children, selectedChildId]);
 
   const facets = selectedChild?.facets ?? [];
+  /** Homepage plate canon: one chip row (prefer make) + two ranges (prefer year/mileage) + CTA. */
+  const chipFacetsList = (() => {
+    const chips = facets.filter(
+      (facet) => facet.type === "SELECT" || facet.type === "BOOLEAN"
+    );
+    const preferred =
+      chips.find((facet) => facet.key === "make" || facet.key === "brand") ??
+      chips[0];
+    return preferred ? [preferred] : [];
+  })();
+  const rangeFacets = (() => {
+    const ranges = facets.filter(
+      (facet) => facet.type === "NUMBER" || facet.type === "YEAR"
+    );
+    const year =
+      ranges.find((facet) => facet.key === "year" || facet.type === "YEAR") ??
+      null;
+    const mileage =
+      ranges.find(
+        (facet) =>
+          facet.key === "mileage" ||
+          facet.key === "km" ||
+          facet.key.includes("prob") ||
+          facet.key.includes("mile")
+      ) ?? null;
+    const picked: HomeFinderFacet[] = [];
+    if (year) picked.push(year);
+    if (mileage && mileage.key !== year?.key) picked.push(mileage);
+    for (const facet of ranges) {
+      if (picked.length >= 2) break;
+      if (!picked.some((item) => item.key === facet.key)) picked.push(facet);
+    }
+    return picked;
+  })();
+  const primaryRanges = rangeFacets;
+  const extraRanges: HomeFinderFacet[] = [];
 
   const count = selectedChild?.productCount ?? selectedRoot?.productCount ?? 0;
 
@@ -284,17 +320,6 @@ export default function CategoryFinderPanel({
 
   const showRoots =
     payload.settings.showRootsBlock && roots.length > 0;
-
-  const childCols =
-    children.length >= 5
-      ? "md:grid-cols-5"
-      : children.length === 4
-        ? "md:grid-cols-4"
-        : children.length === 3
-          ? "md:grid-cols-3"
-          : children.length === 2
-            ? "md:grid-cols-2"
-            : "md:grid-cols-1";
 
   return (
     <div>
@@ -338,10 +363,7 @@ export default function CategoryFinderPanel({
 
       {children.length > 0 ? (
         <div
-          className={cn(
-            "-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden",
-            childCols
-          )}
+          className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
           {children.map((child) => {
@@ -379,9 +401,9 @@ export default function CategoryFinderPanel({
 
       <div className="mt-6 rounded-sm border border-border bg-background p-4 shadow-sm md:mt-8 md:p-5">
         {facets.length === 0 ? (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <p className="text-sm text-muted-foreground">{t("emptyFacets")}</p>
-            <Button asChild className="w-full sm:w-auto">
+            <Button asChild className="w-full sm:w-auto sm:min-w-[14rem]">
               <Link href={href}>
                 {t("cta", { count })}
                 <LuChevronRight aria-hidden />
@@ -390,7 +412,7 @@ export default function CategoryFinderPanel({
           </div>
         ) : (
           <div className="flex flex-col gap-5">
-            {facets.map((facet) => (
+            {chipFacetsList.map((facet) => (
               <FacetField
                 key={facet.key}
                 facet={facet}
@@ -401,33 +423,98 @@ export default function CategoryFinderPanel({
                     [facet.key]: slug,
                   }))
                 }
-                rangeFrom={rangeFrom[facet.key] ?? ""}
-                rangeTo={rangeTo[facet.key] ?? ""}
-                onRangeFrom={(value) =>
-                  setRangeFrom((current) => ({
-                    ...current,
-                    [facet.key]: value,
-                  }))
+                rangeFrom=""
+                rangeTo=""
+                onRangeFrom={() => undefined}
+                onRangeTo={() => undefined}
+                allLabel={
+                  facet.key === "make" || facet.key === "brand"
+                    ? t("allBrands")
+                    : t("allOption")
                 }
-                onRangeTo={(value) =>
-                  setRangeTo((current) => ({
-                    ...current,
-                    [facet.key]: value,
-                  }))
-                }
-                allLabel={t("allOption")}
                 fromPlaceholder={t("rangeFrom")}
                 toPlaceholder={t("rangeTo")}
               />
             ))}
-            <div className="flex justify-end">
-              <Button asChild className="w-full sm:w-auto sm:min-w-[14rem]">
-                <Link href={href}>
-                  {t("cta", { count })}
-                  <LuChevronRight aria-hidden />
-                </Link>
-              </Button>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+              {primaryRanges.map((facet) => (
+                <div key={facet.key} className="lg:col-span-4">
+                  <FacetField
+                    facet={facet}
+                    chipValue={null}
+                    onChip={() => undefined}
+                    rangeFrom={rangeFrom[facet.key] ?? ""}
+                    rangeTo={rangeTo[facet.key] ?? ""}
+                    onRangeFrom={(value) =>
+                      setRangeFrom((current) => ({
+                        ...current,
+                        [facet.key]: value,
+                      }))
+                    }
+                    onRangeTo={(value) =>
+                      setRangeTo((current) => ({
+                        ...current,
+                        [facet.key]: value,
+                      }))
+                    }
+                    allLabel={t("allOption")}
+                    fromPlaceholder={t("rangeFrom")}
+                    toPlaceholder={t("rangeTo")}
+                  />
+                </div>
+              ))}
+              {primaryRanges.length === 0 && chipFacetsList.length === 0 ? null : (
+                <div
+                  className={cn(
+                    "sm:col-span-2",
+                    primaryRanges.length === 0
+                      ? "lg:col-span-12"
+                      : primaryRanges.length === 1
+                        ? "lg:col-span-8"
+                        : "lg:col-span-4"
+                  )}
+                >
+                  <Button asChild className="w-full">
+                    <Link href={href}>
+                      {t("cta", { count })}
+                      <LuChevronRight aria-hidden />
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {extraRanges.length > 0 ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12">
+                {extraRanges.map((facet) => (
+                  <div key={facet.key} className="lg:col-span-4">
+                    <FacetField
+                      facet={facet}
+                      chipValue={null}
+                      onChip={() => undefined}
+                      rangeFrom={rangeFrom[facet.key] ?? ""}
+                      rangeTo={rangeTo[facet.key] ?? ""}
+                      onRangeFrom={(value) =>
+                        setRangeFrom((current) => ({
+                          ...current,
+                          [facet.key]: value,
+                        }))
+                      }
+                      onRangeTo={(value) =>
+                        setRangeTo((current) => ({
+                          ...current,
+                          [facet.key]: value,
+                        }))
+                      }
+                      allLabel={t("allOption")}
+                      fromPlaceholder={t("rangeFrom")}
+                      toPlaceholder={t("rangeTo")}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         )}
       </div>
