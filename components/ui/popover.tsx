@@ -41,7 +41,6 @@ const PopoverContent = React.forwardRef<
       null
     )
     const nodeRef = React.useRef<HTMLDivElement | null>(null)
-    const originRef = React.useRef<{ top: number; left: number } | null>(null)
 
     const setRefs = React.useCallback(
       (node: HTMLDivElement | null) => {
@@ -64,29 +63,6 @@ const PopoverContent = React.forwardRef<
         setFrozenSide(placed)
       }
     }, [frozenSide])
-
-    React.useLayoutEffect(() => {
-      const node = nodeRef.current
-      if (!node || !frozenSide) return
-      const wrapper =
-        (node.closest(
-          "[data-radix-popper-content-wrapper]"
-        ) as HTMLElement | null) ?? node
-
-      if (!originRef.current) {
-        const rect = wrapper.getBoundingClientRect()
-        originRef.current = { top: rect.top, left: rect.left }
-      }
-
-      const { top, left } = originRef.current
-      wrapper.style.setProperty("position", "fixed", "important")
-      wrapper.style.setProperty("top", `${top}px`, "important")
-      wrapper.style.setProperty("left", `${left}px`, "important")
-      wrapper.style.setProperty("right", "auto", "important")
-      wrapper.style.setProperty("bottom", "auto", "important")
-      wrapper.style.setProperty("transform", "none", "important")
-      wrapper.style.setProperty("margin", "0", "important")
-    })
 
     return (
       <PopoverPrimitive.Portal>

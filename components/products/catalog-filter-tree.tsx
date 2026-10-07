@@ -212,7 +212,10 @@ function FacetDropdown({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[200] w-[var(--radix-popover-trigger-width)] p-0"
+        className={cn(
+          "z-[200] w-[var(--radix-popover-trigger-width)] p-0",
+          showSearch && "min-h-[21.25rem]"
+        )}
         align="start"
         onOpenAutoFocus={(event) => {
           if (!showSearch) event.preventDefault();
@@ -241,7 +244,7 @@ function FacetDropdown({
               />
             </div>
           ) : null}
-          <CommandList>
+          <CommandList className={showSearch ? "h-[300px]" : undefined}>
             <CommandEmpty>—</CommandEmpty>
             {filteredGroups.map((group, index) => (
               <div key={group.key}>

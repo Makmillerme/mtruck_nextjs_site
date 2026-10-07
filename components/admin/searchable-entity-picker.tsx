@@ -129,7 +129,10 @@ export default function SearchableEntityPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="z-[220] w-[var(--radix-popover-trigger-width)] p-0"
+          className={cn(
+            "z-[220] w-[var(--radix-popover-trigger-width)] p-0",
+            showSearch && "min-h-[21.25rem]"
+          )}
           align="start"
           onOpenAutoFocus={(event) => {
             // Let the plain search Input take focus when present.
@@ -159,7 +162,7 @@ export default function SearchableEntityPicker({
                 />
               </div>
             ) : null}
-            <CommandList>
+            <CommandList className={showSearch ? "h-[300px]" : undefined}>
               <CommandEmpty>{emptyLabel}</CommandEmpty>
               <CommandGroup>
                 {showClear ? (
