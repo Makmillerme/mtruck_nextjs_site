@@ -113,6 +113,49 @@ function RangeInputs({
   );
 }
 
+const folderCardClass = (active: boolean) =>
+  cn(
+    "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2.5 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:gap-3 sm:px-4 sm:py-4 md:min-w-0",
+    active
+      ? "border-foreground text-foreground"
+      : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+  );
+
+const folderRowClass =
+  "-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden";
+
+function FinderFolderCard({
+  name,
+  count,
+  active,
+  onClick,
+}: {
+  name: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={folderCardClass(active)}
+    >
+      <span className="text-sm font-medium leading-snug text-foreground">
+        {name}
+      </span>
+      <span
+        className={cn(
+          "font-mono text-[10px] tabular-nums tracking-wide",
+          active ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
 function FacetField({
   facet,
   chipValue,
@@ -330,69 +373,30 @@ export default function CategoryFinderPanel({
       />
 
       {showRoots ? (
-        <div className="mb-5 flex flex-wrap gap-2 md:mb-6">
-          {roots.map((root) => {
-            const active = selectedRoot?.id === root.id;
-            return (
-              <button
-                key={root.id}
-                type="button"
-                onClick={() => selectRoot(root)}
-                className={cn(
-                  "rounded-sm border px-4 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors",
-                  active
-                    ? "border-foreground bg-foreground text-background shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"
-                )}
-              >
-                <span className="block">{root.name}</span>
-                <span
-                  className={cn(
-                    "mt-0.5 block font-mono text-[10px] tabular-nums tracking-wide",
-                    active ? "text-background/70" : "text-muted-foreground"
-                  )}
-                >
-                  {root.productCount}
-                </span>
-              </button>
-            );
-          })}
+        <div className={cn(folderRowClass, "mb-5 md:mb-6")} style={{ scrollbarWidth: "none" }}>
+          {roots.map((root) => (
+            <FinderFolderCard
+              key={root.id}
+              name={root.name}
+              count={root.productCount}
+              active={selectedRoot?.id === root.id}
+              onClick={() => selectRoot(root)}
+            />
+          ))}
         </div>
       ) : null}
 
       {children.length > 0 ? (
-        <div
-          className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-5 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {children.map((child) => {
-            const active = selectedChild?.id === child.id;
-            return (
-              <button
-                key={child.id}
-                type="button"
-                onClick={() => selectChild(child)}
-                className={cn(
-                  "relative flex min-w-[8.5rem] shrink-0 flex-col items-start gap-2 rounded-sm border bg-background px-3 py-3 text-left shadow-sm transition-colors sm:min-w-[9.5rem] sm:px-4 sm:py-4 md:min-w-0",
-                  active
-                    ? "border-foreground text-foreground"
-                    : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                )}
-              >
-                <span className="text-sm font-medium leading-snug text-foreground">
-                  {child.name}
-                </span>
-                <span
-                  className={cn(
-                    "font-mono text-[10px] tabular-nums tracking-wide",
-                    active ? "text-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  {child.productCount}
-                </span>
-              </button>
-            );
-          })}
+        <div className={folderRowClass} style={{ scrollbarWidth: "none" }}>
+          {children.map((child) => (
+            <FinderFolderCard
+              key={child.id}
+              name={child.name}
+              count={child.productCount}
+              active={selectedChild?.id === child.id}
+              onClick={() => selectChild(child)}
+            />
+          ))}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">{t("emptyChildren")}</p>
