@@ -133,7 +133,7 @@ async function ProductsCatalogBody({
   );
 }
 
-function ProductsContainer({
+async function ProductsContainer({
   layout,
   query,
 }: {
@@ -142,12 +142,12 @@ function ProductsContainer({
 }) {
   return (
     <div className="page-content">
-      {/* No chrome skeleton: filter is template UI, not a loading surface.
-          Soft-nav keeps prior body via startTransition; cold wait is blank
-          until schema resolves, then real filter + results (grid skeleton). */}
-      <Suspense fallback={null}>
-        <ProductsCatalogBody layout={layout} query={query} />
-      </Suspense>
+      {/**
+       * Await filter chrome here. Outer Suspense fallback={null} emptied main
+       * and collapsed the page on cold /products navigations. Route loading.tsx
+       * holds layout; soft-nav keeps prior results; inner Suspense skeletons grid.
+       */}
+      <ProductsCatalogBody layout={layout} query={query} />
     </div>
   );
 }

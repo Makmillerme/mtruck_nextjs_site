@@ -80,12 +80,59 @@ export function LoadingCatalogGridCards({
   );
 }
 
-/** Full catalog page shell: filter column + results grid. */
-/** Results-only catalog wait — never skeleton the filter chrome. */
+/**
+ * Catalog chrome while schema/products stream: same grid as CatalogView so
+ * main does not collapse (footer jump) on cold /products navigation.
+ */
+export function LoadingCatalogShell({
+  className,
+}: {
+  className?: string;
+} = {}) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] lg:gap-8",
+        className
+      )}
+      aria-busy
+      aria-label="Loading catalog"
+    >
+      <aside className="hidden min-h-[28rem] lg:block">
+        <div className="flex h-full flex-col gap-4 rounded-sm border border-border bg-background p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-3/4" />
+          <Skeleton className="mt-auto h-11 w-full" />
+        </div>
+      </aside>
+      <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 items-center gap-2">
+          <Skeleton className="h-9 min-w-0 flex-1" />
+          <Skeleton className="h-9 w-9 shrink-0" />
+          <Skeleton className="hidden h-9 w-9 shrink-0 md:block" />
+          <Skeleton className="hidden h-9 w-9 shrink-0 md:block" />
+          <Skeleton className="h-9 w-9 shrink-0 lg:hidden" />
+        </div>
+        <div className="mt-6">
+          <LoadingCatalogGridCards count={6} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Full catalog page wait (route loading.tsx / outer Suspense). */
 export function LoadingCatalogPage() {
   return (
     <div className="page-content">
-      <LoadingCatalogGridCards count={6} />
+      <LoadingCatalogShell />
     </div>
   );
 }
