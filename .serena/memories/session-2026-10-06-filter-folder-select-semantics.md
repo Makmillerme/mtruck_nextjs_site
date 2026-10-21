@@ -3,13 +3,12 @@
 ## User model
 Open folder = select for filter; close = deselect.
 
-## Actual (draft, then Apply)
-- Open: `selectFolder(slug)` → `draft.folders = [slug]` (single folder).
-- Close mid-level: if selection is this node or under it → `selectFolder(parentSlug)` (selection moves up, not full clear).
-- Close root: `selectFolder("")` → empty draft.
-- Close without owning selection: UI only.
-- Listing updates only on **Фільтрувати** (`buildCatalogHrefFromDraft`); draft is dirty until then.
-- URL/query uses one folder slug (+ scoped facets/ranges for that slug).
+## Actual (2026-10-13)
+- Open: `selectFolder(slug)` → draft + **immediate** soft-nav URL (`?folder=`).
+- Close mid-level: selection moves to parent slug (URL updates).
+- Close root: `selectFolder("")` → clears `?folder=` immediately.
+- Facets/ranges still draft until **Фільтрувати**.
+- Sort stays independent URL param.
 
 ## Shared
 `CatalogFilterTree` + `selectFolder` in catalog-filters (desktop/mobile) and admin via same draft pattern.

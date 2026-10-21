@@ -9,6 +9,7 @@ export const LAB_CATEGORIES = [
   { id: "overlays", label: "Оверлеї" },
   { id: "feedback", label: "Стани" },
   { id: "cards", label: "Картки" },
+  { id: "games", label: "Міні гра" },
 ] as const;
 
 export type LabCategory = Exclude<(typeof LAB_CATEGORIES)[number]["id"], "all">;
@@ -160,6 +161,14 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
       "avatar empty skeleton loading порожній завантаження пусто",
   },
   {
+    id: "toast",
+    category: "feedback",
+    title: "Toast",
+    hint: "Єдиний шаблон ToastContent + notify.success / error / fromAction. Без Sonner.",
+    keywords:
+      "toast toaster notify sonner notification тост повідомлення success error",
+  },
+  {
     id: "card",
     category: "cards",
     title: "Card (оболонка)",
@@ -182,6 +191,22 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     hint: "Єдиний Embla-компонент: variant card (dots) і page (thumbs). Admin sheet: ProductImageGalleryField (carousel + Reorder thumbs +).",
     keywords:
       "carousel карусель embla photo gallery галерея thumbs dots слайд reorder dnd admin +",
+  },
+  {
+    id: "snake",
+    category: "games",
+    title: "Snake",
+    hint: "Контейнеровоз збирає причепи: navy/white, газ, highscore.",
+    keywords:
+      "snake змія гра game mini тягач причіп convoy canvas wasd highscore fun",
+  },
+  {
+    id: "truck-parking",
+    category: "games",
+    title: "Паркування",
+    hint: "Село → місто → парк → термінал → склад: велика карта, камера, стрілка шляху.",
+    keywords:
+      "truck parking паркування фура тягач причіп склад рампа біом село місто парк шлагбаум game міні гра canvas",
   },
 ];
 

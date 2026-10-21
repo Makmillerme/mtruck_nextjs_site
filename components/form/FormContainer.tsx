@@ -1,11 +1,10 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { actionFunction } from '@/utils/types';
+import { useActionState, useEffect, useRef } from 'react';
+import { notify } from '@/lib/ui/notify';
+import type { ActionState, actionFunction } from '@/utils/types';
 
-const initialState = {
+const initialState: ActionState = {
   message: '',
 };
 
@@ -14,21 +13,42 @@ function FormContainer({
   children,
   id,
   className,
+  onSuccess,
+  onPendingChange,
 }: {
   action: actionFunction;
   children: React.ReactNode;
   id?: string;
   className?: string;
+  /** Soft-save handlers (e.g. patch admin list without redirect). */
+  onSuccess?: (state: ActionState) => void;
+  /** Lock parent sheet/dialog while the action runs. */
+  onPendingChange?: (pending: boolean) => void;
 }) {
-  const [state, formAction] = useActionState(action, initialState);
-  const { toast } = useToast();
+  const [state, formAction, isPending] = useActionState(action, initialState);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const onPendingChangeRef = useRef(onPendingChange);
+  onPendingChangeRef.current = onPendingChange;
+
+  useEffect(() => {
+    onPendingChangeRef.current?.(isPending);
+    return () => {
+      onPendingChangeRef.current?.(false);
+    };
+  }, [isPending]);
+
   useEffect(() => {
     if (state.message) {
-      toast({ description: state.message });
+      notify.fromAction(state);
     }
-  }, [state, toast]);
+    if (state.ok) {
+      onSuccessRef.current?.(state);
+    }
+  }, [state]);
+
   return (
-    <form id={id} action={formAction} className={className}>
+    <form id={id} action={formAction} className={className} aria-busy={isPending || undefined}>
       {children}
     </form>
   );

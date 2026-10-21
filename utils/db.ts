@@ -25,13 +25,22 @@ const prismaClientSingleton = () => {
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
+/** Bump when Prisma schema/client fields change while `next dev` is running. */
+const PRISMA_CLIENT_GEN = 3;
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientSingleton | undefined;
   prismaPg: PrismaClientSingleton | undefined;
+  prismaGen?: number;
 };
 
-if (globalForPrisma.prisma && globalForPrisma.prisma !== globalForPrisma.prismaPg) {
-  void globalForPrisma.prisma.$disconnect();
+if (
+  globalForPrisma.prismaGen !== PRISMA_CLIENT_GEN ||
+  (globalForPrisma.prisma && globalForPrisma.prisma !== globalForPrisma.prismaPg)
+) {
+  void globalForPrisma.prismaPg?.$disconnect();
+  void globalForPrisma.prisma?.$disconnect();
+  globalForPrisma.prismaPg = undefined;
   globalForPrisma.prisma = undefined;
 }
 
@@ -42,4 +51,5 @@ export default prisma;
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prismaPg = prisma;
   globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaGen = PRISMA_CLIENT_GEN;
 }

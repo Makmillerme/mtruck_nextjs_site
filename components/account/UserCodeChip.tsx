@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { notify } from "@/lib/ui/notify";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { LuCheck, LuCopy } from "react-icons/lu";
@@ -18,20 +18,16 @@ export default function UserCodeChip({
   compact?: boolean;
 }) {
   const t = useTranslations("AccountCabinet");
-  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      toast({ description: t("clientCodeCopied") });
+      notify.success(t("clientCodeCopied"));
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast({
-        variant: "destructive",
-        description: t("clientCodeCopyFailed"),
-      });
+      notify.error(t("clientCodeCopyFailed"));
     }
   }
 

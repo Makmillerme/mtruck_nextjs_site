@@ -38,6 +38,7 @@ import { PRODUCT_IMAGE_MAX } from '@/lib/catalog/product-image-limits';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { revalidatePath, unstable_cache } from 'next/cache';
+import { after } from 'next/server';
 import {
   CATALOG_CACHE_REVALIDATE_SECONDS,
   CATALOG_CACHE_TAGS,
@@ -51,9 +52,23 @@ import {
   toPrismaSpecCreates,
 } from '@/lib/catalog/product-specs';
 import { resolveProductNameWithExtra } from '@/lib/catalog/display-group';
-import type { ProductAvailability, ProductStatus } from '@prisma/client';
-
-type ImageOrderEntry = { t: 'e'; id?: string } | { t: 'n' } | { t: 'c' };
+import {
+  adminProductListInclude,
+  adminProductSlimInclude,
+  mapAdminProductRow,
+  mapAdminProductSlimRow,
+} from '@/lib/admin/product-row';
+import {
+  diffProductSpecs,
+  isImageOrderUnchanged,
+  type ImageOrderEntry,
+} from '@/lib/admin/product-write';
+import type { ActionState } from '@/utils/types';
+import {
+  adminUserListSelect,
+  mapAdminUserRow,
+} from '@/lib/admin/user-row';
+import type { ProductAvailability, ProductStatus, Prisma } from '@prisma/client';
 
 function parseImageOrder(raw: FormDataEntryValue | null): ImageOrderEntry[] {
   if (typeof raw !== 'string' || !raw.trim()) return [];
@@ -86,11 +101,14 @@ async function redirectLocalized(
     | "/admin/sales"
     | "/admin/users"
     | "/account/orders"
+    | `/admin/products?${string}`
 ): Promise<never> {
   const locale = await getLocale();
   redirect({ href, locale });
   throw new Error("Redirect failed");
 }
+
+
 
 /** Latest published products for homepage grid (no featured flag). */
 export const fetchFeaturedProducts = async (take = 6) => {
@@ -251,9 +269,9 @@ const PRODUCT_STATUSES: ProductStatus[] = [
 const PRODUCT_AVAILABILITIES: ProductAvailability[] = ['IN_STOCK', 'TRANSIT'];
 
 export const createProductAction = async (
-  prevState: { message: string },
+  _prevState: ActionState,
   formData: FormData
-): Promise<{ message: string }> => {
+): Promise<ActionState> => {
   const { user } = await getStaffUser();
   try {
     const rawData = Object.fromEntries(formData);
@@ -263,28 +281,26 @@ export const createProductAction = async (
       throw new Error(catalogT('productFolderRequired'));
     }
     let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
-    if (taxonomyNodeId) {
-      const node = await db.taxonomyNode.findUnique({
-        where: { id: taxonomyNodeId },
-        select: { id: true },
-      });
-      if (!node) {
-        const catalogT = await getTranslations('CatalogAdmin');
-        throw new Error(catalogT('parentMissing'));
+    const node = await db.taxonomyNode.findUnique({
+      where: { id: taxonomyNodeId },
+      select: { id: true },
+    });
+    if (!node) {
+      const catalogT = await getTranslations('CatalogAdmin');
+      throw new Error(catalogT('parentMissing'));
+    }
+    const parsed = await specsFromFormData(taxonomyNodeId, formData);
+    specCreates = toPrismaSpecCreates(parsed.specs);
+    const composedName = await resolveProductNameWithExtra(
+      taxonomyNodeId,
+      parsed.specs,
+      {
+        prefix: String(formData.get('namePrefix') ?? ''),
+        suffix: String(formData.get('nameSuffix') ?? ''),
       }
-      const parsed = await specsFromFormData(taxonomyNodeId, formData);
-      specCreates = toPrismaSpecCreates(parsed.specs);
-      const composedName = await resolveProductNameWithExtra(
-        taxonomyNodeId,
-        parsed.specs,
-        {
-          prefix: String(formData.get('namePrefix') ?? ''),
-          suffix: String(formData.get('nameSuffix') ?? ''),
-        }
-      );
-      if (composedName) {
-        rawData.name = composedName;
-      }
+    );
+    if (composedName) {
+      rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
     const files = formData
@@ -315,7 +331,7 @@ export const createProductAction = async (
 
     const { generateUniqueProductCode } = await import("@/lib/codes");
     const productCode = await generateUniqueProductCode();
-    await db.product.create({
+    const created = await db.product.create({
       data: {
         name: validatedFields.name,
         price: validatedFields.price,
@@ -324,7 +340,7 @@ export const createProductAction = async (
         image: cover,
         productCode,
         userId: user.id,
-        taxonomyNodeId: taxonomyNodeId || null,
+        taxonomyNodeId,
         status,
         availability,
         specs: specCreates.length ? { create: specCreates } : undefined,
@@ -332,15 +348,23 @@ export const createProductAction = async (
           create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
         },
       },
+      include: adminProductListInclude,
     });
-    revalidatePublicCatalog();
+    after(() => {
+      revalidatePublicCatalog({ productId: created.id });
+    });
+    const t = await getTranslations('Admin');
+    return {
+      message: t('productSaved'),
+      ok: true,
+      product: mapAdminProductRow(created),
+    };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
-  return redirectLocalized('/admin/products');
 };
 
 export const fetchAdminProducts = async () => {
@@ -350,22 +374,9 @@ export const fetchAdminProducts = async () => {
     orderBy: {
       createdAt: 'desc',
     },
-    include: {
-      images: {
-        orderBy: { sortOrder: 'asc' },
-        select: { id: true, url: true, sortOrder: true },
-      },
-      specs: {
-        include: {
-          option: { select: { id: true, label: true, slug: true } },
-          attribute: {
-            select: { id: true, key: true, name: true, type: true, unit: true },
-          },
-        },
-      },
-    },
+    include: adminProductSlimInclude,
   });
-  return products;
+  return products.map(mapAdminProductSlimRow);
 };
 
 export const archiveProductAction = async (prevState: { productId: string }) => {
@@ -456,9 +467,9 @@ export const fetchAdminProductDetails = async (productId: string) => {
 };
 
 export const updateProductAction = async (
-  prevState: { message: string },
+  _prevState: ActionState,
   formData: FormData
-): Promise<{ message: string }> => {
+): Promise<ActionState> => {
   await getStaffUser();
   try {
     const productId = String(formData.get('id') ?? '').trim();
@@ -467,11 +478,14 @@ export const updateProductAction = async (
     }
     const existing = await db.product.findUnique({
       where: { id: productId },
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        images: { orderBy: { sortOrder: 'asc' } },
+        specs: true,
+      },
     });
     if (!existing) {
       const t = await getTranslations('Actions');
-      return { message: t('error') };
+      return { message: t('error'), ok: false };
     }
 
     const rawData = Object.fromEntries(formData);
@@ -480,35 +494,32 @@ export const updateProductAction = async (
       const catalogT = await getTranslations('CatalogAdmin');
       throw new Error(catalogT('productFolderRequired'));
     }
-    let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
-    if (taxonomyNodeId) {
-      const node = await db.taxonomyNode.findUnique({
-        where: { id: taxonomyNodeId },
-        select: { id: true },
-      });
-      if (!node) {
-        const catalogT = await getTranslations('CatalogAdmin');
-        throw new Error(catalogT('parentMissing'));
+    const node = await db.taxonomyNode.findUnique({
+      where: { id: taxonomyNodeId },
+      select: { id: true },
+    });
+    if (!node) {
+      const catalogT = await getTranslations('CatalogAdmin');
+      throw new Error(catalogT('parentMissing'));
+    }
+    const parsed = await specsFromFormData(taxonomyNodeId, formData);
+    const composedName = await resolveProductNameWithExtra(
+      taxonomyNodeId,
+      parsed.specs,
+      {
+        prefix: String(formData.get('namePrefix') ?? ''),
+        suffix: String(formData.get('nameSuffix') ?? ''),
       }
-      const parsed = await specsFromFormData(taxonomyNodeId, formData);
-      specCreates = toPrismaSpecCreates(parsed.specs);
-      const composedName = await resolveProductNameWithExtra(
-        taxonomyNodeId,
-        parsed.specs,
-        {
-          prefix: String(formData.get('namePrefix') ?? ''),
-          suffix: String(formData.get('nameSuffix') ?? ''),
-        }
-      );
-      if (composedName) {
-        rawData.name = composedName;
-      }
+    );
+    if (composedName) {
+      rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
-    const statusRaw = String(formData.get('status') ?? existing.status);
-    const availabilityRaw = String(
-      formData.get('availability') ?? existing.availability
-    );
+    const statusRaw =
+      String(formData.get('status') ?? '').trim() || existing.status;
+    const availabilityRaw =
+      String(formData.get('availability') ?? '').trim() ||
+      existing.availability;
     const status = PRODUCT_STATUSES.includes(statusRaw as ProductStatus)
       ? (statusRaw as ProductStatus)
       : existing.status;
@@ -534,32 +545,44 @@ export const updateProductAction = async (
     for (const file of files) {
       validateWithZodSchema(imageSchema, { image: file });
     }
-    const newUrls = files.length ? await uploadProductImages(files) : [];
+
+    const skipImages =
+      hasImageOrderField &&
+      isImageOrderUnchanged(
+        existing.images.map((image) => image.id),
+        imageOrder,
+        files.length
+      );
+
+    let newUrls: string[] = [];
+    if (!skipImages && files.length > 0) {
+      newUrls = await uploadProductImages(files);
+    }
 
     let cover = existing.image;
-    const creates: { url: string; sortOrder: number }[] = [];
+    const imageCreates: { url: string; sortOrder: number }[] = [];
+    const imageSortUpdates: { id: string; sortOrder: number }[] = [];
+    let imagesTouched = false;
 
-    if (hasImageOrderField) {
+    if (!skipImages && hasImageOrderField) {
+      imagesTouched = true;
       const byId = new Map(existing.images.map((image) => [image.id, image]));
-      const keptIds = new Set<
-        string
-      >();
+      const keptIds = new Set<string>();
       let newIdx = 0;
       let sortOrder = 0;
       for (const entry of imageOrder) {
         if (entry.t === 'e' && entry.id && byId.has(entry.id)) {
           const row = byId.get(entry.id)!;
           keptIds.add(row.id);
-          await db.productImage.update({
-            where: { id: row.id },
-            data: { sortOrder },
-          });
+          if (row.sortOrder !== sortOrder) {
+            imageSortUpdates.push({ id: row.id, sortOrder });
+          }
           if (sortOrder === 0) cover = row.url;
           sortOrder += 1;
           continue;
         }
         if (entry.t === 'c' && existing.image) {
-          creates.push({ url: existing.image, sortOrder });
+          imageCreates.push({ url: existing.image, sortOrder });
           if (sortOrder === 0) cover = existing.image;
           sortOrder += 1;
           continue;
@@ -567,7 +590,7 @@ export const updateProductAction = async (
         if (entry.t === 'n') {
           const url = newUrls[newIdx++];
           if (!url) continue;
-          creates.push({ url, sortOrder });
+          imageCreates.push({ url, sortOrder });
           if (sortOrder === 0) cover = url;
           sortOrder += 1;
         }
@@ -579,48 +602,96 @@ export const updateProductAction = async (
         });
         await deleteImages(removed.map((image) => image.url));
       }
-      if (sortOrder === 0 && creates.length === 0) {
+      if (imageSortUpdates.length > 0) {
+        await db.$transaction(
+          imageSortUpdates.map((row) =>
+            db.productImage.update({
+              where: { id: row.id },
+              data: { sortOrder: row.sortOrder },
+            })
+          )
+        );
+      }
+      if (sortOrder === 0 && imageCreates.length === 0) {
         cover = '/logo_mtruck.svg';
       }
-    } else if (newUrls.length > 0) {
+    } else if (!skipImages && newUrls.length > 0) {
+      imagesTouched = true;
       const startOrder = existing.images.length;
       for (let index = 0; index < newUrls.length; index += 1) {
-        creates.push({ url: newUrls[index]!, sortOrder: startOrder + index });
+        imageCreates.push({ url: newUrls[index]!, sortOrder: startOrder + index });
       }
       if (!existing.image && newUrls[0]) cover = newUrls[0];
     }
 
-    await db.product.update({
+    const currency = validatedFields.currency ?? 'USD';
+    const description = validatedFields.description ?? '';
+    const data: Prisma.ProductUpdateInput = {};
+    if (validatedFields.name !== existing.name) data.name = validatedFields.name;
+    if (validatedFields.price !== existing.price) data.price = validatedFields.price;
+    if (currency !== existing.currency) data.currency = currency;
+    if (description !== existing.description) data.description = description;
+    if (cover !== existing.image) data.image = cover;
+    if (taxonomyNodeId !== (existing.taxonomyNodeId ?? '')) {
+      data.taxonomyNode = { connect: { id: taxonomyNodeId } };
+    }
+    if (status !== existing.status) data.status = status;
+    if (availability !== existing.availability) data.availability = availability;
+
+    const specDiff = diffProductSpecs(existing.specs, parsed.specs);
+    if (specDiff.changed) {
+      if (specDiff.deleteIds.length > 0) {
+        await db.productSpec.deleteMany({
+          where: { id: { in: specDiff.deleteIds } },
+        });
+      }
+      if (specDiff.updates.length > 0) {
+        await db.$transaction(
+          specDiff.updates.map((row) =>
+            db.productSpec.update({ where: { id: row.id }, data: row.data })
+          )
+        );
+      }
+      if (specDiff.creates.length > 0) {
+        data.specs = { create: specDiff.creates };
+      }
+    }
+
+    if (imageCreates.length > 0) {
+      data.images = { create: imageCreates };
+    }
+
+    const needsProductUpdate =
+      Object.keys(data).length > 0 || imagesTouched || specDiff.changed;
+    if (needsProductUpdate && Object.keys(data).length > 0) {
+      await db.product.update({ where: { id: productId }, data });
+    } else if (needsProductUpdate) {
+      // touch updatedAt when only side-table writes happened
+      await db.product.update({
+        where: { id: productId },
+        data: { updatedAt: new Date() },
+      });
+    }
+
+    const fresh = await db.product.findUniqueOrThrow({
       where: { id: productId },
-      data: {
-        name: validatedFields.name,
-        price: validatedFields.price,
-        currency: validatedFields.currency ?? "USD",
-        description: validatedFields.description ?? "",
-        image: cover,
-        taxonomyNodeId: taxonomyNodeId || null,
-        status,
-        availability,
-        specs: {
-          deleteMany: {},
-          create: specCreates,
-        },
-        images:
-          creates.length > 0
-            ? {
-                create: creates,
-              }
-            : undefined,
-      },
+      include: adminProductListInclude,
     });
-    revalidatePublicCatalog({ productId });
+    after(() => {
+      revalidatePublicCatalog({ productId });
+    });
+    const t = await getTranslations('Admin');
+    return {
+      message: t('productSaved'),
+      ok: true,
+      product: mapAdminProductRow(fresh),
+    };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
-  return redirectLocalized('/admin/products');
 };
 export const updateProductImageAction = async (
   prevState: { message: string },
@@ -1476,9 +1547,9 @@ export const fetchAdminUserById = async (userId: string) => {
 };
 
 export const createAdminUserAction = async (
-  prevState: { message: string },
+  _prevState: ActionState,
   formData: FormData
-): Promise<{ message: string }> => {
+): Promise<ActionState> => {
   const { user: actor } = await getStaffUser();
   try {
     const raw = Object.fromEntries(formData);
@@ -1501,7 +1572,7 @@ export const createAdminUserAction = async (
     const userId = generateId();
     const userCode = await generateUniqueUserCode();
     const now = new Date();
-    await db.user.create({
+    const created = await db.user.create({
       data: {
         id: userId,
         name: data.name,
@@ -1524,20 +1595,29 @@ export const createAdminUserAction = async (
           },
         },
       },
+      select: adminUserListSelect,
     });
+    after(() => {
+      revalidatePath('/admin/users');
+    });
+    const t = await getTranslations('Admin');
+    return {
+      message: t('productSaved'),
+      ok: true,
+      user: mapAdminUserRow(created),
+    };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
-  return redirectLocalized('/admin/users');
 };
 
 export const updateAdminUserAction = async (
-  prevState: { message: string },
+  _prevState: ActionState,
   formData: FormData
-): Promise<{ message: string }> => {
+): Promise<ActionState> => {
   const { user: actor } = await getStaffUser();
   try {
     const raw = Object.fromEntries(formData);
@@ -1558,7 +1638,7 @@ export const updateAdminUserAction = async (
     });
     if (!existing) {
       const t = await getTranslations('Actions');
-      return { message: t('error') };
+      return { message: t('error'), ok: false };
     }
     if (
       !isAdminRole(actorRole) &&
@@ -1567,7 +1647,7 @@ export const updateAdminUserAction = async (
       const t = await getTranslations('Admin');
       throw new Error(t('forbiddenEditStaff'));
     }
-    await db.user.update({
+    const updated = await db.user.update({
       where: { id: data.id },
       data: {
         name: data.name,
@@ -1576,14 +1656,23 @@ export const updateAdminUserAction = async (
         role:
           isAdminRole(actorRole) && data.role ? data.role : existing.role,
       },
+      select: adminUserListSelect,
     });
+    after(() => {
+      revalidatePath('/admin/users');
+    });
+    const t = await getTranslations('Admin');
+    return {
+      message: t('productSaved'),
+      ok: true,
+      user: mapAdminUserRow(updated),
+    };
   } catch (error) {
     if (error instanceof Error && error.message) {
-      return { message: error.message };
+      return { message: error.message, ok: false };
     }
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
-  return redirectLocalized('/admin/users');
 };
 
 async function assertUserArchiveMutationAllowed(

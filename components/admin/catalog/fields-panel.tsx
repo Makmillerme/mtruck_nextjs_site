@@ -168,6 +168,7 @@ export default function FieldsPanel({
 }) {
   const t = useTranslations("CatalogAdmin");
   const [sheet, setSheet] = useState<FieldSheet>(null);
+  const [sheetSavePending, setSheetSavePending] = useState(false);
   const [query, setQuery] = useState("");
 
   const searching = query.trim().length > 0;
@@ -287,6 +288,7 @@ export default function FieldsPanel({
       <Sheet
         open={sheet !== null}
         onOpenChange={(open) => {
+          if (!open && sheetSavePending) return;
           if (!open) setSheet(null);
         }}
       >
@@ -302,6 +304,7 @@ export default function FieldsPanel({
               <CatalogForm
                 className="grid gap-4"
                 action={createAttributeAction}
+                onPendingChange={setSheetSavePending}
                 onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="taxonomyNodeId" value={node.id} />
@@ -359,6 +362,8 @@ export default function FieldsPanel({
               <CatalogForm
                 className="grid gap-4"
                 action={updateAttributeAction}
+                onPendingChange={setSheetSavePending}
+                onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="attributeId" value={active.id} />
                 <CatalogField

@@ -109,6 +109,9 @@ import {
 import { UiLabDropdownCanon } from "@/components/dev/ui-lab-dropdown-canon";
 import { UiLabSheetFieldsCanon } from "@/components/dev/ui-lab-sheet-fields";
 import { UiLabDialogFooterCanon } from "@/components/dev/ui-lab-dialog-footer";
+import UiLabSnake from "@/components/dev/ui-lab-snake";
+import UiLabTruckParking from "@/components/dev/ui-lab-truck-parking";
+import UiLabToast from "@/components/dev/ui-lab-toast";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -930,6 +933,16 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             </Section>
           </LabGate>
 
+          <LabGate id="toast" visibleIds={visibleIds}>
+            <Section
+              id="toast"
+              title="Toast"
+              hint="Єдиний шаблон ToastContent + notify.success / error / fromAction. Без Sonner."
+            >
+              <UiLabToast />
+            </Section>
+          </LabGate>
+
           <LabGate id="states" visibleIds={visibleIds}>
             <Section id="states" title="Avatar / Empty / Skeleton">
               <div className="flex flex-wrap items-center gap-4">
@@ -985,6 +998,26 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                   <Button variant="outline">Каталог</Button>
                 </CardFooter>
               </Card>
+            </Section>
+          </LabGate>
+
+          <LabGate id="snake" visibleIds={visibleIds}>
+            <Section
+              id="snake"
+              title="Snake"
+              hint="Контейнеровоз збирає причепи: navy/white, газ, highscore."
+            >
+              <UiLabSnake />
+            </Section>
+          </LabGate>
+
+          <LabGate id="truck-parking" visibleIds={visibleIds}>
+            <Section
+              id="truck-parking"
+              title="Паркування"
+              hint="Село → місто → парк → термінал → склад: велика карта, камера, стрілка шляху."
+            >
+              <UiLabTruckParking />
             </Section>
           </LabGate>
           </div>

@@ -11,13 +11,12 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { notify } from "@/lib/ui/notify";
 import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 
 export default function SignUpForm() {
   const t = useTranslations("Auth");
-  const { toast } = useToast();
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,10 +26,7 @@ export default function SignUpForm() {
 
   const handleGoogleSignIn = async () => {
     if (!googleEnabled) {
-      toast({
-        variant: "destructive",
-        title: t("googleNotConfigured"),
-      });
+      notify.error(t("googleNotConfigured"));
       return;
     }
     await authClient.signIn.social({
@@ -50,19 +46,13 @@ export default function SignUpForm() {
         callbackURL: "/products",
       });
       if (error) {
-        toast({
-          variant: "destructive",
-          title: error.message || t("couldNotCreate"),
-        });
+        notify.error(error.message || t("couldNotCreate"));
         return;
       }
       router.push("/products");
       router.refresh();
     } catch {
-      toast({
-        variant: "destructive",
-        title: t("couldNotCreate"),
-      });
+      notify.error(t("couldNotCreate"));
     } finally {
       setIsLoading(false);
     }

@@ -10,7 +10,11 @@ alwaysApply: false
 
 ## URL
 
-Обидва `DATABASE_URL` і `DIRECT_URL` мають `?pgbouncer=true`. Інакше schema engine падає на `prepared statement "s3"`.
+- `DATABASE_URL` → БД `mtruck_nextjs` + `?pgbouncer=true` (transaction pool, runtime).
+- `DIRECT_URL` → alias `mtruck_nextjs_direct` **без** `pgbouncer=true` (session pool для schema engine).
+
+Alias у `/root/apps/PostgressOps/docker/pgbouncer/pgbouncer.ini`:
+`mtruck_nextjs_direct = … dbname=mtruck_nextjs … pool_mode=session`
 
 Пароль у URL: `+` → `%2B`. Не виводи пароль у чат.
 
@@ -18,7 +22,7 @@ alwaysApply: false
 
 - Зміни схеми — у `prisma/schema.prisma`. Shop-FK: `userId` → `User` (Better-Auth).
 - `npx prisma generate` — безпечно.
-- `npx prisma db push` — лише зі згодою або коли це частина узгодженого завдання на схему. При `prepared statement` — **повтори** push, не крути стек.
+- `npx prisma db push` — лише зі згодою або коли це частина узгодженого завдання на схему. Якщо знову `prepared statement` — перевір, що `DIRECT_URL` бʼє в `mtruck_nextjs_direct` і PgBouncer перезавантажено.
 - `--force-reset` / `drop_database` — лише після **явного** підтвердження.
 - Сід: `npm run db:seed` (`tsx --env-file=.env`). Створює тест-юзерів Better-Auth; продукти — лише якщо таблиця порожня.
 

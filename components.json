@@ -15,6 +15,7 @@
     "utils": "@/lib/utils"
   },
   "registries": {
-    "@shadcn-space": "https://shadcnspace.com/r/{name}.json"
+    "@shadcn-space": "https://shadcnspace.com/r/{name}.json",
+    "@joyco": "https://registry.joyco.studio/r/{name}.json"
   }
 }

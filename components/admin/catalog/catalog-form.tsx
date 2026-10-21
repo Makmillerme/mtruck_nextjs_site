@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { notify } from "@/lib/ui/notify";
 import {
   initialTaxonomyActionState,
   type TaxonomyAction,
@@ -10,37 +10,55 @@ import {
 export default function CatalogForm({
   action,
   onSuccess,
+  onPendingChange,
   className,
   id,
   children,
 }: {
   action: TaxonomyAction;
   onSuccess?: () => void;
+  onPendingChange?: (pending: boolean) => void;
   className?: string;
   id?: string;
   children: React.ReactNode;
 }) {
-  const [state, formAction] = useActionState(action, initialTaxonomyActionState);
-  const { toast } = useToast();
+  const [state, formAction, isPending] = useActionState(
+    action,
+    initialTaxonomyActionState
+  );
   const onSuccessRef = useRef(onSuccess);
+  const onPendingChangeRef = useRef(onPendingChange);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
   }, [onSuccess]);
 
   useEffect(() => {
+    onPendingChangeRef.current = onPendingChange;
+  }, [onPendingChange]);
+
+  useEffect(() => {
+    onPendingChangeRef.current?.(isPending);
+    return () => {
+      onPendingChangeRef.current?.(false);
+    };
+  }, [isPending]);
+
+  useEffect(() => {
     if (state === initialTaxonomyActionState) return;
     if (state.message) {
-      toast({
-        description: state.message,
-        variant: state.ok ? undefined : "destructive",
-      });
+      notify.fromAction(state);
     }
     if (state.ok) onSuccessRef.current?.();
-  }, [state, toast]);
+  }, [state]);
 
   return (
-    <form id={id} action={formAction} className={className}>
+    <form
+      id={id}
+      action={formAction}
+      className={className}
+      aria-busy={isPending || undefined}
+    >
       {children}
     </form>
   );

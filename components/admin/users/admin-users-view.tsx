@@ -11,6 +11,7 @@ import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { SubmitButton } from "@/components/form/Buttons";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
+import type { AdminUserRowDTO } from "@/lib/admin/user-row";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import FormContainer from "@/components/form/FormContainer";
@@ -39,7 +40,7 @@ import {
   createAdminUserAction,
   updateAdminUserAction,
 } from "@/utils/actions";
-import type { actionFunction } from "@/utils/types";
+import type { ActionState, actionFunction } from "@/utils/types";
 import { formatDate } from "@/utils/format";
 import AdminListToolbar, {
   AdminFilterSheet,
@@ -62,18 +63,7 @@ function parseRoleFilter(value: string | null): UserRoleFilter {
     : "all";
 }
 
-export type AdminUserRow = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  userCode: string;
-  role: "USER" | "ADMIN" | "MANAGER";
-  createdAt: string;
-  productCount: number;
-  orderCount: number;
-  archivedAt?: string | null;
-};
+export type AdminUserRow = AdminUserRowDTO;
 
 function ArchiveUser({
   userId,
@@ -174,8 +164,12 @@ export default function AdminUsersView({
   canDelete?: boolean;
 }) {
   const t = useTranslations("Admin");
+  const [listItems, setListItems] = useState(items);
+  useEffect(() => {
+    setListItems(items);
+  }, [items]);
   const { optimisticItems, removeOptimistically } =
-    useOptimisticListRemove(items);
+    useOptimisticListRemove(listItems);
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(
     () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
@@ -184,6 +178,7 @@ export default function AdminUsersView({
     parseRoleFilter(searchParams.get("role"))
   );
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [sheetSavePending, setSheetSavePending] = useState(false);
 
   useEffect(() => {
     syncAdminListUrl(["role", ADMIN_LIST_SEARCH_KEY], {
@@ -212,11 +207,29 @@ export default function AdminUsersView({
 
   const editUser = useMemo(() => {
     const found =
-      items.find((item) => item.id === sheetEditId) ??
+      listItems.find((item) => item.id === sheetEditId) ??
       (editFallback && editFallback.id === sheetEditId ? editFallback : null);
     if (!found || !canEditUser(found)) return null;
     return found;
-  }, [items, sheetEditId, editFallback, canManageRoles]);
+  }, [listItems, sheetEditId, editFallback, canManageRoles]);
+
+  function onUserSaved(state: ActionState) {
+    if (!state.user) return;
+    const saved = state.user;
+    setListItems((prev) => {
+      const index = prev.findIndex((item) => item.id === saved.id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = saved;
+        return next;
+      }
+      return [saved, ...prev];
+    });
+    setSheetSavePending(false);
+    setSheetCreateOpen(false);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -230,6 +243,7 @@ export default function AdminUsersView({
   }, [optimisticItems, search, roleFilter]);
 
   function setCreateOpen(open: boolean) {
+    if (!open && sheetSavePending) return;
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
@@ -240,6 +254,7 @@ export default function AdminUsersView({
   }
 
   function setEditOpen(open: boolean, userId?: string) {
+    if (!open && sheetSavePending) return;
     if (open && userId) {
       setSheetCreateOpen(false);
       setSheetEditId(userId);
@@ -397,7 +412,11 @@ export default function AdminUsersView({
               <SheetTitle>{t("createUserSheetTitle")}</SheetTitle>
               <SheetDescription>{t("createUserSheetLede")}</SheetDescription>
             </SheetHeader>
-            <FormContainer action={createAdminUserAction}>
+            <FormContainer
+              action={createAdminUserAction}
+              onSuccess={onUserSaved}
+              onPendingChange={setSheetSavePending}
+            >
               <div className="grid gap-6">
                 <UserFormFields
                   includePassword
@@ -422,7 +441,11 @@ export default function AdminUsersView({
             </SheetHeader>
             {editUser ? (
               <>
-                <FormContainer action={updateAdminUserAction}>
+                <FormContainer
+                  action={updateAdminUserAction}
+                  onSuccess={onUserSaved}
+                  onPendingChange={setSheetSavePending}
+                >
                   <input type="hidden" name="id" value={editUser.id} />
                   <div className="grid gap-6">
                     <UserFormFields

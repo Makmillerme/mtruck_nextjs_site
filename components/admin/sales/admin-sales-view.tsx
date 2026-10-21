@@ -283,6 +283,7 @@ export default function AdminSalesView({
   }, [appliedFilter, search]);
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
+  const [sheetSavePending, setSheetSavePending] = useState(false);
 
   const editOrder = useMemo(
     () => items.find((item) => item.id === sheetEditId) ?? null,
@@ -307,6 +308,7 @@ export default function AdminSalesView({
   }, [optimisticItems, search, appliedFilter]);
 
   function setCreateOpen(open: boolean) {
+    if (!open && sheetSavePending) return;
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
@@ -320,6 +322,7 @@ export default function AdminSalesView({
   }
 
   function setEditOpen(open: boolean, orderId?: string) {
+    if (!open && sheetSavePending) return;
     if (open && orderId) {
       setSheetCreateOpen(false);
       setSheetEditId(orderId);
@@ -495,6 +498,7 @@ export default function AdminSalesView({
             <FormContainer
               key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createAdminOrderAction}
+              onPendingChange={setSheetSavePending}
             >
               <div className="grid gap-6">
                 <OrderFormFields
@@ -526,6 +530,7 @@ export default function AdminSalesView({
                 <FormContainer
                   key={editOrder.id}
                   action={updateAdminOrderAction}
+                  onPendingChange={setSheetSavePending}
                 >
                   <input type="hidden" name="orderId" value={editOrder.id} />
                   <div className="grid gap-6">

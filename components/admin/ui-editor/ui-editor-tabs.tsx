@@ -16,13 +16,11 @@ export { parseUiEditorTab };
 
 export default function UiEditorTabs({
   tab,
-  filter,
   cardPreview,
   productCard,
   layout,
 }: {
   tab: UiEditorTab;
-  filter: ReactNode;
   cardPreview: ReactNode;
   productCard: ReactNode;
   layout: ReactNode;
@@ -44,9 +42,6 @@ export default function UiEditorTabs({
   return (
     <Tabs value={tab} onValueChange={openTab}>
       <TabsList className="w-full sm:w-full">
-        <TabsTrigger value="filter" className="sm:flex-1">
-          {t("tabFilter")}
-        </TabsTrigger>
         <TabsTrigger value="cardPreview" className="sm:flex-1">
           {t("tabCardPreview")}
         </TabsTrigger>
@@ -58,9 +53,6 @@ export default function UiEditorTabs({
         </TabsTrigger>
       </TabsList>
       <SoftNavPending isPending={isPending}>
-        <TabsContent value="filter" className="mt-6">
-          {filter}
-        </TabsContent>
         <TabsContent value="cardPreview" className="mt-6">
           {cardPreview}
         </TabsContent>

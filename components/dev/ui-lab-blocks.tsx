@@ -17,11 +17,13 @@ const DEMO_VEHICLE = {
   href: "/products",
   status: "PUBLISHED" as const,
   year: 2018,
-  mileage: 540000,
-  euro: "Euro 6",
   categoryLabel: "Сідельні тягачі",
-  transmission: "Автомат",
-  feature: "Перевірено",
+  specItems: [
+    { key: "mileage", label: "Пробіг", value: "540 000 км" },
+    { key: "transmission", label: "КПП", value: "Автомат" },
+    { key: "euro", label: "Euro", value: "Euro 6" },
+    { key: "feature", label: "Особливість", value: "Перевірено" },
+  ],
 };
 
 export default async function UiLabBlocks() {

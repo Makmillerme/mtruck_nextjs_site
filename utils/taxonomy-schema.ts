@@ -21,16 +21,6 @@ export const renameTaxonomyNodeSchema = z.object({
   showInHomeFilter: z.coerce.boolean().optional().default(false),
 });
 
-export const setNodeShowInFilterSchema = z.object({
-  nodeId: z.string().uuid(),
-  showInFilter: z.coerce.boolean(),
-});
-
-export const setAttributeIsFacetSchema = z.object({
-  attributeId: z.string().uuid(),
-  isFacet: z.coerce.boolean(),
-});
-
 export const nodeIdSchema = z.object({
   nodeId: z.string().uuid(),
 });

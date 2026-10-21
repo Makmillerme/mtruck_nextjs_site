@@ -14,25 +14,20 @@ import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import CascadeSelect from "@/components/form/cascade-select";
-import {
   firstTreeNodeId,
   getRootChildren,
   isNodeInSubtree,
-  taxonomyToCascadeItems,
 } from "@/lib/catalog/taxonomy";
 import ProductSpecFields from "@/components/admin/catalog/product-spec-fields";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
 import { Badge } from "@/components/ui/badge";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
-import { loadProductSheetMetaAction } from "@/lib/catalog/product-sheet-meta";
+import {
+  loadAdminProductSheetAction,
+  loadProductSheetMetaAction,
+} from "@/lib/catalog/product-sheet-meta";
+import type { AdminProductRowDTO } from "@/lib/admin/product-row";
+import type { ActionState } from "@/utils/types";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { SubmitButton } from "@/components/form/Buttons";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
@@ -105,7 +100,6 @@ function resolveScopedFolderId(
   }
   return firstTreeNodeId(children);
 }
-import type { AttributeTypeName } from "@/lib/catalog/types";
 import {
   archiveProductAction,
   createProductAction,
@@ -133,7 +127,7 @@ import {
 } from "@/lib/catalog/public-filter";
 import { flattenTaxonomyTree } from "@/lib/catalog/taxonomy";
 import { countActiveCatalogFilters } from "@/utils/catalog-query";
-import { LuArchive, LuArrowRight, LuColumns3, LuPen } from "react-icons/lu";
+import { LuArchive, LuColumns3, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
 const SYSTEM_COLUMNS_STORAGE_KEY =
@@ -156,32 +150,8 @@ const AVAILABILITY_LABEL: Record<string, string> = {
   TRANSIT: "availabilityTransit",
 };
 
-export type AdminProductSpec = {
-  attributeId: string;
-  optionId: string | null;
-  numberValue: number | null;
-  textValue: string | null;
-  booleanValue: boolean | null;
-  optionLabel?: string | null;
-  optionSlug?: string | null;
-  attributeKey?: string | null;
-  unit?: string | null;
-  type?: AttributeTypeName | null;
-};
-
-export type AdminProductRow = {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  status: string;
-  availability: string;
-  description: string;
-  image: string;
-  images: { id: string; url: string }[];
-  taxonomyNodeId: string | null;
-  specs: AdminProductSpec[];
-};
+export type AdminProductSpec = AdminProductRowDTO["specs"][number];
+export type AdminProductRow = AdminProductRowDTO;
 
 function adminItemToFilterRow(
   item: AdminProductRow,
@@ -317,10 +287,6 @@ function ProductSheetFields({
   const [specValues, setSpecValues] = useState<Record<string, string>>(() =>
     product ? specsToInitial(product.specs) : {}
   );
-  const [moveOpen, setMoveOpen] = useState(false);
-  const [moveDraftId, setMoveDraftId] = useState<string | null>(
-    selectedNodeId ?? null
-  );
 
   const pickerTree = useMemo(() => {
     if (!listRootId) return tree;
@@ -385,62 +351,7 @@ function ProductSheetFields({
           tree={pickerTree}
           selectedId={selectedNodeId}
           onNodeChange={onFolderChange}
-          trailing={
-            product ? (
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-11 w-11 shrink-0"
-                aria-label={t("moveProductFolder")}
-                onClick={() => {
-                  setMoveDraftId(selectedNodeId ?? null);
-                  setMoveOpen(true);
-                }}
-              >
-                <LuArrowRight className="size-4" aria-hidden />
-              </Button>
-            ) : null
-          }
         />
-        <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
-          <DialogContent className="z-[110]">
-            <DialogHeader>
-              <DialogTitle>{t("moveProductFolderTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("moveProductFolderDescription")}
-              </DialogDescription>
-            </DialogHeader>
-            <CascadeSelect
-              items={taxonomyToCascadeItems(tree)}
-              value={moveDraftId}
-              onValueChange={setMoveDraftId}
-              placeholder={catalogT("templateFolderPlaceholder")}
-              emptyLabel={catalogT("emptyFolders")}
-              variant="tree"
-            />
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setMoveOpen(false)}
-              >
-                {catalogT("cancel")}
-              </Button>
-              <Button
-                type="button"
-                disabled={!moveDraftId}
-                onClick={() => {
-                  if (!moveDraftId) return;
-                  onFolderChange(moveDraftId);
-                  setMoveOpen(false);
-                }}
-              >
-                {t("moveProductFolderConfirm")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
         <CatalogMenuSelect
           name="status"
           label={t("status")}
@@ -587,9 +498,17 @@ export default function AdminProductsView({
 }) {
   const t = useTranslations("Admin");
   const locale = useLocale();
+  const [listItems, setListItems] = useState(items);
+  useEffect(() => {
+    setListItems(items);
+  }, [items]);
   const { optimisticItems, removeOptimistically } =
-    useOptimisticListRemove(items);
+    useOptimisticListRemove(listItems);
   const searchParams = useSearchParams();
+  const [sheetProduct, setSheetProduct] = useState<AdminProductRow | null>(
+    null
+  );
+  const [sheetSavePending, setSheetSavePending] = useState(false);
   const [search, setSearch] = useState(
     () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
   );
@@ -648,10 +567,11 @@ export default function AdminProductsView({
     [filterSchema, listRootId]
   );
 
-  const editProduct = useMemo(
-    () => items.find((item) => item.id === sheetEditId) ?? null,
-    [items, sheetEditId]
-  );
+  const editProduct = useMemo(() => {
+    if (!sheetEditId) return null;
+    if (sheetProduct?.id === sheetEditId) return sheetProduct;
+    return listItems.find((item) => item.id === sheetEditId) ?? null;
+  }, [sheetEditId, sheetProduct, listItems]);
 
   const tableAttributeKeys = useMemo(
     () => new Set(tableAttributes.map((attribute) => attribute.key)),
@@ -786,10 +706,31 @@ export default function AdminProductsView({
     }
   }
 
+  function onProductSaved(state: ActionState) {
+    if (!state.product) return;
+    const saved = state.product;
+    setListItems((prev) => {
+      const index = prev.findIndex((item) => item.id === saved.id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = saved;
+        return next;
+      }
+      return [saved, ...prev];
+    });
+    setSheetSavePending(false);
+    setSheetProduct(null);
+    setSheetCreateOpen(false);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
+
   function setCreateOpen(open: boolean) {
+    if (!open && sheetSavePending) return;
     setSheetCreateOpen(open);
     if (open) {
       setSheetEditId(undefined);
+      setSheetProduct(null);
       const node =
         resolveScopedFolderId(tree, listRootId, folderNodeId) ?? null;
       if (node && node !== folderNodeId) setFolderNodeId(node);
@@ -801,17 +742,29 @@ export default function AdminProductsView({
   }
 
   function setEditOpen(open: boolean, productId?: string) {
+    if (!open && sheetSavePending) return;
     if (open && productId) {
-      const product = items.find((item) => item.id === productId);
+      const product = listItems.find((item) => item.id === productId);
       const node = product?.taxonomyNodeId ?? null;
       setSheetCreateOpen(false);
       setSheetEditId(productId);
+      setSheetProduct(product ?? null);
       setFolderNodeId(node ?? undefined);
       syncAdminSheetUrl({ edit: productId, node });
-      void loadSheetMeta(node);
+      void (async () => {
+        try {
+          const hydrate = await loadAdminProductSheetAction(productId, node);
+          if (hydrate.product) setSheetProduct(hydrate.product);
+          setSheetAttributes(hydrate.attributes);
+          setSheetNameWriterGroup(hydrate.nameWriterGroup);
+        } catch {
+          void loadSheetMeta(node);
+        }
+      })();
       return;
     }
     setSheetEditId(undefined);
+    setSheetProduct(null);
     syncAdminSheetUrl({});
   }
 
@@ -1119,7 +1072,12 @@ export default function AdminProductsView({
             <FormContainer
               key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createProductAction}
+              onSuccess={onProductSaved}
+              onPendingChange={setSheetSavePending}
             >
+              {listRootId ? (
+                <input type="hidden" name="listRootId" value={listRootId} />
+              ) : null}
               <div className="grid gap-6">
                 <ProductSheetFields
                   tree={tree}
@@ -1151,8 +1109,13 @@ export default function AdminProductsView({
                 <FormContainer
                   key={editProduct.id}
                   action={updateProductAction}
+                  onSuccess={onProductSaved}
+                  onPendingChange={setSheetSavePending}
                 >
                   <input type="hidden" name="id" value={editProduct.id} />
+                  {listRootId ? (
+                    <input type="hidden" name="listRootId" value={listRootId} />
+                  ) : null}
                   <div className="grid gap-6">
                     <ProductSheetFields
                       tree={tree}

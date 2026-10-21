@@ -11,7 +11,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { notify } from "@/lib/ui/notify";
 import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 
@@ -23,7 +23,6 @@ export default function SignInForm({
   redirectUrl = "/products",
 }: SignInFormProps) {
   const t = useTranslations("Auth");
-  const { toast } = useToast();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,10 +31,7 @@ export default function SignInForm({
 
   const handleGoogleSignIn = async () => {
     if (!googleEnabled) {
-      toast({
-        variant: "destructive",
-        title: t("googleNotConfigured"),
-      });
+      notify.error(t("googleNotConfigured"));
       return;
     }
     await authClient.signIn.social({
@@ -54,19 +50,13 @@ export default function SignInForm({
         callbackURL: redirectUrl,
       });
       if (error) {
-        toast({
-          variant: "destructive",
-          title: error.message || t("invalidCredentials"),
-        });
+        notify.error(error.message || t("invalidCredentials"));
         return;
       }
       router.push(redirectUrl);
       router.refresh();
     } catch {
-      toast({
-        variant: "destructive",
-        title: t("invalidCredentials"),
-      });
+      notify.error(t("invalidCredentials"));
     } finally {
       setIsLoading(false);
     }

@@ -158,6 +158,7 @@ model Product {
   @@index([taxonomyNodeId])
   @@index([status])
   @@index([archivedAt])
+  @@index([archivedAt, createdAt])
 }
 
 model ProductImage {
@@ -185,10 +186,11 @@ model TaxonomyNode {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  attributes    AttributeDefinition[]
-  displayGroups DisplayGroup[]
-  products      Product[]
-  orders        Order[]
+  attributes         AttributeDefinition[]
+  displayGroups      DisplayGroup[]
+  products           Product[]
+  orders             Order[]
+  cardPreviewLayout  CardPreviewLayout?
 
   @@index([parentId])
 }
@@ -212,9 +214,11 @@ model AttributeDefinition {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  options             AttributeOption[]
-  specs               ProductSpec[]
-  displayGroupMembers DisplayGroupMember[]
+  options                  AttributeOption[]
+  specs                    ProductSpec[]
+  displayGroupMembers      DisplayGroupMember[]
+  cardPreviewSlots         CardPreviewSlot[]
+  cardPreviewSubtitleSlots CardPreviewSubtitleSlot[]
 
   @@unique([taxonomyNodeId, key])
   @@index([taxonomyNodeId])
@@ -286,6 +290,61 @@ model DisplayGroupMember {
 
   @@unique([groupId, attributeId])
   @@index([groupId])
+  @@index([attributeId])
+}
+
+enum CardPreviewSpecsStyle {
+  GRID
+  TAGS
+}
+
+enum CardPreviewCategorySource {
+  LAYOUT_FOLDER
+  PRODUCT_FOLDER
+}
+
+model CardPreviewLayout {
+  id             String                     @id @default(uuid())
+  taxonomyNodeId String                     @unique
+  taxonomyNode   TaxonomyNode               @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  showName       Boolean                    @default(true)
+  showPrice      Boolean                    @default(true)
+  showStatus     Boolean                    @default(true)
+  showSubtitle   Boolean                    @default(true)
+  showSpecs      Boolean                    @default(true)
+  specsStyle     CardPreviewSpecsStyle      @default(GRID)
+  specsGridCount Int                        @default(4)
+  categorySource CardPreviewCategorySource  @default(PRODUCT_FOLDER)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  slots         CardPreviewSlot[]
+  subtitleSlots CardPreviewSubtitleSlot[]
+}
+
+model CardPreviewSlot {
+  id          String              @id @default(uuid())
+  layoutId    String
+  layout      CardPreviewLayout   @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int                 @default(0)
+
+  @@unique([layoutId, attributeId])
+  @@index([layoutId])
+  @@index([attributeId])
+}
+
+model CardPreviewSubtitleSlot {
+  id          String              @id @default(uuid())
+  layoutId    String
+  layout      CardPreviewLayout   @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int                 @default(0)
+
+  @@unique([layoutId, attributeId])
+  @@index([layoutId])
   @@index([attributeId])
 }
 

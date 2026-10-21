@@ -69,6 +69,36 @@ export function MemberOrderPicker({
 
   return (
     <div className="grid gap-3">
+      {available.length > 0 ? (
+        <SearchableEntityPicker
+          name="memberAttributePick"
+          label={t("displayGroupAddMember")}
+          placeholder={t("displayGroupPickField")}
+          searchPlaceholder={t("displayGroupPickField")}
+          emptyLabel="—"
+          options={available.map((item) => ({
+            value: item.id,
+            label: item.inherited
+              ? `${item.name} (${item.source.name})`
+              : item.name,
+            keywords: [
+              item.name,
+              item.key,
+              item.source.name,
+            ],
+          }))}
+          value={pick}
+          onValueChange={(next) => {
+            if (!next) {
+              setPick("");
+              return;
+            }
+            onChange([...value, next]);
+            setPick("");
+          }}
+          allowClear={false}
+        />
+      ) : null}
       <p className="text-sm font-medium">{t("displayGroupMembers")}</p>
       {value.map((id, index) => {
         const attribute = byId.get(id);
@@ -117,36 +147,6 @@ export function MemberOrderPicker({
           </div>
         );
       })}
-      {available.length > 0 ? (
-        <SearchableEntityPicker
-          name="memberAttributePick"
-          label={t("displayGroupAddMember")}
-          placeholder={t("displayGroupPickField")}
-          searchPlaceholder={t("displayGroupPickField")}
-          emptyLabel="—"
-          options={available.map((item) => ({
-            value: item.id,
-            label: item.inherited
-              ? `${item.name} (${item.source.name})`
-              : item.name,
-            keywords: [
-              item.name,
-              item.key,
-              item.source.name,
-            ],
-          }))}
-          value={pick}
-          onValueChange={(next) => {
-            if (!next) {
-              setPick("");
-              return;
-            }
-            onChange([...value, next]);
-            setPick("");
-          }}
-          allowClear={false}
-        />
-      ) : null}
       {value.length === 0 && !allowEmpty ? (
         <p className="text-sm text-muted-foreground">
           {t("displayGroupMembersHint")}
@@ -167,6 +167,7 @@ export default function DisplayGroupsPanel({
 }) {
   const t = useTranslations("CatalogAdmin");
   const [sheet, setSheet] = useState<GroupSheet>(null);
+  const [sheetSavePending, setSheetSavePending] = useState(false);
   const [memberIds, setMemberIds] = useState<string[]>([]);
 
   const own = groups.filter((item) => !item.inherited);
@@ -286,6 +287,7 @@ export default function DisplayGroupsPanel({
       <Sheet
         open={sheet !== null}
         onOpenChange={(open) => {
+          if (!open && sheetSavePending) return;
           if (!open) setSheet(null);
         }}
       >
@@ -301,6 +303,7 @@ export default function DisplayGroupsPanel({
               <CatalogForm
                 className="grid gap-4"
                 action={createDisplayGroupAction}
+                onPendingChange={setSheetSavePending}
                 onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="taxonomyNodeId" value={node.id} />
@@ -334,6 +337,7 @@ export default function DisplayGroupsPanel({
               <CatalogForm
                 className="grid gap-4"
                 action={updateDisplayGroupAction}
+                onPendingChange={setSheetSavePending}
                 onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="groupId" value={active.id} />

@@ -416,12 +416,14 @@ export function buildCatalogHrefFromDraft(
   const paramsOf = (path: string) =>
     new URLSearchParams(path.includes("?") ? path.split("?")[1] : "");
 
+  // Always rewrite folder list so empty draft clears ?folder= (clearFacets
+  // already deletes it, but be explicit for callers / future clear changes).
   const folder = draft.folders[0];
+  href = buildCatalogHref(paramsOf(href), {
+    folders: folder ? [folder] : [],
+    resetPage: true,
+  });
   if (folder) {
-    href = buildCatalogHref(paramsOf(href), {
-      setFolder: folder,
-      resetPage: true,
-    });
     const bucket = draft.scopedFacets[folder] ?? {};
     if (Object.keys(bucket).length) {
       href = buildCatalogHref(paramsOf(href), {

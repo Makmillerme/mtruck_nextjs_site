@@ -10,12 +10,22 @@ import type {
   CatalogAttribute,
   CatalogDisplayGroup,
 } from "@/lib/catalog/types";
+import {
+  adminProductListInclude,
+  mapAdminProductRow,
+  type AdminProductRowDTO,
+} from "@/lib/admin/product-row";
+import db from "@/utils/db";
 import { getStaffUser } from "@/utils/session";
 
 export type ProductSheetMeta = {
   attributes: CatalogAttribute[];
   nameFromDisplayGroup: boolean;
   nameWriterGroup: CatalogDisplayGroup | null;
+};
+
+export type ProductSheetHydrate = ProductSheetMeta & {
+  product: AdminProductRowDTO | null;
 };
 
 /** Lightweight meta for product create/edit sheet when folder changes (no full page RSC). */
@@ -41,5 +51,24 @@ export async function loadProductSheetMetaAction(
     attributes,
     nameFromDisplayGroup: Boolean(nameWriterGroup),
     nameWriterGroup,
+  };
+}
+
+/** Edit sheet: full product row + folder meta in one round-trip. */
+export async function loadAdminProductSheetAction(
+  productId: string,
+  nodeId: string | null
+): Promise<ProductSheetHydrate> {
+  await getStaffUser();
+  const [row, meta] = await Promise.all([
+    db.product.findUnique({
+      where: { id: productId, archivedAt: null },
+      include: adminProductListInclude,
+    }),
+    loadProductSheetMetaAction(nodeId ?? null),
+  ]);
+  return {
+    ...meta,
+    product: row ? mapAdminProductRow(row) : null,
   };
 }

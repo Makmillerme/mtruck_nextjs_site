@@ -1,10 +1,9 @@
 "use client";
 
-import { type ReactNode, useTransition } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import EmptyList from "@/components/global/EmptyList";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
-import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +28,6 @@ import {
 import { formatCurrency, formatDate } from "@/utils/format";
 import { canMutateUserArchive } from "@/utils/user-roles";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
-import { useRouter } from "@/i18n/navigation";
 import { LuRotateCcw } from "react-icons/lu";
 
 export type ArchiveTab = "sales" | "products" | "users";
@@ -136,8 +134,10 @@ export default function AdminArchiveView({
   orders: ArchiveOrderRow[];
 }) {
   const t = useTranslations("Admin");
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [activeTab, setActiveTab] = useState<ArchiveTab>(tab);
+  useEffect(() => {
+    setActiveTab(tab);
+  }, [tab]);
   const {
     optimisticItems: optimisticOrders,
     removeOptimistically: removeOrder,
@@ -156,15 +156,17 @@ export default function AdminArchiveView({
       value === "products" || value === "users" || value === "sales"
         ? value
         : "sales";
-    if (next === tab) return;
-    startTransition(() => {
-      router.replace(`/admin/archive?tab=${next}`);
-    });
+    if (next === activeTab) return;
+    setActiveTab(next);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", url.toString());
   }
 
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={activeTab} onValueChange={setTab}>
         <TabsList className="w-full sm:w-full">
           <TabsTrigger value="sales" className="sm:flex-1">
             {t("sales")}
@@ -177,7 +179,6 @@ export default function AdminArchiveView({
           </TabsTrigger>
         </TabsList>
 
-        <SoftNavPending isPending={isPending}>
         <TabsContent value="sales" className="mt-6">
           <ArchiveTable
             empty={optimisticOrders.length === 0}
@@ -409,7 +410,6 @@ export default function AdminArchiveView({
             </Table>
           </ArchiveTable>
         </TabsContent>
-        </SoftNavPending>
       </Tabs>
     </section>
   );

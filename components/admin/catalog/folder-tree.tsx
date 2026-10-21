@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useToast } from "@/components/ui/use-toast";
+import { notify } from "@/lib/ui/notify";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import { ConfirmDeleteIcon } from "@/components/form/ConfirmDelete";
 import {
@@ -244,9 +244,9 @@ export default function FolderTree({
   tree: TaxonomyTreeNode[];
 }) {
   const t = useTranslations("CatalogAdmin");
-  const { toast } = useToast();
   const [movePending, startMove] = useTransition();
   const [sheet, setSheet] = useState<FolderSheet>(null);
+  const [sheetSavePending, setSheetSavePending] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
 
@@ -288,7 +288,7 @@ export default function FolderTree({
         formData
       );
       if (result.message && !result.ok) {
-        toast({ description: result.message, variant: "destructive" });
+        notify.error(result.message);
       }
     });
   }
@@ -336,6 +336,7 @@ export default function FolderTree({
       <Sheet
         open={sheet !== null}
         onOpenChange={(open) => {
+          if (!open && sheetSavePending) return;
           if (!open) setSheet(null);
         }}
       >
@@ -353,6 +354,7 @@ export default function FolderTree({
               <CatalogForm
                 className="grid gap-4"
                 action={createTaxonomyNodeAction}
+                onPendingChange={setSheetSavePending}
                 onSuccess={() => setSheet(null)}
               >
                 {sheet.parent ? (
@@ -382,6 +384,7 @@ export default function FolderTree({
               <CatalogForm
                 className="grid gap-4"
                 action={renameTaxonomyNodeAction}
+                onPendingChange={setSheetSavePending}
                 onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="nodeId" value={sheet.node.id} />

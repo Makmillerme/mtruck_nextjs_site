@@ -14,6 +14,8 @@ import {
   pruneScopedFacetsToSchema,
 } from "@/lib/catalog/public-filter";
 import { fetchAllProducts, fetchUserFavoriteIds } from "@/utils/actions";
+import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
+import db from "@/utils/db";
 import { getTranslations } from "next-intl/server";
 import type { CatalogLayout } from "@/utils/catalog-layout";
 import {
@@ -41,6 +43,12 @@ async function CatalogResults({
     }),
     fetchUserFavoriteIds(),
   ]);
+  const layouts = await fetchCardPreviewLayoutsByNodeIds(
+    db,
+    products
+      .map((product) => product.taxonomyNodeId)
+      .filter((id): id is string => Boolean(id))
+  );
   const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
   const emptyLabel =
     total === 0
@@ -56,6 +64,7 @@ async function CatalogResults({
       grid={
         <ProductsGrid
           products={products}
+          layouts={layouts}
           favoriteByProductId={favorites.favoriteByProductId}
           isAuthenticated={favorites.isAuthenticated}
           priorityCount={3}
@@ -64,6 +73,7 @@ async function CatalogResults({
       list={
         <ProductsList
           products={products}
+          layouts={layouts}
           favoriteByProductId={favorites.favoriteByProductId}
           isAuthenticated={favorites.isAuthenticated}
           priorityCount={3}

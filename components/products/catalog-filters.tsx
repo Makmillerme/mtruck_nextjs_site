@@ -179,19 +179,30 @@ export function useCatalogFilters(
   }
 
   function selectFolder(slug: string) {
+    // Open/close accordion = category scope: sync URL immediately so UI
+    // never looks "empty" while ?folder= still filters the listing.
+    // Facets/ranges stay draft until Apply.
     if (!slug) {
-      setDraft(EMPTY_CATALOG_FILTER_DRAFT);
+      const empty: FilterDraft = {
+        folders: [],
+        scopedFacets: {},
+        scopedRanges: {},
+      };
+      setDraft(empty);
+      go(buildCatalogHrefFromDraft(current(), empty));
       return;
     }
-    setDraft((currentDraft) => ({
+    const next: FilterDraft = {
       folders: [slug],
-      scopedFacets: currentDraft.scopedFacets[slug]
-        ? { [slug]: currentDraft.scopedFacets[slug] }
+      scopedFacets: draft.scopedFacets[slug]
+        ? { [slug]: draft.scopedFacets[slug] }
         : {},
-      scopedRanges: currentDraft.scopedRanges[slug]
-        ? { [slug]: currentDraft.scopedRanges[slug] }
+      scopedRanges: draft.scopedRanges[slug]
+        ? { [slug]: draft.scopedRanges[slug] }
         : {},
-    }));
+    };
+    setDraft(next);
+    go(buildCatalogHrefFromDraft(current(), next));
   }
 
   function toggleFacet(
@@ -243,10 +254,13 @@ export function useCatalogFilters(
   }
 
   function clearFilters() {
-    setDraft({ folders: [], scopedFacets: {}, scopedRanges: {} });
-    if (activeCount > 0) {
-      go(buildCatalogHref(current(), { clearFacets: true }));
-    }
+    const empty: FilterDraft = {
+      folders: [],
+      scopedFacets: {},
+      scopedRanges: {},
+    };
+    setDraft(empty);
+    go(buildCatalogHrefFromDraft(current(), empty));
   }
 
   return {
@@ -366,19 +380,25 @@ export function useLocalCatalogFilters(
   const canClear = draftActiveCount > 0 || activeCount > 0;
 
   function selectFolder(slug: string) {
+    // Open/close = folder scope applied immediately (parent owns listing).
+    // Facets/ranges stay draft until Apply.
     if (!slug) {
-      setDraft(EMPTY_CATALOG_FILTER_DRAFT);
+      const empty = EMPTY_CATALOG_FILTER_DRAFT;
+      setDraft(empty);
+      onAppliedChange(empty);
       return;
     }
-    setDraft((currentDraft) => ({
+    const next: FilterDraft = {
       folders: [slug],
-      scopedFacets: currentDraft.scopedFacets[slug]
-        ? { [slug]: currentDraft.scopedFacets[slug] }
+      scopedFacets: draft.scopedFacets[slug]
+        ? { [slug]: draft.scopedFacets[slug] }
         : {},
-      scopedRanges: currentDraft.scopedRanges[slug]
-        ? { [slug]: currentDraft.scopedRanges[slug] }
+      scopedRanges: draft.scopedRanges[slug]
+        ? { [slug]: draft.scopedRanges[slug] }
         : {},
-    }));
+    };
+    setDraft(next);
+    onAppliedChange(next);
   }
 
   function toggleFacet(

@@ -1,4 +1,14 @@
+import type { AdminProductRowDTO } from "@/lib/admin/product-row";
+import type { AdminUserRowDTO } from "@/lib/admin/user-row";
+
+export type ActionState = {
+  message: string;
+  ok?: boolean;
+  product?: AdminProductRowDTO;
+  user?: AdminUserRowDTO;
+};
+
 export type actionFunction = (
-  prevState: { message: string },
+  prevState: ActionState,
   formData: FormData
-) => Promise<{ message: string }>;
+) => Promise<ActionState>;

@@ -13,6 +13,7 @@ export const productListSelect = {
   price: true,
   createdAt: true,
   status: true,
+  taxonomyNodeId: true,
   taxonomyNode: { select: { name: true, slug: true } },
   specs: { select: productSpecCardSelect },
   images: {
@@ -29,6 +30,7 @@ export type ProductListItem = {
   price: number;
   createdAt: Date;
   status: string;
+  taxonomyNodeId: string | null;
   taxonomyNode: { name: string; slug: string } | null;
   specs: {
     attribute: { key: string; unit: string | null; name: string; sortOrder: number };

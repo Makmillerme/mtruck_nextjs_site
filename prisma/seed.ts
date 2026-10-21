@@ -3,6 +3,7 @@ import { getAdminBootstrap, getAdminEmails } from "../lib/admin";
 import { seedCatalogTaxonomyIfEmpty } from "../lib/catalog/seed-taxonomy";
 import { ensureTruckCatalogFields } from "../lib/catalog/ensure-truck-fields";
 import { wipeAndSeedDemoVehicles } from "../lib/catalog/seed-demo-vehicles";
+import { ensureCardPreviewLayouts } from "../lib/catalog/seed-card-preview";
 import { auth } from "../lib/auth";
 
 const prisma = new PrismaClient();
@@ -66,6 +67,7 @@ async function main() {
 
   await seedCatalogTaxonomyIfEmpty(prisma);
   await ensureTruckCatalogFields(prisma);
+  await ensureCardPreviewLayouts(prisma);
 
   const productCount = await prisma.product.count();
   if (productCount > 0) {
@@ -74,6 +76,7 @@ async function main() {
   }
 
   await wipeAndSeedDemoVehicles(prisma, admin.id);
+  await ensureCardPreviewLayouts(prisma);
 }
 
 main()

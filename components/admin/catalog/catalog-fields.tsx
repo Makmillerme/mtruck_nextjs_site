@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { ReloadIcon } from "@radix-ui/react-icons";
@@ -150,13 +150,25 @@ export function CatalogMenuSelect({
 }) {
   const hasDefault =
     defaultValue != null &&
+    defaultValue !== "" &&
     options.some((option) => option.value === defaultValue);
+  /** Never silently fall back to options[0] (e.g. DRAFT) when a value is intended. */
   const initial = hasDefault
     ? defaultValue!
-    : allowClear
-      ? (defaultValue ?? "")
-      : (options[0]?.value ?? "");
+    : defaultValue != null && defaultValue !== ""
+      ? defaultValue
+      : allowClear
+        ? ""
+        : (options[0]?.value ?? "");
   const [value, setValue] = useState(initial);
+
+  // Sync only when defaultValue changes (e.g. sheet hydrate). Do NOT depend on
+  // `options` — callers often pass a fresh array each render, which would reset
+  // the user's selection (role, status, etc.) back to the prop default.
+  useEffect(() => {
+    if (defaultValue == null || defaultValue === "") return;
+    setValue(defaultValue);
+  }, [defaultValue]);
 
   return (
     <div className={cn(className)}>

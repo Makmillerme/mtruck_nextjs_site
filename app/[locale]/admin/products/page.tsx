@@ -1,11 +1,11 @@
 import AdminProductsView from "@/components/admin/products/admin-products-view";
 import { fetchAdminFilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import { fetchPublicFilterSchema } from "@/lib/catalog/public-filter";
+import { fetchRootCatalogAttributes } from "@/lib/catalog/root-attributes-cache";
 import {
   collectSubtreeNodeIds,
   fetchAttributesForNode,
   fetchDisplayGroupsForNode,
-  fetchRootCatalogAttributes,
   fetchTaxonomyTree,
   flattenTaxonomyTree,
   resolveAttributesByKey,
@@ -89,33 +89,7 @@ async function AdminProductsPage(props: {
       canDelete={isAdminRole(role)}
       filterSchema={filterSchema}
       filterAvailability={filterAvailability}
-      items={scopedItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        currency: item.currency,
-        status: item.status,
-        availability: item.availability,
-        description: item.description,
-        image: item.image,
-        images: item.images.map((image) => ({
-          id: image.id,
-          url: image.url,
-        })),
-        taxonomyNodeId: item.taxonomyNodeId,
-        specs: item.specs.map((spec) => ({
-          attributeId: spec.attributeId,
-          optionId: spec.optionId,
-          numberValue: spec.numberValue,
-          textValue: spec.textValue,
-          booleanValue: spec.booleanValue,
-          optionLabel: spec.option?.label ?? null,
-          optionSlug: spec.option?.slug ?? null,
-          attributeKey: spec.attribute?.key ?? null,
-          unit: spec.attribute?.unit ?? null,
-          type: spec.attribute?.type ?? null,
-        })),
-      }))}
+      items={scopedItems}
     />
   );
 }
