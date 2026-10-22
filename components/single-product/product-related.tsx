@@ -14,7 +14,7 @@ export default function ProductRelated({
   if (vehicles.length === 0) return null;
 
   return (
-    <section className="grid gap-4">
+    <section className="grid scroll-mt-24 gap-4">
       <h2 className="text-lg font-bold tracking-tight text-foreground">
         {title}
       </h2>
@@ -22,7 +22,7 @@ export default function ProductRelated({
         {vehicles.map((vehicle) => (
           <VehicleCard
             key={vehicle.id}
-            vehicle={vehicle}
+            vehicle={{ ...vehicle, showStatus: false }}
             isAuthenticated={isAuthenticated}
             showFavorite={false}
           />

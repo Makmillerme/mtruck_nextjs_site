@@ -73,6 +73,9 @@ export default function PhotoCarousel({
   href,
   startIndex = 0,
   onImageClick,
+  prevLabel = "Previous photo",
+  nextLabel = "Next photo",
+  thumbLabel = "Show photo",
 }: {
   images: PhotoCarouselImage[];
   variant?: "card" | "page";
@@ -87,6 +90,9 @@ export default function PhotoCarousel({
   startIndex?: number;
   /** PDP lightbox: click active stage (ignored when `href` is set). */
   onImageClick?: (index: number) => void;
+  prevLabel?: string;
+  nextLabel?: string;
+  thumbLabel?: string;
 }) {
   const slides = images.filter((item) => Boolean(item.src));
   const [api, setApi] = useState<CarouselApi>();
@@ -241,7 +247,7 @@ export default function PhotoCarousel({
               variant="secondary"
               size="icon"
               className="pointer-events-auto size-8 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background"
-              aria-label="Previous photo"
+              aria-label={prevLabel}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -255,7 +261,7 @@ export default function PhotoCarousel({
               variant="secondary"
               size="icon"
               className="pointer-events-auto size-8 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background"
-              aria-label="Next photo"
+              aria-label={nextLabel}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -292,16 +298,16 @@ export default function PhotoCarousel({
       </Carousel>
 
       {variant === "page" ? (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
           {slides.map((item, i) => (
             <button
               key={`thumb-${item.src}-${i}`}
               type="button"
               onClick={() => scrollTo(i)}
-              aria-label={`Show photo ${i + 1}`}
+              aria-label={`${thumbLabel} ${i + 1}`}
               aria-current={i === index ? true : undefined}
               className={cn(
-                "relative aspect-[4/3] overflow-hidden rounded-sm border bg-muted transition-opacity",
+                "relative aspect-[4/3] min-h-[4.5rem] overflow-hidden rounded-sm border bg-muted transition-opacity",
                 i === index
                   ? "border-foreground ring-1 ring-foreground"
                   : "border-border opacity-70 hover:opacity-100"

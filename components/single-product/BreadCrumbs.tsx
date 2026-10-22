@@ -12,11 +12,17 @@ import { getTranslations } from "next-intl/server";
 async function BreadCrumbs({
   name,
   categoryLabel,
+  categorySlug,
 }: {
   name: string;
   categoryLabel?: string | null;
+  /** Taxonomy slug for `?folder=` catalog deep-link. */
+  categorySlug?: string | null;
 }) {
   const t = await getTranslations("Product");
+  const categoryHref = categorySlug
+    ? `/products?folder=${encodeURIComponent(categorySlug)}`
+    : "/products";
 
   return (
     <Breadcrumb>
@@ -37,7 +43,7 @@ async function BreadCrumbs({
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/products">{categoryLabel}</Link>
+                <Link href={categoryHref}>{categoryLabel}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </>

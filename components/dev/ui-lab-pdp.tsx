@@ -131,15 +131,16 @@ export default function UiLabPdp() {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+      <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
         <ProductGallery images={DEMO_IMAGES} />
         <ProductBuyBox
-          sticky
           categoryLabel="Сідельні тягачі"
           name="MAN TGX 18.440"
           priceLabel="€ 38 500"
+          priceHint="ціна з ПДВ"
           availabilityLabel="В наявності"
           availabilityInStock
+          facts={DEMO_FACTS}
           actions={
             <>
               <FavoriteToggleButton
@@ -151,14 +152,24 @@ export default function UiLabPdp() {
             </>
           }
           cta={<DemoCta />}
+          secondaryCta={
+            <Button type="button" variant="outline" className="w-full sm:w-fit">
+              Зателефонувати
+            </Button>
+          }
         />
       </div>
 
-      <ProductKeyFacts facts={DEMO_FACTS} title="Ключові параметри" />
+      <div className="grid gap-2">
+        <h3 className="text-sm font-semibold tracking-tight">
+          Key facts (strip variant)
+        </h3>
+        <ProductKeyFacts facts={DEMO_FACTS} title="Ключові параметри" />
+      </div>
 
-      <p className="max-w-3xl leading-7 text-muted-foreground">
+      <p className="max-w-3xl leading-7 text-foreground/90">
         Демо-опис: перевірена техніка з Європи, підготовка на власному СТО,
-        супровід угоди. Текст іде після key facts — не між ціною й CTA.
+        супровід угоди. Текст іде після buy-box — не між ціною й CTA.
       </p>
 
       <ProductSpecs groups={DEMO_SPEC_GROUPS} title="Характеристики" />
