@@ -259,6 +259,30 @@ export const fetchSingleProduct = async (productId: string) => {
   return product;
 };
 
+/** Same-folder published units for PDP related row (excludes current). */
+export const fetchRelatedProducts = async ({
+  productId,
+  taxonomyNodeId,
+  limit = 4,
+}: {
+  productId: string;
+  taxonomyNodeId: string | null | undefined;
+  limit?: number;
+}) => {
+  if (!taxonomyNodeId) return [];
+  return db.product.findMany({
+    where: {
+      archivedAt: null,
+      status: 'PUBLISHED',
+      taxonomyNodeId,
+      id: { not: productId },
+    },
+    select: productListSelect,
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+};
+
 const PRODUCT_STATUSES: ProductStatus[] = [
   'DRAFT',
   'PUBLISHED',

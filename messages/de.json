@@ -424,6 +424,13 @@
     "reviewsCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
     "reviewsTitle": "Bewertungen",
     "specsTitle": "Technische Daten",
+    "keyFactsTitle": "Eckdaten",
+    "relatedTitle": "Ähnliche Fahrzeuge",
+    "share": "Teilen",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert",
+    "linkCopyFailed": "Link konnte nicht kopiert werden",
+    "shareNative": "Teilen…",
     "availabilityStock": "Auf Lager",
     "availabilityTransit": "Unterwegs",
     "backToCatalog": "Zum Katalog"

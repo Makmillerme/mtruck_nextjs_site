@@ -424,6 +424,13 @@
     "reviewsCount": "{count, plural, one {# review} other {# reviews}}",
     "reviewsTitle": "Product reviews",
     "specsTitle": "Specifications",
+    "keyFactsTitle": "Key specs",
+    "relatedTitle": "Similar vehicles",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "linkCopyFailed": "Could not copy link",
+    "shareNative": "Share…",
     "availabilityStock": "In stock",
     "availabilityTransit": "In transit",
     "backToCatalog": "Back to catalog"

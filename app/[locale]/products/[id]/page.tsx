@@ -1,27 +1,38 @@
-import BreadCrumbs from '@/components/single-product/BreadCrumbs';
-import { fetchFavoriteId, fetchSingleProduct, findExistingReview } from '@/utils/actions';
-import PhotoCarousel from '@/components/media/photo-carousel';
-import { formatCurrency } from '@/utils/format';
-import { uniqueImages } from '@/lib/catalog/product-to-vehicle';
-import FavoriteToggleButton from '@/components/products/FavoriteToggleButton';
-import ProductRating from '@/components/single-product/ProductRating';
-import ShareButton from '@/components/single-product/ShareButton';
-import SubmitReview from '@/components/reviews/SubmitReview';
-import ProductReviews from '@/components/reviews/ProductReviews';
-import { getSession } from '@/utils/session';
-import { getLocale, getTranslations } from 'next-intl/server';
-import { Badge } from '@/components/ui/badge';
-import { formatSpecDisplay } from '@/lib/catalog/product-to-vehicle';
-import { Link } from '@/i18n/navigation';
-import { Button } from '@/components/ui/button';
-import RequestCatalogOrder from '@/components/single-product/RequestCatalogOrder';
+import BreadCrumbs from "@/components/single-product/BreadCrumbs";
+import {
+  fetchFavoriteId,
+  fetchRelatedProducts,
+  fetchSingleProduct,
+} from "@/utils/actions";
+import { uniqueImages } from "@/lib/catalog/product-to-vehicle";
+import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
+import ShareButton from "@/components/single-product/ShareButton";
+import ProductGallery from "@/components/single-product/product-gallery";
+import ProductBuyBox from "@/components/single-product/product-buy-box";
+import ProductKeyFacts from "@/components/single-product/product-key-facts";
+import ProductSpecs from "@/components/single-product/product-specs";
+import ProductRelated from "@/components/single-product/product-related";
+import ProductStickyCta from "@/components/single-product/product-sticky-cta";
+import RequestCatalogOrder from "@/components/single-product/RequestCatalogOrder";
+import { getSession } from "@/utils/session";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatCurrency } from "@/utils/format";
+import {
+  buildProductKeyFacts,
+  buildProductSpecGroups,
+} from "@/lib/catalog/product-page";
+import {
+  fetchDisplayGroupsForNode,
+  resolveDisplayGroupsByKey,
+} from "@/lib/catalog/taxonomy";
+import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const [product, locale, t, session] = await Promise.all([
     fetchSingleProduct(params.id),
     getLocale(),
-    getTranslations('Product'),
+    getTranslations("Product"),
     getSession(),
   ]);
   const { name, description, price } = product;
@@ -29,117 +40,106 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const user = session?.user;
   const userId = user?.id;
   const isAuthenticated = Boolean(userId);
-  const [favoriteId, existingReview] = await Promise.all([
+  const categoryLabel = product.taxonomyNode?.name ?? null;
+
+  const [favoriteId, related, displayGroups] = await Promise.all([
     userId ? fetchFavoriteId({ productId: product.id }) : Promise.resolve(null),
-    userId ? findExistingReview(userId, product.id) : Promise.resolve(null),
+    fetchRelatedProducts({
+      productId: product.id,
+      taxonomyNodeId: product.taxonomyNodeId,
+      limit: 4,
+    }),
+    product.taxonomyNodeId
+      ? fetchDisplayGroupsForNode(product.taxonomyNodeId).then(
+          resolveDisplayGroupsByKey
+        )
+      : Promise.resolve([]),
   ]);
-  const reviewDoesNotExist = Boolean(userId && !existingReview);
 
   const gallery = uniqueImages(
     product.image,
     product.images.map((item) => item.url)
   ).map((src) => ({ src, alt: name }));
-  const specs = [...product.specs].sort(
-    (a, b) => a.attribute.sortOrder - b.attribute.sortOrder
+
+  const specsForPage = product.specs.map((spec) => ({
+    id: spec.id,
+    attribute: {
+      id: spec.attribute.id,
+      key: spec.attribute.key,
+      name: spec.attribute.name,
+      unit: spec.attribute.unit,
+      sortOrder: spec.attribute.sortOrder,
+    },
+    option: spec.option,
+    numberValue: spec.numberValue,
+    textValue: spec.textValue,
+    booleanValue: spec.booleanValue,
+  }));
+
+  const keyFacts = buildProductKeyFacts(specsForPage);
+  const specGroups = buildProductSpecGroups(specsForPage, displayGroups);
+  const relatedVehicles = related.map((item) => productWithSpecsToVehicle(item));
+  const availabilityInStock = product.availability === "IN_STOCK";
+  const availabilityLabel = availabilityInStock
+    ? t("availabilityStock")
+    : t("availabilityTransit");
+
+  const orderCta = (
+    <RequestCatalogOrder
+      productId={params.id}
+      isAuthenticated={isAuthenticated}
+    />
   );
 
   return (
-    <section className="grid gap-8 pb-8">
-      <BreadCrumbs name={product.name} />
+    <section className="grid gap-8 pb-24 lg:pb-8">
+      <BreadCrumbs name={product.name} categoryLabel={categoryLabel} />
+
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <PhotoCarousel
-          variant="page"
+        <ProductGallery
           images={gallery}
           priority
-          sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 33vw"
-          className="overflow-hidden rounded-sm"
+          sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 40vw"
         />
 
-        <div className="grid gap-5 content-start">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 grid gap-2">
-              {product.taxonomyNode ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {product.taxonomyNode.name}
-                </p>
-              ) : null}
-              <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
-            </div>
-            <div className="flex items-center gap-2">
+        <ProductBuyBox
+          sticky
+          categoryLabel={categoryLabel}
+          name={name}
+          priceLabel={dollarsAmount}
+          availabilityLabel={availabilityLabel}
+          availabilityInStock={availabilityInStock}
+          actions={
+            <>
               <FavoriteToggleButton
                 productId={params.id}
                 favoriteId={favoriteId}
                 isAuthenticated={isAuthenticated}
               />
               <ShareButton name={product.name} productId={params.id} />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={product.availability === 'IN_STOCK' ? 'default' : 'secondary'}>
-              {product.availability === 'IN_STOCK'
-                ? t('availabilityStock')
-                : t('availabilityTransit')}
-            </Badge>
-            <Badge variant="soft">{product.status}</Badge>
-          </div>
-
-          <p className="text-3xl font-extrabold tracking-tight">{dollarsAmount}</p>
-          <ProductRating productId={params.id} />
-          <p className="leading-7 text-muted-foreground">{description}</p>
-
-          {specs.length > 0 ? (
-            <div className="grid gap-3 rounded-sm border p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('specsTitle')}
-              </h2>
-              <dl className="grid gap-2 sm:grid-cols-2">
-                {specs.map((spec) => (
-                  <div
-                    key={spec.id}
-                    className="flex items-baseline justify-between gap-3 border-b border-border/60 py-2 text-sm last:border-0"
-                  >
-                    <dt className="text-muted-foreground">{spec.attribute.name}</dt>
-                    <dd className="font-medium text-right">
-                      {formatSpecDisplay({
-                        attribute: {
-                          key: spec.attribute.key,
-                          unit: spec.attribute.unit,
-                        },
-                        option: spec.option,
-                        numberValue: spec.numberValue,
-                        textValue: spec.textValue,
-                        booleanValue: spec.booleanValue,
-                      })}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap items-center gap-3">
-            <RequestCatalogOrder
-              productId={params.id}
-              isAuthenticated={isAuthenticated}
-            />
-            <Button asChild variant="outline" className="w-fit">
-              <Link href="/products">{t('backToCatalog')}</Link>
-            </Button>
-          </div>
-        </div>
+            </>
+          }
+          cta={orderCta}
+        />
       </div>
 
-      <ProductReviews productId={params.id} />
+      <ProductKeyFacts facts={keyFacts} title={t("keyFactsTitle")} />
 
-      {reviewDoesNotExist && user ? (
-        <SubmitReview
-          productId={params.id}
-          authorName={user.name || 'user'}
-          authorImageUrl={user.image || ''}
-        />
+      {description?.trim() ? (
+        <p className="max-w-3xl leading-7 text-muted-foreground">{description}</p>
       ) : null}
+
+      <ProductSpecs groups={specGroups} title={t("specsTitle")} />
+
+      <ProductRelated
+        title={t("relatedTitle")}
+        vehicles={relatedVehicles}
+        isAuthenticated={isAuthenticated}
+      />
+
+      <ProductStickyCta priceLabel={dollarsAmount} cta={orderCta} />
     </section>
   );
 }
+
 export default SingleProductPage;

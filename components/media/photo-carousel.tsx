@@ -72,6 +72,7 @@ export default function PhotoCarousel({
   overlay,
   href,
   startIndex = 0,
+  onImageClick,
 }: {
   images: PhotoCarouselImage[];
   variant?: "card" | "page";
@@ -84,6 +85,8 @@ export default function PhotoCarousel({
   href?: string;
   /** Initial Embla snap (admin gallery thumb click). */
   startIndex?: number;
+  /** PDP lightbox: click active stage (ignored when `href` is set). */
+  onImageClick?: (index: number) => void;
 }) {
   const slides = images.filter((item) => Boolean(item.src));
   const [api, setApi] = useState<CarouselApi>();
@@ -132,7 +135,30 @@ export default function PhotoCarousel({
   if (!multi) {
     const first = slides[0]!;
     return (
-      <div className={cn(stageClass, className)}>
+      <div
+        className={cn(
+          stageClass,
+          className,
+          onImageClick && !href && "cursor-zoom-in"
+        )}
+        onClick={
+          onImageClick && !href
+            ? () => onImageClick(0)
+            : undefined
+        }
+        onKeyDown={
+          onImageClick && !href
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onImageClick(0);
+                }
+              }
+            : undefined
+        }
+        role={onImageClick && !href ? "button" : undefined}
+        tabIndex={onImageClick && !href ? 0 : undefined}
+      >
         <SlideImage
           src={first.src}
           alt={first.alt ?? ""}
@@ -171,7 +197,17 @@ export default function PhotoCarousel({
           frame === "fill" && "h-full"
         )}
       >
-        <div className={stageClass}>
+        <div
+          className={cn(
+            stageClass,
+            onImageClick && !href && "cursor-zoom-in"
+          )}
+          onClick={
+            onImageClick && !href
+              ? () => onImageClick(index)
+              : undefined
+          }
+        >
           {/* Flush slides: override shadcn default -ml-4 / pl-4 gap pattern */}
           <CarouselContent className="!ml-0 h-full">
             {slides.map((item, i) => (

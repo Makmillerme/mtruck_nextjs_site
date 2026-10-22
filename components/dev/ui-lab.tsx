@@ -112,6 +112,7 @@ import { UiLabDialogFooterCanon } from "@/components/dev/ui-lab-dialog-footer";
 import UiLabSnake from "@/components/dev/ui-lab-snake";
 import UiLabTruckParking from "@/components/dev/ui-lab-truck-parking";
 import UiLabToast from "@/components/dev/ui-lab-toast";
+import UiLabPdp from "@/components/dev/ui-lab-pdp";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -1024,6 +1025,20 @@ export default function UiLab({ children }: { children?: ReactNode }) {
         </div>
       </div>
       {visibleIds.has("vehicle") ? children : null}
+
+      {visibleIds.has("pdp") ? (
+        <div className="page-container pb-16 pt-8">
+          <LabGate id="pdp" visibleIds={visibleIds}>
+            <Section
+              id="pdp"
+              title="Сторінка товару (PDP)"
+              hint="Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related VehicleCard."
+            >
+              <UiLabPdp />
+            </Section>
+          </LabGate>
+        </div>
+      ) : null}
     </TooltipProvider>
   );
 }

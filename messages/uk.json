@@ -424,6 +424,13 @@
     "reviewsCount": "{count, plural, one {# відгук} few {# відгуки} many {# відгуків} other {# відгуків}}",
     "reviewsTitle": "Відгуки",
     "specsTitle": "Характеристики",
+    "keyFactsTitle": "Ключові параметри",
+    "relatedTitle": "Схожа техніка",
+    "share": "Поділитися",
+    "copyLink": "Копіювати посилання",
+    "linkCopied": "Посилання скопійовано",
+    "linkCopyFailed": "Не вдалося скопіювати",
+    "shareNative": "Поділитися…",
     "availabilityStock": "В наявності",
     "availabilityTransit": "В дорозі",
     "backToCatalog": "До каталогу"
