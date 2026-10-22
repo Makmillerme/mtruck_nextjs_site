@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { MemberOrderPicker } from "@/components/admin/catalog/display-groups-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -36,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import { saveCardPreviewLayoutAction } from "@/utils/card-preview-actions";
 import { useTranslations } from "next-intl";
+import { LuEye } from "react-icons/lu";
 
 export default function CardPreviewEditor({
   tree,
@@ -56,6 +63,7 @@ export default function CardPreviewEditor({
   const t = useTranslations("UiEditor");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<"grid" | "list">("grid");
   const [showName, setShowName] = useState(initialShowName);
   const [showPrice, setShowPrice] = useState(initialShowPrice);
@@ -172,8 +180,6 @@ export default function CardPreviewEditor({
   }
 
   function onSpecsStyleChange(next: CardPreviewSpecsStyleId) {
-    // Style/count only affect how many slots render on the card.
-    // Keep the full ordered list so switching GRID ↔ TAGS never drops fields.
     setSpecsStyle(next);
   }
 
@@ -227,79 +233,81 @@ export default function CardPreviewEditor({
     });
   }
 
-  return (
-    <div className="grid gap-8">
-      <section className="grid gap-3">
-        <div className="inline-flex h-11 w-full max-w-xs items-center gap-1 rounded-sm border-2 border-primary bg-background p-1 sm:w-fit">
-          <button
-            type="button"
-            className={cn(
-              "h-9 min-w-0 flex-1 rounded-sm px-4 text-sm font-semibold sm:flex-none",
-              previewLayout === "grid"
-                ? "bg-primary text-primary-foreground"
-                : "text-primary"
-            )}
-            onClick={() => setPreviewLayout("grid")}
-          >
-            {t("previewGrid")}
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "h-9 min-w-0 flex-1 rounded-sm px-4 text-sm font-semibold sm:flex-none",
-              previewLayout === "list"
-                ? "bg-primary text-primary-foreground"
-                : "text-primary"
-            )}
-            onClick={() => setPreviewLayout("list")}
-          >
-            {t("previewList")}
-          </button>
-        </div>
+  const layoutToggle = (
+    <div className="inline-flex h-11 w-full max-w-xs items-center gap-1 rounded-sm border-2 border-primary bg-background p-1 sm:w-fit">
+      <button
+        type="button"
+        className={cn(
+          "h-9 min-w-0 flex-1 rounded-sm px-4 text-sm font-semibold sm:flex-none",
+          previewLayout === "grid"
+            ? "bg-primary text-primary-foreground"
+            : "text-primary"
+        )}
+        onClick={() => setPreviewLayout("grid")}
+      >
+        {t("previewGrid")}
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "h-9 min-w-0 flex-1 rounded-sm px-4 text-sm font-semibold sm:flex-none",
+          previewLayout === "list"
+            ? "bg-primary text-primary-foreground"
+            : "text-primary"
+        )}
+        onClick={() => setPreviewLayout("list")}
+      >
+        {t("previewList")}
+      </button>
+    </div>
+  );
 
-        <div
-          className={cn(
-            "w-full min-w-0",
-            previewLayout === "grid" ? "max-w-sm" : "max-w-5xl"
-          )}
-        >
-          <VehicleCard
-            vehicle={previewVehicle}
-            layout={previewLayout}
-            isAuthenticated={false}
-            showFavorite={false}
+  return (
+    <div className="grid gap-6">
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="grid min-w-0 w-full flex-1 gap-2">
+          <Label>{t("pickFolder")}</Label>
+          <p className="text-xs text-muted-foreground">{t("pickFolderHint")}</p>
+          <CascadeSelect
+            items={taxonomyToCascadeItems(tree)}
+            value={selectedNodeId}
+            onValueChange={selectFolder}
+            placeholder={t("pickFolder")}
+            emptyLabel={t("noFolder")}
+            variant="tree"
           />
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full shrink-0 sm:w-fit"
+          disabled={!hasFolder}
+          onClick={() => setPreviewOpen(true)}
+        >
+          <LuEye className="size-4" />
+          {t("openPreview")}
+        </Button>
       </section>
 
       {hasFolder ? (
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_minmax(0,1fr)]">
+        <>
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t("pickFolder")}</CardTitle>
-              <p className="text-sm text-muted-foreground">{t("pickFolderHint")}</p>
+              <CardTitle className="text-base">{t("visibilityTitle")}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <CascadeSelect
-                items={taxonomyToCascadeItems(tree)}
-                value={selectedNodeId}
-                onValueChange={selectFolder}
-                placeholder={t("pickFolder")}
-                emptyLabel={t("noFolder")}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t("tabCardPreview")}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
+            <CardContent className="grid gap-4 sm:grid-cols-2">
               {(
                 [
                   ["showName", showName, setShowName, t("showName")],
                   ["showPrice", showPrice, setShowPrice, t("showPrice")],
                   ["showStatus", showStatus, setShowStatus, t("showStatus")],
+                  [
+                    "showSubtitle",
+                    showSubtitle,
+                    setShowSubtitle,
+                    t("showSubtitle"),
+                  ],
+                  ["showSpecs", showSpecs, setShowSpecs, t("showSpecs")],
                 ] as const
               ).map(([id, checked, setChecked, label]) => (
                 <div
@@ -315,134 +323,66 @@ export default function CardPreviewEditor({
                 </div>
               ))}
 
-              <div className="grid gap-3 border-t border-border/70 pt-4">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="showSubtitle">{t("showSubtitle")}</Label>
-                  <Switch
-                    id="showSubtitle"
-                    checked={showSubtitle}
-                    onCheckedChange={setShowSubtitle}
-                  />
-                </div>
-
-                {showSubtitle ? (
-                  <>
-                    <div className="grid gap-2">
-                      <Label>{t("categorySource")}</Label>
-                      <div className="inline-flex h-10 w-full items-center gap-1 rounded-sm border border-border bg-background p-1">
-                        {CARD_PREVIEW_CATEGORY_SOURCES.map((source) => (
-                          <button
-                            key={source}
-                            type="button"
-                            className={cn(
-                              "h-8 min-w-0 flex-1 rounded-sm px-2 text-xs font-semibold",
-                              categorySource === source
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground"
-                            )}
-                            onClick={() => setCategorySource(source)}
-                          >
-                            {source === "LAYOUT_FOLDER"
-                              ? t("categorySourceLayout")
-                              : t("categorySourceProduct")}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label>{t("subtitleSlots")}</Label>
-                      <p className="text-xs text-muted-foreground">
-                        {t("subtitleSlotsHint", {
-                          count: CARD_PREVIEW_SUBTITLE_FIELD_MAX,
-                        })}
-                      </p>
-                      <MemberOrderPicker
-                        attributes={attributes}
-                        value={subtitleAttributeIds}
-                        onChange={onSubtitleSlotsChange}
-                        allowEmpty
-                      />
-                    </div>
-                  </>
-                ) : null}
-              </div>
-
-              <div className="grid gap-3 border-t border-border/70 pt-4">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="showSpecs">{t("showSpecs")}</Label>
-                  <Switch
-                    id="showSpecs"
-                    checked={showSpecs}
-                    onCheckedChange={setShowSpecs}
-                  />
-                </div>
-
-                {showSpecs ? (
-                  <>
-                    <div className="grid gap-2">
-                      <Label>{t("specsStyle")}</Label>
-                      <div className="inline-flex h-10 w-full items-center gap-1 rounded-sm border border-border bg-background p-1">
-                        {CARD_PREVIEW_SPECS_STYLES.map((style) => (
-                          <button
-                            key={style}
-                            type="button"
-                            className={cn(
-                              "h-8 min-w-0 flex-1 rounded-sm px-2 text-xs font-semibold",
-                              specsStyle === style
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground"
-                            )}
-                            onClick={() => onSpecsStyleChange(style)}
-                          >
-                            {style === "GRID"
-                              ? t("specsStyleGrid")
-                              : t("specsStyleTags")}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("specsStyleHint")}
-                      </p>
-                    </div>
-
-                    {specsStyle === "GRID" ? (
-                      <div className="grid gap-2">
-                        <Label htmlFor="specsGridCount">
-                          {t("specsGridCount")}
-                        </Label>
-                        <Select
-                          value={String(specsGridCount)}
-                          onValueChange={(value) =>
-                            onSpecsGridCountChange(Number(value))
-                          }
-                        >
-                          <SelectTrigger id="specsGridCount" className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CARD_PREVIEW_GRID_COUNTS.map((count) => (
-                              <SelectItem key={count} value={String(count)}>
-                                {t("specsGridCountOption", { count })}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t("specSlots")}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {!showSpecs
-                  ? t("specSlotsHidden")
-                  : tagsUnlimited
+          {showSubtitle ? (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {t("subtitleSectionTitle")}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {t("subtitleSlotsHint", {
+                    count: CARD_PREVIEW_SUBTITLE_FIELD_MAX,
+                  })}
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>{t("categorySource")}</Label>
+                  <div className="inline-flex h-10 w-full max-w-md items-center gap-1 rounded-sm border border-border bg-background p-1">
+                    {CARD_PREVIEW_CATEGORY_SOURCES.map((source) => (
+                      <button
+                        key={source}
+                        type="button"
+                        className={cn(
+                          "h-8 min-w-0 flex-1 rounded-sm px-2 text-xs font-semibold",
+                          categorySource === source
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground"
+                        )}
+                        onClick={() => setCategorySource(source)}
+                      >
+                        {source === "LAYOUT_FOLDER"
+                          ? t("categorySourceLayout")
+                          : t("categorySourceProduct")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>{t("subtitleSlots")}</Label>
+                  <MemberOrderPicker
+                    attributes={attributes}
+                    value={subtitleAttributeIds}
+                    onChange={onSubtitleSlotsChange}
+                    allowEmpty
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {showSpecs ? (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {t("specsSectionTitle")}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {tagsUnlimited
                     ? t("specSlotsHintUnlimited")
                     : slotAttributeIds.length > slotMax
                       ? t("specSlotsHintVisible", {
@@ -450,31 +390,114 @@ export default function CardPreviewEditor({
                           total: slotAttributeIds.length,
                         })
                       : t("specSlotsHint", { count: slotMax })}
-              </p>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              {showSpecs ? (
-                <MemberOrderPicker
-                  attributes={attributes}
-                  value={slotAttributeIds}
-                  onChange={onSlotsChange}
-                  allowEmpty
-                />
-              ) : null}
-              <Button
-                type="button"
-                className="w-full sm:w-fit"
-                disabled={isPending}
-                onClick={save}
-              >
-                {t("saveLayout")}
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>{t("specsStyle")}</Label>
+                    <div className="inline-flex h-10 w-full items-center gap-1 rounded-sm border border-border bg-background p-1">
+                      {CARD_PREVIEW_SPECS_STYLES.map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          className={cn(
+                            "h-8 min-w-0 flex-1 rounded-sm px-2 text-xs font-semibold",
+                            specsStyle === style
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground"
+                          )}
+                          onClick={() => onSpecsStyleChange(style)}
+                        >
+                          {style === "GRID"
+                            ? t("specsStyleGrid")
+                            : t("specsStyleTags")}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("specsStyleHint")}
+                    </p>
+                  </div>
+
+                  {specsStyle === "GRID" ? (
+                    <div className="grid gap-2">
+                      <Label htmlFor="specsGridCount">
+                        {t("specsGridCount")}
+                      </Label>
+                      <Select
+                        value={String(specsGridCount)}
+                        onValueChange={(value) =>
+                          onSpecsGridCountChange(Number(value))
+                        }
+                      >
+                        <SelectTrigger id="specsGridCount" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CARD_PREVIEW_GRID_COUNTS.map((count) => (
+                            <SelectItem key={count} value={String(count)}>
+                              {t("specsGridCountOption", { count })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>{t("specSlots")}</Label>
+                  <MemberOrderPicker
+                    attributes={attributes}
+                    value={slotAttributeIds}
+                    onChange={onSlotsChange}
+                    allowEmpty
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Button
+            type="button"
+            className="w-full sm:w-fit"
+            disabled={isPending}
+            onClick={save}
+          >
+            {t("saveLayout")}
+          </Button>
+        </>
       ) : (
         <p className="text-sm text-muted-foreground">{t("noFolderEmptyTree")}</p>
       )}
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent
+          className={cn(
+            "max-h-[90vh] overflow-y-auto",
+            previewLayout === "grid" ? "sm:max-w-md" : "sm:max-w-5xl"
+          )}
+        >
+          <DialogHeader className="gap-3 sm:pr-8">
+            <DialogTitle>{t("previewDialogTitle")}</DialogTitle>
+            {layoutToggle}
+          </DialogHeader>
+          <div
+            className={cn(
+              "w-full min-w-0",
+              previewLayout === "grid" ? "max-w-sm" : "max-w-5xl"
+            )}
+          >
+            <VehicleCard
+              vehicle={previewVehicle}
+              layout={previewLayout}
+              isAuthenticated={false}
+              showFavorite={false}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
