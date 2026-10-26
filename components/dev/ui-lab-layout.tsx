@@ -1,6 +1,23 @@
 "use client";
 
+import {
+  PAGE_SHELLS,
+  pageShellClassName,
+  type PageShell,
+} from "@/components/global/Container";
 import { cn } from "@/lib/utils";
+
+const SHELL_SAMPLES: {
+  shell: PageShell;
+  max: string;
+  use: string;
+}[] = [
+  { shell: "home", max: "1360px", use: "Головна (full-bleed секції)" },
+  { shell: "catalog", max: "1920px", use: "Каталог (.page-content)" },
+  { shell: "product", max: "1520px", use: "PDP (layout .page-container)" },
+  { shell: "reading", max: "1280px", use: "Вузькі текстові блоки PDP" },
+  { shell: "admin", max: "none + 32px gutter", use: "Адмінка" },
+];
 
 const TYPE_SAMPLES = [
   {
@@ -117,8 +134,8 @@ export default function UiLabLayoutRules() {
         <ul className="grid gap-2 text-sm text-muted-foreground">
           <li>
             <code className="text-xs text-foreground">.page-container</code> і{" "}
-            <code className="text-xs text-foreground">.page-content</code> — без{" "}
-            <code className="text-xs">max-width: 80rem</code>.
+            <code className="text-xs text-foreground">.page-content</code> —
+            спільні gutters; стеля ширини — через shell (нижче).
           </li>
           <li>
             Mobile (&lt; 40rem): <code className="text-xs">padding-inline: 1rem</code>{" "}
@@ -129,11 +146,11 @@ export default function UiLabLayoutRules() {
             <code className="text-xs">
               clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem)
             </code>{" "}
-            (~28–30px). Без жорстких <code className="text-xs">px</code> у
-            викликах.
+            (~28–30px). Admin shell: <code className="text-xs">2rem</code> (32px).
           </li>
           <li>
-            Navbar і Footer використовують той самий токен.
+            Navbar і Footer — ті самі gutters, без per-route max-width (chrome не
+            стрибає).
           </li>
         </ul>
         <div className="mt-3 overflow-hidden rounded-sm border border-dashed border-border bg-muted/40">
@@ -143,6 +160,43 @@ export default function UiLabLayoutRules() {
             </div>
           </div>
         </div>
+      </RuleCard>
+
+      <RuleCard title="Shell widths">
+        <p className="text-sm text-muted-foreground">
+          Іменовані стелі:{" "}
+          <code className="text-xs">.page-shell-*</code> + маркер{" "}
+          <code className="text-xs">data-page-shell</code>. Токени:{" "}
+          <code className="text-xs">--shell-home|catalog|product|reading</code>.
+          API: <code className="text-xs">Container shell=&quot;…&quot;</code>.
+        </p>
+        <ul className="mt-3 grid gap-2">
+          {SHELL_SAMPLES.map((sample) => (
+            <li
+              key={sample.shell}
+              className="grid gap-1 rounded-sm border border-border bg-muted/30 px-3 py-2 text-xs"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <code className="font-medium text-foreground">
+                  {pageShellClassName[sample.shell]}
+                </code>
+                <span className="text-muted-foreground">{sample.max}</span>
+              </div>
+              <p className="text-muted-foreground">{sample.use}</p>
+              <div
+                className={cn(
+                  "mt-1 h-2 rounded-sm bg-primary/25",
+                  pageShellClassName[sample.shell],
+                  "w-full"
+                )}
+                title={sample.shell}
+              />
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Канон shells: {[...PAGE_SHELLS].join(", ")}.
+        </p>
       </RuleCard>
 
       <RuleCard title="Вертикаль секцій">

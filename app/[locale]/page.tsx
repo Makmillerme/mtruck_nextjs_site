@@ -19,7 +19,7 @@ function CatalogFallback() {
 
 function HomePage() {
   return (
-    <>
+    <div data-page-shell="home">
       <Hero />
       <Suspense fallback={<CatalogFallback />}>
         <CatalogBlock />
@@ -28,7 +28,7 @@ function HomePage() {
       <CustomOrderSection />
       <SalesCasesSection />
       <CallbackCtaSection />
-    </>
+    </div>
   );
 }
 export default HomePage;

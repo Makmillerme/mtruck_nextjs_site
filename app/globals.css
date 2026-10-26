@@ -34,6 +34,11 @@
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 222 47% 11%;
+    /* Page shell max-widths (content column, not chrome) */
+    --shell-home: 1360px;
+    --shell-catalog: 1920px;
+    --shell-product: 1520px;
+    --shell-reading: 1280px;
   }
 
   .dark {
@@ -150,6 +155,59 @@
       padding-left: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
       padding-right: clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem);
     }
+  }
+
+  /* Named content shells — max-width only; gutters stay on .page-container / .page-content */
+  .page-shell-home {
+    max-width: var(--shell-home);
+  }
+  .page-shell-catalog {
+    max-width: var(--shell-catalog);
+  }
+  .page-shell-product {
+    max-width: var(--shell-product);
+  }
+  .page-shell-reading {
+    max-width: var(--shell-reading);
+  }
+  .page-shell-admin {
+    max-width: none;
+  }
+
+  @media (min-width: 40rem) {
+    .page-shell-admin {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  /*
+   * Route markers: locale layout wraps main > .page-container.
+   * When .page-content / .full-bleed is present, that wrapper is `contents` —
+   * apply max-width on the real box instead (see catalog .page-content).
+   */
+  main:has([data-page-shell="product"]) > .page-container {
+    max-width: var(--shell-product);
+  }
+  main:has([data-page-shell="admin"]) > .page-container {
+    max-width: none;
+  }
+  @media (min-width: 40rem) {
+    main:has([data-page-shell="admin"]) > .page-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  /* Home: full-bleed sections — constrain every inner .page-container */
+  [data-page-shell="home"] .page-container {
+    max-width: var(--shell-home);
+  }
+
+  /* Catalog: uses .page-content (outer layout becomes contents) */
+  .page-content[data-page-shell="catalog"],
+  main:has([data-page-shell="catalog"]) .page-content {
+    max-width: var(--shell-catalog);
   }
 
   .section-spacing-tight {

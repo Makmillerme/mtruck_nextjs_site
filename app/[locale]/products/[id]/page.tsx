@@ -157,7 +157,10 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   );
 
   return (
-    <section className="grid min-w-0 gap-8 pb-24 lg:pb-8">
+    <section
+      data-page-shell="product"
+      className="grid min-w-0 gap-8 pb-24 lg:pb-8"
+    >
       <BreadCrumbs
         name={product.name}
         categoryLabel={categoryLabel}
@@ -196,7 +199,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       </div>
 
       {description?.trim() ? (
-        <div className="max-w-3xl scroll-mt-24 grid gap-2">
+        <div className="page-shell-reading w-full scroll-mt-24 grid gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             {t("descriptionTitle")}
           </h2>

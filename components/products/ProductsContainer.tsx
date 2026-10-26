@@ -151,7 +151,7 @@ async function ProductsContainer({
   query: Omit<CatalogQuery, "layout">;
 }) {
   return (
-    <div className="page-content">
+    <div className="page-content page-shell-catalog" data-page-shell="catalog">
       {/**
        * Await filter chrome here. Outer Suspense fallback={null} emptied main
        * and collapsed the page on cold /products navigations. Route loading.tsx
