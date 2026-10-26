@@ -188,9 +188,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "pdp",
     category: "cards",
     title: "Сторінка товару (PDP)",
-    hint: "Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related VehicleCard.",
+    hint: "Галерея + lightbox, sticky buy-box, key facts, content underline tabs (Опис / Характеристики), mobile sticky CTA, related.",
     keywords:
-      "pdp product page сторінка товару gallery lightbox sticky cta key facts specs related buy-box наявність",
+      "pdp product page сторінка товару gallery lightbox sticky cta key facts specs tabs опис характеристики related buy-box наявність",
   },
   {
     id: "carousel",

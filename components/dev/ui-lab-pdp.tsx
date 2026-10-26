@@ -5,6 +5,7 @@ import { CardSignInButton } from "@/components/form/Buttons";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
 import ProductGallery from "@/components/single-product/product-gallery";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
+import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
 import ProductRelated from "@/components/single-product/product-related";
 import ProductSpecs from "@/components/single-product/product-specs";
 import ProductStickyCta from "@/components/single-product/product-sticky-cta";
@@ -209,16 +210,19 @@ export default function UiLabPdp() {
         <ProductKeyFacts facts={DEMO_FACTS} title="Ключові параметри" />
       </div>
 
-      <p className="max-w-3xl leading-7 text-foreground/90">
-        Демо-опис: перевірена техніка з Європи, підготовка на власному СТО,
-        супровід угоди. Текст іде після buy-box — не між ціною й CTA.
-      </p>
-
-      <ProductSpecs groups={DEMO_SPEC_GROUPS} title="Характеристики" />
+      <ProductDetailsTabs
+        description={
+          "Демо-опис: перевірена техніка з Європи, підготовка на власному СТО, супровід угоди.\n\nТекст іде після buy-box — не між ціною й CTA."
+        }
+        specGroups={DEMO_SPEC_GROUPS}
+        descriptionTab="Опис"
+        specsTab="Детальні характеристики"
+        aboutTitle="Про автомобіль"
+      />
 
       <div className="grid gap-3">
         <h3 className="text-sm font-semibold tracking-tight">
-          Specs fallback (flat)
+          Specs fallback (flat, без табів)
         </h3>
         <ProductSpecs
           groups={[

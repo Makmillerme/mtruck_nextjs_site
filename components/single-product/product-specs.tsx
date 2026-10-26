@@ -29,18 +29,22 @@ export default function ProductSpecs({
   title,
 }: {
   groups: ProductSpecGroup[];
-  title: string;
+  title?: string;
 }) {
   if (groups.length === 0) return null;
 
   const named = groups.filter((group) => group.title.trim().length > 0);
   const useAccordion = named.length >= 2;
+  const heading = title?.trim() ?? "";
+  const groupFallback = heading || "—";
 
   return (
     <section className="grid w-full scroll-mt-24 gap-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h2>
+      {heading ? (
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {heading}
+        </h2>
+      ) : null}
 
       {useAccordion ? (
         <Accordion
@@ -55,7 +59,7 @@ export default function ProductSpecs({
               className="border-border px-4"
             >
               <AccordionTrigger className="text-sm font-semibold">
-                {group.title.trim() || title}
+                {group.title.trim() || groupFallback}
               </AccordionTrigger>
               <AccordionContent>
                 <SpecRows rows={group.rows} />

@@ -10,7 +10,7 @@ import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
 import ShareButton from "@/components/single-product/ShareButton";
 import ProductGallery from "@/components/single-product/product-gallery";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
-import ProductSpecs from "@/components/single-product/product-specs";
+import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
 import ProductRelated from "@/components/single-product/product-related";
 import ProductStickyCta from "@/components/single-product/product-sticky-cta";
 import RequestCatalogOrder from "@/components/single-product/RequestCatalogOrder";
@@ -198,16 +198,13 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         />
       </div>
 
-      {description?.trim() ? (
-        <div className="page-shell-reading w-full scroll-mt-24 grid gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("descriptionTitle")}
-          </h2>
-          <p className="leading-7 text-foreground/90">{description}</p>
-        </div>
-      ) : null}
-
-      <ProductSpecs groups={specGroups} title={t("specsTitle")} />
+      <ProductDetailsTabs
+        description={description}
+        specGroups={specGroups}
+        descriptionTab={t("descriptionTitle")}
+        specsTab={t("specsTitle")}
+        aboutTitle={t("aboutTitle")}
+      />
 
       <ProductRelated
         title={t("relatedTitle")}
