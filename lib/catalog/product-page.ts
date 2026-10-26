@@ -1,5 +1,8 @@
 import type { CatalogDisplayGroup } from "@/lib/catalog/types";
-import { type SpecForCard } from "@/lib/catalog/product-to-vehicle";
+import {
+  formatSpecDisplay,
+  type SpecForCard,
+} from "@/lib/catalog/product-to-vehicle";
 
 export const PRODUCT_KEY_FACTS_MAX = 6;
 
@@ -31,17 +34,7 @@ export function formatProductSpecValue(
   spec: SpecForCard,
   locale = "uk"
 ): string {
-  if (spec.option?.label) return spec.option.label;
-  if (spec.numberValue != null) {
-    const formatted = new Intl.NumberFormat(intlLocale(locale), {
-      maximumFractionDigits: 0,
-    }).format(spec.numberValue);
-    const unit = spec.attribute.unit ? ` ${spec.attribute.unit}` : "";
-    return `${formatted}${unit}`;
-  }
-  if (spec.textValue) return spec.textValue;
-  if (spec.booleanValue != null) return spec.booleanValue ? "Так" : "Ні";
-  return "—";
+  return formatSpecDisplay(spec, locale);
 }
 
 export function formatProductPrice(

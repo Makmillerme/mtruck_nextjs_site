@@ -4,11 +4,7 @@ import { useState } from "react";
 import PhotoCarousel, {
   type PhotoCarouselImage,
 } from "@/components/media/photo-carousel";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ProductLightbox from "@/components/single-product/product-lightbox";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { LuExpand } from "react-icons/lu";
@@ -57,21 +53,12 @@ export default function ProductGallery({
         thumbLabel={t("galleryThumb")}
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[95vh] w-[min(100vw-1.5rem,72rem)] overflow-y-auto border-0 bg-background p-3 sm:max-w-5xl sm:p-4">
-          <DialogTitle className="sr-only">{t("galleryDialogTitle")}</DialogTitle>
-          <PhotoCarousel
-            variant="page"
-            images={images}
-            startIndex={startIndex}
-            sizes="(max-width:768px) 100vw, 72rem"
-            className="overflow-hidden rounded-sm"
-            prevLabel={t("galleryPrev")}
-            nextLabel={t("galleryNext")}
-            thumbLabel={t("galleryThumb")}
-          />
-        </DialogContent>
-      </Dialog>
+      <ProductLightbox
+        images={images}
+        open={open}
+        startIndex={startIndex}
+        onOpenChange={setOpen}
+      />
     </>
   );
 }

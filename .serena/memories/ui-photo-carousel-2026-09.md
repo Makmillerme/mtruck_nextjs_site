@@ -1,25 +1,19 @@
-# PhotoCarousel (shared)
+# PhotoCarousel + PDP lightbox (shared)
 
-**File:** `components/media/photo-carousel.tsx`
+**Files:** `components/media/photo-carousel.tsx`, `components/single-product/product-gallery.tsx`, `components/single-product/product-lightbox.tsx`
 
-## Variants
-- `card` — aspect 4/3, arrows + dots, optional `href` on slides, hover zoom
-- `page` — same stage + thumbnail strip (aria-current only on selected)
+## Variants (PhotoCarousel)
+- `card` — aspect 4/3, arrows + dots, optional `href`, hover zoom on active slide
+- `page` — stage + thumbnail strip
 
-## Props
-- `startIndex?: number` — Embla start + scrollTo (admin gallery thumb click)
+## PDP gallery canon (2026-10-26)
+- Page: Embla swipe; tap (no drag) opens lightbox
+- Lightbox: **same Embla** for slides (`object-contain`); L-thumbs md+; zoom CSS on active slide
+- Gestures: Embla drag only when `zoom === 1`; pan when zoomed; Ctrl/Meta+wheel zoom; +/−/reset buttons
+- Lab: `/ui-lab?section=carousel` → «PDP gallery + lightbox (канон)» via `ProductGallery`
 
 ## Surfaces
-- VehicleCard preview
-- ProductsList (via VehicleCard)
-- PDP product gallery
-- ui-lab blocks
-- Admin product sheet: `ProductImageGalleryField` (card + Reorder thumbs + add)
+- VehicleCard, catalog list, PDP, ui-lab blocks/PDP, admin `ProductImageGalleryField`
 
-## Hover jump fix (2026-09)
-Card preview shifted left on hover because:
-1. shadcn CarouselContent default `-ml-4` / Item `pl-4` not reliably cancelled → force `!ml-0` / `!pl-0`
-2. `group-hover:scale-105` applied to **all** Embla slides → zoom only on **active** slide (`i === index`)
-3. Isolate scale inside `overflow-hidden` wrappers + `origin-center`
-
-Do not rely on `-ml-0` alone; use important overrides for flush full-bleed slides.
+## Embla flush slides
+Force `!ml-0` / `!pl-0`; zoom hover only on active index; `draggable={false}` + `pointer-events-none` on Image.

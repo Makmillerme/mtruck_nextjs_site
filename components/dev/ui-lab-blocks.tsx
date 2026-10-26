@@ -1,11 +1,14 @@
 import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PhotoCarousel from "@/components/media/photo-carousel";
+import ProductGallery from "@/components/single-product/product-gallery";
 import VehicleCard from "@/components/vehicles/vehicle-card";
 
+/** Distinct enough for Embla motion; real PDP uses product uploads. */
 const DEMO_IMAGES = [
-  { src: "/images/hero.webp", alt: "MAN TGX 1" },
-  { src: "/images/hero.webp", alt: "MAN TGX 2" },
-  { src: "/images/hero.webp", alt: "MAN TGX 3" },
+  { src: "/images/hero.webp", alt: "Slide A — webp" },
+  { src: "/images/hero.png", alt: "Slide B — png" },
+  { src: "/images/hero.webp", alt: "Slide C — webp again" },
+  { src: "/images/hero.png", alt: "Slide D — png again" },
 ];
 
 const DEMO_VEHICLE = {
@@ -13,7 +16,7 @@ const DEMO_VEHICLE = {
   name: "MAN TGX 18.440",
   price: 38500,
   image: "/images/hero.webp",
-  images: ["/images/hero.webp", "/images/hero.webp", "/images/hero.webp"],
+  images: ["/images/hero.webp", "/images/hero.png", "/images/hero.webp"],
   href: "/products",
   status: "PUBLISHED" as const,
   year: 2018,
@@ -79,7 +82,7 @@ export default async function UiLabBlocks() {
             PhotoCarousel (page)
           </h3>
           <p className="text-sm text-muted-foreground">
-            Той самий компонент, що на PDP: стрілки всередині + thumbs.
+            Embla stage + thumbs. Без lightbox — лише гортання.
           </p>
           <div className="max-w-xl overflow-hidden rounded-sm border border-border bg-background">
             <PhotoCarousel
@@ -92,11 +95,28 @@ export default async function UiLabBlocks() {
 
         <div className="grid gap-3">
           <h3 className="text-sm font-semibold tracking-tight">
+            PDP gallery + lightbox (канон)
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Живий `ProductGallery`: Embla свайп на page → tap відкриває lightbox →
+            L-thumbs на md+ → zoom +/− / колесо миші → свайп слайдів лише при
+            zoom=1 (той самий Embla).
+          </p>
+          <div className="max-w-xl overflow-hidden rounded-sm border border-border bg-background p-3">
+            <ProductGallery
+              images={DEMO_IMAGES}
+              sizes="(max-width: 768px) 100vw, 36rem"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <h3 className="text-sm font-semibold tracking-tight">
             Admin gallery (DnD)
           </h3>
           <p className="text-sm text-muted-foreground">
-            `ProductImageGalleryField`: PhotoCarousel + перетягування thumbs + кнопка
-            додати в кінці. Без видимого file input.
+            `ProductImageGalleryField`: PhotoCarousel + перетягування thumbs +
+            кнопка додати в кінці. Без видимого file input.
           </p>
           <div className="w-full max-w-xl rounded-sm border border-border bg-background p-4">
             <ProductImageGalleryField

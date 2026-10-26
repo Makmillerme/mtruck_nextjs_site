@@ -45,11 +45,21 @@ export function uniqueImages(cover: string, gallery: string[] = []) {
   return out;
 }
 
-export function formatSpecDisplay(spec: SpecForCard): string {
+function intlLocale(locale: string) {
+  if (locale === "uk") return "uk-UA";
+  if (locale === "de") return "de-DE";
+  return "en-US";
+}
+
+/** Locale-aware number + unit (e.g. 505 000 км). */
+export function formatSpecDisplay(spec: SpecForCard, locale = "uk"): string {
   if (spec.option?.label) return spec.option.label;
   if (spec.numberValue != null) {
+    const formatted = new Intl.NumberFormat(intlLocale(locale), {
+      maximumFractionDigits: 0,
+    }).format(spec.numberValue);
     const unit = spec.attribute.unit ? ` ${spec.attribute.unit}` : "";
-    return `${spec.numberValue}${unit}`;
+    return `${formatted}${unit}`;
   }
   if (spec.textValue) return spec.textValue;
   if (spec.booleanValue != null) return spec.booleanValue ? "Так" : "Ні";
@@ -58,7 +68,8 @@ export function formatSpecDisplay(spec: SpecForCard): string {
 
 function buildSpecItems(
   specs: SpecForCard[],
-  slotKeys: string[]
+  slotKeys: string[],
+  locale = "uk"
 ): { key: string; label: string; value: string }[] {
   const byKey = new Map(specs.map((spec) => [spec.attribute.key, spec]));
   return slotKeys.map((key) => {
@@ -66,7 +77,7 @@ function buildSpecItems(
     return {
       key,
       label: spec?.attribute.name ?? key,
-      value: spec ? formatSpecDisplay(spec) : "—",
+      value: spec ? formatSpecDisplay(spec, locale) : "—",
     };
   });
 }
@@ -82,7 +93,8 @@ export function productWithSpecsToVehicle(
     specs?: SpecForCard[];
     images?: { url: string }[];
   },
-  layout: CardPreviewLayoutResolved | null | undefined = FALLBACK_CARD_PREVIEW_LAYOUT
+  layout: CardPreviewLayoutResolved | null | undefined = FALLBACK_CARD_PREVIEW_LAYOUT,
+  locale = "uk"
 ): VehicleCardModel {
   const resolved = layout ?? FALLBACK_CARD_PREVIEW_LAYOUT;
   const specs = product.specs ?? [];
@@ -104,7 +116,7 @@ export function productWithSpecsToVehicle(
   const fieldParts = resolved.subtitleKeys
     .map((key) => {
       const spec = byKey.get(key);
-      return spec ? formatSpecDisplay(spec) : null;
+      return spec ? formatSpecDisplay(spec, locale) : null;
     })
     .filter((value): value is string => Boolean(value && value !== "—"));
 
@@ -126,7 +138,7 @@ export function productWithSpecsToVehicle(
     categoryLabel,
     subtitleParts,
     specItems: resolved.showSpecs
-      ? buildSpecItems(specs, resolved.slotKeys)
+      ? buildSpecItems(specs, resolved.slotKeys, locale)
       : [],
     specsStyle: resolved.specsStyle,
     specsGridCount: resolved.specsGridCount,

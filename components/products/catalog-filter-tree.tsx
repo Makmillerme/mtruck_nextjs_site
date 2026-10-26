@@ -482,21 +482,22 @@ function CatalogFilterBranch({
   onToggleFacet,
   onSetRange,
 }: FilterTreeProps & { depth: number; parentSlug?: string }) {
-  const defaultOpen = initialOpenSlug
-    ? nodes.find((node) => nodeContainsSlug(node, initialOpenSlug))?.slug
+  const openTarget = initialOpenSlug || selected[0] || null;
+  const defaultOpen = openTarget
+    ? nodes.find((node) => nodeContainsSlug(node, openTarget))?.slug
     : undefined;
   const [openSlug, setOpenSlug] = useState<string | undefined>(defaultOpen);
   /** Bump when collapsing a node so nested branches remount closed. */
   const [childEpoch, setChildEpoch] = useState(0);
-  const [prevInitial, setPrevInitial] = useState(initialOpenSlug);
+  const [prevOpenTarget, setPrevOpenTarget] = useState(openTarget);
 
-  if (initialOpenSlug !== prevInitial) {
-    setPrevInitial(initialOpenSlug);
-    const nextOpen = initialOpenSlug
-      ? nodes.find((node) => nodeContainsSlug(node, initialOpenSlug))?.slug
+  // Deep-link / breadcrumb `?folder=` — keep accordion aligned with URL selection.
+  if (openTarget !== prevOpenTarget) {
+    setPrevOpenTarget(openTarget);
+    const nextOpen = openTarget
+      ? nodes.find((node) => nodeContainsSlug(node, openTarget))?.slug
       : undefined;
     setOpenSlug(nextOpen);
-    // URL/draft moved to another branch — drop nested open state.
     if (!nextOpen || nextOpen !== openSlug) {
       setChildEpoch((epoch) => epoch + 1);
     }

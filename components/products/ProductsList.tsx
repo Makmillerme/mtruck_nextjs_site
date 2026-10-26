@@ -2,8 +2,9 @@ import VehicleCard from "@/components/vehicles/vehicle-card";
 import type { CardPreviewLayoutResolved } from "@/lib/catalog/card-preview";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { ProductListItem } from "@/utils/product-list";
+import { getLocale } from "next-intl/server";
 
-function ProductsList({
+async function ProductsList({
   products,
   layouts,
   favoriteByProductId,
@@ -16,6 +17,7 @@ function ProductsList({
   isAuthenticated?: boolean;
   priorityCount?: number;
 }) {
+  const locale = await getLocale();
   return (
     <div className="grid gap-4 md:gap-5">
       {products.map((product, index) => (
@@ -26,7 +28,8 @@ function ProductsList({
             product,
             product.taxonomyNodeId
               ? layouts?.get(product.taxonomyNodeId)
-              : undefined
+              : undefined,
+            locale
           )}
           priority={index < priorityCount}
           favoriteId={favoriteByProductId?.get(product.id) ?? null}

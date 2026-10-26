@@ -8,14 +8,16 @@ import type { ProductSpecGroup } from "@/lib/catalog/product-page";
 
 function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
   return (
-    <dl className="grid gap-0">
+    <dl className="grid gap-x-10 gap-y-0 md:grid-cols-2">
       {rows.map((row) => (
         <div
           key={row.id}
-          className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)] items-baseline gap-3 border-b border-border/60 py-2.5 text-sm last:border-0 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]"
+          className="flex items-baseline justify-between gap-6 border-b border-border/60 py-2.5 text-sm"
         >
-          <dt className="text-muted-foreground">{row.label}</dt>
-          <dd className="font-medium text-foreground">{row.value}</dd>
+          <dt className="shrink-0 text-muted-foreground">{row.label}</dt>
+          <dd className="min-w-0 break-words text-right font-medium text-foreground">
+            {row.value}
+          </dd>
         </div>
       ))}
     </dl>
@@ -35,7 +37,7 @@ export default function ProductSpecs({
   const useAccordion = named.length >= 2;
 
   return (
-    <section className="grid max-w-3xl scroll-mt-24 gap-4">
+    <section className="grid w-full scroll-mt-24 gap-4">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
+import { CardSignInButton } from "@/components/form/Buttons";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
 import ProductGallery from "@/components/single-product/product-gallery";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
@@ -14,9 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import type { VehicleCardModel } from "@/components/vehicles/vehicle-card";
 
 const DEMO_IMAGES = [
-  { src: "/images/hero.webp", alt: "MAN TGX 1" },
-  { src: "/images/hero.webp", alt: "MAN TGX 2" },
-  { src: "/images/hero.webp", alt: "MAN TGX 3" },
+  { src: "/images/hero.webp", alt: "MAN TGX — front" },
+  { src: "/images/hero.png", alt: "MAN TGX — alternate" },
+  { src: "/images/hero.webp", alt: "MAN TGX — detail" },
 ];
 
 const DEMO_FACTS = [
@@ -97,11 +97,56 @@ const DEMO_RELATED: VehicleCardModel[] = [
       { key: "euro", label: "Euro", value: "Euro 5" },
     ],
   },
+  {
+    id: "pdp-rel-4",
+    name: "DAF XF 480",
+    price: 41200,
+    image: "/images/hero.webp",
+    images: ["/images/hero.webp"],
+    href: "/products",
+    status: "PUBLISHED",
+    year: 2019,
+    categoryLabel: "Сідельні тягачі",
+    specItems: [
+      { key: "mileage", label: "Пробіг", value: "540 000 км" },
+      { key: "euro", label: "Euro", value: "Euro 6" },
+    ],
+  },
+  {
+    id: "pdp-rel-5",
+    name: "MAN TGX 18.500",
+    price: 44100,
+    image: "/images/hero.webp",
+    images: ["/images/hero.webp"],
+    href: "/products",
+    status: "PUBLISHED",
+    year: 2021,
+    categoryLabel: "Сідельні тягачі",
+    specItems: [
+      { key: "mileage", label: "Пробіг", value: "290 000 км" },
+      { key: "euro", label: "Euro", value: "Euro 6" },
+    ],
+  },
+  {
+    id: "pdp-rel-6",
+    name: "Iveco S-Way",
+    price: 36500,
+    image: "/images/hero.webp",
+    images: ["/images/hero.webp"],
+    href: "/products",
+    status: "PUBLISHED",
+    year: 2018,
+    categoryLabel: "Сідельні тягачі",
+    specItems: [
+      { key: "mileage", label: "Пробіг", value: "680 000 км" },
+      { key: "euro", label: "Euro", value: "Euro 6" },
+    ],
+  },
 ];
 
 function DemoCta() {
   return (
-    <Button type="button" className="w-full sm:w-fit">
+    <Button type="button" size="lg">
       Замовити це авто
     </Button>
   );
@@ -114,8 +159,9 @@ export default function UiLabPdp() {
     <div className="grid gap-10">
       <div className="grid gap-2">
         <p className="text-sm text-muted-foreground">
-          Канон PDP: галерея + lightbox, sticky buy-box, key facts, згруповані
-          specs, related. Mobile sticky CTA — демо-бар нижче (увімк/вимк).
+          Канон PDP. Галерея+lightbox — секція PhotoCarousel (ProductGallery).
+          Тут: sticky buy-box, key facts без іконок, CTA lg+outline, specs,
+          related. Mobile sticky CTA — демо-бар нижче.
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">z-40 sticky CTA</Badge>
@@ -143,17 +189,13 @@ export default function UiLabPdp() {
           facts={DEMO_FACTS}
           actions={
             <>
-              <FavoriteToggleButton
-                productId="ui-lab-pdp"
-                favoriteId={null}
-                isAuthenticated={false}
-              />
+              <CardSignInButton appearance="outline" />
               <ShareButton productId="ui-lab-pdp" name="MAN TGX 18.440" />
             </>
           }
           cta={<DemoCta />}
           secondaryCta={
-            <Button type="button" variant="outline" className="w-full sm:w-fit">
+            <Button type="button" size="lg" variant="outline">
               Зателефонувати
             </Button>
           }
@@ -190,7 +232,15 @@ export default function UiLabPdp() {
         />
       </div>
 
-      <ProductRelated title="Схожа техніка" vehicles={DEMO_RELATED} />
+      <ProductRelated
+        title="Схожі товари"
+        vehicles={DEMO_RELATED}
+        catalogHref="/products"
+        catalogLabel="Перейти до каталогу"
+        catalogHint="Більше пропозицій у каталозі"
+        carouselPrevLabel="Попереднє"
+        carouselNextLabel="Наступне"
+      />
 
       {showSticky ? (
         <ProductStickyCta priceLabel="€ 38 500" cta={<DemoCta />} />

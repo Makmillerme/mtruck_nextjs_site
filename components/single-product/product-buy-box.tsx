@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
 import type { ProductKeyFact } from "@/lib/catalog/product-page";
-import { cn } from "@/lib/utils";
 
 export default function ProductBuyBox({
   categoryLabel,
@@ -63,11 +62,7 @@ export default function ProductBuyBox({
       </div>
 
       {cta || secondaryCta ? (
-        <div
-          className={cn(
-            "flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"
-          )}
-        >
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           {cta}
           {secondaryCta}
         </div>

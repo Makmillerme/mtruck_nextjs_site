@@ -4,6 +4,7 @@ import {
   fetchRelatedProducts,
   fetchSingleProduct,
 } from "@/utils/actions";
+import type { Metadata } from "next";
 import { uniqueImages } from "@/lib/catalog/product-to-vehicle";
 import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
 import ShareButton from "@/components/single-product/ShareButton";
@@ -25,8 +26,42 @@ import {
   fetchDisplayGroupsForNode,
   resolveDisplayGroupsByKey,
 } from "@/lib/catalog/taxonomy";
+import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
+import db from "@/utils/db";
+import { buildCatalogHref } from "@/utils/catalog-query";
 import { LuPhone } from "react-icons/lu";
+
+export async function generateMetadata(props: {
+  params: Promise<{ id: string; locale: string }>;
+}): Promise<Metadata> {
+  const { id } = await props.params;
+  const product = await db.product.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      description: true,
+      image: true,
+      archivedAt: true,
+    },
+  });
+
+  if (!product || product.archivedAt) {
+    return {};
+  }
+
+  const description = product.description?.trim() || undefined;
+
+  return {
+    title: product.name,
+    description,
+    openGraph: {
+      title: product.name,
+      description,
+      images: product.image ? [{ url: product.image }] : undefined,
+    },
+  };
+}
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -45,19 +80,25 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const categoryLabel = product.taxonomyNode?.name ?? null;
   const categorySlug = product.taxonomyNode?.slug ?? null;
 
-  const [favoriteId, related, displayGroups] = await Promise.all([
-    userId ? fetchFavoriteId({ productId: product.id }) : Promise.resolve(null),
-    fetchRelatedProducts({
-      productId: product.id,
-      taxonomyNodeId: product.taxonomyNodeId,
-      limit: 4,
-    }),
-    product.taxonomyNodeId
-      ? fetchDisplayGroupsForNode(product.taxonomyNodeId).then(
-          resolveDisplayGroupsByKey
-        )
-      : Promise.resolve([]),
-  ]);
+  const [favoriteId, related, displayGroups, relatedLayouts] =
+    await Promise.all([
+      userId
+        ? fetchFavoriteId({ productId: product.id })
+        : Promise.resolve(null),
+      fetchRelatedProducts({
+        productId: product.id,
+        taxonomyNodeId: product.taxonomyNodeId,
+        limit: 12,
+      }),
+      product.taxonomyNodeId
+        ? fetchDisplayGroupsForNode(product.taxonomyNodeId).then(
+            resolveDisplayGroupsByKey
+          )
+        : Promise.resolve([]),
+      product.taxonomyNodeId
+        ? fetchCardPreviewLayoutsByNodeIds(db, [product.taxonomyNodeId])
+        : Promise.resolve(new Map()),
+    ]);
 
   const gallery = uniqueImages(
     product.image,
@@ -85,7 +126,15 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     displayGroups,
     locale
   );
-  const relatedVehicles = related.map((item) => productWithSpecsToVehicle(item));
+  const relatedVehicles = related.map((item) =>
+    productWithSpecsToVehicle(
+      item,
+      item.taxonomyNodeId
+        ? relatedLayouts.get(item.taxonomyNodeId)
+        : undefined,
+      locale
+    )
+  );
   const availabilityInStock = product.availability === "IN_STOCK";
   const availabilityLabel = availabilityInStock
     ? t("availabilityStock")
@@ -99,7 +148,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   );
 
   const callCta = (
-    <Button asChild variant="outline" className="w-full sm:w-fit">
+    <Button asChild size="lg" variant="outline">
       <a href={tNav("phoneHref")}>
         <LuPhone className="size-4" aria-hidden />
         {t("callManager")}
@@ -108,7 +157,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   );
 
   return (
-    <section className="grid gap-8 pb-24 lg:pb-8">
+    <section className="grid min-w-0 gap-8 pb-24 lg:pb-8">
       <BreadCrumbs
         name={product.name}
         categoryLabel={categoryLabel}
@@ -136,6 +185,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
                 productId={params.id}
                 favoriteId={favoriteId}
                 isAuthenticated={isAuthenticated}
+                appearance="outline"
               />
               <ShareButton name={product.name} productId={params.id} />
             </>
@@ -159,6 +209,19 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       <ProductRelated
         title={t("relatedTitle")}
         vehicles={relatedVehicles}
+        catalogHref={
+          categorySlug
+            ? buildCatalogHref(new URLSearchParams(), {
+                clearFacets: true,
+                folders: [categorySlug],
+                resetPage: true,
+              })
+            : "/products"
+        }
+        catalogLabel={t("relatedViewCatalog")}
+        catalogHint={t("relatedCatalogHint")}
+        carouselPrevLabel={t("relatedCarouselPrev")}
+        carouselNextLabel={t("relatedCarouselNext")}
         isAuthenticated={isAuthenticated}
       />
 

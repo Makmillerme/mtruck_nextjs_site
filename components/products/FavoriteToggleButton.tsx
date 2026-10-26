@@ -8,11 +8,13 @@ async function FavoriteToggleButton({
   className,
   favoriteId: favoriteIdProp,
   isAuthenticated: isAuthenticatedProp,
+  appearance = "card",
 }: {
   productId: string;
   className?: string;
   favoriteId?: string | null;
   isAuthenticated?: boolean;
+  appearance?: "card" | "outline";
 }) {
   let isAuthenticated = isAuthenticatedProp;
   let favoriteId = favoriteIdProp ?? null;
@@ -25,13 +27,16 @@ async function FavoriteToggleButton({
     }
   }
 
-  if (!isAuthenticated) return <CardSignInButton className={className} />;
+  if (!isAuthenticated) {
+    return <CardSignInButton className={className} appearance={appearance} />;
+  }
 
   return (
     <FavoriteToggleForm
       favoriteId={favoriteId}
       productId={productId}
       className={className}
+      appearance={appearance}
     />
   );
 }

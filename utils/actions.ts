@@ -227,8 +227,8 @@ export const fetchUserFavoriteIds = async () => {
   };
 };
 
-export const fetchSingleProduct = async (productId: string) => {
-  const product = await db.product.findUnique({
+async function fetchSingleProductUncached(productId: string) {
+  return db.product.findUnique({
     where: {
       id: productId,
     },
@@ -253,6 +253,17 @@ export const fetchSingleProduct = async (productId: string) => {
       },
     },
   });
+}
+
+export const fetchSingleProduct = async (productId: string) => {
+  const product = await unstable_cache(
+    () => fetchSingleProductUncached(productId),
+    ['single-product', productId],
+    {
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+      tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
+    }
+  )();
   if (!product || product.archivedAt) {
     return redirectLocalized('/products');
   }
@@ -270,17 +281,25 @@ export const fetchRelatedProducts = async ({
   limit?: number;
 }) => {
   if (!taxonomyNodeId) return [];
-  return db.product.findMany({
-    where: {
-      archivedAt: null,
-      status: 'PUBLISHED',
-      taxonomyNodeId,
-      id: { not: productId },
-    },
-    select: productListSelect,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+  return unstable_cache(
+    () =>
+      db.product.findMany({
+        where: {
+          archivedAt: null,
+          status: 'PUBLISHED',
+          taxonomyNodeId,
+          id: { not: productId },
+        },
+        select: productListSelect,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+    ['related-products', productId, taxonomyNodeId, String(limit)],
+    {
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+      tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
+    }
+  )();
 };
 
 const PRODUCT_STATUSES: ProductStatus[] = [

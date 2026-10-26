@@ -109,19 +109,33 @@ export function FavoriteHeartPreview({
   );
 }
 
-export const CardSignInButton = ({ className }: { className?: string } = {}) => {
+type FavoriteButtonAppearance = "card" | "outline";
+
+export const CardSignInButton = ({
+  className,
+  appearance = "card",
+}: {
+  className?: string;
+  appearance?: FavoriteButtonAppearance;
+} = {}) => {
   const pathname = usePathname();
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
+  const outline = appearance === "outline";
   return (
     <Button
       type="button"
       size="icon"
-      variant="ghost"
-      className={cn("cursor-pointer", favoriteChromeClass, className, favoriteIdleClass)}
+      variant={outline ? "outline" : "ghost"}
+      className={cn(
+        "cursor-pointer",
+        !outline && favoriteChromeClass,
+        !outline && favoriteIdleClass,
+        className
+      )}
       asChild
     >
       <Link href={href}>
-        <FaRegHeart className="size-4" />
+        <FaRegHeart className="size-4" aria-hidden />
       </Link>
     </Button>
   );
@@ -130,29 +144,32 @@ export const CardSignInButton = ({ className }: { className?: string } = {}) => 
 export const CardSubmitButton = ({
   isFavorite,
   className,
+  appearance = "card",
 }: {
   isFavorite: boolean;
   className?: string;
+  appearance?: FavoriteButtonAppearance;
 }) => {
   const { pending } = useFormStatus();
+  const outline = appearance === "outline";
   return (
     <Button
       type="submit"
       size="icon"
-      variant="ghost"
+      variant={outline ? "outline" : "ghost"}
       className={cn(
         "cursor-pointer",
-        favoriteChromeClass,
-        className,
-        isFavorite ? favoriteActiveClass : favoriteIdleClass
+        !outline && favoriteChromeClass,
+        !outline && (isFavorite ? favoriteActiveClass : favoriteIdleClass),
+        className
       )}
     >
       {pending ? (
-        <ReloadIcon className="size-4 animate-spin" />
+        <ReloadIcon className="size-4 animate-spin" aria-hidden />
       ) : isFavorite ? (
-        <FaHeart className="size-4" />
+        <FaHeart className="size-4" aria-hidden />
       ) : (
-        <FaRegHeart className="size-4" />
+        <FaRegHeart className="size-4" aria-hidden />
       )}
     </Button>
   );
@@ -163,7 +180,7 @@ export const ProductSignInButton = () => {
   const t = useTranslations("Product");
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <Button type="button" className="w-fit" asChild>
+    <Button type="button" size="lg" asChild>
       <Link href={href}>{t("signInToOrder")}</Link>
     </Button>
   );

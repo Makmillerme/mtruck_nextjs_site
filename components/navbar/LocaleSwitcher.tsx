@@ -11,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTransition } from "react";
-import { LuCheck, LuChevronDown } from "react-icons/lu";
+import { useCallback, useTransition } from "react";
+import { LuCheck, LuChevronDown, LuLoader } from "react-icons/lu";
 
 const localeCodes: Record<(typeof routing.locales)[number], string> = {
   uk: "UA",
@@ -31,16 +31,33 @@ export default function LocaleSwitcher({
   const t = useTranslations("LocaleSwitcher");
   const [isPending, startTransition] = useTransition();
 
+  const currentQuery = useCallback(() => {
+    if (typeof window === "undefined") return {};
+    return Object.fromEntries(new URLSearchParams(window.location.search));
+  }, []);
+
+  function prefetchOtherLocales() {
+    const query = currentQuery();
+    for (const item of routing.locales) {
+      if (item === locale) continue;
+      router.prefetch({ pathname, query }, { locale: item });
+    }
+  }
+
   function switchLocale(next: (typeof routing.locales)[number]) {
     if (next === locale) return;
-    const query = Object.fromEntries(new URLSearchParams(window.location.search));
+    const query = currentQuery();
     startTransition(() => {
       router.replace({ pathname, query }, { locale: next, scroll: false });
     });
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) prefetchOtherLocales();
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -51,9 +68,14 @@ export default function LocaleSwitcher({
             className
           )}
           aria-label={t("label")}
+          aria-busy={isPending || undefined}
         >
-          {localeCodes[locale as (typeof routing.locales)[number]]}
-          <LuChevronDown className="hidden size-4 lg:block" />
+          {isPending ? (
+            <LuLoader className="size-4 animate-spin" aria-hidden />
+          ) : (
+            localeCodes[locale as (typeof routing.locales)[number]]
+          )}
+          <LuChevronDown className="hidden size-4 lg:block" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

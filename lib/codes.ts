@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import db from "@/utils/db";
 
 const CODE_MIN = 10000;
@@ -40,12 +42,30 @@ export async function generateUniqueProductCode() {
   });
 }
 
-export async function ensureUserCode(userId: string) {
+async function readUserCode(userId: string) {
   const existing = await db.user.findUnique({
     where: { id: userId },
     select: { userCode: true },
   });
-  if (existing?.userCode) return existing.userCode;
+  return existing?.userCode ?? null;
+}
+
+/** Cross-request cache for existing codes — locale switch must not re-hit DB. */
+const getCachedUserCode = (userId: string) =>
+  unstable_cache(
+    () => readUserCode(userId),
+    ["user-code", userId],
+    { revalidate: 300 }
+  )();
+
+/** Per-request dedupe when Navbar + page both call ensureUserCode. */
+export const ensureUserCode = cache(async (userId: string) => {
+  const cached = await getCachedUserCode(userId);
+  if (cached) return cached;
+
+  const existing = await readUserCode(userId);
+  if (existing) return existing;
+
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const userCode = await generateUniqueUserCode();
     try {
@@ -60,7 +80,7 @@ export async function ensureUserCode(userId: string) {
     }
   }
   throw new Error("Failed to assign userCode");
-}
+});
 
 export async function ensureProductCode(productId: string) {
   const existing = await db.product.findUnique({

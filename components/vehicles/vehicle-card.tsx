@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/utils/format";
+import { formatProductPrice } from "@/lib/catalog/product-page";
 import { useLocale, useTranslations } from "next-intl";
 import {
   specsGridClassName,
@@ -105,8 +105,9 @@ export default function VehicleCard({
 }) {
   const locale = useLocale();
   const t = useTranslations("VehicleCard");
+  const tProduct = useTranslations("Product");
   const status = vehicle.status ?? "PUBLISHED";
-  const price = formatCurrency(vehicle.price, locale);
+  const price = formatProductPrice(vehicle.price, locale);
   const showName = vehicle.showName !== false;
   const showPrice = vehicle.showPrice !== false;
   const showStatus = vehicle.showStatus !== false;
@@ -156,6 +157,9 @@ export default function VehicleCard({
                 ? "(max-width: 768px) 100vw, 448px"
                 : "(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
             }
+            prevLabel={tProduct("galleryPrev")}
+            nextLabel={tProduct("galleryNext")}
+            thumbLabel={tProduct("galleryThumb")}
             overlay={
               showStatus || showFavorite ? (
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 sm:p-3">

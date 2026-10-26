@@ -7,6 +7,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Link } from "@/i18n/navigation";
+import { buildCatalogHref } from "@/utils/catalog-query";
 import { getTranslations } from "next-intl/server";
 
 async function BreadCrumbs({
@@ -21,7 +22,11 @@ async function BreadCrumbs({
 }) {
   const t = await getTranslations("Product");
   const categoryHref = categorySlug
-    ? `/products?folder=${encodeURIComponent(categorySlug)}`
+    ? buildCatalogHref(new URLSearchParams(), {
+        clearFacets: true,
+        folders: [categorySlug],
+        resetPage: true,
+      })
     : "/products";
 
   return (

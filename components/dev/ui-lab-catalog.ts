@@ -196,9 +196,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "carousel",
     category: "overlays",
     title: "PhotoCarousel",
-    hint: "Єдиний Embla-компонент: variant card (dots) і page (thumbs). Admin sheet: ProductImageGalleryField (carousel + Reorder thumbs +).",
+    hint: "Embla page/card + PDP ProductGallery lightbox (L-thumbs, zoom Ctrl+wheel). Admin: ProductImageGalleryField DnD.",
     keywords:
-      "carousel карусель embla photo gallery галерея thumbs dots слайд reorder dnd admin +",
+      "carousel карусель embla photo gallery галерея thumbs dots lightbox zoom свайп reorder dnd admin +",
   },
   {
     id: "snake",

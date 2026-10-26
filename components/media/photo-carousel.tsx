@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import {
   Carousel,
   CarouselContent,
@@ -42,8 +49,9 @@ function SlideImage({
         priority={priority}
         loading={priority ? "eager" : "lazy"}
         sizes={sizes}
+        draggable={false}
         className={cn(
-          "object-cover origin-center will-change-transform",
+          "pointer-events-none select-none object-cover origin-center will-change-transform",
           zoomOnHover &&
             "transition-transform duration-500 group-hover:scale-105"
         )}
@@ -102,6 +110,10 @@ export default function PhotoCarousel({
   );
   const [index, setIndex] = useState(safeStart);
   const multi = slides.length > 1;
+  /** Ignore stage click after a swipe/drag so lightbox does not steal the gesture. */
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = useRef(false);
+  const DRAG_THRESHOLD_PX = 8;
   const stageClass =
     frame === "fill"
       ? "relative h-full min-h-0 overflow-hidden bg-muted"
@@ -133,6 +145,26 @@ export default function PhotoCarousel({
     },
     [api]
   );
+
+  function onStagePointerDown(event: ReactPointerEvent) {
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
+    didDragRef.current = false;
+  }
+
+  function onStagePointerMove(event: ReactPointerEvent) {
+    const start = pointerStartRef.current;
+    if (!start || didDragRef.current) return;
+    const dx = Math.abs(event.clientX - start.x);
+    const dy = Math.abs(event.clientY - start.y);
+    if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
+      didDragRef.current = true;
+    }
+  }
+
+  function onStageClick() {
+    if (!onImageClick || href || didDragRef.current) return;
+    onImageClick(index);
+  }
 
   if (slides.length === 0) {
     return <div className={cn(stageClass, className)} />;
@@ -197,6 +229,8 @@ export default function PhotoCarousel({
           align: "start",
           containScroll: false,
           startIndex: safeStart,
+          watchDrag: true,
+          dragFree: false,
         }}
         className={cn(
           "relative w-full overflow-hidden",
@@ -206,13 +240,12 @@ export default function PhotoCarousel({
         <div
           className={cn(
             stageClass,
+            "select-none",
             onImageClick && !href && "cursor-zoom-in"
           )}
-          onClick={
-            onImageClick && !href
-              ? () => onImageClick(index)
-              : undefined
-          }
+          onPointerDown={onImageClick && !href ? onStagePointerDown : undefined}
+          onPointerMove={onImageClick && !href ? onStagePointerMove : undefined}
+          onClick={onImageClick && !href ? onStageClick : undefined}
         >
           {/* Flush slides: override shadcn default -ml-4 / pl-4 gap pattern */}
           <CarouselContent className="!ml-0 h-full">
@@ -278,7 +311,7 @@ export default function PhotoCarousel({
                 <button
                   key={`dot-${i}`}
                   type="button"
-                  aria-label={`Photo ${i + 1}`}
+                  aria-label={`${thumbLabel} ${i + 1}`}
                   className={cn(
                     "pointer-events-auto size-1.5 rounded-full transition-colors",
                     i === index
