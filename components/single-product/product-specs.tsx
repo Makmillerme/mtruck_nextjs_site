@@ -6,21 +6,48 @@ import {
 } from "@/components/ui/accordion";
 import type { ProductSpecGroup } from "@/lib/catalog/product-page";
 
-function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
+function SpecPairCell({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
-    <dl className="grid gap-x-10 gap-y-0 md:grid-cols-2">
-      {rows.map((row) => (
+    <div className="flex items-baseline justify-between gap-6 text-sm">
+      <span className="min-w-0 text-muted-foreground">{label}</span>
+      <span className="shrink-0 text-right font-medium text-foreground">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/** One shared border per visual row so left/right separators stay aligned. */
+function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
+  const pairs: Array<
+    [ProductSpecGroup["rows"][number], ProductSpecGroup["rows"][number] | null]
+  > = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    pairs.push([rows[i], rows[i + 1] ?? null]);
+  }
+
+  return (
+    <div className="grid gap-0">
+      {pairs.map(([left, right]) => (
         <div
-          key={row.id}
-          className="flex items-baseline justify-between gap-6 border-b border-border/60 py-2.5 text-sm"
+          key={left.id}
+          className="grid gap-x-10 border-b border-border/60 py-2.5 last:border-b-0 md:grid-cols-2"
         >
-          <dt className="shrink-0 text-muted-foreground">{row.label}</dt>
-          <dd className="min-w-0 break-words text-right font-medium text-foreground">
-            {row.value}
-          </dd>
+          <SpecPairCell label={left.label} value={left.value} />
+          {right ? (
+            <SpecPairCell label={right.label} value={right.value} />
+          ) : (
+            <div className="hidden md:block" aria-hidden />
+          )}
         </div>
       ))}
-    </dl>
+    </div>
   );
 }
 
