@@ -239,9 +239,9 @@ export default function UiLabPdp() {
       <ProductRelated
         title="Схожі товари"
         vehicles={DEMO_RELATED}
-        catalogHref="/products"
-        catalogLabel="Перейти до каталогу"
-        catalogHint="Більше пропозицій у каталозі"
+        catalogHref="/products?folder=furhony"
+        catalogLabel="Усі в категорії Фургони"
+        catalogHint="Більше пропозицій у категорії Фургони"
         carouselPrevLabel="Попереднє"
         carouselNextLabel="Наступне"
       />

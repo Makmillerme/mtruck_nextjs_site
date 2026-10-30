@@ -218,8 +218,18 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
               })
             : "/products"
         }
-        catalogLabel={t("relatedViewCatalog")}
-        catalogHint={t("relatedCatalogHint")}
+        catalogLabel={
+          categoryLabel
+            ? t("relatedViewCategory", { category: categoryLabel })
+            : t("relatedViewCatalog")
+        }
+        catalogHint={
+          categoryLabel
+            ? t("relatedCatalogHintInCategory", {
+                category: categoryLabel,
+              })
+            : t("relatedCatalogHint")
+        }
         carouselPrevLabel={t("relatedCarouselPrev")}
         carouselNextLabel={t("relatedCarouselNext")}
         isAuthenticated={isAuthenticated}
