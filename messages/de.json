@@ -921,7 +921,12 @@
 
     "productNameTemplateSave": "Namensvorlage speichern",
     "productNameTemplateSaved": "Namensvorlage gespeichert",
+    "productNameTemplateSavedRegenerated": "Vorlage gespeichert. Namen neu erzeugt: {count}.",
     "productNameTemplateCleared": "Namensvorlage geleert — Name manuell eingeben",
+    "productNameTemplateDisconnectHint": "Alle Felder entfernen, um die Auto-Benennung auszuschalten. Gespeicherte Namen in der Datenbank bleiben. Felder erneut verbinden und speichern erzeugt die Namen in diesem Ordner neu.",
+    "productNameTemplateRegenerateTitle": "Produktnamen neu erzeugen?",
+    "productNameTemplateRegenerateDescription": "Alle Produktnamen in dieser Kategorie (und Unterordnern) werden nach der neuen Feldvorlage überschrieben. Das lässt sich nicht rückgängig machen.",
+    "productNameTemplateRegenerateConfirm": "Speichern und neu erzeugen",
     "productSpecs": "Technische Daten",
     "specRequired": "Bitte {field} ausfüllen.",
     "specInvalid": "Ungültiger Wert für {field}.",

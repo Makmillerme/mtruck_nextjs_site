@@ -1,9 +1,11 @@
 import type { CatalogAttribute, CatalogDisplayGroup } from "./types";
 import type { SpecCreateInput } from "./product-specs";
 import {
+  collectSubtreeIds,
   fetchDisplayGroupsForNode,
   resolveDisplayGroupsByKey,
 } from "./taxonomy";
+import db from "@/utils/db";
 
 type SpecValueSource = SpecCreateInput & {
   optionLabel?: string | null;
@@ -108,6 +110,65 @@ export async function resolveProductNameFromDisplayGroups(
   if (!writer) return null;
   const value = resolveDisplayGroupString(writer, specs);
   return value.length > 0 ? value : null;
+}
+
+/** Recompute Product.name for every product in the folder subtree from the active name template. */
+export async function regenerateProductNamesInFolderSubtree(
+  nodeId: string
+): Promise<{ updated: number; skipped: number }> {
+  const folderIds = await collectSubtreeIds(nodeId);
+  const products = await db.product.findMany({
+    where: {
+      taxonomyNodeId: { in: folderIds },
+      archivedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      taxonomyNodeId: true,
+      specs: {
+        select: {
+          attributeId: true,
+          optionId: true,
+          numberValue: true,
+          textValue: true,
+          booleanValue: true,
+          option: { select: { label: true } },
+        },
+      },
+    },
+  });
+
+  let updated = 0;
+  let skipped = 0;
+  for (const product of products) {
+    if (!product.taxonomyNodeId) {
+      skipped += 1;
+      continue;
+    }
+    const specs: SpecValueSource[] = product.specs.map((spec) => ({
+      attributeId: spec.attributeId,
+      optionId: spec.optionId,
+      optionLabel: spec.option?.label ?? null,
+      numberValue: spec.numberValue,
+      textValue: spec.textValue,
+      booleanValue: spec.booleanValue,
+    }));
+    const nextName = await resolveProductNameFromDisplayGroups(
+      product.taxonomyNodeId,
+      specs
+    );
+    if (!nextName || nextName === product.name) {
+      skipped += 1;
+      continue;
+    }
+    await db.product.update({
+      where: { id: product.id },
+      data: { name: nextName },
+    });
+    updated += 1;
+  }
+  return { updated, skipped };
 }
 
 export async function resolveProductNameWithExtra(

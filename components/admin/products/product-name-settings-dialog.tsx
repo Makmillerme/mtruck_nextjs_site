@@ -6,6 +6,16 @@ import { MemberOrderPicker } from "@/components/admin/catalog/display-groups-pan
 import ProductNameTags from "@/components/admin/products/product-name-tags";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -19,9 +29,8 @@ import type {
   CatalogDisplayGroup,
 } from "@/lib/catalog/types";
 import { notify } from "@/lib/ui/notify";
-import {
-  initialTaxonomyActionState,
-} from "@/utils/taxonomy-action-state";
+import { useRouter } from "@/i18n/navigation";
+import { initialTaxonomyActionState } from "@/utils/taxonomy-action-state";
 import { saveProductNameTemplateAction } from "@/utils/taxonomy-actions";
 import { LuSettings } from "react-icons/lu";
 
@@ -37,7 +46,10 @@ export default function ProductNameSettingsDialog({
   onSaved: () => void;
 }) {
   const t = useTranslations("CatalogAdmin");
+  const tCommon = useTranslations("Common");
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [memberIds, setMemberIds] = useState<string[]>(
     writerGroup?.members.map((member) => member.attributeId) ?? []
@@ -50,6 +62,7 @@ export default function ProductNameSettingsDialog({
       writerGroup?.members.map((member) => member.attributeId) ?? []
     );
     setSeparator(writerGroup?.separator ?? " ");
+    setConfirmOpen(false);
   }, [open, writerGroup]);
 
   const byId = useMemo(
@@ -74,8 +87,9 @@ export default function ProductNameSettingsDialog({
   );
 
   const disabled = !folderNodeId;
+  const willRegenerate = memberIds.length > 0;
 
-  function save() {
+  function runSave() {
     if (!folderNodeId) {
       notify.error(t("productNameSettingsNeedFolder"));
       return;
@@ -93,10 +107,24 @@ export default function ProductNameSettingsDialog({
       );
       notify.fromAction(result);
       if (result.ok) {
+        setConfirmOpen(false);
         setOpen(false);
         onSaved();
+        router.refresh();
       }
     });
+  }
+
+  function onSaveClick() {
+    if (!folderNodeId) {
+      notify.error(t("productNameSettingsNeedFolder"));
+      return;
+    }
+    if (willRegenerate) {
+      setConfirmOpen(true);
+      return;
+    }
+    runSave();
   }
 
   return (
@@ -152,6 +180,9 @@ export default function ProductNameSettingsDialog({
                   {t("productNameSettingsInherited")}
                 </p>
               ) : null}
+              <p className="text-sm text-muted-foreground">
+                {t("productNameTemplateDisconnectHint")}
+              </p>
               <MemberOrderPicker
                 attributes={attributes}
                 value={memberIds}
@@ -163,7 +194,7 @@ export default function ProductNameSettingsDialog({
                   type="button"
                   className="w-fit"
                   disabled={isPending}
-                  onClick={save}
+                  onClick={onSaveClick}
                 >
                   {t("productNameTemplateSave")}
                 </Button>
@@ -172,6 +203,33 @@ export default function ProductNameSettingsDialog({
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("productNameTemplateRegenerateTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("productNameTemplateRegenerateDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>
+              {tCommon("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                runSave();
+              }}
+            >
+              {t("productNameTemplateRegenerateConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

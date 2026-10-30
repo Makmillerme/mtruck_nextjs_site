@@ -921,7 +921,12 @@
 
     "productNameTemplateSave": "Зберегти шаблон назви",
     "productNameTemplateSaved": "Шаблон назви збережено",
+    "productNameTemplateSavedRegenerated": "Шаблон збережено. Перегенеровано назв: {count}.",
     "productNameTemplateCleared": "Шаблон назви очищено — можна вписувати вручну",
+    "productNameTemplateDisconnectHint": "Приберіть усі поля, щоб вимкнути автоформування. Збережені назви в БД не зміняться. Повторне підключення полів при збереженні перегенерує назви товарів у цій папці.",
+    "productNameTemplateRegenerateTitle": "Перегенерувати назви товарів?",
+    "productNameTemplateRegenerateDescription": "Усі назви товарів у цій категорії (і вкладених папках) будуть перезаписані за новим шаблоном з полів характеристик. Цю дію не можна скасувати.",
+    "productNameTemplateRegenerateConfirm": "Зберегти і перегенерувати",
     "productSpecs": "Характеристики",
     "specRequired": "Заповніть поле «{field}».",
     "specInvalid": "Некоректне значення поля «{field}».",

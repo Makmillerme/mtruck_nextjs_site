@@ -20,6 +20,7 @@ import {
   updateDisplayGroupSchema,
 } from "@/utils/taxonomy-schema";
 import { keyify, uniqueSlug } from "@/lib/catalog/slug";
+import { regenerateProductNamesInFolderSubtree } from "@/lib/catalog/display-group";
 import {
   fetchSiblingNodes,
   getPathNodes,
@@ -763,9 +764,16 @@ export const saveProductNameTemplateAction: TaxonomyAction = async (
       });
     }
 
+    const { updated } = await regenerateProductNamesInFolderSubtree(
+      data.taxonomyNodeId
+    );
+
     revalidateCatalog();
     revalidatePath("/admin/products");
-    return { message: t("productNameTemplateSaved"), ok: true };
+    return {
+      message: t("productNameTemplateSavedRegenerated", { count: updated }),
+      ok: true,
+    };
   } catch (error) {
     return renderTaxonomyError(error);
   }

@@ -921,7 +921,12 @@
 
     "productNameTemplateSave": "Save name template",
     "productNameTemplateSaved": "Name template saved",
+    "productNameTemplateSavedRegenerated": "Template saved. Regenerated names: {count}.",
     "productNameTemplateCleared": "Name template cleared — type the name manually",
+    "productNameTemplateDisconnectHint": "Remove all fields to turn off auto-naming. Saved names in the database stay unchanged. Reconnecting fields and saving will regenerate product names in this folder.",
+    "productNameTemplateRegenerateTitle": "Regenerate product names?",
+    "productNameTemplateRegenerateDescription": "All product names in this category (and nested folders) will be overwritten using the new field template. This cannot be undone.",
+    "productNameTemplateRegenerateConfirm": "Save and regenerate",
     "productSpecs": "Specifications",
     "specRequired": "Fill in {field}.",
     "specInvalid": "Invalid value for {field}.",
