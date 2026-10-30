@@ -176,6 +176,6 @@ $1
 
 **Дата:** 2026-10-30
 
-**Суть:** Секції вкладки «Характеристики» на сторінці товару — шаблон вигляду PDP, не частина моделі полів. CRUD винести в UI Editor (поруч з Card Preview / майбутньою сторінкою товару). З CMS Fields прибрано UI секцій; лишився лише шаблон назви. Runtime `buildProductSpecGroups` поки читає non-writer `DisplayGroup` з БД. Далі: редактор у `/admin/ui`, опційно нова модель `ProductPageLayout` замість DisplayGroup-секцій.
+**Суть:** Секції вкладки «Характеристики» на сторінці товару — шаблон вигляду PDP, не частина моделі полів. CRUD винести в UI Editor → вкладка **«Сторінка товару»** (`productCard`). З CMS Fields прибрано UI секцій; лишився лише шаблон назви. Runtime `buildProductSpecGroups` поки читає non-writer `DisplayGroup` з БД. Далі: редактор у `/admin/ui?tab=productCard`, опційно нова модель `ProductPageLayout` замість DisplayGroup-секцій.
 
 **Статус:** Відкладено

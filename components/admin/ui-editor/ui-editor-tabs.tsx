@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   parseUiEditorTab,
   type UiEditorTab,
@@ -27,13 +28,15 @@ export default function UiEditorTabs({
 }) {
   const t = useTranslations("UiEditor");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   function openTab(value: string) {
     const next = parseUiEditorTab(value);
     if (next === tab) return;
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     params.set("tab", next);
+    // Keep ?node= across tabs so card editor does not re-redirect / re-fetch.
     startTransition(() => {
       router.replace(`/admin/ui?${params.toString()}`);
     });
