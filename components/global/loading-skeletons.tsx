@@ -33,7 +33,7 @@ export function LoadingCatalogGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-4 sm:grid-cols-2 min-[900px]:grid-cols-3 md:gap-5",
+        "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-5",
         className
       )}
     >
@@ -69,7 +69,7 @@ export function LoadingCatalogGridCards({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-4 sm:grid-cols-2 min-[900px]:grid-cols-3 md:gap-5",
+        "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-5",
         className
       )}
     >

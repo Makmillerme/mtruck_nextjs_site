@@ -306,9 +306,12 @@ export default function UiLabLayoutRules() {
           <li>
             Канон:{" "}
             <code className="text-xs text-foreground">
-              grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 gap-4 md:gap-5
+              grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5
             </code>
-            — без 4 колонок.
+            — без 4 колонок. 3 колонки лише з{" "}
+            <code className="text-xs text-foreground">xl</code> (1280+), бо з{" "}
+            <code className="text-xs text-foreground">lg</code> з’являється сайдбар
+            фільтра.
           </li>
           <li>
             Мін. ширина колонки ~280–300px: краще менше колонок, ніж дрібні картки.
@@ -327,7 +330,7 @@ export default function UiLabLayoutRules() {
             локальний Image.
           </li>
         </ul>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 min-[900px]:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((n) => (
             <div
               key={n}

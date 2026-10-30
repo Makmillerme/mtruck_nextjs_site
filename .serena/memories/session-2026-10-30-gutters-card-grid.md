@@ -13,7 +13,7 @@ Shell max-widths unchanged (home/catalog/product/reading).
 
 ## Catalog grid
 
-`ProductsGrid` + loading skeletons: `grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 gap-4 md:gap-5` (was `xl:grid-cols-3`). Matches UI Lab + VehicleCard `sizes`.
+`ProductsGrid` + loading skeletons: `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5` (was `xl:grid-cols-3`). Matches UI Lab + VehicleCard `sizes`.
 
 Home `#inventory` and `/products` both use `ProductsGrid`.
 

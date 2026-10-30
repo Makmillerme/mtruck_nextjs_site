@@ -43,7 +43,7 @@ export default async function UiLabBlocks() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 min-[900px]:grid-cols-3 md:gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-5">
           <VehicleCard vehicle={DEMO_VEHICLE} isAuthenticated={false} />
           <VehicleCard
             vehicle={{ ...DEMO_VEHICLE, id: "ui-lab-2", name: "Scania R450" }}
