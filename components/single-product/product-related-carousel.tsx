@@ -87,8 +87,9 @@ export default function ProductRelatedCarousel({
         className="ml-0 gap-5"
         viewportClassName={cn(
           overflowFieldGutterClassName,
-          // Embla clips overflow-hidden; room for VehicleCard group-hover:shadow-xl (~25px).
-          "py-6"
+          // Clip only X (Embla track). Y visible so group-hover:shadow-xl is not chopped.
+          // Overrides carousel default overflow-hidden via tailwind-merge.
+          "overflow-x-clip overflow-y-visible px-1 py-3"
         )}
       >
         {vehicles.map((vehicle) => (

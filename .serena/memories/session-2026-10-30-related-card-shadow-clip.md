@@ -6,4 +6,4 @@
 ## Fix
 - `vehicle-card.tsx`: remove overflow-hidden from shadowed shell; clip media with inner `overflow-hidden` + rounded corners.
 - `catalog-teaser-card.tsx`: drop overflow-hidden (no media to clip).
-- `product-related-carousel.tsx`: viewport `py-6` for Embla vertical shadow room.
+- `product-related-carousel.tsx`: viewport `overflow-x-clip overflow-y-visible` (+ light `py-3`) so Embla does not chop vertical box-shadow; X still clipped.
