@@ -1,11 +1,16 @@
 import UiEditorStubPanel from "@/components/admin/ui-editor/ui-editor-stub-panel";
 import UiEditorTabs from "@/components/admin/ui-editor/ui-editor-tabs";
 import CardPreviewEditor from "@/components/admin/ui-editor/card-preview-editor";
+import ProductPageEditor from "@/components/admin/ui-editor/product-page-editor";
 import { parseUiEditorTab } from "@/lib/admin/ui-editor-tab";
 import {
   loadCardPreviewEditorData,
   resolveDefaultCardPreviewNodeId,
 } from "@/lib/admin/card-preview-editor-data";
+import {
+  loadProductPageEditorData,
+  resolveDefaultProductPageNodeId,
+} from "@/lib/admin/product-page-editor-data";
 import { fetchTaxonomyTree } from "@/lib/catalog/taxonomy";
 import { redirect } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -19,13 +24,19 @@ async function AdminUiEditorPage(props: {
   const t = await getTranslations("UiEditor");
   const tab = parseUiEditorTab(searchParams.tab);
 
-  if (tab === "cardPreview" && !searchParams.node) {
+  if (
+    (tab === "cardPreview" || tab === "productCard") &&
+    !searchParams.node
+  ) {
     const tree = await fetchTaxonomyTree();
-    const defaultNodeId = await resolveDefaultCardPreviewNodeId(tree);
+    const defaultNodeId =
+      tab === "cardPreview"
+        ? await resolveDefaultCardPreviewNodeId(tree)
+        : await resolveDefaultProductPageNodeId(tree);
     if (defaultNodeId) {
       const locale = await getLocale();
       redirect({
-        href: `/admin/ui?tab=cardPreview&node=${defaultNodeId}`,
+        href: `/admin/ui?tab=${tab}&node=${defaultNodeId}`,
         locale,
       });
     }
@@ -34,6 +45,10 @@ async function AdminUiEditorPage(props: {
   const cardPreviewData =
     tab === "cardPreview"
       ? await loadCardPreviewEditorData(searchParams.node)
+      : null;
+  const productPageData =
+    tab === "productCard"
+      ? await loadProductPageEditorData(searchParams.node)
       : null;
 
   return (
@@ -51,10 +66,14 @@ async function AdminUiEditorPage(props: {
           )
         }
         productCard={
-          <UiEditorStubPanel
-            title={t("tabProductCard")}
-            description={t("stubProductCard")}
-          />
+          productPageData ? (
+            <ProductPageEditor {...productPageData} />
+          ) : (
+            <UiEditorStubPanel
+              title={t("tabProductCard")}
+              description={t("stubProductCard")}
+            />
+          )
         }
         layout={
           <UiEditorStubPanel

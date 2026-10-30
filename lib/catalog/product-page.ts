@@ -1,3 +1,4 @@
+import type { ProductPageLayoutResolved } from "@/lib/catalog/product-page-layout";
 import type { CatalogDisplayGroup } from "@/lib/catalog/types";
 import {
   formatSpecDisplay,
@@ -117,36 +118,53 @@ export function buildProductKeyFacts(
   return facts;
 }
 
-function flatSpecRows(specs: SpecWithIds[], locale = "uk"): ProductSpecRow[] {
-  return [...specs]
-    .sort(
-      (a, b) =>
-        (a.attribute.sortOrder ?? 0) - (b.attribute.sortOrder ?? 0) ||
-        a.attribute.name.localeCompare(b.attribute.name, "uk")
-    )
-    .filter((spec) => hasDisplayValue(spec, locale))
-    .map((spec) => ({
-      id: spec.id,
-      label: spec.attribute.name,
-      value: formatProductSpecValue(spec, locale),
-    }));
-}
-
 /**
- * Group specs by DisplayGroup (skip name writers).
- * Fallback: one untitled flat group when groups are empty or cover nothing.
- */
-/**
- * PDP specs table: one UI block from catalog fields (data-model order).
- * Not DisplayGroup sections — those were a mistaken coupling.
- * `displayGroups` kept for call-site compat; ignored for content layout.
- * Future: Product page layout (order / visibility) in UI Editor.
+ * PDP specs table: one UI block from catalog fields.
+ * Default: model sortOrder. Optional ProductPageLayout: order + visibility.
+ * `displayGroups` kept for call-site compat; ignored.
  */
 export function buildProductSpecGroups(
   specs: SpecWithIds[],
   _displayGroups: CatalogDisplayGroup[] = [],
-  locale = "uk"
+  locale = "uk",
+  layout: ProductPageLayoutResolved | null = null
 ): ProductSpecGroup[] {
-  const rows = flatSpecRows(specs, locale);
+  const withValues = specs.filter((spec) => hasDisplayValue(spec, locale));
+  if (withValues.length === 0) return [];
+
+  let ordered: SpecWithIds[];
+  if (layout && layout.slots.length > 0) {
+    const byAttrId = new Map(
+      withValues.map((spec) => [spec.attribute.id, spec] as const)
+    );
+    const byKey = new Map(
+      withValues.map((spec) => [spec.attribute.key, spec] as const)
+    );
+    const used = new Set<string>();
+    const next: SpecWithIds[] = [];
+
+    for (const slot of layout.slots) {
+      if (!slot.visible) continue;
+      const spec =
+        byAttrId.get(slot.attributeId) ?? byKey.get(slot.attributeKey);
+      if (!spec || used.has(spec.id)) continue;
+      used.add(spec.id);
+      next.push(spec);
+    }
+    ordered = next;
+  } else {
+    ordered = [...withValues].sort(
+      (a, b) =>
+        (a.attribute.sortOrder ?? 0) - (b.attribute.sortOrder ?? 0) ||
+        a.attribute.name.localeCompare(b.attribute.name, "uk")
+    );
+  }
+
+  const rows: ProductSpecRow[] = ordered.map((spec) => ({
+    id: spec.id,
+    label: spec.attribute.name,
+    value: formatProductSpecValue(spec, locale),
+  }));
+
   return rows.length > 0 ? [{ id: "all", title: "", rows }] : [];
 }

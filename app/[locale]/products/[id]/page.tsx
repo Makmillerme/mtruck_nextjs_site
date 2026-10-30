@@ -27,6 +27,10 @@ import {
   resolveDisplayGroupsByKey,
 } from "@/lib/catalog/taxonomy";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
+import {
+  fetchProductPageLayoutsByNodeIds,
+  resolveProductPageLayout,
+} from "@/lib/catalog/product-page-layout";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
@@ -80,7 +84,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const categoryLabel = product.taxonomyNode?.name ?? null;
   const categorySlug = product.taxonomyNode?.slug ?? null;
 
-  const [favoriteId, related, displayGroups, relatedLayouts] =
+  const [favoriteId, related, displayGroups, relatedLayouts, pageLayouts] =
     await Promise.all([
       userId
         ? fetchFavoriteId({ productId: product.id })
@@ -97,6 +101,9 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         : Promise.resolve([]),
       product.taxonomyNodeId
         ? fetchCardPreviewLayoutsByNodeIds(db, [product.taxonomyNodeId])
+        : Promise.resolve(new Map()),
+      product.taxonomyNodeId
+        ? fetchProductPageLayoutsByNodeIds(db, [product.taxonomyNodeId])
         : Promise.resolve(new Map()),
     ]);
 
@@ -121,10 +128,23 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   }));
 
   const keyFacts = buildProductKeyFacts(specsForPage, 6, locale);
+  const pageLayoutRow = product.taxonomyNodeId
+    ? pageLayouts.get(product.taxonomyNodeId)
+    : undefined;
+  const pageLayout = resolveProductPageLayout(
+    pageLayoutRow,
+    specsForPage.map((spec) => ({
+      id: spec.attribute.id,
+      key: spec.attribute.key,
+      sortOrder: spec.attribute.sortOrder,
+      name: spec.attribute.name,
+    }))
+  );
   const specGroups = buildProductSpecGroups(
     specsForPage,
     displayGroups,
-    locale
+    locale,
+    pageLayout
   );
   const relatedVehicles = related.map((item) =>
     productWithSpecsToVehicle(

@@ -176,6 +176,6 @@ $1
 
 **Дата:** 2026-10-30
 
-**Суть:** Таблиця «Детальні характеристики» на PDP — єдиний адаптивний 2-col UI (ліва колонка зверху вниз, права = продовження; при непарній кількості порожнє лише внизу справа). Це **не** DisplayGroup. За замовчуванням усі несистемні поля в порядку моделі (`sortOrder`). У UI Editor → **«Сторінка товару»**: reorder + show/hide полів (системні завжди видимі). Модель: `ProductPageLayout` / slots per taxonomy folder. Runtime уже відв’язаний від content DisplayGroup (`buildProductSpecGroups` = flat list).
+**Суть:** Таблиця «Детальні характеристики» на PDP — єдиний адаптивний 2-col UI. Модель `ProductPageLayout` + `ProductPageSpecSlot` (order + visible) per taxonomy folder; inheritance по предках як Card Preview. UI Editor → **«Сторінка товару»**: reorder + show/hide. Runtime: `resolveProductPageLayout` → `buildProductSpecGroups`.
 
-**Статус:** Відкладено / готово до впровадження
+**Статус:** Готово

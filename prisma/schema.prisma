@@ -186,11 +186,12 @@ model TaxonomyNode {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  attributes         AttributeDefinition[]
-  displayGroups      DisplayGroup[]
-  products           Product[]
-  orders             Order[]
-  cardPreviewLayout  CardPreviewLayout?
+  attributes          AttributeDefinition[]
+  displayGroups       DisplayGroup[]
+  products            Product[]
+  orders              Order[]
+  cardPreviewLayout   CardPreviewLayout?
+  productPageLayout   ProductPageLayout?
 
   @@index([parentId])
 }
@@ -219,6 +220,7 @@ model AttributeDefinition {
   displayGroupMembers      DisplayGroupMember[]
   cardPreviewSlots         CardPreviewSlot[]
   cardPreviewSubtitleSlots CardPreviewSubtitleSlot[]
+  productPageSpecSlots     ProductPageSpecSlot[]
 
   @@unique([taxonomyNodeId, key])
   @@index([taxonomyNodeId])
@@ -342,6 +344,30 @@ model CardPreviewSubtitleSlot {
   attributeId String
   attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   sortOrder   Int                 @default(0)
+
+  @@unique([layoutId, attributeId])
+  @@index([layoutId])
+  @@index([attributeId])
+}
+
+model ProductPageLayout {
+  id             String       @id @default(uuid())
+  taxonomyNodeId String       @unique
+  taxonomyNode   TaxonomyNode @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  slots ProductPageSpecSlot[]
+}
+
+model ProductPageSpecSlot {
+  id          String              @id @default(uuid())
+  layoutId    String
+  layout      ProductPageLayout   @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int                 @default(0)
+  visible     Boolean             @default(true)
 
   @@unique([layoutId, attributeId])
   @@index([layoutId])
