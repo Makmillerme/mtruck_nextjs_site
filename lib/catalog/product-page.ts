@@ -136,60 +136,17 @@ function flatSpecRows(specs: SpecWithIds[], locale = "uk"): ProductSpecRow[] {
  * Group specs by DisplayGroup (skip name writers).
  * Fallback: one untitled flat group when groups are empty or cover nothing.
  */
+/**
+ * PDP specs table: one UI block from catalog fields (data-model order).
+ * Not DisplayGroup sections — those were a mistaken coupling.
+ * `displayGroups` kept for call-site compat; ignored for content layout.
+ * Future: Product page layout (order / visibility) in UI Editor.
+ */
 export function buildProductSpecGroups(
   specs: SpecWithIds[],
-  displayGroups: CatalogDisplayGroup[],
+  _displayGroups: CatalogDisplayGroup[] = [],
   locale = "uk"
 ): ProductSpecGroup[] {
-  const byAttributeId = new Map(
-    specs.map((spec) => [spec.attribute.id, spec] as const)
-  );
-  const contentGroups = displayGroups
-    .filter((group) => !group.writesProductName)
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-
-  if (contentGroups.length === 0) {
-    const rows = flatSpecRows(specs, locale);
-    return rows.length > 0
-      ? [{ id: "all", title: "", rows }]
-      : [];
-  }
-
-  const used = new Set<string>();
-  const groups: ProductSpecGroup[] = [];
-
-  for (const group of contentGroups) {
-    const rows: ProductSpecRow[] = [];
-    for (const member of group.members) {
-      const spec = byAttributeId.get(member.attributeId);
-      if (!spec || !hasDisplayValue(spec, locale)) continue;
-      used.add(spec.attribute.id);
-      rows.push({
-        id: spec.id,
-        label: member.attribute.name,
-        value: formatProductSpecValue(spec, locale),
-      });
-    }
-    if (rows.length > 0) {
-      groups.push({ id: group.id, title: group.name, rows });
-    }
-  }
-
-  const rest = flatSpecRows(
-    specs.filter((spec) => !used.has(spec.attribute.id)),
-    locale
-  );
-  if (rest.length > 0) {
-    groups.push({ id: "other", title: "", rows: rest });
-  }
-
-  if (groups.length === 0) {
-    const rows = flatSpecRows(specs, locale);
-    return rows.length > 0
-      ? [{ id: "all", title: "", rows }]
-      : [];
-  }
-
-  return groups;
+  const rows = flatSpecRows(specs, locale);
+  return rows.length > 0 ? [{ id: "all", title: "", rows }] : [];
 }

@@ -732,7 +732,7 @@
     "tabProductCard": "Product page",
     "tabLayout": "Layout",
     "stubCardPreview": "Pick a folder and choose what appears on the catalog card.",
-    "stubProductCard": "Coming soon: product page (PDP) layout and spec sections.",
+    "stubProductCard": "Coming soon: order and visibility of fields in the product page specs table.",
     "stubLayout": "Coming soon: visual component layout editor.",
     "pickFolder": "Folder",
     "pickFolderHint": "Layout applies to the folder and all descendants until a child folder has its own layout.",

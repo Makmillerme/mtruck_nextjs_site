@@ -21,12 +21,17 @@ function SpecRow({ label, value }: { label: string; value: string }) {
  * Column-major: left column = first half (top→bottom), right = rest (top→bottom).
  * Order stays as in the data model / display group; no fixed cell count.
  */
+/**
+ * Adaptive 2-col table: left = first half (top→bottom), right = continuation.
+ * Odd count → empty slot only at the bottom of the right column.
+ */
 function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
   if (rows.length === 0) return null;
 
   const mid = Math.ceil(rows.length / 2);
   const left = rows.slice(0, mid);
   const right = rows.slice(mid);
+  const rightPad = left.length - right.length;
 
   return (
     <div className="grid gap-x-10 md:grid-cols-2">
@@ -35,13 +40,20 @@ function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
           <SpecRow key={row.id} label={row.label} value={row.value} />
         ))}
       </div>
-      {right.length > 0 ? (
-        <div className="min-w-0 divide-y divide-border/60">
-          {right.map((row) => (
-            <SpecRow key={row.id} label={row.label} value={row.value} />
-          ))}
-        </div>
-      ) : null}
+      <div className="min-w-0 divide-y divide-border/60">
+        {right.map((row) => (
+          <SpecRow key={row.id} label={row.label} value={row.value} />
+        ))}
+        {Array.from({ length: rightPad }, (_, index) => (
+          <div
+            key={`pad-${index}`}
+            className="pointer-events-none select-none py-2.5 text-sm opacity-0"
+            aria-hidden
+          >
+            —
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -732,7 +732,7 @@
     "tabProductCard": "Produktseite",
     "tabLayout": "Layout",
     "stubCardPreview": "Ordner wählen und festlegen, was auf der Katalogkarte erscheint.",
-    "stubProductCard": "Demnächst: Layout der Produktseite (PDP) und Merkmalssektionen.",
+    "stubProductCard": "Demnächst: Reihenfolge und Sichtbarkeit der Felder in der Merkmalstabelle der Produktseite.",
     "stubLayout": "Demnächst: visueller Layout-Editor für Komponenten.",
     "pickFolder": "Ordner",
     "pickFolderHint": "Das Layout gilt für den Ordner und alle Nachfahren, bis ein Kindordner ein eigenes Layout hat.",
