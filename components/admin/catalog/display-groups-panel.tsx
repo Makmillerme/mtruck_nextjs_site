@@ -31,7 +31,6 @@ import { CatalogField, CatalogSubmit } from "./catalog-fields";
 
 type GroupSheet =
   | { mode: "create-name" }
-  | { mode: "create-section" }
   | { mode: "edit"; groupId: string }
   | null;
 
@@ -168,29 +167,18 @@ export default function DisplayGroupsPanel({
   const [memberIds, setMemberIds] = useState<string[]>([]);
 
   const nameGroups = groups.filter((item) => item.writesProductName);
-  const sectionGroups = groups.filter((item) => !item.writesProductName);
-
   const ownName = nameGroups.filter((item) => !item.inherited);
   const inheritedName = nameGroups.filter((item) => item.inherited);
-  const ownSections = sectionGroups.filter((item) => !item.inherited);
-  const inheritedSections = sectionGroups.filter((item) => item.inherited);
-
   const hasOwnNameTemplate = ownName.length > 0;
 
   const active =
     sheet && sheet.mode === "edit"
-      ? groups.find((item) => item.id === sheet.groupId) ?? null
+      ? nameGroups.find((item) => item.id === sheet.groupId) ?? null
       : null;
-  const editingName = Boolean(active?.writesProductName);
 
   function openCreateName() {
     setMemberIds([]);
     setSheet({ mode: "create-name" });
-  }
-
-  function openCreateSection() {
-    setMemberIds([]);
-    setSheet({ mode: "create-section" });
   }
 
   function openEdit(group: CatalogDisplayGroup) {
@@ -200,11 +188,11 @@ export default function DisplayGroupsPanel({
 
   function renderGroupRow(
     group: CatalogDisplayGroup,
-    opts: { editable: boolean; joinPreview: boolean }
+    opts: { editable: boolean }
   ) {
-    const preview = opts.joinPreview
-      ? group.members.map((m) => m.attribute.name).join(group.separator || " ")
-      : group.members.map((m) => m.attribute.name).join(", ");
+    const preview = group.members
+      .map((m) => m.attribute.name)
+      .join(group.separator || " ");
 
     return (
       <div
@@ -241,26 +229,16 @@ export default function DisplayGroupsPanel({
               size="icon"
               className="text-muted-foreground"
               onClick={() => openEdit(group)}
-              aria-label={
-                group.writesProductName
-                  ? t("nameTemplateEdit")
-                  : t("specSectionEdit")
-              }
+              aria-label={t("nameTemplateEdit")}
             >
               <LuPen className="size-4" />
             </Button>
             <ConfirmDeleteIcon
               action={deleteDisplayGroupAction as unknown as actionFunction}
-              title={
-                group.writesProductName
-                  ? t("nameTemplateDeleteTitle")
-                  : t("specSectionDeleteTitle")
-              }
-              description={
-                group.writesProductName
-                  ? t("nameTemplateDeleteSubject", { group: group.name })
-                  : t("specSectionDeleteSubject", { group: group.name })
-              }
+              title={t("nameTemplateDeleteTitle")}
+              description={t("nameTemplateDeleteSubject", {
+                group: group.name,
+              })}
             >
               <input type="hidden" name="groupId" value={group.id} />
             </ConfirmDeleteIcon>
@@ -271,7 +249,7 @@ export default function DisplayGroupsPanel({
   }
 
   return (
-    <div className="grid gap-6">
+    <>
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <div className="grid gap-1">
@@ -299,53 +277,13 @@ export default function DisplayGroupsPanel({
             </p>
           ) : null}
           {ownName.map((group) =>
-            renderGroupRow(group, { editable: true, joinPreview: true })
+            renderGroupRow(group, { editable: true })
           )}
           {inheritedName.length > 0 ? (
             <div className="grid gap-3 pt-1">
               <p className="text-sm font-medium">{t("nameTemplateInherited")}</p>
               {inheritedName.map((group) =>
-                renderGroupRow(group, { editable: false, joinPreview: true })
-              )}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-          <div className="grid gap-1">
-            <p className="text-sm font-medium">{t("specSectionsTitle")}</p>
-            <p className="text-xs text-muted-foreground">
-              {t("specSectionsHint")}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={openCreateSection}
-            disabled={attributes.length === 0}
-          >
-            <LuPlus className="size-4" />
-            {t("specSectionsAdd")}
-          </Button>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          {ownSections.length === 0 && inheritedSections.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t("specSectionsEmpty")}
-            </p>
-          ) : null}
-          {ownSections.map((group) =>
-            renderGroupRow(group, { editable: true, joinPreview: false })
-          )}
-          {inheritedSections.length > 0 ? (
-            <div className="grid gap-3 pt-1">
-              <p className="text-sm font-medium">{t("specSectionsInherited")}</p>
-              {inheritedSections.map((group) =>
-                renderGroupRow(group, { editable: false, joinPreview: false })
+                renderGroupRow(group, { editable: false })
               )}
             </div>
           ) : null}
@@ -397,40 +335,10 @@ export default function DisplayGroupsPanel({
             </div>
           ) : null}
 
-          {sheet?.mode === "create-section" ? (
-            <div className="grid gap-6">
-              <SheetHeader>
-                <SheetTitle>{t("specSectionNew")}</SheetTitle>
-                <SheetDescription>
-                  {t("specSectionNewHint", { folder: node.name })}
-                </SheetDescription>
-              </SheetHeader>
-              <CatalogForm
-                className="grid gap-4"
-                action={createDisplayGroupAction}
-                onPendingChange={setSheetSavePending}
-                onSuccess={() => setSheet(null)}
-              >
-                <input type="hidden" name="taxonomyNodeId" value={node.id} />
-                <CatalogField name="name" label={t("specSectionName")} />
-                <MemberOrderPicker
-                  attributes={attributes}
-                  value={memberIds}
-                  onChange={setMemberIds}
-                />
-                <CatalogSubmit text={t("specSectionsAdd")} className="w-fit" />
-              </CatalogForm>
-            </div>
-          ) : null}
-
           {sheet?.mode === "edit" && active ? (
             <div className="grid gap-6">
               <SheetHeader>
-                <SheetTitle>
-                  {editingName
-                    ? t("nameTemplateEdit")
-                    : t("specSectionEdit")}
-                </SheetTitle>
+                <SheetTitle>{t("nameTemplateEdit")}</SheetTitle>
                 <SheetDescription>{active.key}</SheetDescription>
               </SheetHeader>
               <CatalogForm
@@ -440,41 +348,25 @@ export default function DisplayGroupsPanel({
                 onSuccess={() => setSheet(null)}
               >
                 <input type="hidden" name="groupId" value={active.id} />
-                {editingName ? (
-                  <input type="hidden" name="writesProductName" value="on" />
-                ) : null}
+                <input type="hidden" name="writesProductName" value="on" />
                 <CatalogField
                   name="name"
-                  label={
-                    editingName ? t("nameTemplateName") : t("specSectionName")
-                  }
+                  label={t("nameTemplateName")}
                   defaultValue={active.name}
                 />
-                {editingName ? (
-                  <CatalogField
-                    name="separator"
-                    label={t("displayGroupSeparator")}
-                    defaultValue={active.separator}
-                    required={false}
-                  />
-                ) : (
-                  <input
-                    type="hidden"
-                    name="separator"
-                    value={active.separator || " "}
-                  />
-                )}
+                <CatalogField
+                  name="separator"
+                  label={t("displayGroupSeparator")}
+                  defaultValue={active.separator}
+                  required={false}
+                />
                 <MemberOrderPicker
                   attributes={attributes}
                   value={memberIds}
                   onChange={setMemberIds}
                 />
                 <CatalogSubmit
-                  text={
-                    editingName
-                      ? t("nameTemplateSave")
-                      : t("specSectionSave")
-                  }
+                  text={t("nameTemplateSave")}
                   className="w-fit"
                 />
               </CatalogForm>
@@ -482,6 +374,6 @@ export default function DisplayGroupsPanel({
           ) : null}
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   );
 }

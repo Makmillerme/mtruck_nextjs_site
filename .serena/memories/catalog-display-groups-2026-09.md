@@ -16,6 +16,6 @@
 
 ## CMS
 - Field create/edit: sheet width select.
-- `DisplayGroupsPanel` under fields: two cards — name template (`writesProductName`) vs PDP spec sections; CRUD + ordered member picker. No COMPOSITE AttributeType.
-- Fetch: `fetchDisplayGroupsForNode` / `resolveDisplayGroupsByKey` (inheritance like attributes).
+- `DisplayGroupsPanel` under fields: **name template only** (`writesProductName`). Spec sections UI removed — backlog UI Editor PDP layout.
+- Fetch: `fetchDisplayGroupsForNode` / `resolveDisplayGroupsByKey` (inheritance like attributes). Non-writer groups still feed `buildProductSpecGroups`.
 - Card subtitle/category: CardPreviewLayout (UI Editor), not DisplayGroup.
