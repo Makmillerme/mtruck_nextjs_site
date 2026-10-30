@@ -12,9 +12,9 @@ const SHELL_SAMPLES: {
   max: string;
   use: string;
 }[] = [
-  { shell: "home", max: "1360px", use: "Головна (full-bleed секції)" },
-  { shell: "catalog", max: "1920px", use: "Каталог (.page-content)" },
-  { shell: "product", max: "1520px", use: "PDP (layout .page-container)" },
+  { shell: "home", max: "1920px", use: "Головна — той самий ceiling, що каталог" },
+  { shell: "catalog", max: "1920px", use: "Каталог (.page-content) — еталон бічних полів" },
+  { shell: "product", max: "1920px", use: "PDP — той самий ceiling, що каталог" },
   { shell: "reading", max: "1280px", use: "Вузькі текстові блоки PDP" },
   { shell: "admin", max: "none (shared gutters)", use: "Адмінка" },
 ];

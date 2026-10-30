@@ -35,10 +35,11 @@
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 222 47% 11%;
-    /* Page shell max-widths (content column, not chrome) */
-    --shell-home: 1360px;
+    /* Page shell max-widths (content column, not chrome).
+       Home/product match catalog: one fluid ceiling — side inset = gutters only. */
+    --shell-home: 1920px;
     --shell-catalog: 1920px;
-    --shell-product: 1520px;
+    --shell-product: 1920px;
     --shell-reading: 1280px;
   }
 
