@@ -16,5 +16,6 @@
 
 ## CMS
 - Field create/edit: sheet width select.
-- `DisplayGroupsPanel` under fields: CRUD + ordered member picker.
+- `DisplayGroupsPanel` under fields: two cards — name template (`writesProductName`) vs PDP spec sections; CRUD + ordered member picker. No COMPOSITE AttributeType.
 - Fetch: `fetchDisplayGroupsForNode` / `resolveDisplayGroupsByKey` (inheritance like attributes).
+- Card subtitle/category: CardPreviewLayout (UI Editor), not DisplayGroup.
