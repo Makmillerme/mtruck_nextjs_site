@@ -709,11 +709,42 @@ export const saveProductNameTemplateAction: TaxonomyAction = async (
         select: { id: true },
       }));
 
-    // Empty members → remove name template; sheet falls back to manual name.
+    // Empty members → own empty writer (blocks parent inheritance; keeps DB names).
     if (memberAttributeIds.length === 0) {
+      await db.displayGroup.updateMany({
+        where: {
+          taxonomyNodeId: data.taxonomyNodeId,
+          writesProductName: true,
+          ...(existing ? { NOT: { id: existing.id } } : {}),
+        },
+        data: { writesProductName: false },
+      });
+
       if (existing) {
-        await db.displayGroup.delete({ where: { id: existing.id } });
+        await db.$transaction([
+          db.displayGroupMember.deleteMany({ where: { groupId: existing.id } }),
+          db.displayGroup.update({
+            where: { id: existing.id },
+            data: {
+              separator: data.separator,
+              writesProductName: true,
+              key: PRODUCT_NAME_TEMPLATE_KEY,
+            },
+          }),
+        ]);
+      } else {
+        await db.displayGroup.create({
+          data: {
+            taxonomyNodeId: data.taxonomyNodeId,
+            name: t("productNameTemplateGroupName"),
+            key: PRODUCT_NAME_TEMPLATE_KEY,
+            separator: data.separator,
+            writesProductName: true,
+            sortOrder: await nextDisplayGroupSort(data.taxonomyNodeId),
+          },
+        });
       }
+
       revalidateCatalog();
       revalidatePath("/admin/products");
       return { message: t("productNameTemplateCleared"), ok: true };

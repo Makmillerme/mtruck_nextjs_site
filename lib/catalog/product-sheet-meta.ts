@@ -45,11 +45,17 @@ export async function loadProductSheetMetaAction(
     fetchDisplayGroupsForNode(nodeId).then(resolveDisplayGroupsByKey),
   ]);
   const writers = displayGroups.filter((group) => group.writesProductName);
+  // Own writer always wins — empty members = auto-name off (blocks parent).
+  const ownWriter = writers.find((group) => !group.inherited) ?? null;
   const nameWriterGroup =
-    writers.find((group) => !group.inherited) ?? writers[0] ?? null;
+    ownWriter ??
+    writers.find((group) => group.members.length > 0) ??
+    null;
   return {
     attributes,
-    nameFromDisplayGroup: Boolean(nameWriterGroup),
+    nameFromDisplayGroup: Boolean(
+      nameWriterGroup && nameWriterGroup.members.length > 0
+    ),
     nameWriterGroup,
   };
 }

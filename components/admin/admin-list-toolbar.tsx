@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -86,9 +85,12 @@ export const AdminFilterTrigger = React.forwardRef<
       <LuListFilter className="size-4 shrink-0" />
       <span className="hidden sm:inline">{label}</span>
       {count > 0 ? (
-        <Badge className="h-5 min-w-5 border-0 bg-primary-foreground px-1.5 text-primary hover:bg-primary-foreground">
+        <span
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-foreground/20 px-1.5 text-[11px] font-semibold tabular-nums text-primary-foreground"
+          aria-hidden
+        >
           {count}
-        </Badge>
+        </span>
       ) : null}
     </Button>
   );
