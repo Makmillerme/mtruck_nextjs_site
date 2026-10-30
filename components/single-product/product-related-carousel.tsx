@@ -17,6 +17,7 @@ import { overflowFieldGutterClassName } from "@/lib/ui/sheet-field";
 import { cn } from "@/lib/utils";
 
 export default function ProductRelatedCarousel({
+  title,
   vehicles,
   catalogHref,
   catalogLabel,
@@ -25,6 +26,7 @@ export default function ProductRelatedCarousel({
   prevLabel,
   nextLabel,
 }: {
+  title: string;
   vehicles: VehicleCardModel[];
   catalogHref: string;
   catalogLabel: string;
@@ -49,6 +51,9 @@ export default function ProductRelatedCarousel({
   const slideClassName =
     "box-border p-px pl-px basis-full lg:basis-[calc((100%-2.5rem)/3)] xl:basis-[calc((100%-3.75rem)/4)]";
 
+  const navButtonClassName =
+    "static left-auto right-auto top-auto size-9 translate-x-0 translate-y-0 border-border bg-card shadow-md";
+
   return (
     <Carousel
       setApi={setApi}
@@ -56,8 +61,28 @@ export default function ProductRelatedCarousel({
         align: "start",
         containScroll: "trimSnaps",
       }}
-      className="relative w-full max-w-full min-w-0 px-11"
+      className="relative w-full max-w-full min-w-0"
     >
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-lg font-bold tracking-tight text-foreground">
+          {title}
+        </h2>
+        <div className="flex shrink-0 items-center gap-2">
+          <CarouselPrevious
+            type="button"
+            className={navButtonClassName}
+            aria-label={prevLabel}
+            onPointerDown={(event) => event.stopPropagation()}
+          />
+          <CarouselNext
+            type="button"
+            className={navButtonClassName}
+            aria-label={nextLabel}
+            onPointerDown={(event) => event.stopPropagation()}
+          />
+        </div>
+      </div>
+
       <CarouselContent
         className="ml-0 gap-5"
         viewportClassName={cn(overflowFieldGutterClassName, "py-1")}
@@ -79,18 +104,6 @@ export default function ProductRelatedCarousel({
           />
         </CarouselItem>
       </CarouselContent>
-      <CarouselPrevious
-        type="button"
-        className="left-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-card pointer-events-auto shadow-md lg:inline-flex"
-        aria-label={prevLabel}
-        onPointerDown={(event) => event.stopPropagation()}
-      />
-      <CarouselNext
-        type="button"
-        className="right-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-card pointer-events-auto shadow-md lg:inline-flex"
-        aria-label={nextLabel}
-        onPointerDown={(event) => event.stopPropagation()}
-      />
     </Carousel>
   );
 }

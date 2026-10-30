@@ -32,12 +32,11 @@ export default function ProductRelated({
 
   return (
     <section className="grid min-w-0 scroll-mt-24 gap-4">
-      <h2 className="text-lg font-bold tracking-tight text-foreground">
-        {title}
-      </h2>
-
       {/* &lt;lg: grid up to 4 + catalog button below */}
       <div className="grid gap-4 lg:hidden">
+        <h2 className="text-lg font-bold tracking-tight text-foreground">
+          {title}
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
           {gridVehicles.map((vehicle) => (
             <VehicleCard
@@ -55,9 +54,10 @@ export default function ProductRelated({
         </div>
       </div>
 
-      {/* ≥lg: Embla carousel + teaser slide */}
+      {/* ≥lg: Embla carousel + teaser slide; nav beside title */}
       <div className="hidden min-w-0 lg:block">
         <ProductRelatedCarousel
+          title={title}
           vehicles={vehicles}
           catalogHref={catalogHref}
           catalogLabel={catalogLabel}

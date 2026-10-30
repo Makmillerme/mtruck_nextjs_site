@@ -46,7 +46,7 @@ export default function ProductDetailsTabs({
   const defaultValue = hasDescription ? "description" : "specs";
 
   return (
-    <div className={cn("page-shell-reading w-full scroll-mt-24", className)}>
+    <div className={cn("w-full scroll-mt-24", className)}>
       <div className={contentTabsCardClassName}>
         <Tabs defaultValue={defaultValue}>
           <TabsList className={contentTabsListClassName}>
