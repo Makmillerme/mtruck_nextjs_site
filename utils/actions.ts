@@ -334,16 +334,16 @@ export const createProductAction = async (
     }
     const parsed = await specsFromFormData(taxonomyNodeId, formData);
     specCreates = toPrismaSpecCreates(parsed.specs);
-    const composedName = await resolveProductNameWithExtra(
-      taxonomyNodeId,
-      parsed.specs,
-      {
-        prefix: String(formData.get('namePrefix') ?? ''),
-        suffix: String(formData.get('nameSuffix') ?? ''),
-      }
-    );
-    if (composedName) {
-      rawData.name = composedName;
+    // Name comes from the classic form input (template only auto-fills on the client).
+    const formName = String(formData.get('name') ?? '').trim();
+    if (formName) {
+      rawData.name = formName;
+    } else {
+      const composedName = await resolveProductNameWithExtra(
+        taxonomyNodeId,
+        parsed.specs
+      );
+      if (composedName) rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
     const files = formData
@@ -546,16 +546,15 @@ export const updateProductAction = async (
       throw new Error(catalogT('parentMissing'));
     }
     const parsed = await specsFromFormData(taxonomyNodeId, formData);
-    const composedName = await resolveProductNameWithExtra(
-      taxonomyNodeId,
-      parsed.specs,
-      {
-        prefix: String(formData.get('namePrefix') ?? ''),
-        suffix: String(formData.get('nameSuffix') ?? ''),
-      }
-    );
-    if (composedName) {
-      rawData.name = composedName;
+    const formName = String(formData.get('name') ?? '').trim();
+    if (formName) {
+      rawData.name = formName;
+    } else {
+      const composedName = await resolveProductNameWithExtra(
+        taxonomyNodeId,
+        parsed.specs
+      );
+      if (composedName) rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
     const statusRaw =

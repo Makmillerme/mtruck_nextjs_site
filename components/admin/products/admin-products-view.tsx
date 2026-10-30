@@ -61,13 +61,9 @@ import {
   tableActionsClassName,
   tableLinkClassName,
 } from "@/components/ui/table";
-import { ProductNameInput } from "@/components/admin/products/product-name-tags";
 import {
-  joinProductName,
-  resolveDisplayGroupParts,
   resolveDisplayGroupString,
   specsFromSheetValues,
-  splitProductNameAroundComposed,
 } from "@/lib/catalog/display-group";
 import { formatSpecCell } from "@/lib/catalog/spec-display";
 import type {
@@ -282,8 +278,8 @@ function ProductSheetFields({
   const catalogT = useTranslations("CatalogAdmin");
   const nameTemplate = hasNameTemplate(nameWriterGroup) ? nameWriterGroup : null;
   const [name, setName] = useState(product?.name ?? "");
-  const [namePrefix, setNamePrefix] = useState("");
-  const [nameSuffix, setNameSuffix] = useState("");
+  const [nameTouched, setNameTouched] = useState(Boolean(product?.name));
+  const lastAutoNameRef = useRef("");
   const [specValues, setSpecValues] = useState<Record<string, string>>(() =>
     product ? specsToInitial(product.specs) : {}
   );
@@ -293,32 +289,6 @@ function ProductSheetFields({
     return getRootChildren(tree, listRootId);
   }, [tree, listRootId]);
 
-  useEffect(() => {
-    const initialSpecs = product ? specsToInitial(product.specs) : {};
-    setSpecValues(initialSpecs);
-    setName(product?.name ?? "");
-    if (!product || !nameTemplate) {
-      setNamePrefix("");
-      setNameSuffix("");
-      return;
-    }
-    const composed = resolveDisplayGroupString(
-      nameTemplate,
-      specsFromSheetValues(attributes, initialSpecs)
-    );
-    const split = splitProductNameAroundComposed(product.name, composed);
-    setNamePrefix(split.prefix);
-    setNameSuffix(split.suffix);
-  }, [product?.id, selectedNodeId, nameTemplate?.id, attributes]);
-
-  const nameParts = useMemo(() => {
-    if (!nameTemplate) return [];
-    return resolveDisplayGroupParts(
-      nameTemplate,
-      specsFromSheetValues(attributes, specValues)
-    );
-  }, [nameTemplate, attributes, specValues]);
-
   const composedName = useMemo(() => {
     if (!nameTemplate) return "";
     return resolveDisplayGroupString(
@@ -327,9 +297,35 @@ function ProductSheetFields({
     );
   }, [nameTemplate, attributes, specValues]);
 
-  const submittedName = nameTemplate
-    ? joinProductName(namePrefix, composedName, nameSuffix)
-    : name;
+  useEffect(() => {
+    const initialSpecs = product ? specsToInitial(product.specs) : {};
+    setSpecValues(initialSpecs);
+    const initialName = product?.name ?? "";
+    setName(initialName);
+    const initialComposed = nameTemplate
+      ? resolveDisplayGroupString(
+          nameTemplate,
+          specsFromSheetValues(attributes, initialSpecs)
+        )
+      : "";
+    lastAutoNameRef.current = initialComposed;
+    // Existing product name is treated as user-owned until specs recompose.
+    setNameTouched(Boolean(initialName) && initialName !== initialComposed);
+  }, [product?.id, selectedNodeId, nameTemplate?.id, attributes]);
+
+  useEffect(() => {
+    if (!nameTemplate) return;
+    if (!composedName) return;
+    if (
+      !nameTouched ||
+      name.trim().length === 0 ||
+      name === lastAutoNameRef.current
+    ) {
+      setName(composedName);
+      lastAutoNameRef.current = composedName;
+      setNameTouched(false);
+    }
+  }, [composedName, nameTemplate, nameTouched, name]);
 
   return (
     <Tabs defaultValue="main" className="grid gap-6">
@@ -386,36 +382,18 @@ function ProductSheetFields({
         <div className="grid gap-2">
           <Label htmlFor="name">{t("productName")}</Label>
           <div className="flex items-center gap-2">
-            {nameTemplate ? (
-              <>
-                <ProductNameInput
-                  resetKey={`${product?.id ?? "new"}-${nameTemplate.id}`}
-                  tags={nameParts.map((part) => ({
-                    id: part.attributeId,
-                    label: part.value ?? part.name,
-                    filled: Boolean(part.value),
-                  }))}
-                  separator={nameTemplate.separator}
-                  prefix={namePrefix}
-                  suffix={nameSuffix}
-                  onPrefixChange={setNamePrefix}
-                  onSuffixChange={setNameSuffix}
-                />
-                <input type="hidden" name="namePrefix" value={namePrefix} />
-                <input type="hidden" name="nameSuffix" value={nameSuffix} />
-                <input type="hidden" id="name" name="name" value={submittedName} />
-              </>
-            ) : (
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                required
-                className="min-w-0 flex-1"
-              />
-            )}
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              value={name}
+              onChange={(event) => {
+                setNameTouched(true);
+                setName(event.target.value);
+              }}
+              required
+              className="min-w-0 flex-1"
+            />
             <ProductNameSettingsDialog
               folderNodeId={selectedNodeId}
               attributes={attributes}
