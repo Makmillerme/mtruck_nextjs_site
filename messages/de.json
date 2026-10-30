@@ -428,7 +428,7 @@
     "keyFactsTitle": "Eckdaten",
     "relatedTitle": "Ähnliche Produkte",
     "relatedViewCatalog": "Zum Katalog",
-    "relatedViewCategory": "Alle in {category}",
+    "relatedViewCategory": "Zum Katalog",
     "relatedCatalogHint": "Weitere Angebote im Katalog",
     "relatedCatalogHintInCategory": "Weitere Angebote in der Kategorie {category}",
     "relatedCarouselPrev": "Vorherige ähnliche",

@@ -428,7 +428,7 @@
     "keyFactsTitle": "Key specs",
     "relatedTitle": "Similar products",
     "relatedViewCatalog": "Go to catalog",
-    "relatedViewCategory": "All in {category}",
+    "relatedViewCategory": "Go to catalog",
     "relatedCatalogHint": "More offers in the catalog",
     "relatedCatalogHintInCategory": "More offers in the {category} category",
     "relatedCarouselPrev": "Previous related",

@@ -218,11 +218,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
               })
             : "/products"
         }
-        catalogLabel={
-          categoryLabel
-            ? t("relatedViewCategory", { category: categoryLabel })
-            : t("relatedViewCatalog")
-        }
+        catalogLabel={t("relatedViewCategory")}
         catalogHint={
           categoryLabel
             ? t("relatedCatalogHintInCategory", {
