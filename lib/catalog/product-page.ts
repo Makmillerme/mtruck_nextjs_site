@@ -120,7 +120,9 @@ export function buildProductKeyFacts(
 function flatSpecRows(specs: SpecWithIds[], locale = "uk"): ProductSpecRow[] {
   return [...specs]
     .sort(
-      (a, b) => (a.attribute.sortOrder ?? 0) - (b.attribute.sortOrder ?? 0)
+      (a, b) =>
+        (a.attribute.sortOrder ?? 0) - (b.attribute.sortOrder ?? 0) ||
+        a.attribute.name.localeCompare(b.attribute.name, "uk")
     )
     .filter((spec) => hasDisplayValue(spec, locale))
     .map((spec) => ({
