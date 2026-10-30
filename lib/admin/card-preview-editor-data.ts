@@ -10,30 +10,15 @@ import {
   fetchTaxonomyNode,
   fetchTaxonomyTree,
   firstTreeNodeId,
-  flattenTaxonomyTree,
 } from "@/lib/catalog/taxonomy";
 import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
 import db from "@/utils/db";
 
-/**
- * Prefer a node that already has CardPreviewLayout (tree order),
- * otherwise the first root.
- */
+/** First folder in tree — fast default for UI Editor redirect. */
 export async function resolveDefaultCardPreviewNodeId(
   tree: TaxonomyTreeNode[]
 ): Promise<string | null> {
-  const flat = flattenTaxonomyTree(tree);
-  if (flat.length === 0) return null;
-
-  const layoutNodeIds = await db.cardPreviewLayout.findMany({
-    select: { taxonomyNodeId: true },
-  });
-  const withLayout = new Set(layoutNodeIds.map((row) => row.taxonomyNodeId));
-
-  for (const node of flat) {
-    if (withLayout.has(node.id)) return node.id;
-  }
-
+  // Prefer first tree node for a fast first paint (no extra layout scan).
   return firstTreeNodeId(tree) ?? null;
 }
 

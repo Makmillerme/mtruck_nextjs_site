@@ -112,34 +112,41 @@ export async function fetchProductPageLayoutsByNodeIds(
     ...new Set(unique.flatMap((id) => ancestorChain(id))),
   ];
 
-  const rows = await prisma.productPageLayout.findMany({
-    where: { taxonomyNodeId: { in: relatedIds } },
-    include: {
-      slots: {
-        orderBy: { sortOrder: "asc" },
-        select: {
-          sortOrder: true,
-          visible: true,
-          attributeId: true,
-          attribute: { select: { key: true } },
+  try {
+    const rows = await prisma.productPageLayout.findMany({
+      where: { taxonomyNodeId: { in: relatedIds } },
+      include: {
+        slots: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            sortOrder: true,
+            visible: true,
+            attributeId: true,
+            attribute: { select: { key: true } },
+          },
         },
       },
-    },
-  });
+    });
 
-  const byNodeId = new Map(
-    rows.map((row) => [row.taxonomyNodeId, row as ProductPageLayoutRow] as const)
-  );
+    const byNodeId = new Map(
+      rows.map(
+        (row) => [row.taxonomyNodeId, row as ProductPageLayoutRow] as const
+      )
+    );
 
-  const map = new Map<string, ProductPageLayoutRow>();
-  for (const nodeId of unique) {
-    for (const id of ancestorChain(nodeId)) {
-      const layout = byNodeId.get(id);
-      if (layout) {
-        map.set(nodeId, layout);
-        break;
+    const map = new Map<string, ProductPageLayoutRow>();
+    for (const nodeId of unique) {
+      for (const id of ancestorChain(nodeId)) {
+        const layout = byNodeId.get(id);
+        if (layout) {
+          map.set(nodeId, layout);
+          break;
+        }
       }
     }
+    return map;
+  } catch (error) {
+    console.error("fetchProductPageLayoutsByNodeIds", error);
+    return new Map<string, ProductPageLayoutRow>();
   }
-  return map;
 }

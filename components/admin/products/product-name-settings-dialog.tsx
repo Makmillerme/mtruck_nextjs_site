@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { MemberOrderPicker } from "@/components/admin/catalog/display-groups-panel";
-import CatalogForm from "@/components/admin/catalog/catalog-form";
-import { CatalogSubmit } from "@/components/admin/catalog/catalog-fields";
 import ProductNameTags from "@/components/admin/products/product-name-tags";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +18,10 @@ import type {
   CatalogAttribute,
   CatalogDisplayGroup,
 } from "@/lib/catalog/types";
+import { notify } from "@/lib/ui/notify";
+import {
+  initialTaxonomyActionState,
+} from "@/utils/taxonomy-action-state";
 import { saveProductNameTemplateAction } from "@/utils/taxonomy-actions";
 import { LuSettings } from "react-icons/lu";
 
@@ -36,6 +38,7 @@ export default function ProductNameSettingsDialog({
 }) {
   const t = useTranslations("CatalogAdmin");
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [memberIds, setMemberIds] = useState<string[]>(
     writerGroup?.members.map((member) => member.attributeId) ?? []
   );
@@ -59,16 +62,42 @@ export default function ProductNameSettingsDialog({
       memberIds
         .map((id) => {
           const attribute = byId.get(id);
-          if (!attribute) return null;
-          return { id, label: attribute.name, filled: true as const };
+          const label =
+            attribute?.name ??
+            writerGroup?.members.find((m) => m.attributeId === id)?.attribute
+              .name ??
+            id;
+          return { id, label, filled: true as const };
         })
-        .filter((item): item is { id: string; label: string; filled: true } =>
-          Boolean(item)
-        ),
-    [memberIds, byId]
+        .filter(Boolean),
+    [memberIds, byId, writerGroup]
   );
 
   const disabled = !folderNodeId;
+
+  function save() {
+    if (!folderNodeId) {
+      notify.error(t("productNameSettingsNeedFolder"));
+      return;
+    }
+    const formData = new FormData();
+    formData.set("taxonomyNodeId", folderNodeId);
+    formData.set("separator", separator);
+    for (const id of memberIds) {
+      formData.append("memberAttributeId", id);
+    }
+    startTransition(async () => {
+      const result = await saveProductNameTemplateAction(
+        initialTaxonomyActionState,
+        formData
+      );
+      notify.fromAction(result);
+      if (result.ok) {
+        setOpen(false);
+        onSaved();
+      }
+    });
+  }
 
   return (
     <>
@@ -97,19 +126,7 @@ export default function ProductNameSettingsDialog({
             <DialogTitle>{t("productNameSettings")}</DialogTitle>
           </DialogHeader>
           {folderNodeId ? (
-            <CatalogForm
-              className="grid gap-4"
-              action={saveProductNameTemplateAction}
-              onSuccess={() => {
-                setOpen(false);
-                onSaved();
-              }}
-            >
-              <input
-                type="hidden"
-                name="taxonomyNodeId"
-                value={folderNodeId}
-              />
+            <div className="grid gap-4">
               <div className="grid gap-2">
                 <p className="text-sm font-medium">
                   {t("productNameTemplatePreview")}
@@ -121,10 +138,11 @@ export default function ProductNameSettingsDialog({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="separator">{t("displayGroupSeparator")}</Label>
+                <Label htmlFor="product-name-separator">
+                  {t("displayGroupSeparator")}
+                </Label>
                 <Input
-                  id="separator"
-                  name="separator"
+                  id="product-name-separator"
                   value={separator}
                   onChange={(event) => setSeparator(event.target.value)}
                 />
@@ -141,12 +159,16 @@ export default function ProductNameSettingsDialog({
                 allowEmpty
               />
               <DialogFooter>
-                <CatalogSubmit
-                  text={t("productNameTemplateSave")}
+                <Button
+                  type="button"
                   className="w-fit"
-                />
+                  disabled={isPending}
+                  onClick={save}
+                >
+                  {t("productNameTemplateSave")}
+                </Button>
               </DialogFooter>
-            </CatalogForm>
+            </div>
           ) : null}
         </DialogContent>
       </Dialog>

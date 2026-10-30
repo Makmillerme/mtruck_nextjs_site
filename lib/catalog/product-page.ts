@@ -74,6 +74,7 @@ type SpecWithIds = SpecForCard & {
   attribute: SpecForCard["attribute"] & {
     id: string;
     name: string;
+    type?: string | null;
     sortOrder?: number;
   };
 };

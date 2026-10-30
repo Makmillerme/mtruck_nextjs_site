@@ -1,5 +1,7 @@
 export const productSpecCardSelect = {
-  attribute: { select: { key: true, unit: true, name: true, sortOrder: true } },
+  attribute: {
+    select: { key: true, unit: true, name: true, sortOrder: true, type: true },
+  },
   option: { select: { label: true } },
   numberValue: true,
   textValue: true,
@@ -33,7 +35,13 @@ export type ProductListItem = {
   taxonomyNodeId: string | null;
   taxonomyNode: { name: string; slug: string } | null;
   specs: {
-    attribute: { key: string; unit: string | null; name: string; sortOrder: number };
+    attribute: {
+      key: string;
+      unit: string | null;
+      name: string;
+      sortOrder: number;
+      type: string;
+    };
     option: { label: string } | null;
     numberValue: number | null;
     textValue: string | null;

@@ -98,21 +98,25 @@ export function MemberOrderPicker({
       <p className="text-sm font-medium">{t("displayGroupMembers")}</p>
       {value.map((id, index) => {
         const attribute = byId.get(id);
-        if (!attribute) return null;
+        const label = attribute?.name ?? id;
         return (
           <div
             key={id}
             className="flex items-center justify-between gap-2 rounded-sm border px-3 py-2"
           >
             <input type="hidden" name="memberAttributeId" value={id} />
-            <span className="min-w-0 truncate text-sm">{attribute.name}</span>
+            <span className="min-w-0 truncate text-sm">{label}</span>
             <div className="flex shrink-0 items-center">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground"
-                onClick={() => move(index, -1)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  move(index, -1);
+                }}
                 disabled={index === 0}
                 aria-label={t("moveUp")}
               >
@@ -123,7 +127,11 @@ export function MemberOrderPicker({
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground"
-                onClick={() => move(index, 1)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  move(index, 1);
+                }}
                 disabled={index === value.length - 1}
                 aria-label={t("moveDown")}
               >
@@ -134,7 +142,11 @@ export function MemberOrderPicker({
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground"
-                onClick={() => onChange(value.filter((item) => item !== id))}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onChange(value.filter((item) => item !== id));
+                }}
                 aria-label={t("displayGroupRemoveMember")}
               >
                 <LuX className="size-4" />

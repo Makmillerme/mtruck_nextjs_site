@@ -119,6 +119,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       key: spec.attribute.key,
       name: spec.attribute.name,
       unit: spec.attribute.unit,
+      type: spec.attribute.type,
       sortOrder: spec.attribute.sortOrder,
     },
     option: spec.option,

@@ -1,13 +1,13 @@
 import {
   resolveProductPageLayout,
   type ProductPageLayoutResolved,
+  type ProductPageLayoutRow,
 } from "@/lib/catalog/product-page-layout";
 import {
   fetchAttributesForNode,
   fetchTaxonomyNode,
   fetchTaxonomyTree,
   firstTreeNodeId,
-  flattenTaxonomyTree,
 } from "@/lib/catalog/taxonomy";
 import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
 import db from "@/utils/db";
@@ -15,18 +15,6 @@ import db from "@/utils/db";
 export async function resolveDefaultProductPageNodeId(
   tree: TaxonomyTreeNode[]
 ): Promise<string | null> {
-  const flat = flattenTaxonomyTree(tree);
-  if (flat.length === 0) return null;
-
-  const layoutNodeIds = await db.productPageLayout.findMany({
-    select: { taxonomyNodeId: true },
-  });
-  const withLayout = new Set(layoutNodeIds.map((row) => row.taxonomyNodeId));
-
-  for (const node of flat) {
-    if (withLayout.has(node.id)) return node.id;
-  }
-
   return firstTreeNodeId(tree) ?? null;
 }
 
@@ -61,54 +49,60 @@ export async function loadProductPageEditorData(
   }
 
   const attributes = await fetchAttributesForNode(selected.id);
-  const ownLayout = await db.productPageLayout.findUnique({
-    where: { taxonomyNodeId: selected.id },
-    include: {
-      slots: {
-        orderBy: { sortOrder: "asc" },
-        select: {
-          sortOrder: true,
-          visible: true,
-          attributeId: true,
-          attribute: { select: { key: true } },
-        },
-      },
-    },
-  });
-
-  let layoutRow = ownLayout;
+  let layoutRow: ProductPageLayoutRow | null = null;
   let inheritedFromAncestor = false;
 
-  if (!layoutRow) {
-    let parentId = selected.parentId;
-    const guard = new Set<string>([selected.id]);
-    while (parentId && !guard.has(parentId)) {
-      guard.add(parentId);
-      const ancestor = await db.productPageLayout.findUnique({
-        where: { taxonomyNodeId: parentId },
-        include: {
-          slots: {
-            orderBy: { sortOrder: "asc" },
-            select: {
-              sortOrder: true,
-              visible: true,
-              attributeId: true,
-              attribute: { select: { key: true } },
-            },
+  try {
+    layoutRow = await db.productPageLayout.findUnique({
+      where: { taxonomyNodeId: selected.id },
+      include: {
+        slots: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            sortOrder: true,
+            visible: true,
+            attributeId: true,
+            attribute: { select: { key: true } },
           },
         },
-      });
-      if (ancestor) {
-        layoutRow = ancestor;
-        inheritedFromAncestor = true;
-        break;
+      },
+    });
+
+    if (!layoutRow) {
+      let parentId = selected.parentId;
+      const guard = new Set<string>([selected.id]);
+      while (parentId && !guard.has(parentId)) {
+        guard.add(parentId);
+        const ancestor = await db.productPageLayout.findUnique({
+          where: { taxonomyNodeId: parentId },
+          include: {
+            slots: {
+              orderBy: { sortOrder: "asc" },
+              select: {
+                sortOrder: true,
+                visible: true,
+                attributeId: true,
+                attribute: { select: { key: true } },
+              },
+            },
+          },
+        });
+        if (ancestor) {
+          layoutRow = ancestor;
+          inheritedFromAncestor = true;
+          break;
+        }
+        const parent = await db.taxonomyNode.findUnique({
+          where: { id: parentId },
+          select: { parentId: true },
+        });
+        parentId = parent?.parentId ?? null;
       }
-      const parent = await db.taxonomyNode.findUnique({
-        where: { id: parentId },
-        select: { parentId: true },
-      });
-      parentId = parent?.parentId ?? null;
     }
+  } catch (error) {
+    console.error("loadProductPageEditorData layout", error);
+    layoutRow = null;
+    inheritedFromAncestor = false;
   }
 
   const resolved: ProductPageLayoutResolved = resolveProductPageLayout(

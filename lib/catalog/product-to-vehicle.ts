@@ -5,12 +5,23 @@ import {
 } from "@/lib/catalog/card-preview";
 
 export type SpecForCard = {
-  attribute: { key: string; unit: string | null; name?: string };
+  attribute: {
+    key: string;
+    unit: string | null;
+    name?: string;
+    type?: string | null;
+  };
   option: { label: string } | null;
   numberValue: number | null;
   textValue: string | null;
   booleanValue: boolean | null;
 };
+
+function isYearAttribute(attribute: SpecForCard["attribute"]) {
+  if (attribute.type === "YEAR") return true;
+  const key = attribute.key.toLowerCase();
+  return key === "year" || key.endsWith("_year") || key.endsWith(".year");
+}
 
 function specMap(specs: SpecForCard[]) {
   const map = new Map<string, SpecForCard>();
@@ -51,13 +62,17 @@ function intlLocale(locale: string) {
   return "en-US";
 }
 
-/** Locale-aware number + unit (e.g. 505 000 км). */
+/** Locale-aware number + unit (e.g. 505 000 км). Years stay as 2019, not 2 019. */
 export function formatSpecDisplay(spec: SpecForCard, locale = "uk"): string {
   if (spec.option?.label) return spec.option.label;
   if (spec.numberValue != null) {
-    const formatted = new Intl.NumberFormat(intlLocale(locale), {
-      maximumFractionDigits: 0,
-    }).format(spec.numberValue);
+    const rounded = Math.round(spec.numberValue);
+    const formatted = isYearAttribute(spec.attribute)
+      ? String(rounded)
+      : new Intl.NumberFormat(intlLocale(locale), {
+          maximumFractionDigits: 0,
+          useGrouping: true,
+        }).format(spec.numberValue);
     const unit = spec.attribute.unit ? ` ${spec.attribute.unit}` : "";
     return `${formatted}${unit}`;
   }
