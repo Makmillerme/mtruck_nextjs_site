@@ -151,7 +151,11 @@ export default function SearchableEntityPicker({
                   autoFocus
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => {
+                    event.stopPropagation();
+                    // Inside FormContainer — Enter must not submit create/edit.
+                    if (event.key === "Enter") event.preventDefault();
+                  }}
                   onPointerDown={(event) => {
                     event.stopPropagation();
                     event.currentTarget.focus();
@@ -168,6 +172,7 @@ export default function SearchableEntityPicker({
                 {showClear ? (
                   <CommandItem
                     value="__clear__"
+                    onMouseDown={(event) => event.preventDefault()}
                     onSelect={() => {
                       onValueChange("");
                       setOpen(false);
@@ -188,6 +193,7 @@ export default function SearchableEntityPicker({
                     key={option.value}
                     value={option.value}
                     keywords={[option.label, ...option.keywords]}
+                    onMouseDown={(event) => event.preventDefault()}
                     onSelect={() => {
                       onValueChange(option.value);
                       setOpen(false);
