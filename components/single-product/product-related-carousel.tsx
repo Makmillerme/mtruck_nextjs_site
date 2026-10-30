@@ -85,7 +85,11 @@ export default function ProductRelatedCarousel({
 
       <CarouselContent
         className="ml-0 gap-5"
-        viewportClassName={cn(overflowFieldGutterClassName, "py-1")}
+        viewportClassName={cn(
+          overflowFieldGutterClassName,
+          // Embla clips overflow-hidden; room for VehicleCard group-hover:shadow-xl (~25px).
+          "py-6"
+        )}
       >
         {vehicles.map((vehicle) => (
           <CarouselItem key={vehicle.id} className={slideClassName}>

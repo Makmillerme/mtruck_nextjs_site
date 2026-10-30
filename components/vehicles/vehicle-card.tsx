@@ -135,14 +135,17 @@ export default function VehicleCard({
     <article className="group h-full">
       <div
         className={cn(
-          "flex h-full overflow-hidden rounded-sm border border-border bg-card shadow-sm transition-shadow duration-500 group-hover:shadow-xl",
+          // Shadow must not share overflow-hidden — it clips box-shadow on hover.
+          "flex h-full rounded-sm border border-border bg-card shadow-sm transition-shadow duration-500 group-hover:shadow-xl",
           isList ? "flex-col md:flex-row" : "flex-col"
         )}
       >
         <div
           className={cn(
-            isList &&
-              "relative aspect-[4/3] w-full md:aspect-auto md:w-[min(38%,20rem)] md:shrink-0 md:self-stretch"
+            "overflow-hidden",
+            isList
+              ? "relative aspect-[4/3] w-full md:aspect-auto md:w-[min(38%,20rem)] md:shrink-0 md:self-stretch md:rounded-l-sm"
+              : "rounded-t-sm"
           )}
         >
           <PhotoCarousel
