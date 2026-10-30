@@ -37,7 +37,7 @@ export default function ProductKeyFacts({
           <div
             key={fact.key}
             className={cn(
-              "grid gap-1 rounded-sm border border-border bg-background",
+              "grid gap-1 rounded-sm border border-border bg-card",
               compact ? "p-2.5" : "gap-1.5 p-3"
             )}
           >

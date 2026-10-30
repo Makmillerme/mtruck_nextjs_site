@@ -279,7 +279,7 @@ export default function PhotoCarousel({
               type="button"
               variant="secondary"
               size="icon"
-              className="pointer-events-auto size-8 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background"
+              className="pointer-events-auto size-8 rounded-full border-0 bg-card/90 shadow-sm backdrop-blur-sm hover:bg-card"
               aria-label={prevLabel}
               onClick={(e) => {
                 e.preventDefault();
@@ -293,7 +293,7 @@ export default function PhotoCarousel({
               type="button"
               variant="secondary"
               size="icon"
-              className="pointer-events-auto size-8 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background"
+              className="pointer-events-auto size-8 rounded-full border-0 bg-card/90 shadow-sm backdrop-blur-sm hover:bg-card"
               aria-label={nextLabel}
               onClick={(e) => {
                 e.preventDefault();
@@ -315,8 +315,8 @@ export default function PhotoCarousel({
                   className={cn(
                     "pointer-events-auto size-1.5 rounded-full transition-colors",
                     i === index
-                      ? "bg-background"
-                      : "bg-background/50 hover:bg-background/80"
+                      ? "bg-card"
+                      : "bg-card/50 hover:bg-card/80"
                   )}
                   onClick={(e) => {
                     e.preventDefault();

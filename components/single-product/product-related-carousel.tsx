@@ -81,13 +81,13 @@ export default function ProductRelatedCarousel({
       </CarouselContent>
       <CarouselPrevious
         type="button"
-        className="left-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-background pointer-events-auto shadow-md lg:inline-flex"
+        className="left-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-card pointer-events-auto shadow-md lg:inline-flex"
         aria-label={prevLabel}
         onPointerDown={(event) => event.stopPropagation()}
       />
       <CarouselNext
         type="button"
-        className="right-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-background pointer-events-auto shadow-md lg:inline-flex"
+        className="right-0 top-1/2 z-30 hidden size-9 -translate-y-1/2 border-border bg-card pointer-events-auto shadow-md lg:inline-flex"
         aria-label={nextLabel}
         onPointerDown={(event) => event.stopPropagation()}
       />

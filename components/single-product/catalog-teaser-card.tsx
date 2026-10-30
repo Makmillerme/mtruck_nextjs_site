@@ -20,7 +20,7 @@ export default function CatalogTeaserCard({
     <article className={cn("group h-full", className)}>
       <Link
         href={href}
-        className="flex h-full min-h-full flex-col items-center justify-center gap-3 overflow-hidden rounded-sm border border-border bg-background px-5 py-8 text-center shadow-sm transition-shadow duration-500 group-hover:shadow-xl sm:px-6"
+        className="flex h-full min-h-full flex-col items-center justify-center gap-3 overflow-hidden rounded-sm border border-border bg-card px-5 py-8 text-center shadow-sm transition-shadow duration-500 group-hover:shadow-xl sm:px-6"
       >
         <LuLayoutGrid
           className="size-8 text-muted-foreground/80 transition-colors group-hover:text-foreground sm:size-9"

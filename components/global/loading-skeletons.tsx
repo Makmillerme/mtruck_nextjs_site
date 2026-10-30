@@ -47,7 +47,7 @@ export function LoadingCatalogGrid({
 /** Vehicle-card shaped skeleton (aspect media + body). */
 export function LoadingProductCard() {
   return (
-    <article className="overflow-hidden rounded-sm border border-border bg-background">
+    <article className="overflow-hidden rounded-sm border border-border bg-card">
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="space-y-3 p-4">
         <Skeleton className="h-3 w-1/3" />
@@ -99,7 +99,7 @@ export function LoadingCatalogShell({
       aria-label="Loading catalog"
     >
       <aside className="hidden min-h-[28rem] lg:block">
-        <div className="flex h-full flex-col gap-4 rounded-sm border border-border bg-background p-4 shadow-sm">
+        <div className="flex h-full flex-col gap-4 rounded-sm border border-border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-5 w-24" />
             <Skeleton className="h-8 w-16" />

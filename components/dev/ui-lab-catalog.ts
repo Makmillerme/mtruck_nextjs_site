@@ -29,9 +29,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "layout",
     category: "layout",
     title: "Правила розмітки",
-    hint: "Manrope, gutters, shell widths (home/catalog/product/reading/admin), section-spacing, full-bleed.",
+    hint: "Manrope, canvas vs white surface, gutters, shell widths, section-spacing, full-bleed.",
     keywords:
-      "layout розмітка gutter shell page-shell home catalog product reading admin відступ padding page-container page-content section-spacing typography шрифт font manrope кирилиця full-bleed",
+      "layout розмітка canvas surface background card gutter shell page-shell home catalog product reading admin відступ padding page-container page-content section-spacing typography шрифт font manrope кирилиця full-bleed",
   },
   {
     id: "catalog-filter",

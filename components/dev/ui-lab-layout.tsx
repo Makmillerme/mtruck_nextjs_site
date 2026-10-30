@@ -99,6 +99,46 @@ function RuleCard({
 export default function UiLabLayoutRules() {
   return (
     <div className="grid gap-6">
+      <RuleCard title="Canvas vs surface">
+        <p className="text-sm text-muted-foreground">
+          Сторінка — дуже світлий холодний сірий canvas ({" "}
+          <code className="text-xs">--background</code>
+          ). Поверхні (картки, popover, sidebar, PDP details) — чистий білий{" "}
+          <code className="text-xs">--card</code> /{" "}
+          <code className="text-xs">bg-card</code>. Обидва виглядають «білими»,
+          але біле на сірому дає легку ієрархію без важких тіней. Не теплий
+          cream.
+        </p>
+        <div className="mt-3 overflow-hidden rounded-sm border border-border">
+          <div className="grid gap-3 bg-background p-4">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              live tokens — bg-background / bg-card
+            </p>
+            <div className="rounded-sm border border-border bg-card p-4 shadow-sm">
+              <p className="text-sm font-semibold text-foreground">
+                Surface (білий)
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Картка / buy-box / details tabs —{" "}
+                <code className="text-xs">bg-card</code> на canvas.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-sm border border-dashed border-border/80 bg-background px-3 py-4 text-center text-[11px] text-muted-foreground">
+                canvas
+              </div>
+              <div className="rounded-sm border border-border bg-card px-3 py-4 text-center text-[11px] text-foreground">
+                card / white
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Токени: <code>--background: 210 18% 97%</code>,{" "}
+          <code>--card / --popover: 0 0% 100%</code>.
+        </p>
+      </RuleCard>
+
       <RuleCard title="Шрифт">
         <p className="text-sm text-muted-foreground">
           Єдиний шрифт сайту: <code className="text-xs">Manrope</code> (

@@ -224,7 +224,7 @@ export default function ProductLightbox({
         className={cn(
           // Phone: full bleed. sm+: width-led shell — shorter than before so landscape
           // object-contain does not leave a huge letterbox above/below the photo.
-          "z-[110] flex h-[100dvh] max-h-[100dvh] w-screen max-w-none translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0",
+          "z-[110] flex h-[100dvh] max-h-[100dvh] w-screen max-w-none translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-none border-0 bg-card p-0",
           "sm:h-[min(80vh,36rem)] sm:max-h-[80vh] sm:w-[min(100vw-1.5rem,72rem)] sm:max-w-5xl sm:rounded-sm",
           "lg:h-[min(82vh,40rem)] lg:max-h-[82vh] lg:max-w-6xl"
         )}
@@ -335,7 +335,7 @@ export default function ProductLightbox({
                       type="button"
                       variant="secondary"
                       size="icon"
-                      className="pointer-events-auto size-9 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm"
+                      className="pointer-events-auto size-9 rounded-full border-0 bg-card/90 shadow-sm backdrop-blur-sm"
                       aria-label={t("galleryPrev")}
                       onClick={() => {
                         resetZoom();
@@ -348,7 +348,7 @@ export default function ProductLightbox({
                       type="button"
                       variant="secondary"
                       size="icon"
-                      className="pointer-events-auto size-9 rounded-full border-0 bg-background/90 shadow-sm backdrop-blur-sm"
+                      className="pointer-events-auto size-9 rounded-full border-0 bg-card/90 shadow-sm backdrop-blur-sm"
                       aria-label={t("galleryNext")}
                       onClick={() => {
                         resetZoom();

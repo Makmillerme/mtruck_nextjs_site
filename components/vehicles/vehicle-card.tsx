@@ -135,7 +135,7 @@ export default function VehicleCard({
     <article className="group h-full">
       <div
         className={cn(
-          "flex h-full overflow-hidden rounded-sm border border-border bg-background shadow-sm transition-shadow duration-500 group-hover:shadow-xl",
+          "flex h-full overflow-hidden rounded-sm border border-border bg-card shadow-sm transition-shadow duration-500 group-hover:shadow-xl",
           isList ? "flex-col md:flex-row" : "flex-col"
         )}
       >
@@ -166,7 +166,7 @@ export default function VehicleCard({
                   {showStatus ? (
                     <Badge
                       variant="secondary"
-                      className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-background/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-background/90 sm:px-3 sm:py-1.5 sm:text-xs"
+                      className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-card/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-card/90 sm:px-3 sm:py-1.5 sm:text-xs"
                     >
                       <span
                         className={cn(

@@ -31,7 +31,7 @@ export default function ProductGallery({
 
   const zoomHint = (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-end p-2.5">
-      <span className="inline-flex items-center gap-1.5 rounded-sm bg-background/90 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
+      <span className="inline-flex items-center gap-1.5 rounded-sm bg-card/90 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
         <LuExpand className="size-3.5" aria-hidden />
         {t("galleryExpand")}
       </span>

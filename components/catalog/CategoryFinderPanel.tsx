@@ -620,7 +620,7 @@ export default function CategoryFinderPanel({
         <p className="text-sm text-muted-foreground">{t("emptyChildren")}</p>
       ) : null}
 
-      <div className="mt-6 rounded-sm border border-border bg-background p-4 shadow-sm md:mt-8 md:p-5">
+      <div className="mt-6 rounded-sm border border-border bg-card p-4 shadow-sm md:mt-8 md:p-5">
         {facets.length === 0 ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <p className="text-sm text-muted-foreground">{t("emptyFacets")}</p>
