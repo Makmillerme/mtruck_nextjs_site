@@ -6,15 +6,9 @@ import {
 } from "@/components/ui/accordion";
 import type { ProductSpecGroup } from "@/lib/catalog/product-page";
 
-function SpecPairCell({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-6 text-sm">
+    <div className="flex items-baseline justify-between gap-6 py-2.5 text-sm">
       <span className="min-w-0 text-muted-foreground">{label}</span>
       <span className="shrink-0 text-right font-medium text-foreground">
         {value}
@@ -23,33 +17,35 @@ function SpecPairCell({
   );
 }
 
-/** One shared border per visual row so left/right separators stay aligned. */
+/**
+ * Column-major: left column = first half (top→bottom), right = rest (top→bottom).
+ * Order stays as in the data model / display group; no fixed cell count.
+ */
 function SpecRows({ rows }: { rows: ProductSpecGroup["rows"] }) {
-  const pairs: Array<
-    [ProductSpecGroup["rows"][number], ProductSpecGroup["rows"][number] | null]
-  > = [];
-  for (let i = 0; i < rows.length; i += 2) {
-    pairs.push([rows[i], rows[i + 1] ?? null]);
-  }
+  if (rows.length === 0) return null;
+
+  const mid = Math.ceil(rows.length / 2);
+  const left = rows.slice(0, mid);
+  const right = rows.slice(mid);
 
   return (
-    <div className="grid gap-0">
-      {pairs.map(([left, right]) => (
-        <div
-          key={left.id}
-          className="grid gap-x-10 border-b border-border/60 py-2.5 last:border-b-0 md:grid-cols-2"
-        >
-          <SpecPairCell label={left.label} value={left.value} />
-          {right ? (
-            <SpecPairCell label={right.label} value={right.value} />
-          ) : (
-            <div className="hidden md:block" aria-hidden />
-          )}
+    <div className="grid gap-x-10 md:grid-cols-2">
+      <div className="min-w-0 divide-y divide-border/60">
+        {left.map((row) => (
+          <SpecRow key={row.id} label={row.label} value={row.value} />
+        ))}
+      </div>
+      {right.length > 0 ? (
+        <div className="min-w-0 divide-y divide-border/60">
+          {right.map((row) => (
+            <SpecRow key={row.id} label={row.label} value={row.value} />
+          ))}
         </div>
-      ))}
+      ) : null}
     </div>
   );
 }
+
 
 export default function ProductSpecs({
   groups,
