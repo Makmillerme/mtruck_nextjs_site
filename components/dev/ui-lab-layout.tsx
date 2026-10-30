@@ -16,7 +16,7 @@ const SHELL_SAMPLES: {
   { shell: "catalog", max: "1920px", use: "Каталог (.page-content)" },
   { shell: "product", max: "1520px", use: "PDP (layout .page-container)" },
   { shell: "reading", max: "1280px", use: "Вузькі текстові блоки PDP" },
-  { shell: "admin", max: "none + 32px gutter", use: "Адмінка" },
+  { shell: "admin", max: "none (shared gutters)", use: "Адмінка" },
 ];
 
 const TYPE_SAMPLES = [
@@ -178,15 +178,15 @@ export default function UiLabLayoutRules() {
             спільні gutters; стеля ширини — через shell (нижче).
           </li>
           <li>
-            Mobile (&lt; 40rem): <code className="text-xs">padding-inline: 1rem</code>{" "}
-            (~16px).
+            Mobile (&lt; 40rem):{" "}
+            <code className="text-xs">padding-inline: 1.25rem</code> (~20px).
           </li>
           <li>
             Tablet+:{" "}
             <code className="text-xs">
-              clamp(1.75rem, 1.5rem + 0.45vw, 1.875rem)
+              clamp(2rem, 1.75rem + 0.5vw, 2.25rem)
             </code>{" "}
-            (~28–30px). Admin shell: <code className="text-xs">2rem</code> (32px).
+            (~32–36px). Один канон для всіх маршрутів (включно з admin).
           </li>
           <li>
             Navbar і Footer — ті самі gutters, без per-route max-width (chrome не
