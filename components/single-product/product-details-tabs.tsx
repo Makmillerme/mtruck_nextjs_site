@@ -1,5 +1,6 @@
 "use client";
 
+import ProductEquipmentList from "@/components/single-product/product-equipment-list";
 import ProductSpecs from "@/components/single-product/product-specs";
 import {
   Tabs,
@@ -7,7 +8,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import type { ProductSpecGroup } from "@/lib/catalog/product-page";
+import type { ProductDetailsTab } from "@/lib/catalog/product-page";
 import { cn } from "@/lib/utils";
 
 /** Content / underline tabs — PDP reading card. Framed navy Tabs stay default elsewhere. */
@@ -21,74 +22,65 @@ export const contentTabsCardClassName =
   "rounded-sm border border-border bg-card p-4 md:p-6";
 
 type ProductDetailsTabsProps = {
-  description?: string | null;
-  specGroups: ProductSpecGroup[];
-  descriptionTab: string;
-  specsTab: string;
-  aboutTitle: string;
+  tabs: ProductDetailsTab[];
+  /** Fallback heading inside TEXT tabs when body has no own title. */
+  textHeading?: string;
   className?: string;
 };
 
 export default function ProductDetailsTabs({
-  description,
-  specGroups,
-  descriptionTab,
-  specsTab,
-  aboutTitle,
+  tabs,
+  textHeading,
   className,
 }: ProductDetailsTabsProps) {
-  const trimmed = description?.trim() ?? "";
-  const hasDescription = trimmed.length > 0;
-  const hasSpecs = specGroups.length > 0;
+  if (tabs.length === 0) return null;
 
-  if (!hasDescription && !hasSpecs) return null;
-
-  const defaultValue = hasDescription ? "description" : "specs";
+  const defaultValue = tabs[0]?.id;
 
   return (
     <div className={cn("w-full scroll-mt-24", className)}>
       <div className={contentTabsCardClassName}>
-        <Tabs defaultValue={defaultValue}>
+        <Tabs defaultValue={defaultValue} key={defaultValue}>
           <TabsList className={contentTabsListClassName}>
-            {hasDescription ? (
+            {tabs.map((tab) => (
               <TabsTrigger
-                value="description"
+                key={tab.id}
+                value={tab.id}
                 className={contentTabsTriggerClassName}
               >
-                {descriptionTab}
+                {tab.name}
               </TabsTrigger>
-            ) : null}
-            {hasSpecs ? (
-              <TabsTrigger
-                value="specs"
-                className={contentTabsTriggerClassName}
-              >
-                {specsTab}
-              </TabsTrigger>
-            ) : null}
+            ))}
           </TabsList>
 
-          {hasDescription ? (
+          {tabs.map((tab) => (
             <TabsContent
-              value="description"
+              key={tab.id}
+              value={tab.id}
               className="mt-6 focus-visible:ring-0"
             >
-              <div className="grid gap-3">
-                <h3 className="text-lg font-bold tracking-tight text-foreground">
-                  {aboutTitle}
-                </h3>
-                <p className="whitespace-pre-wrap leading-7 text-foreground/90">
-                  {trimmed}
-                </p>
-              </div>
-            </TabsContent>
-          ) : null}
+              {tab.kind === "TEXT" ? (
+                <div className="grid gap-3">
+                  {textHeading ? (
+                    <h3 className="text-lg font-bold tracking-tight text-foreground">
+                      {textHeading}
+                    </h3>
+                  ) : null}
+                  <p className="whitespace-pre-wrap leading-7 text-foreground/90">
+                    {tab.body}
+                  </p>
+                </div>
+              ) : null}
 
-          {hasSpecs ? (
-            <TabsContent value="specs" className="mt-6 focus-visible:ring-0">
-              <ProductSpecs groups={specGroups} />
+              {tab.kind === "TABLE" ? (
+                <ProductSpecs groups={tab.groups} />
+              ) : null}
+
+              {tab.kind === "LIST" ? (
+                <ProductEquipmentList items={tab.items} />
+              ) : null}
             </TabsContent>
-          ) : null}
+          ))}
         </Tabs>
       </div>
     </div>

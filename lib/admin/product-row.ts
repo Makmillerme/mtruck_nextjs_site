@@ -4,6 +4,8 @@ import type { AttributeType, Prisma } from "@prisma/client";
 export type AdminProductSpecDTO = {
   attributeId: string;
   optionId: string | null;
+  optionIds?: string[];
+  optionLabels?: string[];
   numberValue: number | null;
   textValue: string | null;
   booleanValue: boolean | null;
@@ -28,18 +30,25 @@ export type AdminProductRowDTO = {
   specs: AdminProductSpecDTO[];
 };
 
+const specInclude = {
+  option: { select: { id: true, label: true, slug: true } },
+  selectedOptions: {
+    include: {
+      option: { select: { id: true, label: true, slug: true } },
+    },
+  },
+  attribute: {
+    select: { id: true, key: true, name: true, type: true, unit: true },
+  },
+} as const;
+
 export const adminProductListInclude = {
   images: {
     orderBy: { sortOrder: "asc" as const },
     select: { id: true, url: true, sortOrder: true },
   },
   specs: {
-    include: {
-      option: { select: { id: true, label: true, slug: true } },
-      attribute: {
-        select: { id: true, key: true, name: true, type: true, unit: true },
-      },
-    },
+    include: specInclude,
   },
 } satisfies Prisma.ProductInclude;
 
@@ -48,6 +57,11 @@ export const adminProductSlimInclude = {
   specs: {
     include: {
       option: { select: { id: true, label: true, slug: true } },
+      selectedOptions: {
+        include: {
+          option: { select: { id: true, label: true, slug: true } },
+        },
+      },
       attribute: {
         select: { id: true, key: true, type: true, unit: true },
       },
@@ -66,18 +80,23 @@ type ProductWithSlimRelations = Prisma.ProductGetPayload<{
 function mapSpecs(
   specs: ProductWithAdminRelations["specs"] | ProductWithSlimRelations["specs"]
 ): AdminProductSpecDTO[] {
-  return specs.map((spec) => ({
-    attributeId: spec.attributeId,
-    optionId: spec.optionId,
-    numberValue: spec.numberValue,
-    textValue: spec.textValue,
-    booleanValue: spec.booleanValue,
-    optionLabel: spec.option?.label ?? null,
-    optionSlug: spec.option?.slug ?? null,
-    attributeKey: spec.attribute?.key ?? null,
-    unit: spec.attribute?.unit ?? null,
-    type: spec.attribute?.type ?? null,
-  }));
+  return specs.map((spec) => {
+    const selected = "selectedOptions" in spec ? spec.selectedOptions : [];
+    return {
+      attributeId: spec.attributeId,
+      optionId: spec.optionId,
+      optionIds: selected.map((row) => row.optionId),
+      optionLabels: selected.map((row) => row.option.label),
+      numberValue: spec.numberValue,
+      textValue: spec.textValue,
+      booleanValue: spec.booleanValue,
+      optionLabel: spec.option?.label ?? null,
+      optionSlug: spec.option?.slug ?? null,
+      attributeKey: spec.attribute?.key ?? null,
+      unit: spec.attribute?.unit ?? null,
+      type: spec.attribute?.type ?? null,
+    };
+  });
 }
 
 export function mapAdminProductRow(

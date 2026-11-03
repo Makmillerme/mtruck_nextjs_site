@@ -85,7 +85,23 @@ function Sidebar({
       return;
     }
     event.preventDefault();
-    softNav.startTransition(() => router.push(href));
+    // Stay on UI editor: keep tab/node so SoftNav does not remount via bare /admin/ui.
+    let target = href;
+    if (href === "/admin/ui" && isCmsUiEditor(pathname)) {
+      const tab = searchParams.get("tab")?.trim() || "cardPreview";
+      const node = searchParams.get("node")?.trim();
+      target = node
+        ? `/admin/ui?tab=${tab}&node=${node}`
+        : `/admin/ui?tab=${tab}`;
+      if (
+        pathname === "/admin/ui" &&
+        (searchParams.get("tab")?.trim() || "cardPreview") === tab &&
+        (searchParams.get("node")?.trim() || "") === (node || "")
+      ) {
+        return;
+      }
+    }
+    softNav.startTransition(() => router.push(target));
   }
 
   useEffect(() => {

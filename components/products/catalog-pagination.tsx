@@ -11,12 +11,29 @@ import {
 import { useEdgeMenuAlign } from "@/lib/use-edge-menu-align";
 import { cn } from "@/lib/utils";
 import {
-  CATALOG_PAGE_SIZES,
+  CATALOG_PAGE_SIZES_NARROW,
+  CATALOG_WIDE_PAGE_SIZE_MQ,
+  catalogPageSizesForViewport,
+  nearestCatalogPageSize,
   type CatalogPageSize,
 } from "@/utils/catalog-query";
 import { useTranslations } from "next-intl";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuChevronDown, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+
+function useCatalogPageSizeOptions() {
+  const [wide3Col, setWide3Col] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(CATALOG_WIDE_PAGE_SIZE_MQ);
+    const sync = () => setWide3Col(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return catalogPageSizesForViewport(wide3Col);
+}
 
 export default function CatalogPagination({
   page,
@@ -38,6 +55,16 @@ export default function CatalogPagination({
   const safePage = Math.min(Math.max(1, page), safeCount);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { align, onOpenChange, collisionPadding } = useEdgeMenuAlign("end");
+  const pageSizeOptions = useCatalogPageSizeOptions();
+  const onPageSizeChangeRef = useRef(onPageSizeChange);
+  onPageSizeChangeRef.current = onPageSizeChange;
+
+  useEffect(() => {
+    if ((pageSizeOptions as readonly number[]).includes(pageSize)) return;
+    onPageSizeChangeRef.current(
+      nearestCatalogPageSize(pageSize, pageSizeOptions)
+    );
+  }, [pageSize, pageSizeOptions]);
 
   return (
     <div
@@ -99,12 +126,19 @@ export default function CatalogPagination({
             className="min-w-0 w-max"
           >
             <DropdownMenuRadioGroup
-              value={String(pageSize)}
+              value={String(
+                (pageSizeOptions as readonly number[]).includes(pageSize)
+                  ? pageSize
+                  : nearestCatalogPageSize(pageSize, pageSizeOptions)
+              )}
               onValueChange={(value) =>
                 onPageSizeChange(Number(value) as CatalogPageSize)
               }
             >
-              {CATALOG_PAGE_SIZES.map((size) => (
+              {(pageSizeOptions.length > 0
+                ? pageSizeOptions
+                : CATALOG_PAGE_SIZES_NARROW
+              ).map((size) => (
                 <DropdownMenuRadioItem key={size} value={String(size)}>
                   {size}
                 </DropdownMenuRadioItem>

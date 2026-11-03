@@ -9,9 +9,35 @@ export const CATALOG_SORTS = [
 
 export type CatalogSort = (typeof CATALOG_SORTS)[number];
 
-export const CATALOG_PAGE_SIZES = [10, 25, 40] as const;
+/** 1–2 cards per row (< xl): keep full rows of 1–2. */
+export const CATALOG_PAGE_SIZES_NARROW = [10, 20, 30] as const;
+/** 3 cards per row (xl+), matches ProductsGrid `xl:grid-cols-3`. */
+export const CATALOG_PAGE_SIZES_WIDE = [9, 18, 36] as const;
+export const CATALOG_PAGE_SIZES = [9, 10, 18, 20, 30, 36] as const;
 export type CatalogPageSize = (typeof CATALOG_PAGE_SIZES)[number];
 export const DEFAULT_CATALOG_PAGE_SIZE: CatalogPageSize = 10;
+
+/** Tailwind `xl` — same breakpoint as catalog card grid 3-col. */
+export const CATALOG_WIDE_PAGE_SIZE_MQ = "(min-width: 1280px)";
+
+const LEGACY_CATALOG_PAGE_SIZES: Record<number, CatalogPageSize> = {
+  25: 20,
+  40: 36,
+};
+
+export function nearestCatalogPageSize(
+  current: number,
+  options: readonly CatalogPageSize[]
+): CatalogPageSize {
+  const list = options.length > 0 ? options : CATALOG_PAGE_SIZES_NARROW;
+  return list.reduce((best, size) =>
+    Math.abs(size - current) < Math.abs(best - current) ? size : best
+  );
+}
+
+export function catalogPageSizesForViewport(wide3Col: boolean): readonly CatalogPageSize[] {
+  return wide3Col ? CATALOG_PAGE_SIZES_WIDE : CATALOG_PAGE_SIZES_NARROW;
+}
 
 export type CatalogRange = {
   min?: number;
@@ -46,6 +72,8 @@ export function parseCatalogSort(value?: string | null): CatalogSort {
 
 export function parseCatalogPageSize(value?: string | null): CatalogPageSize {
   const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_CATALOG_PAGE_SIZE;
+  if (LEGACY_CATALOG_PAGE_SIZES[n]) return LEGACY_CATALOG_PAGE_SIZES[n];
   return CATALOG_PAGE_SIZES.includes(n as CatalogPageSize)
     ? (n as CatalogPageSize)
     : DEFAULT_CATALOG_PAGE_SIZE;

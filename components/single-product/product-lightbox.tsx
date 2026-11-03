@@ -231,7 +231,13 @@ export default function ProductLightbox({
       >
         <DialogTitle className="sr-only">{t("galleryDialogTitle")}</DialogTitle>
 
-        <div className="flex min-h-0 flex-1 flex-col md:grid md:grid-cols-[7.5rem_minmax(0,1fr)]">
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col",
+            slides.length > 1 &&
+              "md:grid md:grid-cols-[7.5rem_minmax(0,1fr)]"
+          )}
+        >
           {slides.length > 1 ? (
             <div className="hidden min-h-0 overflow-y-auto border-r border-border p-2 md:block">
               <div className="grid gap-2">

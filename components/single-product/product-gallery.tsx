@@ -39,13 +39,16 @@ export default function ProductGallery({
   );
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 w-full flex-col">
       <PhotoCarousel
         variant="page"
         images={images}
         priority={priority}
         sizes={sizes}
-        className={cn("overflow-hidden rounded-sm", className)}
+        className={cn(
+          "min-h-0 min-w-0 w-full flex-1 overflow-hidden rounded-sm",
+          className
+        )}
         onImageClick={openAt}
         overlay={zoomHint}
         prevLabel={t("galleryPrev")}
@@ -59,6 +62,6 @@ export default function ProductGallery({
         startIndex={startIndex}
         onOpenChange={setOpen}
       />
-    </>
+    </div>
   );
 }

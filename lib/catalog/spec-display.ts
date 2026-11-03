@@ -3,6 +3,7 @@ import type { CatalogAttribute, AttributeTypeName } from "./types";
 export type SpecDisplayValue = {
   attributeId: string;
   optionLabel?: string | null;
+  optionLabels?: string[] | null;
   numberValue?: number | null;
   textValue?: string | null;
   booleanValue?: boolean | null;
@@ -14,18 +15,26 @@ export function formatSpecCell(
   attribute: CatalogAttribute,
   spec: SpecDisplayValue | undefined,
   yesLabel = "Так",
-  noLabel = "—"
+  noLabel = "Ні",
+  emptyLabel = "—"
 ): string {
-  if (!spec) return noLabel;
+  if (!spec) return emptyLabel;
   if (attribute.type === "SELECT") {
-    return spec.optionLabel?.trim() || noLabel;
+    return spec.optionLabel?.trim() || emptyLabel;
+  }
+  if (attribute.type === "MULTI_SELECT") {
+    const labels = (spec.optionLabels ?? [])
+      .map((label) => label.trim())
+      .filter(Boolean);
+    if (labels.length === 0) return emptyLabel;
+    return labels.join(", ");
   }
   if (attribute.type === "TEXT") {
-    return spec.textValue?.trim() || noLabel;
+    return spec.textValue?.trim() || emptyLabel;
   }
   if (attribute.type === "NUMBER" || attribute.type === "YEAR") {
     if (spec.numberValue == null || !Number.isFinite(spec.numberValue)) {
-      return noLabel;
+      return emptyLabel;
     }
     const raw =
       attribute.type === "YEAR"
@@ -35,8 +44,8 @@ export function formatSpecCell(
     return unit ? `${raw} ${unit}` : raw;
   }
   if (attribute.type === "BOOLEAN") {
-    if (spec.booleanValue == null) return noLabel;
+    if (spec.booleanValue == null) return emptyLabel;
     return spec.booleanValue ? yesLabel : noLabel;
   }
-  return noLabel;
+  return emptyLabel;
 }

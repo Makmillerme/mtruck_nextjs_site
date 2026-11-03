@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
-import { LuTrash2, LuPen } from "react-icons/lu";
+import { LuPen, LuShoppingCart, LuTrash2 } from "react-icons/lu";
 import { useTranslations } from "next-intl";
 
 type btnSize = "default" | "lg" | "sm";
@@ -180,8 +180,11 @@ export const ProductSignInButton = () => {
   const t = useTranslations("Product");
   const href = `/sign-in?redirect_url=${encodeURIComponent(pathname || "/products")}`;
   return (
-    <Button type="button" size="lg" asChild>
-      <Link href={href}>{t("signInToOrder")}</Link>
+    <Button type="button" size="lg" className="w-full" asChild>
+      <Link href={href}>
+        <LuShoppingCart className="size-4" aria-hidden />
+        {t("signInToOrder")}
+      </Link>
     </Button>
   );
 };

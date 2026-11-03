@@ -1,13 +1,16 @@
 import {
+  productPageLayoutInclude,
   resolveProductPageLayout,
   type ProductPageLayoutResolved,
   type ProductPageLayoutRow,
+  type ProductPageTabKindName,
+  type ProductPageSystemSourceName,
 } from "@/lib/catalog/product-page-layout";
 import {
   fetchAttributesForNode,
   fetchTaxonomyNode,
   fetchTaxonomyTree,
-  firstTreeNodeId,
+  firstLeafTreeNodeId,
 } from "@/lib/catalog/taxonomy";
 import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
 import db from "@/utils/db";
@@ -15,12 +18,40 @@ import db from "@/utils/db";
 export async function resolveDefaultProductPageNodeId(
   tree: TaxonomyTreeNode[]
 ): Promise<string | null> {
-  return firstTreeNodeId(tree) ?? null;
+  const withLayout = await db.productPageLayout.findMany({
+    select: { taxonomyNodeId: true },
+  });
+  const configured = new Set(withLayout.map((row) => row.taxonomyNodeId));
+  const preferConfigured = (nodes: TaxonomyTreeNode[]): string | undefined => {
+    for (const node of nodes) {
+      if (node.children.length === 0) {
+        if (configured.has(node.id)) return node.id;
+      } else {
+        const nested = preferConfigured(node.children);
+        if (nested) return nested;
+      }
+    }
+    return undefined;
+  };
+  return preferConfigured(tree) ?? firstLeafTreeNodeId(tree) ?? null;
 }
 
-export type ProductPageEditorSlot = {
+export type ProductPageEditorKeyFactSlot = {
   attributeId: string;
   visible: boolean;
+};
+
+export type ProductPageEditorTabSlot = {
+  attributeId: string | null;
+  systemSource: ProductPageSystemSourceName | null;
+  visible: boolean;
+};
+
+export type ProductPageEditorTab = {
+  id: string;
+  name: string;
+  kind: ProductPageTabKindName;
+  slots: ProductPageEditorTabSlot[];
 };
 
 export type ProductPageEditorPayload = {
@@ -28,9 +59,49 @@ export type ProductPageEditorPayload = {
   selectedNodeId: string | null;
   selectedNodeName: string | null;
   attributes: CatalogAttribute[];
-  slots: ProductPageEditorSlot[];
+  keyFactsMax: number;
+  keyFactSlots: ProductPageEditorKeyFactSlot[];
+  tabs: ProductPageEditorTab[];
   inheritedFromAncestor: boolean;
 };
+
+async function loadLayoutRowForNode(
+  nodeId: string,
+  parentId: string | null
+): Promise<{ row: ProductPageLayoutRow | null; inherited: boolean }> {
+  try {
+    const own = await db.productPageLayout.findUnique({
+      where: { taxonomyNodeId: nodeId },
+      include: productPageLayoutInclude,
+    });
+    if (own) {
+      return { row: own as ProductPageLayoutRow, inherited: false };
+    }
+
+    let currentParent = parentId;
+    const guard = new Set<string>([nodeId]);
+    while (currentParent && !guard.has(currentParent)) {
+      guard.add(currentParent);
+      const ancestor = await db.productPageLayout.findUnique({
+        where: { taxonomyNodeId: currentParent },
+        include: productPageLayoutInclude,
+      });
+      if (ancestor) {
+        return { row: ancestor as ProductPageLayoutRow, inherited: true };
+      }
+      const parent = await db.taxonomyNode.findUnique({
+        where: { id: currentParent },
+        select: { parentId: true },
+      });
+      currentParent = parent?.parentId ?? null;
+    }
+    return { row: null, inherited: false };
+  } catch (error) {
+    // Stale Prisma client (missing Tab/KeyFact models) used to hide here → empty editor.
+    console.error("loadProductPageEditorData layout", error);
+    throw error;
+  }
+}
 
 export async function loadProductPageEditorData(
   nodeId?: string | null
@@ -43,67 +114,18 @@ export async function loadProductPageEditorData(
       selectedNodeId: null,
       selectedNodeName: null,
       attributes: [],
-      slots: [],
+      keyFactsMax: 6,
+      keyFactSlots: [],
+      tabs: [],
       inheritedFromAncestor: false,
     };
   }
 
+  // Path only (folder + ancestors). Layout on a bare root stays empty until
+  // fields exist on that path — do not hoist descendant fields.
   const attributes = await fetchAttributesForNode(selected.id);
-  let layoutRow: ProductPageLayoutRow | null = null;
-  let inheritedFromAncestor = false;
-
-  try {
-    layoutRow = await db.productPageLayout.findUnique({
-      where: { taxonomyNodeId: selected.id },
-      include: {
-        slots: {
-          orderBy: { sortOrder: "asc" },
-          select: {
-            sortOrder: true,
-            visible: true,
-            attributeId: true,
-            attribute: { select: { key: true } },
-          },
-        },
-      },
-    });
-
-    if (!layoutRow) {
-      let parentId = selected.parentId;
-      const guard = new Set<string>([selected.id]);
-      while (parentId && !guard.has(parentId)) {
-        guard.add(parentId);
-        const ancestor = await db.productPageLayout.findUnique({
-          where: { taxonomyNodeId: parentId },
-          include: {
-            slots: {
-              orderBy: { sortOrder: "asc" },
-              select: {
-                sortOrder: true,
-                visible: true,
-                attributeId: true,
-                attribute: { select: { key: true } },
-              },
-            },
-          },
-        });
-        if (ancestor) {
-          layoutRow = ancestor;
-          inheritedFromAncestor = true;
-          break;
-        }
-        const parent = await db.taxonomyNode.findUnique({
-          where: { id: parentId },
-          select: { parentId: true },
-        });
-        parentId = parent?.parentId ?? null;
-      }
-    }
-  } catch (error) {
-    console.error("loadProductPageEditorData layout", error);
-    layoutRow = null;
-    inheritedFromAncestor = false;
-  }
+  const { row: layoutRow, inherited: inheritedFromAncestor } =
+    await loadLayoutRowForNode(selected.id, selected.parentId);
 
   const resolved: ProductPageLayoutResolved = resolveProductPageLayout(
     layoutRow,
@@ -112,23 +134,44 @@ export async function loadProductPageEditorData(
       key: attr.key,
       sortOrder: attr.sortOrder,
       name: attr.name,
+      type: attr.type,
+      textInput: attr.textInput,
     }))
   );
 
   const allowed = new Set(attributes.map((attr) => attr.id));
-  const slots = resolved.slots
-    .filter((slot) => allowed.has(slot.attributeId))
-    .map((slot) => ({
-      attributeId: slot.attributeId,
-      visible: slot.visible,
-    }));
 
   return {
     tree,
     selectedNodeId: selected.id,
     selectedNodeName: selected.name,
     attributes,
-    slots,
+    keyFactsMax: resolved.keyFactsMax,
+    keyFactSlots: resolved.keyFactSlots
+      .filter((slot) => allowed.has(slot.attributeId))
+      .map((slot) => ({
+        attributeId: slot.attributeId,
+        visible: slot.visible,
+      })),
+    tabs: resolved.tabs.map((tab) => ({
+      id: tab.id,
+      name: tab.name,
+      kind: tab.kind,
+      slots:
+        tab.kind === "TEXT" && tab.slots.length === 0
+          ? [
+              {
+                attributeId: null,
+                systemSource: "DESCRIPTION" as const,
+                visible: true,
+              },
+            ]
+          : tab.slots.map((slot) => ({
+              attributeId: slot.attributeId,
+              systemSource: slot.systemSource,
+              visible: slot.visible,
+            })),
+    })),
     inheritedFromAncestor,
   };
 }

@@ -68,8 +68,9 @@ export type CardPreviewLayoutResolved = {
   showSpecs: boolean;
   specsStyle: CardPreviewSpecsStyleId;
   specsGridCount: number;
+  /** Persisted for DB compat; runtime always treats as PRODUCT_FOLDER. */
   categorySource: CardPreviewCategorySourceId;
-  /** Name of the folder that owns this layout (for LAYOUT_FOLDER source). */
+  /** Name of the folder that owns this layout (legacy; unused for labels). */
   layoutFolderName: string | null;
   /** Ordered attribute keys for the specs block */
   slotKeys: string[];
@@ -134,11 +135,8 @@ export function resolveCardPreviewLayout(
     typeof rawStyle === "string" ? rawStyle : undefined,
     row.specsGridCount
   );
-  const categorySource: CardPreviewCategorySourceId =
-    row.categorySource &&
-    CARD_PREVIEW_CATEGORY_SOURCES.includes(row.categorySource)
-      ? row.categorySource
-      : "PRODUCT_FOLDER";
+  // Always product folder — LAYOUT_FOLDER option retired from UI.
+  const categorySource: CardPreviewCategorySourceId = "PRODUCT_FOLDER";
   const max = slotMaxForSpecsStyle(specsStyle, specsGridCount);
   const slotKeys = [...row.slots]
     .sort((a, b) => a.sortOrder - b.sortOrder)

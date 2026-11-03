@@ -59,10 +59,13 @@ function CascadeMenuItems({
   items,
   value,
   onSelect,
+  leafOnly = false,
 }: {
   items: CascadeItem[];
   value?: string | null;
   onSelect: (id: string) => void;
+  /** When true, only nodes without children can be selected. */
+  leafOnly?: boolean;
 }) {
   return items.map((item) => {
     const hasChildren = Boolean(item.children?.length);
@@ -92,11 +95,14 @@ function CascadeMenuItems({
           data-cascade-id={item.id}
           onClick={(event) => {
             event.preventDefault();
-            onSelect(item.id);
+            // Open submenu only; parents are not selectable when leafOnly.
+            if (!leafOnly) onSelect(item.id);
           }}
         >
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
-          {isSelected ? <LuCheck className="mr-1 size-4 shrink-0" /> : null}
+          {isSelected && !leafOnly ? (
+            <LuCheck className="mr-1 size-4 shrink-0" />
+          ) : null}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent
           className="w-max min-w-[10rem]"
@@ -106,6 +112,7 @@ function CascadeMenuItems({
             items={item.children!}
             value={value}
             onSelect={onSelect}
+            leafOnly={leafOnly}
           />
         </DropdownMenuSubContent>
       </DropdownMenuSub>
@@ -124,11 +131,13 @@ function CascadePanels({
   value,
   onSelect,
   leading,
+  leafOnly = false,
 }: {
   items: CascadeItem[];
   value?: string | null;
   onSelect: (id: string) => void;
   leading?: ReactNode;
+  leafOnly?: boolean;
 }) {
   const [activePath, setActivePath] = useState<CascadeItem[]>([]);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -255,15 +264,15 @@ function CascadePanels({
                 onClick={() => {
                   const touch = pointerTypeRef.current !== "mouse";
                   pointerTypeRef.current = "mouse";
-                  if (hasChildren && touch && !isOpen) {
-                    openAt(depth, item);
-                    return;
+                  if (hasChildren) {
+                    if (touch && !isOpen) openAt(depth, item);
+                    if (leafOnly) return;
                   }
                   onSelect(item.id);
                 }}
               >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                {isSelected ? (
+                {isSelected && !(leafOnly && hasChildren) ? (
                   <LuCheck
                     className={cn("size-4 shrink-0", hasChildren && "mr-1")}
                   />
@@ -298,6 +307,8 @@ export default function CascadeSelect({
    * `tree` — same cascade UX via Popover panels (Sheet/Dialog-safe).
    */
   variant = "menu",
+  /** Only leaf folders (no children) can be selected; parents still open. */
+  leafOnly = false,
 }: {
   items: CascadeItem[];
   value?: string | null;
@@ -312,6 +323,7 @@ export default function CascadeSelect({
   className?: string;
   triggerClassName?: string;
   variant?: "menu" | "tree";
+  leafOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const path = useMemo(
@@ -396,6 +408,7 @@ export default function CascadeSelect({
                 value={value}
                 onSelect={(id) => select(id)}
                 leading={emptyRow}
+                leafOnly={leafOnly}
               />
             )}
           </PopoverContent>
@@ -431,6 +444,7 @@ export default function CascadeSelect({
                 items={items}
                 value={value}
                 onSelect={(id) => select(id)}
+                leafOnly={leafOnly}
               />
             )}
           </DropdownMenuContent>

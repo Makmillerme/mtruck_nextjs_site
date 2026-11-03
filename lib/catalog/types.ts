@@ -1,16 +1,25 @@
 export const ATTRIBUTE_TYPES = [
   "SELECT",
+  "MULTI_SELECT",
   "NUMBER",
   "TEXT",
   "BOOLEAN",
   "YEAR",
 ] as const;
 
+export function attributeHasOptions(type: AttributeTypeName) {
+  return type === "SELECT" || type === "MULTI_SELECT";
+}
+
 export type AttributeTypeName = (typeof ATTRIBUTE_TYPES)[number];
 
 export const SHEET_WIDTHS = ["FULL", "HALF", "THIRD"] as const;
 
 export type SheetWidthName = (typeof SHEET_WIDTHS)[number];
+
+export const TEXT_INPUTS = ["LINE", "AREA"] as const;
+
+export type TextInputName = (typeof TEXT_INPUTS)[number];
 
 export type TaxonomyNodeRow = {
   id: string;
@@ -66,6 +75,7 @@ export type CatalogAttribute = {
   showInHomeFilter: boolean;
   unit: string | null;
   sheetWidth: SheetWidthName;
+  textInput: TextInputName;
   sortOrder: number;
   source: AttributeSource;
   inherited: boolean;
@@ -93,6 +103,8 @@ export type CatalogDisplayGroup = {
   separator: string;
   sortOrder: number;
   writesProductName: boolean;
+  /** TEXT attribute filled by this template; null = Product.name when writesProductName. */
+  targetAttributeId: string | null;
   source: AttributeSource;
   inherited: boolean;
   members: DisplayGroupMemberRow[];

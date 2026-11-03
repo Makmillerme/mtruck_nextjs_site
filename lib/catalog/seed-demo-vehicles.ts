@@ -576,8 +576,22 @@ export async function wipeAndSeedDemoVehicles(
   const axle = await attrId(prisma, trucks.id, "axle");
   const location = await attrId(prisma, trucks.id, "location");
   const feature = await attrId(prisma, trucks.id, "feature");
-  const containerSize = await attrId(prisma, containers.id, "container_size");
-  const twistLocks = await attrId(prisma, containers.id, "twist_locks");
+  const containerSize = await prisma.attributeDefinition.findUnique({
+    where: {
+      taxonomyNodeId_key: {
+        taxonomyNodeId: containers.id,
+        key: "container_size",
+      },
+    },
+  });
+  const twistLocks = await prisma.attributeDefinition.findUnique({
+    where: {
+      taxonomyNodeId_key: {
+        taxonomyNodeId: containers.id,
+        key: "twist_locks",
+      },
+    },
+  });
 
   const { generateUniqueProductCode } = await import("../codes");
 
@@ -625,23 +639,22 @@ export async function wipeAndSeedDemoVehicles(
     ];
 
     if (demo.folderSlug === CONTAINER_SLUG) {
-      if (!demo.containerSizeSlug) {
-        throw new Error(`containerSizeSlug required for ${demo.name}`);
-      }
-      specs.push(
-        {
+      if (containerSize && demo.containerSizeSlug) {
+        specs.push({
           attributeId: containerSize.id,
           optionId: await optionId(
             prisma,
             containerSize.id,
             demo.containerSizeSlug
           ),
-        },
-        {
+        });
+      }
+      if (twistLocks) {
+        specs.push({
           attributeId: twistLocks.id,
           booleanValue: demo.twistLocks ?? false,
-        }
-      );
+        });
+      }
     }
 
     await prisma.product.create({

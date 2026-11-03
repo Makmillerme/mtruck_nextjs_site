@@ -51,7 +51,11 @@ import {
   specsFromFormData,
   toPrismaSpecCreates,
 } from '@/lib/catalog/product-specs';
-import { resolveProductNameWithExtra } from '@/lib/catalog/display-group';
+import {
+  applyFormationTemplates,
+  mergeFormationIntoSpecs,
+  resolveProductNameWithExtra,
+} from '@/lib/catalog/display-group';
 import {
   adminProductListInclude,
   adminProductSlimInclude,
@@ -245,9 +249,15 @@ async function fetchSingleProductUncached(productId: string) {
               unit: true,
               sortOrder: true,
               type: true,
+              textInput: true,
             },
           },
           option: { select: { id: true, label: true, slug: true } },
+          selectedOptions: {
+            include: {
+              option: { select: { id: true, label: true, slug: true } },
+            },
+          },
         },
         orderBy: { attribute: { sortOrder: 'asc' } },
       },
@@ -333,16 +343,23 @@ export const createProductAction = async (
       throw new Error(catalogT('parentMissing'));
     }
     const parsed = await specsFromFormData(taxonomyNodeId, formData);
-    specCreates = toPrismaSpecCreates(parsed.specs);
+    const formation = await applyFormationTemplates(
+      taxonomyNodeId,
+      parsed.specs
+    );
+    const mergedSpecs = mergeFormationIntoSpecs(
+      parsed.specs,
+      formation.attributeTextValues
+    );
+    specCreates = toPrismaSpecCreates(mergedSpecs);
     // Name comes from the classic form input (template only auto-fills on the client).
     const formName = String(formData.get('name') ?? '').trim();
     if (formName) {
       rawData.name = formName;
     } else {
-      const composedName = await resolveProductNameWithExtra(
-        taxonomyNodeId,
-        parsed.specs
-      );
+      const composedName =
+        formation.name ??
+        (await resolveProductNameWithExtra(taxonomyNodeId, mergedSpecs));
       if (composedName) rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
@@ -523,7 +540,11 @@ export const updateProductAction = async (
       where: { id: productId },
       include: {
         images: { orderBy: { sortOrder: 'asc' } },
-        specs: true,
+        specs: {
+          include: {
+            selectedOptions: { select: { optionId: true } },
+          },
+        },
       },
     });
     if (!existing) {
@@ -546,14 +567,25 @@ export const updateProductAction = async (
       throw new Error(catalogT('parentMissing'));
     }
     const parsed = await specsFromFormData(taxonomyNodeId, formData);
+    const formation = await applyFormationTemplates(
+      taxonomyNodeId,
+      parsed.specs
+    );
+    const previousTexts = new Map(
+      existing.specs.map((spec) => [spec.attributeId, spec.textValue])
+    );
+    const mergedSpecs = mergeFormationIntoSpecs(
+      parsed.specs,
+      formation.attributeTextValues,
+      previousTexts
+    );
     const formName = String(formData.get('name') ?? '').trim();
     if (formName) {
       rawData.name = formName;
     } else {
-      const composedName = await resolveProductNameWithExtra(
-        taxonomyNodeId,
-        parsed.specs
-      );
+      const composedName =
+        formation.name ??
+        (await resolveProductNameWithExtra(taxonomyNodeId, mergedSpecs));
       if (composedName) rawData.name = composedName;
     }
     const validatedFields = validateWithZodSchema(productSchema, rawData);
@@ -680,7 +712,16 @@ export const updateProductAction = async (
     if (status !== existing.status) data.status = status;
     if (availability !== existing.availability) data.availability = availability;
 
-    const specDiff = diffProductSpecs(existing.specs, parsed.specs);
+    const existingForDiff = existing.specs.map((spec) => ({
+      id: spec.id,
+      attributeId: spec.attributeId,
+      optionId: spec.optionId,
+      numberValue: spec.numberValue,
+      textValue: spec.textValue,
+      booleanValue: spec.booleanValue,
+      selectedOptionIds: spec.selectedOptions.map((row) => row.optionId),
+    }));
+    const specDiff = diffProductSpecs(existingForDiff, mergedSpecs);
     if (specDiff.changed) {
       if (specDiff.deleteIds.length > 0) {
         await db.productSpec.deleteMany({
@@ -688,11 +729,27 @@ export const updateProductAction = async (
         });
       }
       if (specDiff.updates.length > 0) {
-        await db.$transaction(
-          specDiff.updates.map((row) =>
-            db.productSpec.update({ where: { id: row.id }, data: row.data })
-          )
-        );
+        await db.$transaction(async (tx) => {
+          for (const row of specDiff.updates) {
+            await tx.productSpec.update({
+              where: { id: row.id },
+              data: row.data,
+            });
+            if (row.optionIds !== undefined) {
+              await tx.productSpecOption.deleteMany({
+                where: { productSpecId: row.id },
+              });
+              if (row.optionIds.length > 0) {
+                await tx.productSpecOption.createMany({
+                  data: row.optionIds.map((optionId) => ({
+                    productSpecId: row.id,
+                    optionId,
+                  })),
+                });
+              }
+            }
+          }
+        });
       }
       if (specDiff.creates.length > 0) {
         data.specs = { create: specDiff.creates };

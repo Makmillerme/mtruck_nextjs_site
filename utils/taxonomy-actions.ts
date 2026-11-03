@@ -20,7 +20,12 @@ import {
   updateDisplayGroupSchema,
 } from "@/utils/taxonomy-schema";
 import { keyify, uniqueSlug } from "@/lib/catalog/slug";
-import { regenerateProductNamesInFolderSubtree } from "@/lib/catalog/display-group";
+import { attributeHasOptions } from "@/lib/catalog/types";
+import {
+  regenerateFormationInFolderSubtree,
+  resolveFormationTemplates,
+} from "@/lib/catalog/display-group";
+import { fetchDisplayGroupsForNode } from "@/lib/catalog/taxonomy";
 import {
   fetchSiblingNodes,
   getPathNodes,
@@ -159,6 +164,83 @@ async function assertMembersAllowed(
   const unique = new Set(memberAttributeIds);
   if (unique.size !== memberAttributeIds.length) {
     throw new Error(t("displayGroupMemberDuplicate"));
+  }
+}
+
+const FORMATION_NAME_SENTINEL = "__name__";
+
+function parseFormationTarget(formData: FormData): {
+  writesProductName: boolean;
+  targetAttributeId: string | null;
+} {
+  const raw = String(formData.get("targetAttributeId") ?? "").trim();
+  if (!raw || raw === FORMATION_NAME_SENTINEL) {
+    return { writesProductName: true, targetAttributeId: null };
+  }
+  return { writesProductName: false, targetAttributeId: raw };
+}
+
+async function assertFormationTarget(
+  taxonomyNodeId: string,
+  writesProductName: boolean,
+  targetAttributeId: string | null,
+  memberAttributeIds: string[],
+  excludeGroupId?: string
+) {
+  const t = await getTranslations("CatalogAdmin");
+  if (!writesProductName && !targetAttributeId) {
+    throw new Error(t("formationTargetRequired"));
+  }
+  if (writesProductName && targetAttributeId) {
+    throw new Error(t("formationTargetInvalid"));
+  }
+  if (targetAttributeId && memberAttributeIds.includes(targetAttributeId)) {
+    throw new Error(t("formationTargetNotMember"));
+  }
+
+  if (targetAttributeId) {
+    const path = await getPathNodes(taxonomyNodeId);
+    const pathIds = new Set(path.map((node) => node.id));
+    const attribute = await db.attributeDefinition.findUnique({
+      where: { id: targetAttributeId },
+      select: { id: true, type: true, taxonomyNodeId: true },
+    });
+    if (!attribute || !pathIds.has(attribute.taxonomyNodeId)) {
+      throw new Error(t("formationTargetMissing"));
+    }
+    if (attribute.type !== "TEXT") {
+      throw new Error(t("formationTargetMustBeText"));
+    }
+  }
+
+  const existing = await db.displayGroup.findMany({
+    where: {
+      taxonomyNodeId,
+      ...(excludeGroupId ? { NOT: { id: excludeGroupId } } : {}),
+      OR: targetAttributeId
+        ? [{ targetAttributeId }]
+        : [{ writesProductName: true, targetAttributeId: null }],
+    },
+    select: { id: true },
+  });
+  if (existing.length > 0) {
+    throw new Error(t("formationTargetDuplicate"));
+  }
+
+  // Block direct cycles A→B→A among TEXT formation targets on this folder path.
+  if (targetAttributeId && memberAttributeIds.length > 0) {
+    const templates = resolveFormationTemplates(
+      await fetchDisplayGroupsForNode(taxonomyNodeId)
+    );
+    for (const memberId of memberAttributeIds) {
+      const other = templates.find((group) => group.targetAttributeId === memberId);
+      if (!other) continue;
+      if (
+        other.members.some((member) => member.attributeId === targetAttributeId)
+      ) {
+        throw new Error(t("formationTargetCycle"));
+      }
+    }
   }
 }
 
@@ -324,8 +406,11 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
       isFacet: checkbox(formData, "isFacet"),
       showInHomeFilter: checkbox(formData, "showInHomeFilter"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
+      textInput: formData.get("textInput") ?? "LINE",
     });
-    await assertDependsOnAllowed(data.taxonomyNodeId, data.dependsOnAttributeId);
+    const dependsOn =
+      data.type === "SELECT" ? data.dependsOnAttributeId : undefined;
+    await assertDependsOnAllowed(data.taxonomyNodeId, dependsOn);
     const key = await uniqueAttributeKey(
       data.taxonomyNodeId,
       data.key ?? data.name
@@ -336,12 +421,13 @@ export const createAttributeAction: TaxonomyAction = async (_prev, formData) => 
         name: data.name,
         key,
         type: data.type,
-        dependsOnAttributeId: data.dependsOnAttributeId ?? null,
+        dependsOnAttributeId: dependsOn ?? null,
         unit: data.unit ?? null,
         isRequired: data.isRequired,
         isFacet: data.isFacet,
         showInHomeFilter: data.showInHomeFilter,
         sheetWidth: data.sheetWidth,
+        textInput: data.type === "TEXT" ? data.textInput : "LINE",
         sortOrder: await nextAttributeSort(data.taxonomyNodeId),
       },
     });
@@ -366,6 +452,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
       isFacet: checkbox(formData, "isFacet"),
       showInHomeFilter: checkbox(formData, "showInHomeFilter"),
       sheetWidth: formData.get("sheetWidth") ?? "FULL",
+      textInput: formData.get("textInput") ?? "LINE",
     });
     const t = await getTranslations("CatalogAdmin");
     const existing = await db.attributeDefinition.findUnique({
@@ -396,13 +483,17 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
     const structureChanged =
       existing.type !== nextType ||
       (existing.dependsOnAttributeId ?? null) !== nextDependsOn;
+    const keepOptions =
+      attributeHasOptions(existing.type) && attributeHasOptions(nextType);
 
     await db.$transaction(async (tx) => {
       if (structureChanged) {
         await tx.productSpec.deleteMany({ where: { attributeId: data.attributeId } });
-        await tx.attributeOption.deleteMany({
-          where: { attributeId: data.attributeId },
-        });
+        if (!keepOptions) {
+          await tx.attributeOption.deleteMany({
+            where: { attributeId: data.attributeId },
+          });
+        }
       }
       await tx.attributeDefinition.update({
         where: { id: data.attributeId },
@@ -415,6 +506,7 @@ export const updateAttributeAction: TaxonomyAction = async (_prev, formData) => 
           isFacet: data.isFacet,
           showInHomeFilter: data.showInHomeFilter,
           sheetWidth: data.sheetWidth,
+          textInput: nextType === "TEXT" ? data.textInput : "LINE",
         },
       });
     });
@@ -458,8 +550,11 @@ export const createAttributeOptionAction: TaxonomyAction = async (_prev, formDat
       where: { id: data.attributeId },
     });
     if (!attribute) throw new Error(t("fieldMissing"));
-    if (attribute.type !== "SELECT") throw new Error(t("optionsOnlySelect"));
-    if (attribute.dependsOnAttributeId) {
+    if (!attributeHasOptions(attribute.type)) {
+      throw new Error(t("optionsOnlySelect"));
+    }
+    // MULTI_SELECT is flat (no cascade parent); SELECT may depend on another SELECT.
+    if (attribute.type === "SELECT" && attribute.dependsOnAttributeId) {
       if (!data.parentOptionId) throw new Error(t("optionNeedsParent"));
       const parentOption = await db.attributeOption.findUnique({
         where: { id: data.parentOptionId },
@@ -504,8 +599,10 @@ export const updateAttributeOptionAction: TaxonomyAction = async (_prev, formDat
     });
     if (!option) throw new Error(t("optionMissing"));
     const attribute = option.attribute;
-    if (attribute.type !== "SELECT") throw new Error(t("optionsOnlySelect"));
-    if (attribute.dependsOnAttributeId) {
+    if (!attributeHasOptions(attribute.type)) {
+      throw new Error(t("optionsOnlySelect"));
+    }
+    if (attribute.type === "SELECT" && attribute.dependsOnAttributeId) {
       if (!data.parentOptionId) throw new Error(t("optionNeedsParent"));
       const parentOption = await db.attributeOption.findUnique({
         where: { id: data.parentOptionId },
@@ -556,28 +653,27 @@ export const deleteAttributeOptionAction: TaxonomyAction = async (_prev, formDat
 export const createDisplayGroupAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
+    const target = parseFormationTarget(formData);
     const data = validateWithZodSchema(createDisplayGroupSchema, {
       taxonomyNodeId: formData.get("taxonomyNodeId"),
       name: formData.get("name"),
       key: formData.get("key") ?? undefined,
       separator: formData.get("separator") ?? " ",
-      writesProductName: checkbox(formData, "writesProductName"),
+      writesProductName: target.writesProductName,
+      targetAttributeId: target.targetAttributeId,
       memberAttributeIds: memberAttributeIdsFromForm(formData),
     });
     await assertMembersAllowed(data.taxonomyNodeId, data.memberAttributeIds);
+    await assertFormationTarget(
+      data.taxonomyNodeId,
+      Boolean(data.writesProductName),
+      data.targetAttributeId ?? null,
+      data.memberAttributeIds
+    );
     const key = await uniqueDisplayGroupKey(
       data.taxonomyNodeId,
       data.key ?? data.name
     );
-    if (data.writesProductName) {
-      await db.displayGroup.updateMany({
-        where: {
-          taxonomyNodeId: data.taxonomyNodeId,
-          writesProductName: true,
-        },
-        data: { writesProductName: false },
-      });
-    }
     await db.displayGroup.create({
       data: {
         taxonomyNodeId: data.taxonomyNodeId,
@@ -585,6 +681,7 @@ export const createDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
         key,
         separator: data.separator,
         writesProductName: data.writesProductName,
+        targetAttributeId: data.targetAttributeId ?? null,
         sortOrder: await nextDisplayGroupSort(data.taxonomyNodeId),
         members: {
           create: data.memberAttributeIds.map((attributeId, index) => ({
@@ -594,9 +691,18 @@ export const createDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
         },
       },
     });
-    revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("displayGroupCreated"), ok: true };
+    let message = t("formationTemplateCreated");
+    if (data.memberAttributeIds.length > 0) {
+      const { updatedNames, updatedSpecs } =
+        await regenerateFormationInFolderSubtree(data.taxonomyNodeId);
+      message = t("formationTemplateSavedRegenerated", {
+        names: updatedNames,
+        specs: updatedSpecs,
+      });
+    }
+    revalidateCatalog();
+    return { message, ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
@@ -605,11 +711,13 @@ export const createDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
 export const updateDisplayGroupAction: TaxonomyAction = async (_prev, formData) => {
   await getAdminUser();
   try {
+    const target = parseFormationTarget(formData);
     const data = validateWithZodSchema(updateDisplayGroupSchema, {
       groupId: formData.get("groupId"),
       name: formData.get("name"),
       separator: formData.get("separator") ?? " ",
-      writesProductName: checkbox(formData, "writesProductName"),
+      writesProductName: target.writesProductName,
+      targetAttributeId: target.targetAttributeId,
       memberAttributeIds: memberAttributeIdsFromForm(formData),
     });
     const existing = await db.displayGroup.findUnique({
@@ -619,16 +727,13 @@ export const updateDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
     const t = await getTranslations("CatalogAdmin");
     if (!existing) throw new Error(t("displayGroupMissing"));
     await assertMembersAllowed(existing.taxonomyNodeId, data.memberAttributeIds);
-    if (data.writesProductName) {
-      await db.displayGroup.updateMany({
-        where: {
-          taxonomyNodeId: existing.taxonomyNodeId,
-          writesProductName: true,
-          NOT: { id: existing.id },
-        },
-        data: { writesProductName: false },
-      });
-    }
+    await assertFormationTarget(
+      existing.taxonomyNodeId,
+      Boolean(data.writesProductName),
+      data.targetAttributeId ?? null,
+      data.memberAttributeIds,
+      existing.id
+    );
     await db.$transaction([
       db.displayGroupMember.deleteMany({ where: { groupId: existing.id } }),
       db.displayGroup.update({
@@ -637,6 +742,7 @@ export const updateDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
           name: data.name,
           separator: data.separator,
           writesProductName: data.writesProductName,
+          targetAttributeId: data.targetAttributeId ?? null,
           members: {
             create: data.memberAttributeIds.map((attributeId, index) => ({
               attributeId,
@@ -646,8 +752,19 @@ export const updateDisplayGroupAction: TaxonomyAction = async (_prev, formData) 
         },
       }),
     ]);
+    let message = t("formationTemplateUpdated");
+    if (data.memberAttributeIds.length > 0) {
+      const { updatedNames, updatedSpecs } =
+        await regenerateFormationInFolderSubtree(existing.taxonomyNodeId);
+      message = t("formationTemplateSavedRegenerated", {
+        names: updatedNames,
+        specs: updatedSpecs,
+      });
+    } else {
+      message = t("formationTemplateCleared");
+    }
     revalidateCatalog();
-    return { message: t("displayGroupUpdated"), ok: true };
+    return { message, ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }
@@ -795,14 +912,16 @@ export const saveProductNameTemplateAction: TaxonomyAction = async (
       });
     }
 
-    const { updated } = await regenerateProductNamesInFolderSubtree(
-      data.taxonomyNodeId
-    );
+    const { updatedNames, updatedSpecs } =
+      await regenerateFormationInFolderSubtree(data.taxonomyNodeId);
 
     revalidateCatalog();
     revalidatePath("/admin/products");
     return {
-      message: t("productNameTemplateSavedRegenerated", { count: updated }),
+      message: t("formationTemplateSavedRegenerated", {
+        names: updatedNames,
+        specs: updatedSpecs,
+      }),
       ok: true,
     };
   } catch (error) {

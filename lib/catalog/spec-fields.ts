@@ -1,7 +1,7 @@
 import type { CatalogAttribute } from "./types";
 
 export function specInputName(
-  kind: "option" | "number" | "text" | "bool",
+  kind: "option" | "options" | "number" | "text" | "bool",
   attributeId: string
 ) {
   return `spec_${kind}_${attributeId}`;

@@ -163,6 +163,35 @@ export function firstTreeNodeId(nodes: TaxonomyTreeNode[]): string | undefined {
   return nodes[0].id;
 }
 
+/** True if the node has no children in the tree. */
+export function isLeafTaxonomyNode(
+  tree: TaxonomyTreeNode[],
+  nodeId: string
+): boolean {
+  const node = findNodeInTree(tree, nodeId);
+  return Boolean(node && node.children.length === 0);
+}
+
+/** First leaf (no children) in depth-first preorder. */
+export function firstLeafTreeNodeId(
+  nodes: TaxonomyTreeNode[]
+): string | undefined {
+  for (const node of nodes) {
+    if (node.children.length === 0) return node.id;
+    const nested = firstLeafTreeNodeId(node.children);
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
+/** True if the folder has no child taxonomy nodes (end category). */
+export async function isLeafTaxonomyNodeId(nodeId: string) {
+  const children = await db.taxonomyNode.count({
+    where: { parentId: nodeId },
+  });
+  return children === 0;
+}
+
 /** True if nodeId is the root or any descendant of rootId. */
 export function isNodeInSubtree(
   tree: TaxonomyTreeNode[],
@@ -240,6 +269,7 @@ function mapAttribute(
     showInHomeFilter: boolean;
     unit: string | null;
     sheetWidth: CatalogAttribute["sheetWidth"];
+    textInput: CatalogAttribute["textInput"];
     sortOrder: number;
     taxonomyNode: { id: string; name: string };
     options: {
@@ -266,6 +296,7 @@ function mapAttribute(
     showInHomeFilter: def.showInHomeFilter,
     unit: def.unit,
     sheetWidth: def.sheetWidth,
+    textInput: def.textInput ?? "LINE",
     sortOrder: def.sortOrder,
     source: def.taxonomyNode,
     inherited: def.taxonomyNodeId !== selectedNodeId,
@@ -387,6 +418,7 @@ export async function fetchDisplayGroupsForNode(nodeId: string) {
         separator: group.separator,
         sortOrder: group.sortOrder,
         writesProductName: group.writesProductName,
+        targetAttributeId: group.targetAttributeId ?? null,
         source: group.taxonomyNode,
         inherited: group.taxonomyNodeId !== nodeId,
         members: group.members.map((member) => ({

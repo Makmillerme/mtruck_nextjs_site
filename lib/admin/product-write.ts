@@ -8,6 +8,7 @@ export type ExistingSpecRow = {
   numberValue: number | null;
   textValue: string | null;
   booleanValue: boolean | null;
+  selectedOptionIds?: string[];
 };
 
 export type ImageOrderEntry =
@@ -29,12 +30,20 @@ function sameNullableBool(a: boolean | null | undefined, b: boolean | null | und
   return (a ?? null) === (b ?? null);
 }
 
+function sameIdSet(a: string[] | undefined, b: string[] | undefined) {
+  const left = [...(a ?? [])].sort();
+  const right = [...(b ?? [])].sort();
+  if (left.length !== right.length) return false;
+  return left.every((id, index) => id === right[index]);
+}
+
 function specEquals(existing: ExistingSpecRow, next: SpecCreateInput): boolean {
   return (
     sameNullableString(existing.optionId, next.optionId ?? null) &&
     sameNullableNumber(existing.numberValue, next.numberValue ?? null) &&
     sameNullableString(existing.textValue, next.textValue ?? null) &&
-    sameNullableBool(existing.booleanValue, next.booleanValue ?? null)
+    sameNullableBool(existing.booleanValue, next.booleanValue ?? null) &&
+    sameIdSet(existing.selectedOptionIds, next.optionIds)
   );
 }
 
@@ -44,14 +53,18 @@ export function diffProductSpecs(
   nextSpecs: SpecCreateInput[]
 ): {
   creates: Prisma.ProductSpecCreateWithoutProductInput[];
-  updates: { id: string; data: Prisma.ProductSpecUpdateInput }[];
+  updates: { id: string; data: Prisma.ProductSpecUpdateInput; optionIds?: string[] }[];
   deleteIds: string[];
   changed: boolean;
 } {
   const byAttr = new Map(existing.map((row) => [row.attributeId, row]));
   const nextIds = new Set(nextSpecs.map((spec) => spec.attributeId));
   const creates: Prisma.ProductSpecCreateWithoutProductInput[] = [];
-  const updates: { id: string; data: Prisma.ProductSpecUpdateInput }[] = [];
+  const updates: {
+    id: string;
+    data: Prisma.ProductSpecUpdateInput;
+    optionIds?: string[];
+  }[] = [];
 
   for (const spec of nextSpecs) {
     const prev = byAttr.get(spec.attributeId);
@@ -70,11 +83,18 @@ export function diffProductSpecs(
         numberValue: spec.numberValue ?? undefined,
         textValue: spec.textValue ?? undefined,
         booleanValue: spec.booleanValue ?? undefined,
+        selectedOptions: spec.optionIds?.length
+          ? { create: spec.optionIds.map((optionId) => ({ optionId })) }
+          : undefined,
       });
       continue;
     }
     if (!specEquals(prev, spec)) {
-      updates.push({ id: prev.id, data });
+      updates.push({
+        id: prev.id,
+        data,
+        optionIds: spec.optionIds,
+      });
     }
   }
 

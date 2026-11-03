@@ -25,7 +25,6 @@ import VehicleCard, {
 import CascadeSelect from "@/components/form/cascade-select";
 import type { CardPreviewEditorPayload } from "@/lib/admin/card-preview-editor-data";
 import {
-  CARD_PREVIEW_CATEGORY_SOURCES,
   CARD_PREVIEW_GRID_COUNTS,
   CARD_PREVIEW_SLOT_MAX,
   CARD_PREVIEW_SPECS_STYLES,
@@ -33,7 +32,6 @@ import {
   clampSpecsGridCount,
   isTagsSpecsStyle,
   slotMaxForSpecsStyle,
-  type CardPreviewCategorySourceId,
   type CardPreviewSpecsStyleId,
 } from "@/lib/catalog/card-preview";
 import { taxonomyToCascadeItems } from "@/lib/catalog/taxonomy";
@@ -47,7 +45,6 @@ import { LuEye } from "react-icons/lu";
 export default function CardPreviewEditor({
   tree,
   selectedNodeId,
-  selectedNodeName,
   attributes,
   showName: initialShowName,
   showPrice: initialShowPrice,
@@ -56,7 +53,6 @@ export default function CardPreviewEditor({
   showSpecs: initialShowSpecs,
   specsStyle: initialSpecsStyle,
   specsGridCount: initialSpecsGridCount,
-  categorySource: initialCategorySource,
   slotAttributeIds: initialSlots,
   subtitleAttributeIds: initialSubtitleSlots,
 }: CardPreviewEditorPayload) {
@@ -75,8 +71,6 @@ export default function CardPreviewEditor({
   const [specsGridCount, setSpecsGridCount] = useState(
     clampSpecsGridCount(initialSpecsGridCount)
   );
-  const [categorySource, setCategorySource] =
-    useState<CardPreviewCategorySourceId>(initialCategorySource);
   const [slotAttributeIds, setSlotAttributeIds] = useState(initialSlots);
   const [subtitleAttributeIds, setSubtitleAttributeIds] =
     useState(initialSubtitleSlots);
@@ -93,11 +87,20 @@ export default function CardPreviewEditor({
     setShowSpecs(initialShowSpecs);
     setSpecsStyle(initialSpecsStyle);
     setSpecsGridCount(clampSpecsGridCount(initialSpecsGridCount));
-    setCategorySource(initialCategorySource);
     setSlotAttributeIds(initialSlots);
     setSubtitleAttributeIds(initialSubtitleSlots);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNodeId]);
+  }, [
+    selectedNodeId,
+    initialShowName,
+    initialShowPrice,
+    initialShowStatus,
+    initialShowSubtitle,
+    initialShowSpecs,
+    initialSpecsStyle,
+    initialSpecsGridCount,
+    initialSlots,
+    initialSubtitleSlots,
+  ]);
 
   const byId = useMemo(
     () => new Map(attributes.map((attr) => [attr.id, attr])),
@@ -122,10 +125,8 @@ export default function CardPreviewEditor({
           }))
       : [];
 
-    const categoryLabel =
-      categorySource === "LAYOUT_FOLDER"
-        ? selectedNodeName ?? "—"
-        : t("previewDemoProductFolder");
+    // Always product folder label (categorySource UI removed).
+    const categoryLabel = t("previewDemoProductFolder");
 
     const fieldParts = subtitleAttributeIds
       .slice(0, CARD_PREVIEW_SUBTITLE_FIELD_MAX)
@@ -154,8 +155,6 @@ export default function CardPreviewEditor({
     };
   }, [
     byId,
-    categorySource,
-    selectedNodeName,
     showName,
     showPrice,
     showStatus,
@@ -222,7 +221,6 @@ export default function CardPreviewEditor({
         showSpecs,
         specsStyle,
         specsGridCount,
-        categorySource,
         slotAttributeIds: slotAttributeIds.slice(0, CARD_PREVIEW_SLOT_MAX),
         subtitleAttributeIds: subtitleAttributeIds.slice(
           0,
@@ -275,7 +273,13 @@ export default function CardPreviewEditor({
             placeholder={t("pickFolder")}
             emptyLabel={t("noFolder")}
             variant="tree"
+            leafOnly
           />
+          {hasFolder && attributes.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("cardPreviewNoFields")}
+            </p>
+          ) : null}
         </div>
         <Button
           type="button"
@@ -339,38 +343,18 @@ export default function CardPreviewEditor({
                 </p>
               </CardHeader>
               <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label>{t("categorySource")}</Label>
-                  <div className="inline-flex h-10 w-full max-w-md items-center gap-1 rounded-sm border border-border bg-background p-1">
-                    {CARD_PREVIEW_CATEGORY_SOURCES.map((source) => (
-                      <button
-                        key={source}
-                        type="button"
-                        className={cn(
-                          "h-8 min-w-0 flex-1 rounded-sm px-2 text-xs font-semibold",
-                          categorySource === source
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground"
-                        )}
-                        onClick={() => setCategorySource(source)}
-                      >
-                        {source === "LAYOUT_FOLDER"
-                          ? t("categorySourceLayout")
-                          : t("categorySourceProduct")}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>{t("subtitleSlots")}</Label>
+                {attributes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("cardPreviewNoFields")}
+                  </p>
+                ) : (
                   <MemberOrderPicker
                     attributes={attributes}
                     value={subtitleAttributeIds}
                     onChange={onSubtitleSlotsChange}
                     allowEmpty
                   />
-                </div>
+                )}
               </CardContent>
             </Card>
           ) : null}
@@ -393,7 +377,7 @@ export default function CardPreviewEditor({
                 </p>
               </CardHeader>
               <CardContent className="grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid max-w-md gap-4">
                   <div className="grid gap-2">
                     <Label>{t("specsStyle")}</Label>
                     <div className="inline-flex h-10 w-full items-center gap-1 rounded-sm border border-border bg-background p-1">
@@ -448,12 +432,18 @@ export default function CardPreviewEditor({
 
                 <div className="grid gap-2">
                   <Label>{t("specSlots")}</Label>
-                  <MemberOrderPicker
-                    attributes={attributes}
-                    value={slotAttributeIds}
-                    onChange={onSlotsChange}
-                    allowEmpty
-                  />
+                  {attributes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("cardPreviewNoFields")}
+                    </p>
+                  ) : (
+                    <MemberOrderPicker
+                      attributes={attributes}
+                      value={slotAttributeIds}
+                      onChange={onSlotsChange}
+                      allowEmpty
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>

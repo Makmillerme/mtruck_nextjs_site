@@ -39,7 +39,7 @@ export const createAttributeSchema = z.object({
     .max(80)
     .optional()
     .transform((value) => (value && value.length > 0 ? value : undefined)),
-  type: z.enum(["SELECT", "NUMBER", "TEXT", "BOOLEAN", "YEAR"]),
+  type: z.enum(["SELECT", "MULTI_SELECT", "NUMBER", "TEXT", "BOOLEAN", "YEAR"]),
   dependsOnAttributeId: optionalUuid,
   unit: z
     .string()
@@ -51,12 +51,13 @@ export const createAttributeSchema = z.object({
   isFacet: z.coerce.boolean().optional().default(false),
   showInHomeFilter: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
+  textInput: z.enum(["LINE", "AREA"]).optional().default("LINE"),
 });
 
 export const updateAttributeSchema = z.object({
   attributeId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
-  type: z.enum(["SELECT", "NUMBER", "TEXT", "BOOLEAN", "YEAR"]),
+  type: z.enum(["SELECT", "MULTI_SELECT", "NUMBER", "TEXT", "BOOLEAN", "YEAR"]),
   dependsOnAttributeId: optionalUuid,
   unit: z
     .string()
@@ -68,6 +69,7 @@ export const updateAttributeSchema = z.object({
   isFacet: z.coerce.boolean().optional().default(false),
   showInHomeFilter: z.coerce.boolean().optional().default(false),
   sheetWidth: z.enum(["FULL", "HALF", "THIRD"]).optional().default("FULL"),
+  textInput: z.enum(["LINE", "AREA"]).optional().default("LINE"),
 });
 
 
@@ -87,10 +89,8 @@ export const createDisplayGroupSchema = z.object({
     .optional()
     .transform((value) => (value == null || value.length === 0 ? " " : value)),
   writesProductName: z.coerce.boolean().optional().default(false),
-  memberAttributeIds: z
-    .array(z.string().uuid())
-    .min(1)
-    .max(20),
+  targetAttributeId: z.union([z.string().uuid(), z.null()]).optional(),
+  memberAttributeIds: z.array(z.string().uuid()).max(20),
 });
 
 export const updateDisplayGroupSchema = z.object({
@@ -102,10 +102,8 @@ export const updateDisplayGroupSchema = z.object({
     .optional()
     .transform((value) => (value == null || value.length === 0 ? " " : value)),
   writesProductName: z.coerce.boolean().optional().default(false),
-  memberAttributeIds: z
-    .array(z.string().uuid())
-    .min(1)
-    .max(20),
+  targetAttributeId: z.union([z.string().uuid(), z.null()]).optional(),
+  memberAttributeIds: z.array(z.string().uuid()).max(20),
 });
 
 /** Product sheet name gear — upsert writer template, no new CMS fields. */

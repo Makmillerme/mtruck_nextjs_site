@@ -11,6 +11,7 @@ export { specInputName, sortByDependency } from "./spec-fields";
 export type SpecCreateInput = {
   attributeId: string;
   optionId?: string | null;
+  optionIds?: string[];
   optionLabel?: string | null;
   numberValue?: number | null;
   textValue?: string | null;
@@ -48,6 +49,28 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
         optionId: option.id,
         optionLabel: option.label,
       });
+      continue;
+    }
+
+    if (attribute.type === "MULTI_SELECT") {
+      const rawIds = formData
+        .getAll(specInputName("options", attribute.id))
+        .map((value) => String(value).trim())
+        .filter(Boolean);
+      const unique = [...new Set(rawIds)];
+      if (unique.length === 0) {
+        if (attribute.isRequired) {
+          throw new Error(t("specRequired", { field: attribute.name }));
+        }
+        continue;
+      }
+      const optionIds: string[] = [];
+      for (const id of unique) {
+        const option = attribute.options.find((item) => item.id === id);
+        if (!option) throw new Error(t("specInvalid", { field: attribute.name }));
+        optionIds.push(option.id);
+      }
+      specs.push({ attributeId: attribute.id, optionIds });
       continue;
     }
 
@@ -95,7 +118,12 @@ export async function specsFromFormData(nodeId: string, formData: FormData) {
   return { specs, attributes };
 }
 
-
+function selectedOptionsCreate(optionIds: string[] | undefined) {
+  if (!optionIds?.length) return undefined;
+  return {
+    create: optionIds.map((optionId) => ({ optionId })),
+  };
+}
 
 export function toPrismaSpecCreates(
   specs: SpecCreateInput[]
@@ -106,5 +134,6 @@ export function toPrismaSpecCreates(
     numberValue: spec.numberValue ?? undefined,
     textValue: spec.textValue ?? undefined,
     booleanValue: spec.booleanValue ?? undefined,
+    selectedOptions: selectedOptionsCreate(spec.optionIds),
   }));
 }

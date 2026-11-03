@@ -8,7 +8,7 @@ export default function ProductKeyFacts({
 }: {
   facts: ProductKeyFact[];
   title?: string;
-  /** `compact` — buy-box (2 cols); `strip` — full-width lab demo. */
+  /** `compact` — buy-box; `strip` — full-width lab demo. */
   variant?: "strip" | "compact";
 }) {
   if (facts.length === 0) return null;
@@ -29,7 +29,7 @@ export default function ProductKeyFacts({
         className={cn(
           "grid gap-2",
           compact
-            ? "grid-cols-2 sm:grid-cols-3"
+            ? "grid-cols-2"
             : "grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
         )}
       >

@@ -10,7 +10,7 @@ export type HomeFinderFacetOption = {
 export type HomeFinderFacet = {
   key: string;
   name: string;
-  type: Exclude<AttributeTypeName, "TEXT">;
+  type: Exclude<AttributeTypeName, "TEXT" | "MULTI_SELECT">;
   unit: string | null;
   dependsOnKey: string | null;
   options: HomeFinderFacetOption[];

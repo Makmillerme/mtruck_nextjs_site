@@ -36,7 +36,6 @@ import FormContainer from "@/components/form/FormContainer";
 import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PriceInput from "@/components/form/PriceInput";
 import TextAreaInput from "@/components/form/TextAreaInput";
-import ProductNameSettingsDialog from "@/components/admin/products/product-name-settings-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +74,12 @@ import type {
 function hasNameTemplate(
   group: CatalogDisplayGroup | null | undefined
 ): group is CatalogDisplayGroup {
-  return Boolean(group && group.members.length > 0);
+  return Boolean(
+    group &&
+      group.writesProductName &&
+      !group.targetAttributeId &&
+      group.members.length > 0
+  );
 }
 
 /** Prefer an in-scope child folder; fall back to root when it has no children. */
@@ -234,7 +238,9 @@ function ArchiveProduct({
 function specsToInitial(specs: AdminProductSpec[]) {
   const values: Record<string, string> = {};
   for (const spec of specs) {
-    if (spec.optionId) values[spec.attributeId] = spec.optionId;
+    if (spec.optionIds && spec.optionIds.length > 0) {
+      values[spec.attributeId] = spec.optionIds.join(",");
+    } else if (spec.optionId) values[spec.attributeId] = spec.optionId;
     else if (spec.numberValue != null) {
       values[spec.attributeId] = String(spec.numberValue);
     } else if (spec.textValue) values[spec.attributeId] = spec.textValue;
@@ -263,7 +269,7 @@ function ProductSheetFields({
   attributes,
   product,
   nameWriterGroup = null,
-  onNameSettingsSaved,
+  formationTemplates = [],
 }: {
   tree: TaxonomyTreeNode[];
   listRootId?: string;
@@ -272,11 +278,18 @@ function ProductSheetFields({
   attributes: CatalogAttribute[];
   product?: AdminProductRow;
   nameWriterGroup?: CatalogDisplayGroup | null;
-  onNameSettingsSaved: () => void;
+  formationTemplates?: CatalogDisplayGroup[];
 }) {
   const t = useTranslations("Admin");
   const catalogT = useTranslations("CatalogAdmin");
   const nameTemplate = hasNameTemplate(nameWriterGroup) ? nameWriterGroup : null;
+  const textFormationTemplates = useMemo(
+    () =>
+      formationTemplates.filter(
+        (group) => group.targetAttributeId && group.members.length > 0
+      ),
+    [formationTemplates]
+  );
   const [name, setName] = useState(product?.name ?? "");
   const [nameTouched, setNameTouched] = useState(Boolean(product?.name));
   const lastAutoNameRef = useRef("");
@@ -289,13 +302,25 @@ function ProductSheetFields({
     return getRootChildren(tree, listRootId);
   }, [tree, listRootId]);
 
+  const sheetSpecs = useMemo(
+    () => specsFromSheetValues(attributes, specValues),
+    [attributes, specValues]
+  );
+
   const composedName = useMemo(() => {
     if (!nameTemplate) return "";
-    return resolveDisplayGroupString(
-      nameTemplate,
-      specsFromSheetValues(attributes, specValues)
-    );
-  }, [nameTemplate, attributes, specValues]);
+    return resolveDisplayGroupString(nameTemplate, sheetSpecs);
+  }, [nameTemplate, sheetSpecs]);
+
+  const formationAutoValues = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const template of textFormationTemplates) {
+      if (!template.targetAttributeId) continue;
+      const composed = resolveDisplayGroupString(template, sheetSpecs);
+      if (composed) map[template.targetAttributeId] = composed;
+    }
+    return map;
+  }, [textFormationTemplates, sheetSpecs]);
 
   useEffect(() => {
     const initialSpecs = product ? specsToInitial(product.specs) : {};
@@ -381,31 +406,17 @@ function ProductSheetFields({
         />
         <div className="grid gap-2">
           <Label htmlFor="name">{t("productName")}</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              value={name}
-              onChange={(event) => {
-                setNameTouched(true);
-                setName(event.target.value);
-              }}
-              required
-              className="min-w-0 flex-1"
-            />
-            <ProductNameSettingsDialog
-              folderNodeId={selectedNodeId}
-              attributes={attributes}
-              writerGroup={nameWriterGroup}
-              onSaved={onNameSettingsSaved}
-            />
-          </div>
-          {!selectedNodeId ? (
-            <p className="text-xs text-muted-foreground">
-              {catalogT("productNameSettingsNeedFolder")}
-            </p>
-          ) : null}
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            value={name}
+            onChange={(event) => {
+              setNameTouched(true);
+              setName(event.target.value);
+            }}
+            required
+          />
         </div>
         <PriceInput
           defaultValue={product?.price}
@@ -430,6 +441,7 @@ function ProductSheetFields({
             attributes={attributes}
             initialValues={product ? specsToInitial(product.specs) : {}}
             onValuesChange={setSpecValues}
+            formationAutoValues={formationAutoValues}
             showHeading={false}
           />
         ) : selectedNodeId ? (
@@ -456,6 +468,7 @@ export default function AdminProductsView({
   selectedNodeId,
   listRootId,
   nameWriterGroup = null,
+  formationTemplates = [],
   canDelete = false,
   filterSchema,
   filterAvailability,
@@ -470,6 +483,7 @@ export default function AdminProductsView({
   selectedNodeId?: string;
   listRootId?: string;
   nameWriterGroup?: CatalogDisplayGroup | null;
+  formationTemplates?: CatalogDisplayGroup[];
   canDelete?: boolean;
   filterSchema: PublicFilterSchema;
   filterAvailability: FilterAvailabilityIndex;
@@ -526,6 +540,8 @@ export default function AdminProductsView({
     useState<CatalogAttribute[]>(attributes);
   const [sheetNameWriterGroup, setSheetNameWriterGroup] =
     useState<CatalogDisplayGroup | null>(nameWriterGroup);
+  const [sheetFormationTemplates, setSheetFormationTemplates] =
+    useState<CatalogDisplayGroup[]>(formationTemplates);
 
   useEffect(() => {
     if (sheetEditId) return;
@@ -678,9 +694,11 @@ export default function AdminProductsView({
       const meta = await loadProductSheetMetaAction(nodeId);
       setSheetAttributes(meta.attributes);
       setSheetNameWriterGroup(meta.nameWriterGroup);
+      setSheetFormationTemplates(meta.formationTemplates);
     } catch {
       setSheetAttributes([]);
       setSheetNameWriterGroup(null);
+      setSheetFormationTemplates([]);
     }
   }
 
@@ -735,6 +753,7 @@ export default function AdminProductsView({
           if (hydrate.product) setSheetProduct(hydrate.product);
           setSheetAttributes(hydrate.attributes);
           setSheetNameWriterGroup(hydrate.nameWriterGroup);
+          setSheetFormationTemplates(hydrate.formationTemplates);
         } catch {
           void loadSheetMeta(node);
         }
@@ -1005,6 +1024,7 @@ export default function AdminProductsView({
                           attribute,
                           findSpecForAttribute(item.specs, attribute),
                           t("columnsYes"),
+                          t("columnsNo"),
                           t("columnsEmptyCell")
                         )}
                       </TableCell>
@@ -1064,7 +1084,7 @@ export default function AdminProductsView({
                   onFolderChange={onFolderChange}
                   attributes={sheetAttributes}
                   nameWriterGroup={sheetNameWriterGroup}
-                  onNameSettingsSaved={() => void loadSheetMeta(folderNodeId ?? null)}
+                  formationTemplates={sheetFormationTemplates}
                 />
                 <SubmitButton text={t("submitCreate")} className="w-fit" />
               </div>
@@ -1103,9 +1123,7 @@ export default function AdminProductsView({
                       attributes={sheetAttributes}
                       product={editProduct}
                       nameWriterGroup={sheetNameWriterGroup}
-                      onNameSettingsSaved={() =>
-                        void loadSheetMeta(folderNodeId ?? null)
-                      }
+                      formationTemplates={sheetFormationTemplates}
                     />
                     <SheetFormActions
                       saveLabel={t("submitUpdate")}

@@ -26,7 +26,7 @@ const prismaClientSingleton = () => {
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
 /** Bump when Prisma schema/client fields change while `next dev` is running. */
-const PRISMA_CLIENT_GEN = 3;
+const PRISMA_CLIENT_GEN = 4;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientSingleton | undefined;

@@ -3,13 +3,16 @@ import { fetchAdminFilterAvailabilityIndex } from "@/lib/catalog/filter-availabi
 import { fetchPublicFilterSchema } from "@/lib/catalog/public-filter";
 import { fetchRootCatalogAttributes } from "@/lib/catalog/root-attributes-cache";
 import {
+  isActiveFormationTemplate,
+  resolveFormationTemplates,
+} from "@/lib/catalog/display-group";
+import {
   collectSubtreeNodeIds,
   fetchAttributesForNode,
   fetchDisplayGroupsForNode,
   fetchTaxonomyTree,
   flattenTaxonomyTree,
   resolveAttributesByKey,
-  resolveDisplayGroupsByKey,
 } from "@/lib/catalog/taxonomy";
 import { fetchAdminProducts } from "@/utils/actions";
 import { getLocale } from "next-intl/server";
@@ -69,11 +72,14 @@ async function AdminProductsPage(props: {
       : [];
   const displayGroups =
     sheetOpen && selectedExists && selectedId
-      ? resolveDisplayGroupsByKey(await fetchDisplayGroupsForNode(selectedId))
+      ? await fetchDisplayGroupsForNode(selectedId)
       : [];
-  const writers = displayGroups.filter((group) => group.writesProductName);
+  const formationAll = resolveFormationTemplates(displayGroups);
   const nameWriterGroup =
-    writers.find((group) => !group.inherited) ?? writers[0] ?? null;
+    formationAll.find(
+      (group) => group.writesProductName && !group.targetAttributeId
+    ) ?? null;
+  const formationTemplates = formationAll.filter(isActiveFormationTemplate);
 
   return (
     <AdminProductsView
@@ -86,6 +92,7 @@ async function AdminProductsPage(props: {
       attributes={attributes}
       tableAttributes={tableAttributes}
       nameWriterGroup={nameWriterGroup}
+      formationTemplates={formationTemplates}
       canDelete={isAdminRole(role)}
       filterSchema={filterSchema}
       filterAvailability={filterAvailability}

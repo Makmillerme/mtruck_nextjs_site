@@ -1,7 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
 const TRUCKS_SLUG = "vantazhni-avto";
-const CONTAINER_SLUG = "kontejnerovozy";
 
 async function ensureSelectOptions(
   prisma: PrismaClient,
@@ -38,7 +37,7 @@ async function ensureAttribute(
   data: {
     key: string;
     name: string;
-    type: "SELECT" | "NUMBER" | "TEXT" | "BOOLEAN" | "YEAR";
+    type: "SELECT" | "MULTI_SELECT" | "NUMBER" | "TEXT" | "BOOLEAN" | "YEAR";
     unit?: string | null;
     dependsOnAttributeId?: string | null;
     isFacet?: boolean;
@@ -163,6 +162,13 @@ export async function ensureTruckCatalogFields(prisma: PrismaClient) {
     isFacet: false,
     sortOrder: 9,
   });
+  const equipment = await ensureAttribute(prisma, trucks.id, {
+    key: "equipment",
+    name: "Комплектація",
+    type: "MULTI_SELECT",
+    isFacet: false,
+    sortOrder: 10,
+  });
 
   const euro = await prisma.attributeDefinition.findUniqueOrThrow({
     where: { taxonomyNodeId_key: { taxonomyNodeId: trucks.id, key: "euro" } },
@@ -226,40 +232,37 @@ export async function ensureTruckCatalogFields(prisma: PrismaClient) {
     { label: "6×4", slug: "6x4", sortOrder: 2 },
   ]);
 
-  const containers = await prisma.taxonomyNode.findUnique({
-    where: { slug: CONTAINER_SLUG },
-  });
-  if (containers) {
-    await ensureAttribute(prisma, containers.id, {
-      key: "container_size",
-      name: "Тип контейнера",
-      type: "SELECT",
-      isFacet: true,
-      isRequired: true,
-      sortOrder: 0,
-    });
-    await ensureAttribute(prisma, containers.id, {
-      key: "twist_locks",
-      name: "Твістлоки",
-      type: "BOOLEAN",
-      isFacet: true,
-      sortOrder: 1,
-    });
-    const containerSize = await prisma.attributeDefinition.findUniqueOrThrow({
-      where: {
-        taxonomyNodeId_key: {
-          taxonomyNodeId: containers.id,
-          key: "container_size",
-        },
-      },
-    });
-    await ensureSelectOptions(prisma, containerSize.id, [
-      { label: "20′", slug: "20ft", sortOrder: 0 },
-      { label: "40′", slug: "40ft", sortOrder: 1 },
-      { label: "45′", slug: "45ft", sortOrder: 2 },
-      { label: "2×20′", slug: "2x20ft", sortOrder: 3 },
-    ]);
-  }
+  // AutoRIA-style truck equipment checklist (flat MULTI_SELECT).
+  await ensureSelectOptions(prisma, equipment.id, [
+    { label: "ABS", slug: "abs", sortOrder: 0 },
+    { label: "ASR / ESP", slug: "asr-esp", sortOrder: 1 },
+    { label: "Кондиціонер", slug: "air-conditioning", sortOrder: 2 },
+    { label: "Клімат-контроль", slug: "climate-control", sortOrder: 3 },
+    { label: "Автономний обігрівач", slug: "parking-heater", sortOrder: 4 },
+    { label: "Тахограф", slug: "tachograph", sortOrder: 5 },
+    { label: "Круїз-контроль", slug: "cruise-control", sortOrder: 6 },
+    { label: "Електросклопідйомники", slug: "power-windows", sortOrder: 7 },
+    { label: "Центральний замок", slug: "central-locking", sortOrder: 8 },
+    { label: "Підігрів дзеркал", slug: "heated-mirrors", sortOrder: 9 },
+    { label: "Підігрів сидінь", slug: "heated-seats", sortOrder: 10 },
+    { label: "Пневмопідвіска", slug: "air-suspension", sortOrder: 11 },
+    { label: "Ретардер / інтардер", slug: "retarder", sortOrder: 12 },
+    { label: "Блокування диференціала", slug: "diff-lock", sortOrder: 13 },
+    { label: "Гідроборт", slug: "tail-lift", sortOrder: 14 },
+    { label: "Додатковий паливний бак", slug: "extra-fuel-tank", sortOrder: 15 },
+    { label: "Спальник", slug: "sleeper-cab", sortOrder: 16 },
+    { label: "GPS-навігація", slug: "gps", sortOrder: 17 },
+    { label: "Камера заднього виду", slug: "rear-camera", sortOrder: 18 },
+    { label: "Парктронік", slug: "parking-sensors", sortOrder: 19 },
+    { label: "Мультимедіа / Bluetooth", slug: "multimedia", sortOrder: 20 },
+    { label: "LED-оптика", slug: "led-lights", sortOrder: 21 },
+    { label: "Холодильник", slug: "fridge", sortOrder: 22 },
+    { label: "AdBlue", slug: "adblue", sortOrder: 23 },
+    { label: "Фільтр сажі (DPF)", slug: "dpf", sortOrder: 24 },
+  ]);
 
-  console.log("Ensured truck/container catalog fields and options.");
+  // Leaf-only fields (container_size, twist_locks, …) are managed in CMS —
+  // do not auto-recreate them here after the admin deletes them.
+
+  console.log("Ensured vantazhni-avto catalog fields and options.");
 }

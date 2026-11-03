@@ -375,8 +375,8 @@ export function UiLabCatalogPaginationDemo() {
     <div className="grid max-w-xl gap-3">
       <p className="text-sm text-muted-foreground">
         Стрілки + <code className="text-xs">сторінка / усього</code> + outline
-        DropdownMenu 10/25/40. Той самий блок на{" "}
-        <code className="text-xs">/products</code>.
+        DropdownMenu: до xl — 10/20/30, з xl (3 картки в ряд) — 9/18/36. Той
+        самий блок на <code className="text-xs">/products</code>.
       </p>
       <CatalogPagination
         page={page}

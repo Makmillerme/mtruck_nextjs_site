@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { CatalogAttribute } from "@/lib/catalog/types";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { packSheetAttributes } from "@/lib/catalog/sheet-layout";
@@ -32,21 +33,52 @@ export default function ProductSpecFields({
   initialValues = {},
   onValuesChange,
   showHeading = true,
+  formationAutoValues,
 }: {
   attributes: CatalogAttribute[];
   initialValues?: Record<string, string>;
   onValuesChange?: (values: Record<string, string>) => void;
   showHeading?: boolean;
+  /** Composed TEXT values from field-formation templates. */
+  formationAutoValues?: Record<string, string>;
 }) {
   const t = useTranslations("CatalogAdmin");
   const ordered = useMemo(() => sortSheetAttributes(attributes), [attributes]);
   const layout = useMemo(() => packSheetAttributes(ordered), [ordered]);
   const [values, setValues] = useState<Record<string, string>>(initialValues);
+  const touchedRef = useRef<Set<string>>(new Set());
+  const lastAutoRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!formationAutoValues) return;
+    setValues((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const [attributeId, composed] of Object.entries(formationAutoValues)) {
+        if (!composed) continue;
+        const current = (next[attributeId] ?? "").trim();
+        const lastAuto = lastAutoRef.current[attributeId] ?? "";
+        const touched = touchedRef.current.has(attributeId);
+        if (!touched || current.length === 0 || current === lastAuto) {
+          if (next[attributeId] !== composed) {
+            next[attributeId] = composed;
+            changed = true;
+          }
+          lastAutoRef.current[attributeId] = composed;
+          touchedRef.current.delete(attributeId);
+        }
+      }
+      if (changed) onValuesChange?.(next);
+      return changed ? next : prev;
+    });
+  }, [formationAutoValues, onValuesChange]);
 
   function setValue(attributeId: string, value: string, dependents: string[]) {
+    touchedRef.current.add(attributeId);
     const cleaned = { ...values, [attributeId]: value };
     for (const id of dependents) {
       delete cleaned[id];
+      touchedRef.current.delete(id);
     }
     setValues(cleaned);
     onValuesChange?.(cleaned);
@@ -125,6 +157,63 @@ export default function ProductSpecFields({
               </div>
             );
           }
+          if (attribute.type === "MULTI_SELECT") {
+            const selected = new Set(
+              (values[attribute.id] ?? "")
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean)
+            );
+            const options = attribute.options.filter(
+              (option) => !option.parentOptionId
+            );
+            return (
+              <div key={attribute.id} className={cn("grid gap-3", className)}>
+                <p className="text-sm font-medium">{label}</p>
+                <div className="grid gap-2">
+                  {options.map((option) => {
+                    const checked = selected.has(option.id);
+                    return (
+                      <label
+                        key={option.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          name={specInputName("options", attribute.id)}
+                          value={option.id}
+                          checked={checked}
+                          onChange={(event) => {
+                            const next = new Set(selected);
+                            if (event.target.checked) next.add(option.id);
+                            else next.delete(option.id);
+                            setValue(
+                              attribute.id,
+                              [...next].join(","),
+                              []
+                            );
+                          }}
+                          className="h-4 w-4 shrink-0 rounded-sm border border-primary accent-primary"
+                        />
+                        {option.label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {attribute.isRequired ? (
+                  <input
+                    type="text"
+                    tabIndex={-1}
+                    aria-hidden
+                    className="sr-only"
+                    required={selected.size === 0}
+                    value={selected.size > 0 ? "1" : ""}
+                    onChange={() => undefined}
+                  />
+                ) : null}
+              </div>
+            );
+          }
           if (attribute.type === "BOOLEAN") {
             const checked = values[attribute.id] === "true";
             return (
@@ -150,20 +239,24 @@ export default function ProductSpecFields({
             );
           }
           if (attribute.type === "TEXT") {
+            const inputId = specInputName("text", attribute.id);
+            const common = {
+              id: inputId,
+              name: inputId,
+              required: attribute.isRequired,
+              value: values[attribute.id] ?? "",
+              onChange: (
+                event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+              ) => setValue(attribute.id, event.target.value, []),
+            };
             return (
               <div key={attribute.id} className={cn("grid gap-2", className)}>
-                <Label htmlFor={specInputName("text", attribute.id)}>
-                  {label}
-                </Label>
-                <Input
-                  id={specInputName("text", attribute.id)}
-                  name={specInputName("text", attribute.id)}
-                  required={attribute.isRequired}
-                  value={values[attribute.id] ?? ""}
-                  onChange={(event) =>
-                    setValue(attribute.id, event.target.value, [])
-                  }
-                />
+                <Label htmlFor={inputId}>{label}</Label>
+                {attribute.textInput === "AREA" ? (
+                  <Textarea {...common} rows={5} className="min-h-[120px]" />
+                ) : (
+                  <Input {...common} />
+                )}
               </div>
             );
           }

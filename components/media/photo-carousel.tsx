@@ -116,8 +116,8 @@ export default function PhotoCarousel({
   const DRAG_THRESHOLD_PX = 8;
   const stageClass =
     frame === "fill"
-      ? "relative h-full min-h-0 overflow-hidden bg-muted"
-      : "relative aspect-[4/3] overflow-hidden bg-muted";
+      ? "relative h-full min-h-0 w-full min-w-0 overflow-hidden bg-muted"
+      : "relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-muted";
   const slideFrameClass =
     frame === "fill"
       ? "absolute inset-0 overflow-hidden"
@@ -172,10 +172,15 @@ export default function PhotoCarousel({
 
   if (!multi) {
     const first = slides[0]!;
+    /** PDP single photo: fill stretched hero column (aspect alone leaves a dead gap under the frame). */
+    const pageSingleClass =
+      variant === "page"
+        ? "relative aspect-[4/3] h-full min-h-0 w-full min-w-0 overflow-hidden bg-muted"
+        : stageClass;
     return (
       <div
         className={cn(
-          stageClass,
+          pageSingleClass,
           className,
           onImageClick && !href && "cursor-zoom-in"
         )}
@@ -217,6 +222,7 @@ export default function PhotoCarousel({
   return (
     <div
       className={cn(
+        "min-w-0 w-full",
         variant === "page" && "grid gap-3",
         frame === "fill" && "h-full min-h-0",
         className

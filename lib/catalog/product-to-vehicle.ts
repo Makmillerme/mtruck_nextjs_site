@@ -10,8 +10,10 @@ export type SpecForCard = {
     unit: string | null;
     name?: string;
     type?: string | null;
+    textInput?: string | null;
   };
   option: { label: string } | null;
+  selectedOptions?: { option: { label: string } }[];
   numberValue: number | null;
   textValue: string | null;
   booleanValue: boolean | null;
@@ -64,6 +66,12 @@ function intlLocale(locale: string) {
 
 /** Locale-aware number + unit (e.g. 505 000 км). Years stay as 2019, not 2 019. */
 export function formatSpecDisplay(spec: SpecForCard, locale = "uk"): string {
+  if (spec.attribute.type === "MULTI_SELECT") {
+    const labels = (spec.selectedOptions ?? [])
+      .map((row) => row.option.label.trim())
+      .filter(Boolean);
+    return labels.length > 0 ? labels.join(", ") : "—";
+  }
   if (spec.option?.label) return spec.option.label;
   if (spec.numberValue != null) {
     const rounded = Math.round(spec.numberValue);
@@ -118,15 +126,9 @@ export function productWithSpecsToVehicle(
     product.image,
     product.images?.map((item) => item.url) ?? []
   );
+  // Category label = product folder only (LAYOUT_FOLDER option removed).
   const categoryLabel =
-    resolved.categorySource === "LAYOUT_FOLDER"
-      ? resolved.layoutFolderName ??
-        product.taxonomyNode?.name ??
-        optionLabel(byKey, "make") ??
-        null
-      : product.taxonomyNode?.name ??
-        optionLabel(byKey, "make") ??
-        null;
+    product.taxonomyNode?.name ?? optionLabel(byKey, "make") ?? null;
 
   const fieldParts = resolved.subtitleKeys
     .map((key) => {

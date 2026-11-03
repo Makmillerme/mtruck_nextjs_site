@@ -1,17 +1,18 @@
 "use server";
 
 import {
-  CARD_PREVIEW_CATEGORY_SOURCES,
   CARD_PREVIEW_GRID_COUNT_MAX,
   CARD_PREVIEW_GRID_COUNT_MIN,
   CARD_PREVIEW_SLOT_MAX,
   CARD_PREVIEW_SPECS_STYLES,
   CARD_PREVIEW_SUBTITLE_FIELD_MAX,
   clampSpecsGridCount,
-  type CardPreviewCategorySourceId,
   type CardPreviewSpecsStyleId,
 } from "@/lib/catalog/card-preview";
-import { fetchAttributesForNode } from "@/lib/catalog/taxonomy";
+import {
+  fetchAttributesForNode,
+  isLeafTaxonomyNodeId,
+} from "@/lib/catalog/taxonomy";
 import db from "@/utils/db";
 import { getAdminUser } from "@/utils/session";
 import { getTranslations } from "next-intl/server";
@@ -31,7 +32,6 @@ const saveSchema = z.object({
     .int()
     .min(CARD_PREVIEW_GRID_COUNT_MIN)
     .max(CARD_PREVIEW_GRID_COUNT_MAX),
-  categorySource: z.enum(["LAYOUT_FOLDER", "PRODUCT_FOLDER"]),
   slotAttributeIds: z.array(z.string().uuid()).max(CARD_PREVIEW_SLOT_MAX),
   subtitleAttributeIds: z
     .array(z.string().uuid())
@@ -51,13 +51,11 @@ export async function saveCardPreviewLayoutAction(
   try {
     const data = saveSchema.parse(input);
     const specsStyle = data.specsStyle as CardPreviewSpecsStyleId;
-    const categorySource = data.categorySource as CardPreviewCategorySourceId;
     const specsGridCount = clampSpecsGridCount(data.specsGridCount);
+    // Always product folder — categorySource UI removed.
+    const categorySource = "PRODUCT_FOLDER" as const;
     if (!CARD_PREVIEW_SPECS_STYLES.includes(specsStyle)) {
       return { message: "Invalid style", ok: false };
-    }
-    if (!CARD_PREVIEW_CATEGORY_SOURCES.includes(categorySource)) {
-      return { message: "Invalid category source", ok: false };
     }
     const node = await db.taxonomyNode.findUnique({
       where: { id: data.taxonomyNodeId },
@@ -65,6 +63,9 @@ export async function saveCardPreviewLayoutAction(
     });
     if (!node) {
       return { message: t("noFolder"), ok: false };
+    }
+    if (!(await isLeafTaxonomyNodeId(data.taxonomyNodeId))) {
+      return { message: t("leafFolderOnly"), ok: false };
     }
 
     const attributes = await fetchAttributesForNode(data.taxonomyNodeId);

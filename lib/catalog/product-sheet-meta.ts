@@ -1,10 +1,14 @@
 "use server";
 
 import {
+  isActiveFormationTemplate,
+  resolveFormationTemplates,
+  resolveNameFormationTemplate,
+} from "@/lib/catalog/display-group";
+import {
   fetchAttributesForNode,
   fetchDisplayGroupsForNode,
   resolveAttributesByKey,
-  resolveDisplayGroupsByKey,
 } from "@/lib/catalog/taxonomy";
 import type {
   CatalogAttribute,
@@ -22,6 +26,7 @@ export type ProductSheetMeta = {
   attributes: CatalogAttribute[];
   nameFromDisplayGroup: boolean;
   nameWriterGroup: CatalogDisplayGroup | null;
+  formationTemplates: CatalogDisplayGroup[];
 };
 
 export type ProductSheetHydrate = ProductSheetMeta & {
@@ -38,25 +43,25 @@ export async function loadProductSheetMetaAction(
       attributes: [],
       nameFromDisplayGroup: false,
       nameWriterGroup: null,
+      formationTemplates: [],
     };
   }
   const [attributes, displayGroups] = await Promise.all([
     fetchAttributesForNode(nodeId).then(resolveAttributesByKey),
-    fetchDisplayGroupsForNode(nodeId).then(resolveDisplayGroupsByKey),
+    fetchDisplayGroupsForNode(nodeId),
   ]);
-  const writers = displayGroups.filter((group) => group.writesProductName);
-  // Own writer always wins — empty members = auto-name off (blocks parent).
-  const ownWriter = writers.find((group) => !group.inherited) ?? null;
-  const nameWriterGroup =
-    ownWriter ??
-    writers.find((group) => group.members.length > 0) ??
-    null;
+  const formationTemplates = resolveFormationTemplates(displayGroups);
+  const nameWriterGroup = resolveNameFormationTemplate(formationTemplates);
+  // Keep resolved name writer even when empty (blocks inheritance) for sheet parity.
+  const nameResolved =
+    formationTemplates.find(
+      (group) => group.writesProductName && !group.targetAttributeId
+    ) ?? null;
   return {
     attributes,
-    nameFromDisplayGroup: Boolean(
-      nameWriterGroup && nameWriterGroup.members.length > 0
-    ),
-    nameWriterGroup,
+    nameFromDisplayGroup: isActiveFormationTemplate(nameWriterGroup),
+    nameWriterGroup: nameResolved,
+    formationTemplates: formationTemplates.filter(isActiveFormationTemplate),
   };
 }
 

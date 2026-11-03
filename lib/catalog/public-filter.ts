@@ -55,7 +55,7 @@ export function toPublicFacet(
   attribute: CatalogAttribute,
   byId: Map<string, CatalogAttribute>
 ): PublicFilterFacet | null {
-  if (attribute.type === "TEXT") return null;
+  if (attribute.type === "TEXT" || attribute.type === "MULTI_SELECT") return null;
   const parent = attribute.dependsOnAttributeId
     ? byId.get(attribute.dependsOnAttributeId)
     : undefined;

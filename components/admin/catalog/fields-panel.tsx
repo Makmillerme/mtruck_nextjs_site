@@ -15,7 +15,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   ATTRIBUTE_TYPES,
+  attributeHasOptions,
   SHEET_WIDTHS,
+  TEXT_INPUTS,
   type CatalogAttribute,
   type CatalogDisplayGroup,
   type TaxonomyNodeRow,
@@ -124,7 +126,7 @@ function FieldRow({
           <Badge variant="outline">
             {t(`sheetWidth.${attribute.sheetWidth}`)}
           </Badge>
-          {attribute.type === "SELECT" ? (
+          {attributeHasOptions(attribute.type) ? (
             <Badge variant="outline">
               {t("optionsCount", { count: attribute.options.length })}
             </Badge>
@@ -347,6 +349,16 @@ export default function FieldsPanel({
                     label: t(`sheetWidth.${width}`),
                   }))}
                 />
+                <CatalogMenuSelect
+                  name="textInput"
+                  label={t("textInputLabel")}
+                  searchable={false}
+                  defaultValue="LINE"
+                  options={TEXT_INPUTS.map((mode) => ({
+                    value: mode,
+                    label: t(`textInput.${mode}`),
+                  }))}
+                />
                 <FieldFlags />
                 <CatalogSubmit text={t("addField")} className="w-fit" />
               </CatalogForm>
@@ -412,6 +424,16 @@ export default function FieldsPanel({
                     label: t(`sheetWidth.${width}`),
                   }))}
                 />
+                <CatalogMenuSelect
+                  name="textInput"
+                  label={t("textInputLabel")}
+                  searchable={false}
+                  defaultValue={active.textInput ?? "LINE"}
+                  options={TEXT_INPUTS.map((mode) => ({
+                    value: mode,
+                    label: t(`textInput.${mode}`),
+                  }))}
+                />
                 <FieldFlags
                   defaults={{
                     isRequired: active.isRequired,
@@ -421,12 +443,14 @@ export default function FieldsPanel({
                 />
                 <CatalogSubmit text={t("saveField")} className="w-fit" />
               </CatalogForm>
-              {active.type === "SELECT" ? (
+              {attributeHasOptions(active.type) ? (
                 <>
                   <Separator />
                   <OptionEditor
                     attribute={active}
-                    parentOptions={parentOptions}
+                    parentOptions={
+                      active.type === "SELECT" ? parentOptions : []
+                    }
                   />
                 </>
               ) : null}

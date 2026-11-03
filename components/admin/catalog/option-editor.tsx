@@ -14,7 +14,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { CatalogAttribute } from "@/lib/catalog/types";
+import {
+  attributeHasOptions,
+  type CatalogAttribute,
+} from "@/lib/catalog/types";
 import {
   createAttributeOptionAction,
   deleteAttributeOptionAction,
@@ -230,7 +233,9 @@ export default function OptionEditor({
   const [createOpen, setCreateOpen] = useState(false);
   const [editOption, setEditOption] = useState<OptionItem | null>(null);
 
-  const dependsOnParent = Boolean(attribute.dependsOnAttributeId);
+  // Cascade parent tags only for SELECT; MULTI_SELECT is always flat.
+  const dependsOnParent =
+    attribute.type === "SELECT" && Boolean(attribute.dependsOnAttributeId);
   const parentById = useMemo(() => {
     const map = new Map<string, string>();
     for (const parent of parentOptions) {
@@ -263,7 +268,7 @@ export default function OptionEditor({
       .map(({ option, displayLabel }) => ({ option, displayLabel }));
   }, [attribute.options, dependsOnParent, parentById, query]);
 
-  if (attribute.type !== "SELECT") return null;
+  if (!attributeHasOptions(attribute.type)) return null;
 
   if (dependsOnParent && parentOptions.length === 0) {
     return (

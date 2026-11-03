@@ -16,6 +16,7 @@ enum UserRole {
 
 enum AttributeType {
   SELECT
+  MULTI_SELECT
   NUMBER
   TEXT
   BOOLEAN
@@ -61,6 +62,21 @@ enum SheetWidth {
   FULL
   HALF
   THIRD
+}
+
+enum TextInput {
+  LINE
+  AREA
+}
+
+enum ProductPageTabKind {
+  TEXT
+  TABLE
+  LIST
+}
+
+enum ProductPageSystemSource {
+  DESCRIPTION
 }
 
 model User {
@@ -211,6 +227,7 @@ model AttributeDefinition {
   showInHomeFilter     Boolean       @default(true)
   unit                 String?
   sheetWidth           SheetWidth    @default(FULL)
+  textInput            TextInput     @default(LINE)
   sortOrder            Int           @default(0)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
@@ -218,9 +235,12 @@ model AttributeDefinition {
   options                  AttributeOption[]
   specs                    ProductSpec[]
   displayGroupMembers      DisplayGroupMember[]
+  formationTargets         DisplayGroup[]       @relation("FormationTarget")
   cardPreviewSlots         CardPreviewSlot[]
   cardPreviewSubtitleSlots CardPreviewSubtitleSlot[]
   productPageSpecSlots     ProductPageSpecSlot[]
+  productPageKeyFactSlots  ProductPageKeyFactSlot[]
+  productPageTabSlots      ProductPageTabSlot[]
 
   @@unique([taxonomyNodeId, key])
   @@index([taxonomyNodeId])
@@ -240,7 +260,8 @@ model AttributeOption {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  specs ProductSpec[]
+  specs            ProductSpec[]
+  selectedInSpecs  ProductSpecOption[]
 
   @@unique([attributeId, slug])
   @@index([attributeId])
@@ -258,28 +279,44 @@ model ProductSpec {
   numberValue  Float?
   textValue    String?
   booleanValue Boolean?
+  selectedOptions ProductSpecOption[]
 
   @@unique([productId, attributeId])
   @@index([attributeId, optionId])
   @@index([productId])
 }
 
+model ProductSpecOption {
+  id           String          @id @default(uuid())
+  productSpecId String
+  productSpec  ProductSpec     @relation(fields: [productSpecId], references: [id], onDelete: Cascade)
+  optionId     String
+  option       AttributeOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([productSpecId, optionId])
+  @@index([optionId])
+  @@index([productSpecId])
+}
+
 model DisplayGroup {
-  id                String       @id @default(uuid())
-  taxonomyNodeId    String
-  taxonomyNode      TaxonomyNode @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
-  key               String
-  name              String
-  separator         String       @default(" ")
-  sortOrder         Int          @default(0)
-  writesProductName Boolean      @default(false)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id                 String               @id @default(uuid())
+  taxonomyNodeId     String
+  taxonomyNode       TaxonomyNode         @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  key                String
+  name               String
+  separator          String               @default(" ")
+  sortOrder          Int                  @default(0)
+  writesProductName  Boolean              @default(false)
+  targetAttributeId  String?
+  targetAttribute    AttributeDefinition? @relation("FormationTarget", fields: [targetAttributeId], references: [id], onDelete: Cascade)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   members DisplayGroupMember[]
 
   @@unique([taxonomyNodeId, key])
   @@index([taxonomyNodeId])
+  @@index([targetAttributeId])
 }
 
 model DisplayGroupMember {
@@ -354,10 +391,13 @@ model ProductPageLayout {
   id             String       @id @default(uuid())
   taxonomyNodeId String       @unique
   taxonomyNode   TaxonomyNode @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  keyFactsMax    Int          @default(6)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  slots ProductPageSpecSlot[]
+  slots         ProductPageSpecSlot[]
+  keyFactSlots  ProductPageKeyFactSlot[]
+  tabs          ProductPageTab[]
 }
 
 model ProductPageSpecSlot {
@@ -371,6 +411,47 @@ model ProductPageSpecSlot {
 
   @@unique([layoutId, attributeId])
   @@index([layoutId])
+  @@index([attributeId])
+}
+
+model ProductPageKeyFactSlot {
+  id          String              @id @default(uuid())
+  layoutId    String
+  layout      ProductPageLayout   @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sortOrder   Int                 @default(0)
+  visible     Boolean             @default(true)
+
+  @@unique([layoutId, attributeId])
+  @@index([layoutId])
+  @@index([attributeId])
+}
+
+model ProductPageTab {
+  id       String             @id @default(uuid())
+  layoutId String
+  layout   ProductPageLayout  @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  name     String
+  kind     ProductPageTabKind @default(TABLE)
+  sortOrder Int               @default(0)
+
+  slots ProductPageTabSlot[]
+
+  @@index([layoutId])
+}
+
+model ProductPageTabSlot {
+  id           String                   @id @default(uuid())
+  tabId        String
+  tab          ProductPageTab           @relation(fields: [tabId], references: [id], onDelete: Cascade)
+  attributeId  String?
+  attribute    AttributeDefinition?     @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  systemSource ProductPageSystemSource?
+  sortOrder    Int                      @default(0)
+  visible      Boolean                  @default(true)
+
+  @@index([tabId])
   @@index([attributeId])
 }
 

@@ -2,6 +2,14 @@
 
 Ідеї, які свідомо не впроваджуємо зараз. Агент додає записи за правилом `.cursor/rules/backlog.mdc`.
 
+## PDP універсальний ціновий / фінансовий блок
+
+**Дата:** 2026-11-03
+
+**Суть:** Hero buy-box зараз має статичний price + copy «Фінансування» (лізинг або кредит, орієнтовна сума/міс). Потрібен універсальний блок під будь-який товар (валюта, ПДВ, схеми лізинг/кредит, CMS-слоти, калькуляція, різні офери) без хардкоду під вантажівки.
+
+**Статус:** Відкладено
+
 ## Google OAuth
 
 **Дата:** 2026-08-20
@@ -154,23 +162,29 @@
 
 **Статус:** Фаза 0–2 — сайдбар CMS; фільтри (головна + каталог) у моделі даних (`showInFilter` / `showInHomeFilter` / `isFacet`); `/admin/ui` Filter — заглушка. Далі: превʼю картки, картка товару, visual layout.
 
-$1
+## Inline-токени `{поле}` у textarea / TEXT AREA
+
+**Дата:** 2026-10-30
+
+**Суть:** У довгих текстах (`Product.description` або TEXT `textInput=AREA`) дозволити підстановку значень атрибутів через маркери на кшталт `{Пробіг}` / `{mileage}`. Formation templates (`DisplayGroup`) не чіпати — окремий механізм збірки назви/поля. Токени в textarea — окремий реліз після візуального PDP UI Editor.
+
+**Статус:** Відкладено
 
 ## PDP «Комплектація» (модель + UI)
 
 **Дата:** 2026-10-26
 
-**Суть:** Окреме поле/група комплектації в схемі Product або CMS DisplayGroup; третя вкладка в PDP details-tabs (Опис / Характеристики / Комплектація); адмін-редагування. Зараз вкладку не показуємо — лише Опис і Характеристики.
+**Суть:** Модель = `AttributeType.MULTI_SELECT` (одне поле + багато опцій, як SELECT але multi). Зберігання через `ProductSpecOption`. PDP вкладка «Комплектація» показує MULTI_SELECT. Facet-фільтр каталогу по опціях — окремо пізніше.
 
-**Статус:** Відкладено
+**Статус:** Готово (v1 без facet)
 
 ## DisplayGroup → AttributeType.COMPOSITE
 
 **Дата:** 2026-10-30
 
-**Суть:** Не робити. Назва товару й підзаголовок картки (категорія) — системні шаблони (`DisplayGroup` writer + `CardPreviewLayout`), не тип поля. COMPOSITE лише дублював би членів у AttributeType з великою міграцією й малим виграшем.
+**Суть:** Не робити як `AttributeType`. Замість COMPOSITE — **шаблони формування поля** на `DisplayGroup` (`writesProductName` / `targetAttributeId` + члени): системна Назва або TEXT-атрибут, конфіг у CMS «Поля» на будь-якій папці. Підзаголовок картки лишається `CardPreviewLayout`.
 
-**Статус:** Скасовано
+**Статус:** Замінено (formation templates)
 
 ## UI Editor — Сторінка товару (порядок / видимість характеристик)
 
@@ -178,4 +192,6 @@ $1
 
 **Суть:** Таблиця «Детальні характеристики» на PDP — єдиний адаптивний 2-col UI. Модель `ProductPageLayout` + `ProductPageSpecSlot` (order + visible) per taxonomy folder; inheritance по предках як Card Preview. UI Editor → **«Сторінка товару»**: reorder + show/hide. Runtime: `resolveProductPageLayout` → `buildProductSpecGroups`.
 
-**Статус:** Готово
+**Оновлено:** 2026-10-30 — візуальний редактор: `keyFactsMax` + KeyFactSlots, вкладки TEXT/TABLE/LIST + TabSlots; SpecSlots лишаються legacy sync з першим TABLE.
+
+**Статус:** Готово (візуальний editor)

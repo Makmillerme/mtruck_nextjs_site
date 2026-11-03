@@ -18,14 +18,10 @@ import { Button } from "@/components/ui/button";
 import { getSession } from "@/utils/session";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
+  buildProductDetailsTabs,
   buildProductKeyFacts,
-  buildProductSpecGroups,
   formatProductPrice,
 } from "@/lib/catalog/product-page";
-import {
-  fetchDisplayGroupsForNode,
-  resolveDisplayGroupsByKey,
-} from "@/lib/catalog/taxonomy";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import {
   fetchProductPageLayoutsByNodeIds,
@@ -34,7 +30,8 @@ import {
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
-import { LuPhone } from "react-icons/lu";
+import { Link } from "@/i18n/navigation";
+import { LuFileText } from "react-icons/lu";
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string; locale: string }>;
@@ -69,22 +66,23 @@ export async function generateMetadata(props: {
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const [product, locale, t, tNav, session] = await Promise.all([
+  const [product, locale, t, session] = await Promise.all([
     fetchSingleProduct(params.id),
     getLocale(),
     getTranslations("Product"),
-    getTranslations("Navbar"),
     getSession(),
   ]);
-  const { name, description, price } = product;
+  const { name, description, price, productCode } = product;
   const priceLabel = formatProductPrice(price, locale);
+  const leasingEstimate = Math.max(1, Math.round((price || 0) / 51));
+  const leasingAmountLabel = formatProductPrice(leasingEstimate, locale);
   const user = session?.user;
   const userId = user?.id;
   const isAuthenticated = Boolean(userId);
   const categoryLabel = product.taxonomyNode?.name ?? null;
   const categorySlug = product.taxonomyNode?.slug ?? null;
 
-  const [favoriteId, related, displayGroups, relatedLayouts, pageLayouts] =
+  const [favoriteId, related, relatedLayouts, pageLayouts] =
     await Promise.all([
       userId
         ? fetchFavoriteId({ productId: product.id })
@@ -94,11 +92,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         taxonomyNodeId: product.taxonomyNodeId,
         limit: 12,
       }),
-      product.taxonomyNodeId
-        ? fetchDisplayGroupsForNode(product.taxonomyNodeId).then(
-            resolveDisplayGroupsByKey
-          )
-        : Promise.resolve([]),
       product.taxonomyNodeId
         ? fetchCardPreviewLayoutsByNodeIds(db, [product.taxonomyNodeId])
         : Promise.resolve(new Map()),
@@ -120,15 +113,16 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       name: spec.attribute.name,
       unit: spec.attribute.unit,
       type: spec.attribute.type,
+      textInput: spec.attribute.textInput,
       sortOrder: spec.attribute.sortOrder,
     },
     option: spec.option,
+    selectedOptions: spec.selectedOptions,
     numberValue: spec.numberValue,
     textValue: spec.textValue,
     booleanValue: spec.booleanValue,
   }));
 
-  const keyFacts = buildProductKeyFacts(specsForPage, 6, locale);
   const pageLayoutRow = product.taxonomyNodeId
     ? pageLayouts.get(product.taxonomyNodeId)
     : undefined;
@@ -139,13 +133,16 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       key: spec.attribute.key,
       sortOrder: spec.attribute.sortOrder,
       name: spec.attribute.name,
+      type: spec.attribute.type,
+      textInput: spec.attribute.textInput,
     }))
   );
-  const specGroups = buildProductSpecGroups(
+  const keyFacts = buildProductKeyFacts(specsForPage, pageLayout, locale);
+  const detailsTabs = buildProductDetailsTabs(
     specsForPage,
-    displayGroups,
-    locale,
-    pageLayout
+    pageLayout,
+    description,
+    locale
   );
   const relatedVehicles = related.map((item) =>
     productWithSpecsToVehicle(
@@ -168,14 +165,25 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     />
   );
 
-  const callCta = (
-    <Button asChild size="lg" variant="outline">
-      <a href={tNav("phoneHref")}>
-        <LuPhone className="size-4" aria-hidden />
-        {t("callManager")}
-      </a>
+  const offerCta = (
+    <Button asChild size="lg" variant="outline" className="w-full">
+      <Link href="/contacts">
+        <LuFileText className="size-4" aria-hidden />
+        {t("requestOffer")}
+      </Link>
     </Button>
   );
+
+  const trustItems = [
+    { id: "warranty", label: t("trustWarranty") },
+    { id: "service", label: t("trustService") },
+    { id: "delivery", label: t("trustDelivery") },
+    {
+      id: "tradein",
+      label: t("trustTradeIn"),
+      hint: t("trustTradeInHint"),
+    },
+  ];
 
   return (
     <section
@@ -188,14 +196,17 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         categorySlug={categorySlug}
       />
 
-      <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
-        <ProductGallery
-          images={gallery}
-          priority
-          sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 40vw"
-        />
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+        <div className="flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden">
+          <ProductGallery
+            images={gallery}
+            priority
+            sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 40vw"
+          />
+        </div>
 
         <ProductBuyBox
+          className="min-w-0"
           categoryLabel={categoryLabel}
           name={name}
           priceLabel={priceLabel}
@@ -203,6 +214,15 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
           availabilityLabel={availabilityLabel}
           availabilityInStock={availabilityInStock}
           facts={keyFacts}
+          articleLabel={
+            productCode ? t("articleCode", { code: productCode }) : null
+          }
+          financingLabel={t("financingFrom")}
+          financingAmount={t("financingPerMonth", {
+            amount: leasingAmountLabel,
+          })}
+          financingHint={t("financingHint")}
+          trustItems={trustItems}
           actions={
             <>
               <FavoriteToggleButton
@@ -215,17 +235,11 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             </>
           }
           cta={orderCta}
-          secondaryCta={callCta}
+          secondaryCta={offerCta}
         />
       </div>
 
-      <ProductDetailsTabs
-        description={description}
-        specGroups={specGroups}
-        descriptionTab={t("descriptionTitle")}
-        specsTab={t("specsTitle")}
-        aboutTitle={t("aboutTitle")}
-      />
+      <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
 
       <ProductRelated
         title={t("relatedTitle")}

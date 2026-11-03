@@ -47,7 +47,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     title: "Пагінація каталогу",
     hint: "Стрілки + сторінка/усього + outline DropdownMenu 10/25/40.",
     keywords:
-      "pagination пагінація page pagesize 10 25 40 каталог products dropdown",
+      "pagination пагінація page pagesize 9 10 18 20 30 36 каталог products dropdown",
   },
   {
     id: "logo",
@@ -188,9 +188,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "pdp",
     category: "cards",
     title: "Сторінка товару (PDP)",
-    hint: "Галерея + lightbox, sticky buy-box, key facts, content underline tabs (Опис / Характеристики), mobile sticky CTA, related.",
+    hint: "Галерея + lightbox, sticky buy-box (teaser, icon facts, leasing, trust), underline tabs, mobile sticky CTA, related.",
     keywords:
-      "pdp product page сторінка товару gallery lightbox sticky cta key facts specs tabs опис характеристики related buy-box наявність",
+      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
   },
   {
     id: "carousel",

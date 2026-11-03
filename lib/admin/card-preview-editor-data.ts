@@ -2,24 +2,47 @@ import {
   CARD_PREVIEW_SUBTITLE_FIELD_MAX,
   resolveCardPreviewLayout,
   slotMaxForSpecsStyle,
-  type CardPreviewCategorySourceId,
   type CardPreviewSpecsStyleId,
 } from "@/lib/catalog/card-preview";
 import {
   fetchAttributesForNode,
   fetchTaxonomyNode,
   fetchTaxonomyTree,
-  firstTreeNodeId,
+  firstLeafTreeNodeId,
+  isLeafTaxonomyNode,
 } from "@/lib/catalog/taxonomy";
 import type { CatalogAttribute, TaxonomyTreeNode } from "@/lib/catalog/types";
 import db from "@/utils/db";
 
-/** First folder in tree — fast default for UI Editor redirect. */
+/** First leaf folder — UI Editor only configures end categories. */
 export async function resolveDefaultCardPreviewNodeId(
   tree: TaxonomyTreeNode[]
 ): Promise<string | null> {
-  // Prefer first tree node for a fast first paint (no extra layout scan).
-  return firstTreeNodeId(tree) ?? null;
+  const withLayout = await db.cardPreviewLayout.findMany({
+    select: { taxonomyNodeId: true },
+  });
+  const configured = new Set(withLayout.map((row) => row.taxonomyNodeId));
+  const preferConfigured = (nodes: TaxonomyTreeNode[]): string | undefined => {
+    for (const node of nodes) {
+      if (node.children.length === 0) {
+        if (configured.has(node.id)) return node.id;
+      } else {
+        const nested = preferConfigured(node.children);
+        if (nested) return nested;
+      }
+    }
+    return undefined;
+  };
+  return preferConfigured(tree) ?? firstLeafTreeNodeId(tree) ?? null;
+}
+
+/** Null if missing or not a leaf (parents are not editable here). */
+export function resolveLeafEditorNodeId(
+  tree: TaxonomyTreeNode[],
+  nodeId: string | null | undefined
+): string | null {
+  if (!nodeId) return null;
+  return isLeafTaxonomyNode(tree, nodeId) ? nodeId : null;
 }
 
 export type CardPreviewEditorPayload = {
@@ -34,7 +57,6 @@ export type CardPreviewEditorPayload = {
   showSpecs: boolean;
   specsStyle: CardPreviewSpecsStyleId;
   specsGridCount: number;
-  categorySource: CardPreviewCategorySourceId;
   slotAttributeIds: string[];
   subtitleAttributeIds: string[];
   slotMax: number;
@@ -58,7 +80,6 @@ export async function loadCardPreviewEditorData(
       showSpecs: true,
       specsStyle: "GRID",
       specsGridCount: 4,
-      categorySource: "PRODUCT_FOLDER",
       slotAttributeIds: [],
       subtitleAttributeIds: [],
       slotMax: slotMaxForSpecsStyle("GRID", 4),
@@ -128,7 +149,6 @@ export async function loadCardPreviewEditorData(
     showSpecs: resolved.showSpecs,
     specsStyle: resolved.specsStyle,
     specsGridCount: resolved.specsGridCount,
-    categorySource: resolved.categorySource,
     slotAttributeIds,
     subtitleAttributeIds,
     slotMax: max,

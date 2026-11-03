@@ -11,6 +11,46 @@ type SpecValueSource = SpecCreateInput & {
   optionLabel?: string | null;
 };
 
+export const FORMATION_TARGET_NAME = "name";
+
+export function formationTargetKey(
+  group: Pick<CatalogDisplayGroup, "writesProductName" | "targetAttributeId">
+): string | null {
+  if (group.targetAttributeId) return `attr:${group.targetAttributeId}`;
+  if (group.writesProductName) return FORMATION_TARGET_NAME;
+  return null;
+}
+
+/** Closest folder wins per formation target (name or TEXT attribute). */
+export function resolveFormationTemplates(
+  groups: CatalogDisplayGroup[]
+): CatalogDisplayGroup[] {
+  const byTarget = new Map<string, CatalogDisplayGroup>();
+  for (const group of groups) {
+    const key = formationTargetKey(group);
+    if (!key) continue;
+    byTarget.set(key, group);
+  }
+  return [...byTarget.values()];
+}
+
+export function isActiveFormationTemplate(
+  group: CatalogDisplayGroup | null | undefined
+): group is CatalogDisplayGroup {
+  return Boolean(group && formationTargetKey(group) && group.members.length > 0);
+}
+
+export function resolveNameFormationTemplate(
+  groups: CatalogDisplayGroup[]
+): CatalogDisplayGroup | null {
+  const templates = resolveFormationTemplates(groups);
+  const nameTemplate =
+    templates.find(
+      (group) => group.writesProductName && !group.targetAttributeId
+    ) ?? null;
+  return isActiveFormationTemplate(nameTemplate) ? nameTemplate : null;
+}
+
 function formatSpecPart(
   member: CatalogDisplayGroup["members"][number],
   spec: SpecValueSource | undefined
@@ -97,25 +137,45 @@ export function splitProductNameAroundComposed(
   };
 }
 
+export type FormationApplyResult = {
+  name: string | null;
+  attributeTextValues: Map<string, string>;
+};
+
+export async function applyFormationTemplates(
+  nodeId: string,
+  specs: SpecValueSource[]
+): Promise<FormationApplyResult> {
+  const templates = resolveFormationTemplates(
+    await fetchDisplayGroupsForNode(nodeId)
+  );
+  let name: string | null = null;
+  const attributeTextValues = new Map<string, string>();
+  for (const template of templates) {
+    if (template.members.length === 0) continue;
+    const value = resolveDisplayGroupString(template, specs);
+    if (!value) continue;
+    if (template.targetAttributeId) {
+      attributeTextValues.set(template.targetAttributeId, value);
+    } else if (template.writesProductName) {
+      name = value;
+    }
+  }
+  return { name, attributeTextValues };
+}
+
 export async function resolveProductNameFromDisplayGroups(
   nodeId: string,
   specs: SpecValueSource[]
 ): Promise<string | null> {
-  const groups = resolveDisplayGroupsByKey(
-    await fetchDisplayGroupsForNode(nodeId)
-  );
-  const writers = groups.filter((group) => group.writesProductName);
-  const writer =
-    writers.find((group) => !group.inherited) ?? writers[0] ?? null;
-  if (!writer) return null;
-  const value = resolveDisplayGroupString(writer, specs);
-  return value.length > 0 ? value : null;
+  const { name } = await applyFormationTemplates(nodeId, specs);
+  return name;
 }
 
-/** Recompute Product.name for every product in the folder subtree from the active name template. */
-export async function regenerateProductNamesInFolderSubtree(
+/** Recompute Product.name and TEXT formation targets in the folder subtree. */
+export async function regenerateFormationInFolderSubtree(
   nodeId: string
-): Promise<{ updated: number; skipped: number }> {
+): Promise<{ updatedNames: number; updatedSpecs: number; skipped: number }> {
   const folderIds = await collectSubtreeIds(nodeId);
   const products = await db.product.findMany({
     where: {
@@ -128,6 +188,7 @@ export async function regenerateProductNamesInFolderSubtree(
       taxonomyNodeId: true,
       specs: {
         select: {
+          id: true,
           attributeId: true,
           optionId: true,
           numberValue: true,
@@ -139,7 +200,8 @@ export async function regenerateProductNamesInFolderSubtree(
     },
   });
 
-  let updated = 0;
+  let updatedNames = 0;
+  let updatedSpecs = 0;
   let skipped = 0;
   for (const product of products) {
     if (!product.taxonomyNodeId) {
@@ -154,21 +216,62 @@ export async function regenerateProductNamesInFolderSubtree(
       textValue: spec.textValue,
       booleanValue: spec.booleanValue,
     }));
-    const nextName = await resolveProductNameFromDisplayGroups(
+    const applied = await applyFormationTemplates(
       product.taxonomyNodeId,
       specs
     );
-    if (!nextName || nextName === product.name) {
-      skipped += 1;
-      continue;
+
+    let touched = false;
+    if (applied.name && applied.name !== product.name) {
+      await db.product.update({
+        where: { id: product.id },
+        data: { name: applied.name },
+      });
+      updatedNames += 1;
+      touched = true;
     }
-    await db.product.update({
-      where: { id: product.id },
-      data: { name: nextName },
-    });
-    updated += 1;
+
+    for (const [attributeId, textValue] of applied.attributeTextValues) {
+      const existing = product.specs.find(
+        (spec) => spec.attributeId === attributeId
+      );
+      if (existing) {
+        if (existing.textValue === textValue) continue;
+        await db.productSpec.update({
+          where: { id: existing.id },
+          data: {
+            textValue,
+            optionId: null,
+            numberValue: null,
+            booleanValue: null,
+          },
+        });
+        updatedSpecs += 1;
+        touched = true;
+      } else {
+        await db.productSpec.create({
+          data: {
+            productId: product.id,
+            attributeId,
+            textValue,
+          },
+        });
+        updatedSpecs += 1;
+        touched = true;
+      }
+    }
+
+    if (!touched) skipped += 1;
   }
-  return { updated, skipped };
+  return { updatedNames, updatedSpecs, skipped };
+}
+
+/** @deprecated Prefer regenerateFormationInFolderSubtree */
+export async function regenerateProductNamesInFolderSubtree(
+  nodeId: string
+): Promise<{ updated: number; skipped: number }> {
+  const result = await regenerateFormationInFolderSubtree(nodeId);
+  return { updated: result.updatedNames, skipped: result.skipped };
 }
 
 export async function resolveProductNameWithExtra(
@@ -179,9 +282,7 @@ export async function resolveProductNameWithExtra(
   const groups = resolveDisplayGroupsByKey(
     await fetchDisplayGroupsForNode(nodeId)
   );
-  const writers = groups.filter((group) => group.writesProductName);
-  const writer =
-    writers.find((group) => !group.inherited) ?? writers[0] ?? null;
+  const writer = resolveNameFormationTemplate(groups);
   if (!writer) return null;
   const composed = resolveDisplayGroupString(writer, specs);
   const joined = joinProductName(
@@ -190,6 +291,34 @@ export async function resolveProductNameWithExtra(
     affix?.suffix ?? ""
   );
   return joined.length > 0 ? joined : null;
+}
+
+/** Merge formation TEXT targets into parsed specs (empty or previous auto). */
+export function mergeFormationIntoSpecs(
+  specs: SpecCreateInput[],
+  attributeTextValues: Map<string, string>,
+  previousByAttribute?: Map<string, string | null>
+): SpecCreateInput[] {
+  if (attributeTextValues.size === 0) return specs;
+  const byId = new Map(specs.map((spec) => [spec.attributeId, { ...spec }]));
+  for (const [attributeId, textValue] of attributeTextValues) {
+    const existing = byId.get(attributeId);
+    const currentText = existing?.textValue?.trim() ?? "";
+    const previous = previousByAttribute?.get(attributeId)?.trim() ?? "";
+    const shouldWrite =
+      currentText.length === 0 ||
+      currentText === previous ||
+      currentText === textValue;
+    if (!shouldWrite) continue;
+    byId.set(attributeId, {
+      attributeId,
+      textValue,
+      optionId: null,
+      numberValue: null,
+      booleanValue: null,
+    });
+  }
+  return [...byId.values()];
 }
 
 /** Build compose inputs from sheet controlled values (option id / text / number / bool). */
@@ -209,6 +338,17 @@ export function specsFromSheetValues(
         optionId: option.id,
         optionLabel: option.label,
       });
+      continue;
+    }
+    if (attribute.type === "MULTI_SELECT") {
+      if (!raw?.trim()) continue;
+      const optionIds = raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .filter((id) => attribute.options.some((option) => option.id === id));
+      if (optionIds.length === 0) continue;
+      specs.push({ attributeId: attribute.id, optionIds });
       continue;
     }
     if (attribute.type === "TEXT") {
