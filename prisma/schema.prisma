@@ -58,6 +58,12 @@ enum OrderOrigin {
   ADMIN
 }
 
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
 enum SheetWidth {
   FULL
   HALF
@@ -162,8 +168,9 @@ model Product {
   user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   favorites      Favorite[]
   reviews        Review[]
-  orders         Order[]
-  taxonomyNodeId String?
+  orders            Order[]
+  callbackInquiries CallbackInquiry[]
+  taxonomyNodeId    String?
   taxonomyNode   TaxonomyNode?        @relation(fields: [taxonomyNodeId], references: [id], onDelete: SetNull)
   status         ProductStatus        @default(PUBLISHED)
   availability   ProductAvailability  @default(IN_STOCK)
@@ -508,6 +515,28 @@ model Order {
   @@index([kind])
   @@index([status])
   @@index([origin])
+  @@index([archivedAt])
+}
+
+// Phone callback / CTA lead (anonymous site inquiry).
+model CallbackInquiry {
+  id          String         @id @default(uuid())
+  phone       String
+  productId   String?
+  product     Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String?
+  productCode String?
+  status      InquiryStatus  @default(NEW)
+  note        String?
+  readAt      DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  archivedAt  DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([readAt])
+  @@index([productId])
   @@index([archivedAt])
 }
 

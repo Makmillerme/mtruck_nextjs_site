@@ -142,8 +142,10 @@ export function buildProductKeyFacts(
       });
       if (facts.length >= max) break;
     }
-    if (facts.length > 0) return facts;
-    // No configured visible slots → sortOrder heuristic below.
+    // Leaf UI Editor layout: only picked key facts — never invent sortOrder top-N.
+    if (layout.hasLayout || layout.keyFactsConfigured || facts.length > 0) {
+      return facts;
+    }
   }
 
   const max =

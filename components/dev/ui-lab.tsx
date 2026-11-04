@@ -113,6 +113,7 @@ import UiLabSnake from "@/components/dev/ui-lab-snake";
 import UiLabTruckParking from "@/components/dev/ui-lab-truck-parking";
 import UiLabToast from "@/components/dev/ui-lab-toast";
 import UiLabPdp from "@/components/dev/ui-lab-pdp";
+import UiLabAccountOrders from "@/components/dev/ui-lab-account-orders";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -1035,6 +1036,20 @@ export default function UiLab({ children }: { children?: ReactNode }) {
               hint="Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related VehicleCard."
             >
               <UiLabPdp />
+            </Section>
+          </LabGate>
+        </div>
+      ) : null}
+
+      {visibleIds.has("account-orders") ? (
+        <div className="page-container pb-16 pt-8">
+          <LabGate id="account-orders" visibleIds={visibleIds}>
+            <Section
+              id="account-orders"
+              title="Кабінет / Замовлення"
+              hint="Cart-like список позицій + sticky підсумок. Канон для табу Замовлення."
+            >
+              <UiLabAccountOrders />
             </Section>
           </LabGate>
         </div>

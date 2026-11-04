@@ -1,5 +1,5 @@
+import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import SectionIntro from "@/components/section-intro";
-import { Button } from "@/components/ui/button";
 import { getTranslations } from "next-intl/server";
 import type { IconType } from "react-icons";
 import {
@@ -62,9 +62,7 @@ export default async function CustomOrderSection() {
         </ol>
 
         <div className="mt-14 flex justify-center lg:mt-16">
-          <Button asChild size="lg">
-            <a href="#contact">{t("cta")}</a>
-          </Button>
+          <CtaInquiryTrigger size="lg">{t("cta")}</CtaInquiryTrigger>
         </div>
       </div>
     </section>

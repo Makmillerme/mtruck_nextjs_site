@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import AccountEmptyState from "@/components/account/AccountEmptyState";
 import AccountOrdersView, {
@@ -7,11 +8,12 @@ import AccountOrdersView, {
 import AccountSettingsForms from "@/components/account/AccountSettingsForms";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import VehicleCard from "@/components/vehicles/vehicle-card";
+import VehicleCard, {
+  type VehicleCardModel,
+} from "@/components/vehicles/vehicle-card";
 import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
-import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import { toggleFavoriteAction } from "@/utils/actions";
 import { useTranslations } from "next-intl";
@@ -20,32 +22,11 @@ import { LuHeart } from "react-icons/lu";
 
 export type AccountCabinetTab = "orders" | "favorites" | "settings";
 
-export type AccountFavoriteProduct = {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  createdAt: string;
-  status: string;
-  taxonomyNode: { name: string; slug: string } | null;
-  specs: {
-    attribute: {
-      key: string;
-      unit: string | null;
-      name: string;
-      sortOrder: number;
-    };
-    option: { label: string } | null;
-    numberValue: number | null;
-    textValue: string | null;
-    booleanValue: boolean | null;
-  }[];
-  images: { url: string }[];
-};
-
+/** Favorite row with server-resolved VehicleCard (layouts + locale). */
 export type AccountFavoriteRow = {
   id: string;
-  product: AccountFavoriteProduct;
+  productId: string;
+  vehicle: VehicleCardModel;
 };
 
 export type AccountSettingsProps = {
@@ -93,15 +74,21 @@ function AccountFavoritesPanel({
       <p className="text-sm text-muted-foreground">
         {t("favoritesTotal", { count: optimisticItems.length })}
       </p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
+      {/* Full-width cabinet (no filter sidebar): denser than catalog — 1→2→3→4 */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-5 xl:grid-cols-4">
         {optimisticItems.map((favorite, index) => (
-          <div key={favorite.id} className="relative">
+          <div
+            key={favorite.id}
+            className="relative animate-in fade-in duration-300 fill-mode-both"
+            style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+          >
             <VehicleCard
-              vehicle={productWithSpecsToVehicle(favorite.product)}
+              vehicle={favorite.vehicle}
               priority={index < 3}
               favoriteId={favorite.id}
               isAuthenticated
               showFavorite={false}
+              imageSizes="(max-width: 640px) 100vw, (max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw"
             />
             <div className="absolute right-2.5 top-2.5 z-10 sm:right-3 sm:top-3">
               <ConfirmDeleteCallbackIcon
@@ -109,7 +96,7 @@ function AccountFavoritesPanel({
                 onConfirm={() =>
                   removeOptimistically(favorite.id, () =>
                     toggleFavoriteAction({
-                      productId: favorite.product.id,
+                      productId: favorite.productId,
                       favoriteId: favorite.id,
                       pathname,
                     })

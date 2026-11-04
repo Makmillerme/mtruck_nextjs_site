@@ -666,13 +666,19 @@ export default function AdminProductsView({
       if (q) {
         const specHay = item.specs
           .map((spec) =>
-            [spec.optionLabel, spec.textValue, spec.numberValue]
+            [
+              spec.optionLabel,
+              ...(spec.optionLabels ?? []),
+              spec.textValue,
+              spec.numberValue,
+            ]
               .filter((value) => value != null && value !== "")
               .join(" ")
           )
           .join(" ")
           .toLowerCase();
-        const hay = `${item.name} ${specHay}`.toLowerCase();
+        const hay =
+          `${item.name} ${item.productCode} ${specHay}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (catalogActive) {

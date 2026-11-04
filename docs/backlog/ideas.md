@@ -2,6 +2,14 @@
 
 Ідеї, які свідомо не впроваджуємо зараз. Агент додає записи за правилом `.cursor/rules/backlog.mdc`.
 
+## Смарт-чат (менеджер + ШІ) на Pusher
+
+**Дата:** 2026-11-04
+
+**Суть:** Модульний онлайн-чат на сайті: (1) realtime з менеджером, (2) чат із ШІ з повною кастомізацією (knowledge/RAG, промпти, tools, ескалація людині). Транспорт — **Pusher Channels** (`pusher` + `pusher-js`); історія/ролі — Prisma; UI — свій під бренд MTruck. Спочатку окремо: live-бейдж заявок через Pusher; повний чат-продукт — після стабілізації сповіщень.
+
+**Статус:** Відкладено (транспорт Pusher узгоджено; реалізація чату пізніше)
+
 ## PDP універсальний ціновий / фінансовий блок
 
 **Дата:** 2026-11-03
@@ -56,9 +64,11 @@
 
 **Дата:** 2026-09-09
 
-**Суть:** `submitCallbackInquiryAction` і `submitPartnershipInquiryAction` зараз лише валідують і показують toast — дані не пишуться в БД і не йдуть на email. Потрібен persistence + сповіщення.
+**Оновлено:** 2026-11-03
 
-**Статус:** Відкладено
+**Суть:** CTA/callback → `CallbackInquiry` у БД + адмінка «Продажі → Заявки» + бейдж у хедері. Partnership — перевірити окремо. Live-оновлення бейджа без reload — етап Pusher.
+
+**Статус:** Готово (persistence + адмін UI); realtime — в роботі
 
 ## Реальні лічильники CategoryFinder
 
@@ -190,7 +200,7 @@
 
 **Дата:** 2026-10-30
 
-**Суть:** Таблиця «Детальні характеристики» на PDP — єдиний адаптивний 2-col UI. Модель `ProductPageLayout` + `ProductPageSpecSlot` (order + visible) per taxonomy folder; inheritance по предках як Card Preview. UI Editor → **«Сторінка товару»**: reorder + show/hide. Runtime: `resolveProductPageLayout` → `buildProductSpecGroups`.
+**Суть:** Таблиця «Детальні характеристики» на PDP — єдиний адаптивний 2-col UI. Модель `ProductPageLayout` (+ KeyFactSlots / Tabs) **лише на кінцевій категорії товару** (без наслідування від батька). UI Editor → **«Сторінка товару»**. Runtime: `resolveProductPageLayout` → key facts + details tabs.
 
 **Оновлено:** 2026-10-30 — візуальний редактор: `keyFactsMax` + KeyFactSlots, вкладки TEXT/TABLE/LIST + TabSlots; SpecSlots лишаються legacy sync з першим TABLE.
 

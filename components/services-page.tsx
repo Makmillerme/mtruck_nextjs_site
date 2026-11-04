@@ -1,10 +1,11 @@
-import { Button } from "@/components/ui/button";
+import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import {
@@ -127,9 +128,9 @@ export default async function ServicesPageContent() {
           <Button asChild size="lg">
             <Link href="/products">{t("ctaCatalog")}</Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/contact">{t("ctaContact")}</Link>
-          </Button>
+          <CtaInquiryTrigger variant="outline" size="lg">
+            {t("ctaContact")}
+          </CtaInquiryTrigger>
         </div>
       </section>
     </div>

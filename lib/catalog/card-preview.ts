@@ -188,6 +188,7 @@ export async function seedDefaultCardPreviewLayouts(prisma: PrismaClient) {
   return created;
 }
 
+/** Leaf-only: card preview layout for the product folder itself, never ancestors. */
 export async function fetchCardPreviewLayoutsByNodeIds(
   prisma: PrismaClient,
   nodeIds: string[]
@@ -197,29 +198,8 @@ export async function fetchCardPreviewLayoutsByNodeIds(
     return new Map<string, CardPreviewLayoutResolved>();
   }
 
-  const nodes = await prisma.taxonomyNode.findMany({
-    select: { id: true, parentId: true },
-  });
-  const parentById = new Map(nodes.map((node) => [node.id, node.parentId]));
-
-  function ancestorChain(nodeId: string): string[] {
-    const chain: string[] = [];
-    let current: string | null = nodeId;
-    const guard = new Set<string>();
-    while (current && !guard.has(current)) {
-      chain.push(current);
-      guard.add(current);
-      current = parentById.get(current) ?? null;
-    }
-    return chain;
-  }
-
-  const relatedIds = [
-    ...new Set(unique.flatMap((id) => ancestorChain(id))),
-  ];
-
   const rows = await prisma.cardPreviewLayout.findMany({
-    where: { taxonomyNodeId: { in: relatedIds } },
+    where: { taxonomyNodeId: { in: unique } },
     include: {
       taxonomyNode: { select: { name: true } },
       slots: {
@@ -233,19 +213,7 @@ export async function fetchCardPreviewLayoutsByNodeIds(
     },
   });
 
-  const byNodeId = new Map(
+  return new Map(
     rows.map((row) => [row.taxonomyNodeId, resolveCardPreviewLayout(row)] as const)
   );
-
-  const map = new Map<string, CardPreviewLayoutResolved>();
-  for (const nodeId of unique) {
-    for (const id of ancestorChain(nodeId)) {
-      const layout = byNodeId.get(id);
-      if (layout) {
-        map.set(nodeId, layout);
-        break;
-      }
-    }
-  }
-  return map;
 }

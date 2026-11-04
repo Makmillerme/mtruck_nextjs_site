@@ -85,6 +85,15 @@ export const callbackInquirySchema = z.object({
     .refine((value) => /^\+?[\d\s()-]{10,20}$/.test(value), {
       message: "Enter a valid phone number.",
     }),
+  productId: z.string().trim().optional().or(z.literal("")),
+  productName: z.string().trim().max(200).optional().or(z.literal("")),
+  productCode: z.string().trim().max(32).optional().or(z.literal("")),
+  note: z
+    .string()
+    .trim()
+    .max(2000, { message: "Message must be at most 2000 characters." })
+    .optional()
+    .or(z.literal("")),
 });
 
 export const updateAccountProfileSchema = z.object({

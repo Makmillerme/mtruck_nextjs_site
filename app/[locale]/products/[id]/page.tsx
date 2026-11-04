@@ -1,6 +1,7 @@
 import BreadCrumbs from "@/components/single-product/BreadCrumbs";
 import {
   fetchFavoriteId,
+  fetchOpenCatalogOrderForProduct,
   fetchRelatedProducts,
   fetchSingleProduct,
 } from "@/utils/actions";
@@ -13,8 +14,8 @@ import ProductBuyBox from "@/components/single-product/product-buy-box";
 import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
 import ProductRelated from "@/components/single-product/product-related";
 import ProductStickyCta from "@/components/single-product/product-sticky-cta";
+import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import RequestCatalogOrder from "@/components/single-product/RequestCatalogOrder";
-import { Button } from "@/components/ui/button";
 import { getSession } from "@/utils/session";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
@@ -27,10 +28,10 @@ import {
   fetchProductPageLayoutsByNodeIds,
   resolveProductPageLayout,
 } from "@/lib/catalog/product-page-layout";
+import { fetchAttributesForNode } from "@/lib/catalog/taxonomy";
 import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
-import { Link } from "@/i18n/navigation";
 import { LuFileText } from "react-icons/lu";
 
 export async function generateMetadata(props: {
@@ -82,10 +83,22 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const categoryLabel = product.taxonomyNode?.name ?? null;
   const categorySlug = product.taxonomyNode?.slug ?? null;
 
-  const [favoriteId, related, relatedLayouts, pageLayouts] =
-    await Promise.all([
+  const [
+    favoriteId,
+    openCatalogOrder,
+    related,
+    relatedLayouts,
+    pageLayouts,
+    folderAttributes,
+  ] = await Promise.all([
       userId
         ? fetchFavoriteId({ productId: product.id })
+        : Promise.resolve(null),
+      userId
+        ? fetchOpenCatalogOrderForProduct({
+            productId: product.id,
+            userId,
+          })
         : Promise.resolve(null),
       fetchRelatedProducts({
         productId: product.id,
@@ -98,6 +111,9 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       product.taxonomyNodeId
         ? fetchProductPageLayoutsByNodeIds(db, [product.taxonomyNodeId])
         : Promise.resolve(new Map()),
+      product.taxonomyNodeId
+        ? fetchAttributesForNode(product.taxonomyNodeId)
+        : Promise.resolve([]),
     ]);
 
   const gallery = uniqueImages(
@@ -126,17 +142,25 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const pageLayoutRow = product.taxonomyNodeId
     ? pageLayouts.get(product.taxonomyNodeId)
     : undefined;
-  const pageLayout = resolveProductPageLayout(
-    pageLayoutRow,
-    specsForPage.map((spec) => ({
-      id: spec.attribute.id,
-      key: spec.attribute.key,
-      sortOrder: spec.attribute.sortOrder,
-      name: spec.attribute.name,
-      type: spec.attribute.type,
-      textInput: spec.attribute.textInput,
-    }))
-  );
+  const layoutAttributes =
+    folderAttributes.length > 0
+      ? folderAttributes.map((attr) => ({
+          id: attr.id,
+          key: attr.key,
+          sortOrder: attr.sortOrder,
+          name: attr.name,
+          type: attr.type,
+          textInput: attr.textInput,
+        }))
+      : specsForPage.map((spec) => ({
+          id: spec.attribute.id,
+          key: spec.attribute.key,
+          sortOrder: spec.attribute.sortOrder,
+          name: spec.attribute.name,
+          type: spec.attribute.type,
+          textInput: spec.attribute.textInput,
+        }));
+  const pageLayout = resolveProductPageLayout(pageLayoutRow, layoutAttributes);
   const keyFacts = buildProductKeyFacts(specsForPage, pageLayout, locale);
   const detailsTabs = buildProductDetailsTabs(
     specsForPage,
@@ -162,16 +186,24 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     <RequestCatalogOrder
       productId={params.id}
       isAuthenticated={isAuthenticated}
+      hasOpenOrder={Boolean(openCatalogOrder)}
     />
   );
 
   const offerCta = (
-    <Button asChild size="lg" variant="outline" className="w-full">
-      <Link href="/contacts">
-        <LuFileText className="size-4" aria-hidden />
-        {t("requestOffer")}
-      </Link>
-    </Button>
+    <CtaInquiryTrigger
+      size="lg"
+      variant="outline"
+      className="w-full"
+      context={{
+        productId: params.id,
+        productName: name,
+        productCode: productCode ?? null,
+      }}
+    >
+      <LuFileText className="size-4" aria-hidden />
+      {t("requestOffer")}
+    </CtaInquiryTrigger>
   );
 
   const trustItems = [

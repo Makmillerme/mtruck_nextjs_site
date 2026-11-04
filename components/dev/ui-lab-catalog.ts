@@ -193,6 +193,14 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
       "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
   },
   {
+    id: "account-orders",
+    category: "cards",
+    title: "Кабінет / Замовлення",
+    hint: "Cart-like: OrderLine (click-to-select card, thumb, status, actions) + sticky Summary + CTA Перейти до оформлення.",
+    keywords:
+      "account orders замовлення кабінет cart корзина select card summary checkout оформлення order line",
+  },
+  {
     id: "carousel",
     category: "overlays",
     title: "PhotoCarousel",

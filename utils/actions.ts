@@ -960,13 +960,115 @@ export const submitCallbackInquiryAction = async (
   formData: FormData
 ) => {
   try {
-    validateWithZodSchema(callbackInquirySchema, {
+    const data = validateWithZodSchema(callbackInquirySchema, {
       phone: formData.get('phone'),
+      productId: formData.get('productId') ?? '',
+      productName: formData.get('productName') ?? '',
+      productCode: formData.get('productCode') ?? '',
+      note: formData.get('note') ?? '',
     });
+    const productId = data.productId?.trim() || null;
+    let productName = data.productName?.trim() || null;
+    let productCode = data.productCode?.trim() || null;
+    const note = data.note?.trim() || null;
+    if (productId) {
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        select: { id: true, name: true, productCode: true },
+      });
+      if (product) {
+        productName = product.name;
+        productCode = product.productCode;
+      }
+    }
+    await db.callbackInquiry.create({
+      data: {
+        phone: data.phone,
+        productId: productId,
+        productName,
+        productCode,
+        note,
+      },
+    });
+    revalidatePath('/admin/sales/inquiries');
     const t = await getTranslations('Actions');
-    return { message: t('callbackSubmitted') };
+    return { message: t('callbackSubmitted'), ok: true as const };
   } catch (error) {
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false as const };
+  }
+};
+
+export const fetchAdminCallbackInquiries = async () => {
+  await getStaffUser();
+  return db.callbackInquiry.findMany({
+    where: { archivedAt: null },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      product: { select: { id: true, name: true, productCode: true } },
+    },
+  });
+};
+
+export const countUnreadCallbackInquiries = async () => {
+  await getStaffUser();
+  return db.callbackInquiry.count({
+    where: { archivedAt: null, readAt: null },
+  });
+};
+
+export const fetchRecentUnreadCallbackInquiries = async (limit = 5) => {
+  await getStaffUser();
+  return db.callbackInquiry.findMany({
+    where: { archivedAt: null, readAt: null },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      phone: true,
+      productName: true,
+      productCode: true,
+      createdAt: true,
+    },
+  });
+};
+
+export const markCallbackInquiriesReadAction = async () => {
+  try {
+    await getStaffUser();
+    await db.callbackInquiry.updateMany({
+      where: { archivedAt: null, readAt: null },
+      data: { readAt: new Date() },
+    });
+    revalidatePath('/admin/sales/inquiries');
+    return { ok: true as const, message: '' };
+  } catch (error) {
+    return { ...(await renderError(error)), ok: false as const };
+  }
+};
+
+export const updateCallbackInquiryStatusAction = async (
+  prevState: { message: string },
+  formData: FormData
+) => {
+  try {
+    await getStaffUser();
+    const id = String(formData.get('id') ?? '').trim();
+    const status = String(formData.get('status') ?? '').trim();
+    if (!id || !['NEW', 'IN_PROGRESS', 'CLOSED'].includes(status)) {
+      throw new Error('Invalid inquiry update');
+    }
+    await db.callbackInquiry.update({
+      where: { id },
+      data: {
+        status: status as 'NEW' | 'IN_PROGRESS' | 'CLOSED',
+        readAt: new Date(),
+      },
+    });
+    revalidatePath('/admin/sales/inquiries');
+    const t = await getTranslations('Admin');
+    return { message: t('productSaved'), ok: true as const };
+  } catch (error) {
+    return { ...(await renderError(error)), ok: false as const };
   }
 };
 
@@ -1056,6 +1158,25 @@ const fetchProduct = async (productId: string) => {
   return product;
 };
 
+export const fetchOpenCatalogOrderForProduct = async ({
+  productId,
+  userId,
+}: {
+  productId: string;
+  userId: string;
+}) => {
+  return db.order.findFirst({
+    where: {
+      userId,
+      productId,
+      kind: 'CATALOG',
+      archivedAt: null,
+      status: { in: ['NEW', 'IN_PROGRESS'] },
+    },
+    select: { id: true },
+  });
+};
+
 export const createCatalogOrderAction = async (
   prevState: { message: string },
   formData: FormData
@@ -1067,14 +1188,9 @@ export const createCatalogOrderAction = async (
       throw new Error('Product id is required');
     }
     const product = await fetchProduct(productId);
-    const openOrder = await db.order.findFirst({
-      where: {
-        userId: user.id,
-        productId: product.id,
-        kind: 'CATALOG',
-        status: { in: ['NEW', 'IN_PROGRESS'] },
-      },
-      select: { id: true },
+    const openOrder = await fetchOpenCatalogOrderForProduct({
+      productId: product.id,
+      userId: user.id,
     });
     if (openOrder) {
       const t = await getTranslations('Actions');
@@ -1112,7 +1228,7 @@ export const fetchUserOrders = async () => {
     },
     include: {
       product: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, image: true, productCode: true },
       },
       taxonomyNode: {
         select: { id: true, name: true },
@@ -1122,7 +1238,36 @@ export const fetchUserOrders = async () => {
       createdAt: 'desc',
     },
   });
-  return orders;
+
+  const productIds = [
+    ...new Set(
+      orders
+        .map((order) => order.productId)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+
+  const favorites =
+    productIds.length > 0
+      ? await db.favorite.findMany({
+          where: {
+            userId: user.id,
+            productId: { in: productIds },
+          },
+          select: { id: true, productId: true },
+        })
+      : [];
+
+  const favoriteByProductId = new Map(
+    favorites.map((favorite) => [favorite.productId, favorite.id])
+  );
+
+  return orders.map((order) => ({
+    ...order,
+    favoriteId: order.productId
+      ? (favoriteByProductId.get(order.productId) ?? null)
+      : null,
+  }));
 };
 
 export const createUserRequestOrderAction = async (

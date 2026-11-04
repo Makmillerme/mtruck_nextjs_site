@@ -112,6 +112,7 @@ export function ConfirmDeleteCallbackIcon({
   title,
   description,
   confirmLabel,
+  label,
   className,
   iconClassName,
   mode = "delete",
@@ -120,6 +121,8 @@ export function ConfirmDeleteCallbackIcon({
   title?: string;
   description?: string;
   confirmLabel?: string;
+  /** Optional visible label (cart-style text action). */
+  label?: string;
   className?: string;
   iconClassName?: string;
   mode?: "delete" | "archive";
@@ -143,9 +146,14 @@ export function ConfirmDeleteCallbackIcon({
     <>
       <Button
         type="button"
-        size="icon"
+        size={label ? "sm" : "icon"}
         variant="ghost"
-        className={className ?? "cursor-pointer text-muted-foreground"}
+        className={
+          className ??
+          (label
+            ? "h-8 cursor-pointer gap-1.5 px-2 text-muted-foreground"
+            : "cursor-pointer text-muted-foreground")
+        }
         aria-label={resolvedTitle}
         onMouseDown={(event) => {
           event.preventDefault();
@@ -158,10 +166,11 @@ export function ConfirmDeleteCallbackIcon({
         }}
       >
         {isArchive ? (
-          <LuArchive className={iconClassName} aria-hidden />
+          <LuArchive className={iconClassName ?? "size-4"} aria-hidden />
         ) : (
-          <LuTrash2 className={iconClassName} aria-hidden />
+          <LuTrash2 className={iconClassName ?? "size-4"} aria-hidden />
         )}
+        {label ? <span>{label}</span> : null}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="z-[110]">

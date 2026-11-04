@@ -52,6 +52,10 @@ export type ProductPageTabResolved = {
 export type ProductPageLayoutResolved = {
   keyFactsMax: number;
   keyFactSlots: ProductPageKeyFactSlotResolved[];
+  /** Leaf folder has its own ProductPageLayout row from UI Editor. */
+  hasLayout: boolean;
+  /** Leaf layout has saved key-fact picks (opt-in list). */
+  keyFactsConfigured: boolean;
   tabs: ProductPageTabResolved[];
   /** Legacy flat TABLE slots (compat). */
   slots: ProductPageSpecSlotResolved[];
@@ -264,6 +268,8 @@ export function resolveProductPageLayout(
   return {
     keyFactsMax,
     keyFactSlots,
+    hasLayout: Boolean(row),
+    keyFactsConfigured: hasSavedKeyFacts,
     tabs,
     slots: legacySlots,
   };
@@ -309,6 +315,7 @@ const layoutInclude = {
   },
 } as const;
 
+/** Leaf-only: layout for the product folder itself, never ancestors. */
 export async function fetchProductPageLayoutsByNodeIds(
   prisma: PrismaClient,
   nodeIds: string[]
@@ -318,50 +325,17 @@ export async function fetchProductPageLayoutsByNodeIds(
     return new Map<string, ProductPageLayoutRow>();
   }
 
-  const nodes = await prisma.taxonomyNode.findMany({
-    select: { id: true, parentId: true },
-  });
-  const parentById = new Map(nodes.map((node) => [node.id, node.parentId]));
-
-  function ancestorChain(nodeId: string): string[] {
-    const chain: string[] = [];
-    let current: string | null = nodeId;
-    const guard = new Set<string>();
-    while (current && !guard.has(current)) {
-      chain.push(current);
-      guard.add(current);
-      current = parentById.get(current) ?? null;
-    }
-    return chain;
-  }
-
-  const relatedIds = [
-    ...new Set(unique.flatMap((id) => ancestorChain(id))),
-  ];
-
   try {
     const rows = await prisma.productPageLayout.findMany({
-      where: { taxonomyNodeId: { in: relatedIds } },
+      where: { taxonomyNodeId: { in: unique } },
       include: layoutInclude,
     });
 
-    const byNodeId = new Map(
+    return new Map(
       rows.map(
         (row) => [row.taxonomyNodeId, row as ProductPageLayoutRow] as const
       )
     );
-
-    const map = new Map<string, ProductPageLayoutRow>();
-    for (const nodeId of unique) {
-      for (const id of ancestorChain(nodeId)) {
-        const layout = byNodeId.get(id);
-        if (layout) {
-          map.set(nodeId, layout);
-          break;
-        }
-      }
-    }
-    return map;
   } catch (error) {
     console.error("fetchProductPageLayoutsByNodeIds", error);
     return new Map<string, ProductPageLayoutRow>();

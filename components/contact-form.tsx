@@ -3,6 +3,7 @@
 import FormContainer from "@/components/form/FormContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { submitCallbackInquiryAction } from "@/utils/actions";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -13,7 +14,7 @@ function SubmitCallbackButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} className="shrink-0">
+    <Button type="submit" disabled={pending} className="w-full shrink-0">
       {pending ? (
         <LuLoader className="size-4 animate-spin" aria-hidden />
       ) : null}
@@ -22,26 +23,60 @@ function SubmitCallbackButton({ label }: { label: string }) {
   );
 }
 
-export default function ContactForm() {
+export default function ContactForm({
+  inputId = "callback-phone",
+  messageId = "callback-note",
+  onSuccess,
+  productId,
+  productName,
+  productCode,
+}: {
+  inputId?: string;
+  messageId?: string;
+  onSuccess?: () => void;
+  productId?: string | null;
+  productName?: string | null;
+  productCode?: string | null;
+} = {}) {
   const t = useTranslations("ContactSection");
 
   return (
-    <FormContainer action={submitCallbackInquiryAction}>
-      <div className="flex items-center gap-3">
-        <Input
-          id="callback-phone"
-          name="phone"
-          type="tel"
-          required
-          autoComplete="tel"
-          inputMode="tel"
-          placeholder={t("phonePlaceholder")}
-          aria-label={t("phone.label")}
-          className="min-w-0 flex-1 font-mono"
-        />
-        <SubmitCallbackButton label={t("submit")} />
-      </div>
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+    <FormContainer
+      action={submitCallbackInquiryAction}
+      onSuccess={() => onSuccess?.()}
+      className="grid gap-3"
+    >
+      {productId ? (
+        <input type="hidden" name="productId" value={productId} />
+      ) : null}
+      {productName ? (
+        <input type="hidden" name="productName" value={productName} />
+      ) : null}
+      {productCode ? (
+        <input type="hidden" name="productCode" value={productCode} />
+      ) : null}
+      <Input
+        id={inputId}
+        name="phone"
+        type="tel"
+        required
+        autoComplete="tel"
+        inputMode="tel"
+        placeholder={t("phonePlaceholder")}
+        aria-label={t("phone.label")}
+        className="font-mono"
+      />
+      <Textarea
+        id={messageId}
+        name="note"
+        rows={4}
+        maxLength={2000}
+        placeholder={t("messagePlaceholder")}
+        aria-label={t("messageLabel")}
+        className="min-h-[6rem] resize-y"
+      />
+      <SubmitCallbackButton label={t("submit")} />
+      <p className="text-xs leading-relaxed text-muted-foreground">
         {t.rich("privacy", {
           privacy: (chunks) => (
             <Link href="/privacy" className="text-primary hover:underline">

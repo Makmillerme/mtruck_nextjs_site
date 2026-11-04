@@ -19,6 +19,8 @@ export type AdminProductSpecDTO = {
 export type AdminProductRowDTO = {
   id: string;
   name: string;
+  /** Public article / SKU (5-digit), not the UUID id. */
+  productCode: string;
   price: number;
   currency: string;
   status: string;
@@ -105,6 +107,7 @@ export function mapAdminProductRow(
   return {
     id: product.id,
     name: product.name,
+    productCode: product.productCode,
     price: product.price,
     currency: product.currency,
     status: product.status,
@@ -123,6 +126,7 @@ export function mapAdminProductSlimRow(
   return {
     id: product.id,
     name: product.name,
+    productCode: product.productCode,
     price: product.price,
     currency: product.currency,
     status: product.status,

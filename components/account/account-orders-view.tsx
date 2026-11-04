@@ -2,18 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import AccountEmptyState from "@/components/account/AccountEmptyState";
+import AccountOrderLine from "@/components/account/account-order-line";
+import AccountOrdersSummary from "@/components/account/account-orders-summary";
 import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import AdminListToolbar from "@/components/admin/admin-list-toolbar";
 import SheetFormActions from "@/components/admin/sheet-form-actions";
+import { useCtaInquiry } from "@/components/cta/cta-inquiry";
 import { SubmitButton } from "@/components/form/Buttons";
-import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import FormContainer from "@/components/form/FormContainer";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
-import EmptyList from "@/components/global/EmptyList";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -22,17 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  tableActionsClassName,
-  tableLinkClassName,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@/i18n/navigation";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import { cn } from "@/lib/utils";
 import {
@@ -41,8 +31,9 @@ import {
   updateUserOrderAction,
 } from "@/utils/actions";
 import type { actionFunction } from "@/utils/types";
-import { formatCurrency, formatDate } from "@/utils/format";
-import { LuPen } from "react-icons/lu";
+import { formatCurrency } from "@/utils/format";
+import { tableLinkClassName } from "@/components/ui/table";
+import { LuShoppingCart } from "react-icons/lu";
 
 export type AccountOrderRow = {
   id: string;
@@ -51,6 +42,9 @@ export type AccountOrderRow = {
   origin: "USER" | "ADMIN";
   productId: string | null;
   productName: string | null;
+  productImage: string | null;
+  productCode: string | null;
+  favoriteId: string | null;
   taxonomyNodeId: string | null;
   taxonomyNodeName: string | null;
   note: string | null;
@@ -62,16 +56,13 @@ function canEditOrder(order: AccountOrderRow) {
   return order.status === "NEW";
 }
 
-function DeleteOrder({
-  orderId,
-  onDelete,
-}: {
-  orderId: string;
-  onDelete: (orderId: string) => void;
-}) {
-  return (
-    <ConfirmDeleteCallbackIcon onConfirm={() => onDelete(orderId)} />
-  );
+function isOpenOrder(order: AccountOrderRow) {
+  return order.status === "NEW" || order.status === "IN_PROGRESS";
+}
+
+function orderTitle(order: AccountOrderRow, customRequestLabel: string) {
+  if (order.productName) return order.productName;
+  return order.taxonomyNodeName ?? customRequestLabel;
 }
 
 function OrderRequestFields({
@@ -126,11 +117,15 @@ export default function AccountOrdersView({
   const t = useTranslations("AccountCabinet");
   const tOrders = useTranslations("Orders");
   const tAdmin = useTranslations("Admin");
+  const { open: openInquiry } = useCtaInquiry();
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(items.filter(isOpenOrder).map((order) => order.id))
+  );
 
   const editOrder = useMemo(
     () => optimisticItems.find((item) => item.id === sheetEditId) ?? null,
@@ -142,10 +137,23 @@ export default function AccountOrdersView({
     const q = search.trim().toLowerCase();
     if (!q) return optimisticItems;
     return optimisticItems.filter((item) => {
-      const hay = `${item.productName ?? ""} ${item.taxonomyNodeName ?? ""} ${item.note ?? ""}`;
+      const hay = `${item.productName ?? ""} ${item.productCode ?? ""} ${item.taxonomyNodeName ?? ""} ${item.note ?? ""}`;
       return hay.toLowerCase().includes(q);
     });
   }, [optimisticItems, search]);
+
+  const selectedOrders = useMemo(
+    () =>
+      filtered.filter(
+        (order) => selectedIds.has(order.id) && isOpenOrder(order)
+      ),
+    [filtered, selectedIds]
+  );
+
+  const selectedTotal = selectedOrders.reduce(
+    (sum, order) => sum + order.orderTotal,
+    0
+  );
 
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
@@ -168,6 +176,34 @@ export default function AccountOrdersView({
     onSheetUrlChange?.({});
   }
 
+  function toggleSelected(orderId: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(orderId);
+      else next.delete(orderId);
+      return next;
+    });
+  }
+
+  function handleCheckout() {
+    if (selectedOrders.length === 0) return;
+    const catalog = selectedOrders.find(
+      (order) => order.kind === "CATALOG" && order.productId
+    );
+    const names = selectedOrders
+      .map((order) => orderTitle(order, tOrders("customRequest")))
+      .join(", ");
+    const codes = selectedOrders
+      .map((order) => order.productCode)
+      .filter((code): code is string => Boolean(code))
+      .join(", ");
+    openInquiry({
+      productId: catalog?.productId ?? null,
+      productName: names,
+      productCode: codes || null,
+    });
+  }
+
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
       <AdminListToolbar
@@ -182,98 +218,82 @@ export default function AccountOrdersView({
         {t("ordersTotal", { count: filtered.length })}
       </p>
 
-      {filtered.length === 0 ? (
-        <EmptyList />
+      {optimisticItems.length === 0 ? (
+        <AccountEmptyState
+          icon={LuShoppingCart}
+          title={t("ordersEmptyTitle")}
+          description={t("ordersEmptyDesc")}
+          actionLabel={t("browseCatalog")}
+        />
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("ordersEmptyTitle")}</p>
       ) : (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{tOrders("products")}</TableHead>
-                  <TableHead>{t("kind")}</TableHead>
-                  <TableHead>{t("orderTotal")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead>{t("date")}</TableHead>
-                  <TableHead className={tableActionsClassName}>
-                    {t("actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      {order.productId && order.productName ? (
-                        <Link
-                          href={`/products/${order.productId}`}
-                          className={cn(
-                            buttonVariants({ variant: "link" }),
-                            tableLinkClassName
-                          )}
-                        >
-                          {order.productName}
-                        </Link>
-                      ) : (
-                        (order.taxonomyNodeName ?? tOrders("customRequest"))
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="soft">
-                        {order.kind === "REQUEST"
-                          ? tOrders("kindRequest")
-                          : tOrders("kindCatalog")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(order.orderTotal, locale)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status === "CLOSED" ? "secondary" : "default"
-                        }
-                      >
-                        {order.status === "IN_PROGRESS"
-                          ? tOrders("statusInProgress")
-                          : order.status === "CLOSED"
-                            ? tOrders("statusClosed")
-                            : tOrders("statusNew")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(new Date(order.createdAt), locale)}
-                    </TableCell>
-                    <TableCell className={tableActionsClassName}>
-                      {canEditOrder(order) ? (
-                        <div className="inline-flex items-center justify-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="cursor-pointer text-muted-foreground"
-                            onClick={() => setEditOpen(true, order.id)}
-                            aria-label={t("editOrder")}
-                          >
-                            <LuPen />
-                          </Button>
-                          <DeleteOrder
-                            orderId={order.id}
-                            onDelete={(orderId) =>
-                              removeOptimistically(orderId, () =>
-                                deleteUserOrderAction({ orderId })
-                              )
-                            }
-                          />
-                        </div>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div
+            role="listbox"
+            aria-multiselectable="true"
+            aria-label={t("orders")}
+            className="grid gap-3"
+          >
+            {filtered.map((order) => {
+              const title = orderTitle(order, tOrders("customRequest"));
+              const selectable = isOpenOrder(order);
+              return (
+                <AccountOrderLine
+                  key={order.id}
+                  id={order.id}
+                  title={title}
+                  href={
+                    order.productId ? `/products/${order.productId}` : null
+                  }
+                  productId={order.productId}
+                  productImage={order.productImage}
+                  productCode={order.productCode}
+                  kindLabel={
+                    order.kind === "REQUEST"
+                      ? tOrders("kindRequest")
+                      : tOrders("kindCatalog")
+                  }
+                  status={order.status}
+                  statusLabel={
+                    order.status === "IN_PROGRESS"
+                      ? tOrders("statusInProgress")
+                      : order.status === "CLOSED"
+                        ? tOrders("statusClosed")
+                        : tOrders("statusNew")
+                  }
+                  priceLabel={formatCurrency(order.orderTotal, locale)}
+                  selected={selectedIds.has(order.id)}
+                  selectable={selectable}
+                  onSelectedChange={(checked) =>
+                    toggleSelected(order.id, checked)
+                  }
+                  canEdit={canEditOrder(order)}
+                  onEdit={() => setEditOpen(true, order.id)}
+                  onDelete={() => {
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(order.id);
+                      return next;
+                    });
+                    removeOptimistically(order.id, () =>
+                      deleteUserOrderAction({ orderId: order.id })
+                    );
+                  }}
+                  favoriteId={order.favoriteId}
+                  showFavorite={Boolean(order.productId)}
+                />
+              );
+            })}
+          </div>
+
+          <AccountOrdersSummary
+            className="lg:sticky lg:top-24"
+            selectedCount={selectedOrders.length}
+            totalLabel={formatCurrency(selectedTotal, locale)}
+            onCheckout={handleCheckout}
+          />
+        </div>
       )}
 
       <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
@@ -308,61 +328,61 @@ export default function AccountOrdersView({
             </SheetHeader>
             {editAllowed && editOrder ? (
               <>
-              <FormContainer key={editOrder.id} action={updateUserOrderAction}>
-                <input type="hidden" name="orderId" value={editOrder.id} />
-                <div className="grid gap-6">
-                  {editOrder.kind === "REQUEST" ? (
-                    <OrderRequestFields
-                      tree={tree}
-                      taxonomyNodeId={editOrder.taxonomyNodeId}
-                      note={editOrder.note}
-                    />
-                  ) : (
-                    <div className="grid gap-6">
-                      <p className="text-sm text-muted-foreground">
-                        {t("catalogOrderLockedHint")}
-                      </p>
-                      {editOrder.productId && editOrder.productName ? (
-                        <Link
-                          href={`/products/${editOrder.productId}`}
-                          className={cn(
-                            buttonVariants({ variant: "link" }),
-                            tableLinkClassName,
-                            "w-fit"
-                          )}
-                        >
-                          {editOrder.productName}
-                        </Link>
-                      ) : null}
-                      <div className="grid gap-2">
-                        <Label htmlFor="note">{t("orderNote")}</Label>
-                        <Textarea
-                          id="note"
-                          name="note"
-                          rows={5}
-                          defaultValue={editOrder.note ?? ""}
-                          className="leading-loose"
-                        />
+                <FormContainer key={editOrder.id} action={updateUserOrderAction}>
+                  <input type="hidden" name="orderId" value={editOrder.id} />
+                  <div className="grid gap-6">
+                    {editOrder.kind === "REQUEST" ? (
+                      <OrderRequestFields
+                        tree={tree}
+                        taxonomyNodeId={editOrder.taxonomyNodeId}
+                        note={editOrder.note}
+                      />
+                    ) : (
+                      <div className="grid gap-6">
+                        <p className="text-sm text-muted-foreground">
+                          {t("catalogOrderLockedHint")}
+                        </p>
+                        {editOrder.productId && editOrder.productName ? (
+                          <Link
+                            href={`/products/${editOrder.productId}`}
+                            className={cn(
+                              buttonVariants({ variant: "link" }),
+                              tableLinkClassName,
+                              "w-fit"
+                            )}
+                          >
+                            {editOrder.productName}
+                          </Link>
+                        ) : null}
+                        <div className="grid gap-2">
+                          <Label htmlFor="note">{t("orderNote")}</Label>
+                          <Textarea
+                            id="note"
+                            name="note"
+                            rows={5}
+                            defaultValue={editOrder.note ?? ""}
+                            className="leading-loose"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <SheetFormActions
-                    saveLabel={tAdmin("submitUpdate")}
-                    deleteFormId="delete-user-order-form"
-                  />
-                </div>
-              </FormContainer>
-              <FormContainer
-                id="delete-user-order-form"
-                className="hidden"
-                action={
-                  deleteUserOrderAction.bind(null, {
-                    orderId: editOrder.id,
-                  }) as unknown as actionFunction
-                }
-              >
-                <input type="hidden" name="orderId" value={editOrder.id} />
-              </FormContainer>
+                    )}
+                    <SheetFormActions
+                      saveLabel={tAdmin("submitUpdate")}
+                      deleteFormId="delete-user-order-form"
+                    />
+                  </div>
+                </FormContainer>
+                <FormContainer
+                  id="delete-user-order-form"
+                  className="hidden"
+                  action={
+                    deleteUserOrderAction.bind(null, {
+                      orderId: editOrder.id,
+                    }) as unknown as actionFunction
+                  }
+                >
+                  <input type="hidden" name="orderId" value={editOrder.id} />
+                </FormContainer>
               </>
             ) : null}
           </div>

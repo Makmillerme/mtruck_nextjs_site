@@ -153,7 +153,7 @@ function DemoCta() {
   return (
     <Button type="button" size="lg" className="w-full">
       <LuShoppingCart className="size-4" aria-hidden />
-      Замовити це авто
+      Замовити товар
     </Button>
   );
 }
@@ -270,7 +270,7 @@ export default function UiLabPdp() {
         </h3>
         <p className="text-sm text-muted-foreground">
           Канон PDP tab kind=LIST — ProductEquipmentList: Specs-ритм (column-major
-          1/2/3 col, divide-y), маркер LuCheck у muted square.
+          1/2/3 col з matchMedia, divide-y), маркер LuCheck у muted square.
         </p>
         <div className="rounded-sm border border-border bg-card p-4 md:p-6">
           <ProductEquipmentList

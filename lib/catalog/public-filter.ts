@@ -347,9 +347,7 @@ async function productWhereForLeaf(
   ];
 
   if (query.search) {
-    and.push({
-      name: { contains: query.search, mode: "insensitive" },
-    });
+    and.push(catalogTextSearchClause(query.search));
   }
 
   and.push(...(await specClausesFor(query.facets ?? {}, query.ranges ?? {})));
@@ -520,6 +518,16 @@ export function pruneScopedFacetsToSchema(
   return next;
 }
 
+/** Name + article (`productCode`); UUID id is not searchable. */
+function catalogTextSearchClause(search: string): Prisma.ProductWhereInput {
+  return {
+    OR: [
+      { name: { contains: search, mode: "insensitive" } },
+      { productCode: { contains: search, mode: "insensitive" } },
+    ],
+  };
+}
+
 async function specClausesFor(
   facets: Record<string, string[]>,
   ranges: Record<string, CatalogRange>
@@ -596,9 +604,7 @@ export async function catalogQueryToWhere(
   ];
 
   if (query.search) {
-    clauses.push({
-      name: { contains: query.search, mode: "insensitive" },
-    });
+    clauses.push(catalogTextSearchClause(query.search));
   }
 
   clauses.push(

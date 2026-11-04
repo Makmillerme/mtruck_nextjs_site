@@ -4,6 +4,8 @@ import AccountCabinetView, {
   type AccountSettingsProps,
 } from "@/components/account/AccountCabinetView";
 import type { AccountOrderRow } from "@/components/account/account-orders-view";
+import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
+import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
 import { fetchTaxonomyTree } from "@/lib/catalog/taxonomy";
 import type { TaxonomyTreeNode } from "@/lib/catalog/types";
 import {
@@ -30,6 +32,9 @@ function mapOrders(
     origin: order.origin,
     productId: order.productId,
     productName: order.product?.name ?? null,
+    productImage: order.product?.image ?? null,
+    productCode: order.product?.productCode ?? null,
+    favoriteId: order.favoriteId ?? null,
     taxonomyNodeId: order.taxonomyNodeId,
     taxonomyNodeName: order.taxonomyNode?.name ?? null,
     note: order.note,
@@ -38,22 +43,25 @@ function mapOrders(
   }));
 }
 
-function mapFavorites(
-  favorites: Awaited<ReturnType<typeof fetchUserFavorites>>
-): AccountFavoriteRow[] {
+async function mapFavorites(
+  favorites: Awaited<ReturnType<typeof fetchUserFavorites>>,
+  locale: string
+): Promise<AccountFavoriteRow[]> {
+  const nodeIds = favorites
+    .map((favorite) => favorite.product.taxonomyNodeId)
+    .filter((id): id is string => Boolean(id));
+  const layouts = await fetchCardPreviewLayoutsByNodeIds(db, nodeIds);
+
   return favorites.map((favorite) => ({
     id: favorite.id,
-    product: {
-      id: favorite.product.id,
-      name: favorite.product.name,
-      image: favorite.product.image,
-      price: favorite.product.price,
-      createdAt: favorite.product.createdAt.toISOString(),
-      status: favorite.product.status,
-      taxonomyNode: favorite.product.taxonomyNode,
-      specs: favorite.product.specs,
-      images: favorite.product.images,
-    },
+    productId: favorite.product.id,
+    vehicle: productWithSpecsToVehicle(
+      favorite.product,
+      favorite.product.taxonomyNodeId
+        ? layouts.get(favorite.product.taxonomyNodeId)
+        : undefined,
+      locale
+    ),
   }));
 }
 
@@ -73,7 +81,7 @@ export default async function AccountPage(props: {
   let settings: AccountSettingsProps | null = null;
 
   if (tab === "favorites") {
-    favorites = mapFavorites(await fetchUserFavorites());
+    favorites = await mapFavorites(await fetchUserFavorites(), locale);
   } else if (tab === "settings") {
     const [canChangePassword, profile] = await Promise.all([
       userHasCredentialAccount(),

@@ -88,6 +88,12 @@ const STATUS_DOT: Record<VehicleStatus, string> = {
   SOLD: "bg-red-500",
 };
 
+const GRID_IMAGE_SIZES =
+  // Catalog grid: 1 → 2 (sm) → 3 (xl=1280), with filter sidebar
+  "(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 33vw";
+
+const LIST_IMAGE_SIZES = "(max-width: 768px) 100vw, 448px";
+
 export default function VehicleCard({
   vehicle,
   priority = false,
@@ -95,6 +101,7 @@ export default function VehicleCard({
   isAuthenticated,
   layout = "grid",
   showFavorite = true,
+  imageSizes,
 }: {
   vehicle: VehicleCardModel;
   priority?: boolean;
@@ -102,6 +109,8 @@ export default function VehicleCard({
   isAuthenticated?: boolean;
   layout?: "grid" | "list";
   showFavorite?: boolean;
+  /** Override next/image sizes (e.g. denser cabinet favorites grid). */
+  imageSizes?: string;
 }) {
   const locale = useLocale();
   const t = useTranslations("VehicleCard");
@@ -156,9 +165,8 @@ export default function VehicleCard({
             priority={priority}
             className={isList ? "absolute inset-0 h-full" : undefined}
             sizes={
-              isList
-                ? "(max-width: 768px) 100vw, 448px"
-                : "(max-width: 640px) 100vw, (max-width: 899px) 50vw, 33vw"
+              imageSizes ??
+              (isList ? LIST_IMAGE_SIZES : GRID_IMAGE_SIZES)
             }
             prevLabel={tProduct("galleryPrev")}
             nextLabel={tProduct("galleryNext")}

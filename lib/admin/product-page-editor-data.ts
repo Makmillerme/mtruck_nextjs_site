@@ -62,42 +62,19 @@ export type ProductPageEditorPayload = {
   keyFactsMax: number;
   keyFactSlots: ProductPageEditorKeyFactSlot[];
   tabs: ProductPageEditorTab[];
-  inheritedFromAncestor: boolean;
 };
 
+/** Leaf-only: layout for this folder only. */
 async function loadLayoutRowForNode(
-  nodeId: string,
-  parentId: string | null
-): Promise<{ row: ProductPageLayoutRow | null; inherited: boolean }> {
+  nodeId: string
+): Promise<ProductPageLayoutRow | null> {
   try {
     const own = await db.productPageLayout.findUnique({
       where: { taxonomyNodeId: nodeId },
       include: productPageLayoutInclude,
     });
-    if (own) {
-      return { row: own as ProductPageLayoutRow, inherited: false };
-    }
-
-    let currentParent = parentId;
-    const guard = new Set<string>([nodeId]);
-    while (currentParent && !guard.has(currentParent)) {
-      guard.add(currentParent);
-      const ancestor = await db.productPageLayout.findUnique({
-        where: { taxonomyNodeId: currentParent },
-        include: productPageLayoutInclude,
-      });
-      if (ancestor) {
-        return { row: ancestor as ProductPageLayoutRow, inherited: true };
-      }
-      const parent = await db.taxonomyNode.findUnique({
-        where: { id: currentParent },
-        select: { parentId: true },
-      });
-      currentParent = parent?.parentId ?? null;
-    }
-    return { row: null, inherited: false };
+    return own ? (own as ProductPageLayoutRow) : null;
   } catch (error) {
-    // Stale Prisma client (missing Tab/KeyFact models) used to hide here → empty editor.
     console.error("loadProductPageEditorData layout", error);
     throw error;
   }
@@ -117,15 +94,12 @@ export async function loadProductPageEditorData(
       keyFactsMax: 6,
       keyFactSlots: [],
       tabs: [],
-      inheritedFromAncestor: false,
     };
   }
 
-  // Path only (folder + ancestors). Layout on a bare root stays empty until
-  // fields exist on that path — do not hoist descendant fields.
+  // Path attrs (folder + ancestors for field model). Layout = this leaf only.
   const attributes = await fetchAttributesForNode(selected.id);
-  const { row: layoutRow, inherited: inheritedFromAncestor } =
-    await loadLayoutRowForNode(selected.id, selected.parentId);
+  const layoutRow = await loadLayoutRowForNode(selected.id);
 
   const resolved: ProductPageLayoutResolved = resolveProductPageLayout(
     layoutRow,
@@ -172,6 +146,5 @@ export async function loadProductPageEditorData(
               visible: slot.visible,
             })),
     })),
-    inheritedFromAncestor,
   };
 }

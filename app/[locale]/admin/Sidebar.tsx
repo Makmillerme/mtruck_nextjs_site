@@ -46,9 +46,29 @@ function isCmsUiEditor(pathname: string) {
   return pathname === "/admin/ui" || pathname.startsWith("/admin/ui/");
 }
 
+function isSalesSection(pathname: string) {
+  return pathname === "/admin/sales" || pathname.startsWith("/admin/sales/");
+}
+
+function isSalesOrders(pathname: string) {
+  return pathname === "/admin/sales";
+}
+
+function isSalesInquiries(pathname: string) {
+  return (
+    pathname === "/admin/sales/inquiries" ||
+    pathname.startsWith("/admin/sales/inquiries/")
+  );
+}
+
 const CMS_NAV_CHILDREN = [
   { href: "/admin/catalog", labelKey: "cmsDataModel" as const },
   { href: "/admin/ui", labelKey: "cmsUiEditor" as const },
+];
+
+const SALES_NAV_CHILDREN = [
+  { href: "/admin/sales/inquiries", labelKey: "salesInquiries" as const },
+  { href: "/admin/sales", labelKey: "salesOrders" as const },
 ];
 
 function Sidebar({
@@ -67,9 +87,11 @@ function Sidebar({
   const onProducts =
     pathname === "/admin/products" || pathname.startsWith("/admin/products/");
   const onCms = isCmsSection(pathname);
+  const onSales = isSalesSection(pathname);
   const activeRoot = searchParams.get("root")?.trim() || "";
   const [productsOpen, setProductsOpen] = useState(onProducts);
   const [cmsOpen, setCmsOpen] = useState(onCms);
+  const [salesOpen, setSalesOpen] = useState(onSales);
   const router = useRouter();
   const softNav = useSoftNavOptional();
 
@@ -112,11 +134,64 @@ function Sidebar({
     if (onCms) setCmsOpen(true);
   }, [onCms]);
 
+  useEffect(() => {
+    if (onSales) setSalesOpen(true);
+  }, [onSales]);
+
   return (
     <aside className="min-w-0">
       <Card className="sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto shadow-sm lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
         <CardContent className="grid gap-1 p-3">
           {links.map((link) => {
+            if (link.href === "/admin/sales") {
+              return (
+                <div key={link.href} className="grid gap-1">
+                  <Button
+                    type="button"
+                    className="w-full justify-between font-normal"
+                    variant={onSales ? "default" : "ghost"}
+                    aria-expanded={salesOpen}
+                    onClick={() => setSalesOpen((open) => !open)}
+                  >
+                    <span>{t(link.key)}</span>
+                    <LuChevronDown
+                      className={cn(
+                        "size-4 shrink-0 transition-transform",
+                        salesOpen && "rotate-180"
+                      )}
+                      aria-hidden
+                    />
+                  </Button>
+                  {salesOpen ? (
+                    <div className="ml-3 grid gap-1 border-l border-border pl-2">
+                      {SALES_NAV_CHILDREN.map((child) => {
+                        const active =
+                          child.href === "/admin/sales/inquiries"
+                            ? isSalesInquiries(pathname)
+                            : isSalesOrders(pathname);
+                        return (
+                          <Button
+                            key={child.href}
+                            asChild
+                            size="sm"
+                            className="h-9 w-full justify-start font-normal"
+                            variant={active ? "default" : "ghost"}
+                          >
+                            <Link
+                              href={child.href}
+                              onClick={(event) => navigate(event, child.href)}
+                            >
+                              {t(child.labelKey)}
+                            </Link>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            }
+
             if (link.href === "/admin/catalog") {
               return (
                 <div key={link.href} className="grid gap-1">

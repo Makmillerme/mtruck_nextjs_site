@@ -143,7 +143,6 @@ export default function ProductPageEditor({
   keyFactsMax: initialKeyFactsMax,
   keyFactSlots: initialKeyFactSlots,
   tabs: initialTabs,
-  inheritedFromAncestor,
 }: ProductPageEditorPayload) {
   const t = useTranslations("UiEditor");
   const router = useRouter();
@@ -459,11 +458,6 @@ export default function ProductPageEditor({
           variant="tree"
           leafOnly
         />
-        {hasFolder && inheritedFromAncestor ? (
-          <p className="text-xs text-muted-foreground">
-            {t("productPageInheritedHint")}
-          </p>
-        ) : null}
       </section>
 
       {hasFolder ? (

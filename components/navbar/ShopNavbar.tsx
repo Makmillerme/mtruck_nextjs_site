@@ -6,6 +6,9 @@ import FavoritesButton from "@/components/navbar/FavoritesButton";
 import LinksDropdown from "@/components/navbar/LinksDropdown";
 import LocaleSwitcher from "@/components/navbar/LocaleSwitcher";
 import Logo from "@/components/navbar/Logo";
+import NotificationsButton, {
+  type NotificationPreview,
+} from "@/components/navbar/NotificationsButton";
 import { Button } from "@/components/ui/button";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -106,9 +109,13 @@ function HeaderGlass({ surface }: { surface: "light" | "dark" | null }) {
 export default function ShopNavbar({
   user,
   isAdmin = false,
+  unreadInquiryCount = 0,
+  notificationItems = [],
 }: {
   user: SessionUser | null;
   isAdmin?: boolean;
+  unreadInquiryCount?: number;
+  notificationItems?: NotificationPreview[];
 }) {
   const t = useTranslations("Navbar");
   const pathname = usePathname();
@@ -141,11 +148,22 @@ export default function ShopNavbar({
             ))}
           </nav>
           <div className="flex min-w-0 shrink-0 items-center justify-end justify-self-end gap-0.5 sm:gap-1">
-            <Button asChild variant="ghost" size="icon" className={headerIconClass}>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className={cn(headerIconClass, "md:hidden")}
+            >
               <a href={phoneHref} aria-label={t("call")}>
                 <LuPhone className="size-5" />
               </a>
             </Button>
+            <NotificationsButton
+              className={headerIconClass}
+              isStaff={isAdmin}
+              unreadCount={unreadInquiryCount}
+              items={notificationItems}
+            />
             <FavoritesButton className={headerIconClass} />
             <LocaleSwitcher className={headerControlClass} />
             <LinksDropdown initialUser={user} isAdmin={isAdmin} />

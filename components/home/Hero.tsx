@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- intentional native img + preload for LCP without next/image flash */
+import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/public/images/hero.webp";
 import { getTranslations } from "next-intl/server";
@@ -42,9 +43,9 @@ async function Hero() {
             <Button asChild size="lg">
               <a href="#custom-order">{t("heroCta")}</a>
             </Button>
-            <Button asChild variant="inverse" size="lg">
-              <a href="#contact">{t("heroSecondary")}</a>
-            </Button>
+            <CtaInquiryTrigger variant="inverse" size="lg">
+              {t("heroSecondary")}
+            </CtaInquiryTrigger>
           </div>
         </div>
       </div>

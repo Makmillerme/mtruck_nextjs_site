@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -140,6 +141,26 @@ export function UiLabDialogFooterCanon() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
+
+      <div className="grid gap-2 border-t border-border pt-4">
+        <p className="text-sm font-medium text-foreground">
+          Site CTA inquiry (callback modal)
+        </p>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          <code className="text-xs">CtaInquiryTrigger</code> відкриває глобальний
+          Dialog з <code className="text-xs">ContactForm</code> — без переходу на{" "}
+          <code className="text-xs">/contact</code>. Контекст товару опційний.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <CtaInquiryTrigger>Замовити дзвінок</CtaInquiryTrigger>
+          <CtaInquiryTrigger
+            variant="outline"
+            context={{ productName: "MAN TGX", productCode: "18440" }}
+          >
+            Залишити заявку (з авто)
+          </CtaInquiryTrigger>
+        </div>
       </div>
     </div>
   );
