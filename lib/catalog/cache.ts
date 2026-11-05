@@ -9,6 +9,11 @@ export {
 type RevalidatePublicCatalogOptions = {
   /** Also invalidate the product detail route. */
   productId?: string;
+  /**
+   * `full` (default) — taxonomy / filter / card-preview structural changes.
+   * `product` — single-product content: skip root/filterSchema/homeFinder/home path.
+   */
+  scope?: "full" | "product";
 };
 
 /**
@@ -22,11 +27,18 @@ type RevalidatePublicCatalogOptions = {
 export function revalidatePublicCatalog(
   options?: RevalidatePublicCatalogOptions
 ) {
-  updateTag(CATALOG_CACHE_TAGS.root);
-  updateTag(CATALOG_CACHE_TAGS.filterSchema);
-  updateTag(CATALOG_CACHE_TAGS.availability);
-  updateTag(CATALOG_CACHE_TAGS.homeFinder);
-  revalidatePath("/");
+  const scope = options?.scope ?? "full";
+  if (scope === "full") {
+    updateTag(CATALOG_CACHE_TAGS.root);
+    updateTag(CATALOG_CACHE_TAGS.products);
+    updateTag(CATALOG_CACHE_TAGS.filterSchema);
+    updateTag(CATALOG_CACHE_TAGS.availability);
+    updateTag(CATALOG_CACHE_TAGS.homeFinder);
+    revalidatePath("/");
+  } else {
+    updateTag(CATALOG_CACHE_TAGS.products);
+    updateTag(CATALOG_CACHE_TAGS.availability);
+  }
   revalidatePath("/products");
   if (options?.productId) {
     revalidatePath(`/products/${options.productId}`);

@@ -13,6 +13,7 @@ import {
   fetchAttributesForNode,
   isLeafTaxonomyNodeId,
 } from "@/lib/catalog/taxonomy";
+import { revalidatePublicCatalog } from "@/lib/catalog/cache";
 import db from "@/utils/db";
 import { getAdminUser } from "@/utils/session";
 import { getTranslations } from "next-intl/server";
@@ -129,9 +130,8 @@ export async function saveCardPreviewLayoutAction(
       }
     });
 
-    revalidatePath("/", "layout");
     revalidatePath("/admin/ui");
-    revalidatePath("/products");
+    revalidatePublicCatalog();
     return { message: t("layoutSaved"), ok: true };
   } catch (error) {
     if (error instanceof Error && error.message) {

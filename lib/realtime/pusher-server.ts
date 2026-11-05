@@ -3,8 +3,10 @@ import "server-only";
 import Pusher from "pusher";
 import {
   INQUIRY_CREATED_EVENT,
+  ORDER_REQUEST_CREATED_EVENT,
   STAFF_NOTIFICATIONS_CHANNEL,
   type InquiryCreatedPayload,
+  type OrderRequestCreatedPayload,
 } from "@/lib/realtime/channels";
 
 function readServerConfig() {
@@ -44,9 +46,25 @@ export async function publishInquiryCreated(
     await pusher.trigger(
       STAFF_NOTIFICATIONS_CHANNEL,
       INQUIRY_CREATED_EVENT,
-      payload
+      { ...payload, kind: payload.kind ?? "inquiry" }
     );
   } catch (error) {
     console.error("pusher.trigger inquiry.created failed", error);
+  }
+}
+
+export async function publishOrderRequestCreated(
+  payload: OrderRequestCreatedPayload
+): Promise<void> {
+  const pusher = getPusherServer();
+  if (!pusher) return;
+  try {
+    await pusher.trigger(
+      STAFF_NOTIFICATIONS_CHANNEL,
+      ORDER_REQUEST_CREATED_EVENT,
+      payload
+    );
+  } catch (error) {
+    console.error("pusher.trigger order.request.created failed", error);
   }
 }

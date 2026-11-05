@@ -13,14 +13,16 @@ import FormContainer from "@/components/form/FormContainer";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import { useRouter } from "@/i18n/navigation";
 import { notify } from "@/lib/ui/notify";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ORDER_QUANTITY_MAX } from "@/lib/catalog/order-quantity";
 import {
@@ -98,12 +100,15 @@ export default function AccountOrdersView({
   items,
   locale,
   createOpen,
+  userPhone = null,
   onSheetUrlChange,
 }: {
   items: AccountOrderRow[];
   locale: string;
   createOpen: boolean;
-  /** Sync sheet query without RSC (cabinet uses replaceState). */
+  /** Profile phone — if missing, request modal asks for it once. */
+  userPhone?: string | null;
+  /** Sync create query without RSC (cabinet uses replaceState). */
   onSheetUrlChange?: (next: { create?: boolean }) => void;
 }) {
   const t = useTranslations("AccountCabinet");
@@ -113,7 +118,8 @@ export default function AccountOrdersView({
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
-  const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
+  const [requestOpen, setRequestOpen] = useState(createOpen);
+  const needsPhone = !userPhone?.trim();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(items.filter(isOpenOrder).map((order) => order.id))
   );
@@ -196,9 +202,14 @@ export default function AccountOrdersView({
     [displayItems]
   );
 
-  function setCreateOpen(open: boolean) {
-    setSheetCreateOpen(open);
+  function setRequestOpenState(open: boolean) {
+    setRequestOpen(open);
     onSheetUrlChange?.(open ? { create: true } : {});
+  }
+
+  function onRequestSuccess() {
+    setRequestOpenState(false);
+    router.refresh();
   }
 
   function toggleSelected(orderId: string, checked: boolean) {
@@ -294,7 +305,7 @@ export default function AccountOrdersView({
         onSearchChange={setSearch}
         searchPlaceholder={t("searchOrdersPlaceholder")}
         createLabel={t("createOrder")}
-        onCreate={() => setCreateOpen(true)}
+        onCreate={() => setRequestOpenState(true)}
       />
 
       <div className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
@@ -330,7 +341,7 @@ export default function AccountOrdersView({
           description={t("ordersEmptyDesc")}
           actionLabel={t("browseCatalog")}
           secondaryActionLabel={t("emptyRequestAction")}
-          onSecondaryAction={() => setCreateOpen(true)}
+          onSecondaryAction={() => setRequestOpenState(true)}
         />
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("ordersEmptyTitle")}</p>
@@ -406,28 +417,46 @@ export default function AccountOrdersView({
         </div>
       )}
 
-      <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
-        <SheetContent>
-          <div className="grid gap-6">
-            <SheetHeader>
-              <SheetTitle>{t("createOrderSheetTitle")}</SheetTitle>
-              <SheetDescription>{t("createOrderSheetLede")}</SheetDescription>
-            </SheetHeader>
-            <FormContainer
-              key={sheetCreateOpen ? "create-open" : "create-closed"}
-              action={createUserRequestOrderAction}
-            >
-              <div className="grid gap-6">
-                <OrderRequestFields noteRequired />
-                <SubmitButton
-                  text={t("submitCreateOrder")}
-                  className="w-full sm:w-fit"
+      <Dialog open={requestOpen} onOpenChange={setRequestOpenState}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("createOrderSheetTitle")}</DialogTitle>
+            <DialogDescription>{t("createOrderSheetLede")}</DialogDescription>
+          </DialogHeader>
+          <FormContainer
+            key={requestOpen ? "request-open" : "request-closed"}
+            action={createUserRequestOrderAction}
+            onSuccess={onRequestSuccess}
+            className="grid gap-4"
+          >
+            {needsPhone ? (
+              <div className="grid gap-2">
+                <Label htmlFor="request-phone">{t("phoneLabel")}</Label>
+                <Input
+                  id="request-phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  inputMode="tel"
+                  placeholder={t("requestPhonePlaceholder")}
+                  className="font-mono"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {t("requestPhoneHint")}
+                </p>
               </div>
-            </FormContainer>
-          </div>
-        </SheetContent>
-      </Sheet>
+            ) : null}
+            <OrderRequestFields noteRequired />
+            <DialogFooter>
+              <SubmitButton
+                text={t("submitCreateOrder")}
+                className="w-full sm:w-auto"
+              />
+            </DialogFooter>
+          </FormContainer>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

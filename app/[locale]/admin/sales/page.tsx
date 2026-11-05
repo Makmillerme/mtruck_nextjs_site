@@ -2,6 +2,7 @@ import AdminSalesView from "@/components/admin/sales/admin-sales-view";
 import {
   fetchAdminOrderFormOptions,
   fetchAdminOrders,
+  markOrderRequestReadAction,
 } from "@/utils/actions";
 import { getLocale } from "next-intl/server";
 import { getStaffUser, isAdminRole } from "@/utils/session";
@@ -21,6 +22,12 @@ async function SalesPage(props: {
   const editExists = editId
     ? orders.some((order) => order.id === editId)
     : false;
+  if (editExists && editId) {
+    const target = orders.find((order) => order.id === editId);
+    if (target?.kind === "REQUEST") {
+      await markOrderRequestReadAction(editId);
+    }
+  }
   const preselectedUserId = searchParams.userId?.trim() || undefined;
   const preselectedExists = preselectedUserId
     ? options.users.some((user) => user.id === preselectedUserId)
@@ -35,23 +42,7 @@ async function SalesPage(props: {
       canDelete={isAdminRole(role)}
       users={options.users}
       products={options.products}
-      items={orders.map((order) => ({
-        id: order.id,
-        email: order.email,
-        userId: order.userId,
-        userName: order.user.name,
-        kind: order.kind,
-        status: order.status,
-        productId: order.productId,
-        productName: order.product?.name ?? null,
-        folderName: order.taxonomyNode?.name ?? null,
-        products: order.products,
-        orderTotal: order.orderTotal,
-        tax: order.tax,
-        shipping: order.shipping,
-        isPaid: order.isPaid,
-        createdAt: order.createdAt.toISOString(),
-      }))}
+      items={orders}
     />
   );
 }

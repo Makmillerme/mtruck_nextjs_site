@@ -229,15 +229,112 @@ export function pruneDependentFacetValues(
   return next;
 }
 
+type NumericBoundsIndex = Map<
+  string,
+  {
+    globalMin: number | null;
+    globalMax: number | null;
+    byNode: Map<string, { min: number; max: number }>;
+  }
+>;
+
+/** One query for all NUMBER/YEAR facet specs — replaces per-leaf aggregate N+1. */
+async function loadNumericFacetBoundsIndex(): Promise<NumericBoundsIndex> {
+  const specs = await db.productSpec.findMany({
+    where: {
+      numberValue: { not: null },
+      attribute: {
+        type: { in: ["NUMBER", "YEAR"] },
+        isFacet: true,
+      },
+      product: { status: "PUBLISHED", archivedAt: null },
+    },
+    select: {
+      numberValue: true,
+      attribute: { select: { key: true } },
+      product: { select: { taxonomyNodeId: true } },
+    },
+  });
+
+  const index: NumericBoundsIndex = new Map();
+  for (const spec of specs) {
+    const value = spec.numberValue;
+    if (value == null) continue;
+    const key = spec.attribute.key;
+    let entry = index.get(key);
+    if (!entry) {
+      entry = {
+        globalMin: value,
+        globalMax: value,
+        byNode: new Map(),
+      };
+      index.set(key, entry);
+    } else {
+      entry.globalMin =
+        entry.globalMin == null ? value : Math.min(entry.globalMin, value);
+      entry.globalMax =
+        entry.globalMax == null ? value : Math.max(entry.globalMax, value);
+    }
+    const nodeId = spec.product.taxonomyNodeId;
+    if (!nodeId) continue;
+    const nodeBounds = entry.byNode.get(nodeId);
+    if (!nodeBounds) {
+      entry.byNode.set(nodeId, { min: value, max: value });
+    } else {
+      nodeBounds.min = Math.min(nodeBounds.min, value);
+      nodeBounds.max = Math.max(nodeBounds.max, value);
+    }
+  }
+  return index;
+}
+
+function boundsFromIndex(
+  index: NumericBoundsIndex,
+  attributeKey: string,
+  taxonomyNodeIds: string[] | null
+): { minBound: number | null; maxBound: number | null } {
+  const entry = index.get(attributeKey);
+  if (!entry) return { minBound: null, maxBound: null };
+
+  if (!taxonomyNodeIds?.length) {
+    return {
+      minBound: entry.globalMin != null ? Math.floor(entry.globalMin) : null,
+      maxBound: entry.globalMax != null ? Math.ceil(entry.globalMax) : null,
+    };
+  }
+
+  let min: number | null = null;
+  let max: number | null = null;
+  for (const nodeId of taxonomyNodeIds) {
+    const nodeBounds = entry.byNode.get(nodeId);
+    if (!nodeBounds) continue;
+    min = min == null ? nodeBounds.min : Math.min(min, nodeBounds.min);
+    max = max == null ? nodeBounds.max : Math.max(max, nodeBounds.max);
+  }
+
+  if (min == null || max == null) {
+    return {
+      minBound: entry.globalMin != null ? Math.floor(entry.globalMin) : null,
+      maxBound: entry.globalMax != null ? Math.ceil(entry.globalMax) : null,
+    };
+  }
+
+  return {
+    minBound: Math.floor(min),
+    maxBound: Math.ceil(max),
+  };
+}
+
 async function mapFilterNodes(
-  nodes: TaxonomyTreeNode[]
+  nodes: TaxonomyTreeNode[],
+  numericBounds: NumericBoundsIndex
 ): Promise<PublicFilterNode[]> {
   const result: PublicFilterNode[] = [];
 
   for (const node of nodes) {
     if (!node.isActive) continue;
 
-    const children = await mapFilterNodes(node.children);
+    const children = await mapFilterNodes(node.children, numericBounds);
 
     // Hidden folders do not appear, but their visible descendants hoist up.
     if (!node.showInFilter) {
@@ -262,17 +359,12 @@ async function mapFilterNodes(
         seen.add(facet.key);
         built.push(facet);
       }
-      await Promise.all(
-        built.map(async (facet) => {
-          if (facet.type !== "NUMBER" && facet.type !== "YEAR") return;
-          const bounds = await numberBoundsForAttribute(
-            facet.key,
-            subtreeIds
-          );
-          facet.minBound = bounds.minBound;
-          facet.maxBound = bounds.maxBound;
-        })
-      );
+      for (const facet of built) {
+        if (facet.type !== "NUMBER" && facet.type !== "YEAR") continue;
+        const bounds = boundsFromIndex(numericBounds, facet.key, subtreeIds);
+        facet.minBound = bounds.minBound;
+        facet.maxBound = bounds.maxBound;
+      }
       facets = sortPublicFacets(built);
     }
 
@@ -292,10 +384,13 @@ async function mapFilterNodes(
 export async function fetchPublicFilterSchema(): Promise<PublicFilterSchema> {
   const cached = unstable_cache(
     async () => {
-      const tree = await fetchTaxonomyTree();
-      return { tree: await mapFilterNodes(tree) };
+      const [tree, numericBounds] = await Promise.all([
+        fetchTaxonomyTree(),
+        loadNumericFacetBoundsIndex(),
+      ]);
+      return { tree: await mapFilterNodes(tree, numericBounds) };
     },
-    ["public-filter-schema"],
+    ["public-filter-schema-v2"],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.filterSchema],
@@ -596,12 +691,22 @@ export async function catalogQueryToWhere(
     | "scopedFacets"
     | "scopedRanges"
     | "search"
-  >
+  >,
+  options?: {
+    /** Default true — public catalog. Admin lists pass false. */
+    requirePublished?: boolean;
+    /** Extra taxonomy scope (e.g. admin sidebar root subtree). */
+    taxonomyNodeIds?: string[] | null;
+  }
 ): Promise<Prisma.ProductWhereInput[]> {
+  const requirePublished = options?.requirePublished !== false;
   const clauses: Prisma.ProductWhereInput[] = [
-    { status: "PUBLISHED" },
+    ...(requirePublished ? [{ status: "PUBLISHED" as const }] : []),
     { archivedAt: null },
   ];
+  if (options?.taxonomyNodeIds?.length) {
+    clauses.push({ taxonomyNodeId: { in: options.taxonomyNodeIds } });
+  }
 
   if (query.search) {
     clauses.push(catalogTextSearchClause(query.search));

@@ -6,6 +6,8 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig = {
   // Gallery: up to 15 images; each raw upload ≤10MB before server WebP compress.
   experimental: {
+    // Dev MCP get_request_insights + DevTools request timeline (restart next dev).
+    requestInsights: true,
     serverActions: {
       bodySizeLimit: "32mb",
     },

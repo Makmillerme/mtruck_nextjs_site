@@ -3,6 +3,7 @@ import Footer from "@/components/layout/footer";
 import SiteChrome from "@/components/layout/site-chrome";
 import Navbar from "@/components/navbar/Navbar";
 import Providers from "../providers";
+import { fetchSessionPrimaryPhone } from "@/lib/user-phone";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { hasLocale } from "next-intl";
@@ -53,11 +54,14 @@ export default async function LocaleLayout({
   }
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const [messages, userPhone] = await Promise.all([
+    getMessages(),
+    fetchSessionPrimaryPhone(),
+  ]);
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <Providers>
+      <Providers userPhone={userPhone}>
         <SiteChrome header={<Navbar />} footer={<Footer />}>
           <div className="page-container flex min-w-0 flex-1 flex-col has-[.full-bleed]:contents has-[.page-content]:contents">
             {children}

@@ -1,7 +1,8 @@
 /**
  * Tags / TTL for public catalog `unstable_cache` entries.
  * Safe for any importer (no `next/cache` APIs here).
- * Attach `root` to every catalog cache; bust via `revalidatePublicCatalog()`.
+ * Attach `root` for structural catalog caches; product-scoped busts skip `root`
+ * (see `revalidatePublicCatalog({ scope: "product" })`).
  */
 export const CATALOG_CACHE_TAGS = {
   root: "catalog",

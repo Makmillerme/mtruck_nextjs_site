@@ -30,6 +30,7 @@ export default function ContactForm({
   productId,
   productName,
   productCode,
+  knownPhone = null,
 }: {
   inputId?: string;
   messageId?: string;
@@ -37,8 +38,11 @@ export default function ContactForm({
   productId?: string | null;
   productName?: string | null;
   productCode?: string | null;
+  /** Logged-in primary phone — hide tel field and submit this value. */
+  knownPhone?: string | null;
 } = {}) {
   const t = useTranslations("ContactSection");
+  const hasKnownPhone = Boolean(knownPhone?.trim());
 
   return (
     <FormContainer
@@ -55,17 +59,21 @@ export default function ContactForm({
       {productCode ? (
         <input type="hidden" name="productCode" value={productCode} />
       ) : null}
-      <Input
-        id={inputId}
-        name="phone"
-        type="tel"
-        required
-        autoComplete="tel"
-        inputMode="tel"
-        placeholder={t("phonePlaceholder")}
-        aria-label={t("phone.label")}
-        className="font-mono"
-      />
+      {hasKnownPhone ? (
+        <input type="hidden" name="phone" value={knownPhone!.trim()} />
+      ) : (
+        <Input
+          id={inputId}
+          name="phone"
+          type="tel"
+          required
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder={t("phonePlaceholder")}
+          aria-label={t("phone.label")}
+          className="font-mono"
+        />
+      )}
       <Textarea
         id={messageId}
         name="note"

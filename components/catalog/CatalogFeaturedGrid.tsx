@@ -10,21 +10,21 @@ import { getTranslations } from "next-intl/server";
 /** Featured vehicles grid only — no section title (CatalogBlock owns headings). */
 export default async function CatalogFeaturedGrid() {
   const t = await getTranslations("HomePage");
-  const [products, favorites] = await Promise.all([
-    fetchFeaturedProducts(),
-    fetchUserFavoriteIds(),
-  ]);
+  const products = await fetchFeaturedProducts();
 
   if (products.length === 0) {
     return <EmptyList />;
   }
 
-  const layouts = await fetchCardPreviewLayoutsByNodeIds(
-    db,
-    products
-      .map((product) => product.taxonomyNodeId)
-      .filter((id): id is string => Boolean(id))
-  );
+  const [favorites, layouts] = await Promise.all([
+    fetchUserFavoriteIds(products.map((product) => product.id)),
+    fetchCardPreviewLayoutsByNodeIds(
+      db,
+      products
+        .map((product) => product.taxonomyNodeId)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ]);
 
   return (
     <div>

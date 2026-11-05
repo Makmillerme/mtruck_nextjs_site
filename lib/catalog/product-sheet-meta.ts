@@ -65,6 +65,30 @@ export async function loadProductSheetMetaAction(
   };
 }
 
+/** Lazy filter chrome for /admin/products — not loaded on every list GET. */
+export async function loadAdminProductsFilterChromeAction(
+  rootId?: string | null
+): Promise<{
+  schema: import("@/lib/catalog/public-filter").PublicFilterSchema;
+  availability: import("@/lib/catalog/filter-availability").FilterAvailabilityIndex;
+}> {
+  await getStaffUser();
+  const { fetchPublicFilterSchema, scopeFilterSchemaToRoot } = await import(
+    "@/lib/catalog/public-filter"
+  );
+  const { fetchAdminFilterAvailabilityIndex } = await import(
+    "@/lib/catalog/filter-availability"
+  );
+  const [schema, availability] = await Promise.all([
+    fetchPublicFilterSchema(),
+    fetchAdminFilterAvailabilityIndex(),
+  ]);
+  return {
+    schema: scopeFilterSchemaToRoot(schema, rootId?.trim() || undefined),
+    availability,
+  };
+}
+
 /** Edit sheet: full product row + folder meta in one round-trip. */
 export async function loadAdminProductSheetAction(
   productId: string,

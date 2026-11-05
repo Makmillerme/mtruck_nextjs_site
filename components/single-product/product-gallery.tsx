@@ -39,14 +39,14 @@ export default function ProductGallery({
   );
 
   return (
-    <div className="flex min-h-0 min-w-0 w-full flex-col lg:h-full">
+    <div className="flex min-h-0 min-w-0 w-full flex-col">
       <PhotoCarousel
         variant="page"
         images={images}
         priority={priority}
         sizes={sizes}
         className={cn(
-          "min-h-0 min-w-0 w-full overflow-hidden rounded-sm lg:min-h-0 lg:flex-1",
+          "min-h-0 min-w-0 w-full overflow-hidden rounded-sm",
           className
         )}
         onImageClick={openAt}

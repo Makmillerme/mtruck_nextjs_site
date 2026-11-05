@@ -209,6 +209,7 @@ export default function PhotoCarousel({
     [api]
   );
 
+
   function onStagePointerDown(event: ReactPointerEvent) {
     pointerStartRef.current = { x: event.clientX, y: event.clientY };
     didDragRef.current = false;
@@ -238,8 +239,8 @@ export default function PhotoCarousel({
     /** PDP single photo: fill stretched hero column (aspect alone leaves a dead gap under the frame). */
     const pageSingleClass =
       variant === "page"
-        ? // Mobile: intrinsic 4/3. lg+: fill column matched to buybox.
-          "relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-muted lg:aspect-auto lg:h-full lg:min-h-0"
+        ? // Stable 4/3 stage on all breakpoints — stretching to buybox made lg crop worse.
+          "relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-muted"
         : stageClass;
     return (
       <div
@@ -285,10 +286,11 @@ export default function PhotoCarousel({
 
   return (
     <div
+      data-photo-carousel=""
       className={cn(
         "min-w-0 w-full",
-        // Page: column matches buybox height; stage flex-1, thumbs shrink-0 (no stretched gap).
-        variant === "page" && "flex min-h-0 flex-col gap-3 lg:h-full",
+        // Page: fixed 4/3 stage + thumbs below (do not shrink stage to buybox height).
+        variant === "page" && "flex min-h-0 flex-col gap-3",
         frame === "fill" && "h-full min-h-0",
         className
       )}
@@ -305,8 +307,7 @@ export default function PhotoCarousel({
         }}
         className={cn(
           "relative w-full overflow-hidden",
-          variant === "page" &&
-            "aspect-[4/3] lg:aspect-auto lg:min-h-0 lg:flex-1",
+          variant === "page" && "aspect-[4/3] shrink-0",
           frame === "fill" && "h-full"
         )}
       >

@@ -14,15 +14,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   INQUIRY_CREATED_EVENT,
+  ORDER_REQUEST_CREATED_EVENT,
   STAFF_NOTIFICATIONS_CHANNEL,
   type InquiryCreatedPayload,
+  type OrderRequestCreatedPayload,
+  type StaffNotificationKind,
 } from "@/lib/realtime/channels";
 import { getPusherClient } from "@/lib/realtime/pusher-client";
 import { cn } from "@/lib/utils";
+import {
+  markCallbackInquiriesReadAction,
+  markOrderRequestReadAction,
+} from "@/utils/actions";
 import { LuBell } from "react-icons/lu";
 
 export type NotificationPreview = {
   id: string;
+  kind: StaffNotificationKind;
   phone: string;
   productName: string | null;
   productCode: string | null;
@@ -47,8 +55,16 @@ export default function NotificationsButton({
   const [liveItems, setLiveItems] = useState(items);
 
   useEffect(() => {
-    setLiveCount(onInquiriesPage ? 0 : unreadCount);
-  }, [unreadCount, onInquiriesPage]);
+    if (!onInquiriesPage) {
+      setLiveCount(unreadCount);
+      return;
+    }
+    // Inquiries page marks callback leads read; keep vehicle-request badges.
+    const requestUnread = items.filter(
+      (item) => item.kind === "vehicle-request"
+    ).length;
+    setLiveCount(requestUnread);
+  }, [unreadCount, onInquiriesPage, items]);
 
   useEffect(() => {
     setLiveItems(items);
@@ -60,26 +76,39 @@ export default function NotificationsButton({
     if (!pusher) return;
 
     const channel = pusher.subscribe(STAFF_NOTIFICATIONS_CHANNEL);
-    const onCreated = (payload: InquiryCreatedPayload) => {
+    const prepend = (entry: NotificationPreview) => {
       setLiveCount((prev) => prev + 1);
       setLiveItems((prev) => {
-        if (prev.some((item) => item.id === payload.id)) return prev;
-        return [
-          {
-            id: payload.id,
-            phone: payload.phone,
-            productName: payload.productName,
-            productCode: payload.productCode,
-            createdAt: payload.createdAt,
-          },
-          ...prev,
-        ].slice(0, 5);
+        if (prev.some((item) => item.id === entry.id)) return prev;
+        return [entry, ...prev].slice(0, 5);
+      });
+    };
+    const onInquiry = (payload: InquiryCreatedPayload) => {
+      prepend({
+        id: payload.id,
+        kind: payload.kind ?? "inquiry",
+        phone: payload.phone,
+        productName: payload.productName,
+        productCode: payload.productCode,
+        createdAt: payload.createdAt,
+      });
+    };
+    const onRequest = (payload: OrderRequestCreatedPayload) => {
+      prepend({
+        id: payload.id,
+        kind: "vehicle-request",
+        phone: payload.phone,
+        productName: payload.note,
+        productCode: null,
+        createdAt: payload.createdAt,
       });
     };
 
-    channel.bind(INQUIRY_CREATED_EVENT, onCreated);
+    channel.bind(INQUIRY_CREATED_EVENT, onInquiry);
+    channel.bind(ORDER_REQUEST_CREATED_EVENT, onRequest);
     return () => {
-      channel.unbind(INQUIRY_CREATED_EVENT, onCreated);
+      channel.unbind(INQUIRY_CREATED_EVENT, onInquiry);
+      channel.unbind(ORDER_REQUEST_CREATED_EVENT, onRequest);
       pusher.unsubscribe(STAFF_NOTIFICATIONS_CHANNEL);
     };
   }, [isStaff]);
@@ -116,21 +145,39 @@ export default function NotificationsButton({
             {t("notificationsEmpty")}
           </div>
         ) : (
-          liveItems.map((item) => (
-            <DropdownMenuItem key={item.id} asChild>
-              <Link
-                href="/admin/sales/inquiries"
-                className="flex flex-col items-start gap-0.5"
-                onClick={() => setLiveCount(0)}
-              >
-                <span className="text-sm font-medium">{t("notificationsInquiry")}</span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {item.phone}
-                  {item.productName ? ` · ${item.productName}` : ""}
-                </span>
-              </Link>
-            </DropdownMenuItem>
-          ))
+          liveItems.map((item) => {
+            const isRequest = item.kind === "vehicle-request";
+            const href = isRequest
+              ? (`/admin/sales?edit=${item.id}` as const)
+              : ("/admin/sales/inquiries" as const);
+            return (
+              <DropdownMenuItem key={item.id} asChild>
+                <Link
+                  href={href}
+                  className="flex flex-col items-start gap-0.5"
+                  onClick={() => {
+                    setLiveItems((prev) =>
+                      prev.filter((row) => row.id !== item.id)
+                    );
+                    setLiveCount((prev) => Math.max(0, prev - 1));
+                    void (isRequest
+                      ? markOrderRequestReadAction(item.id)
+                      : markCallbackInquiriesReadAction());
+                  }}
+                >
+                  <span className="text-sm font-medium">
+                    {isRequest
+                      ? t("notificationsVehicleRequest")
+                      : t("notificationsInquiry")}
+                  </span>
+                  <span className="line-clamp-2 text-xs text-muted-foreground">
+                    <span className="font-mono">{item.phone}</span>
+                    {item.productName ? ` · ${item.productName}` : ""}
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            );
+          })
         )}
         {isStaff ? (
           <>
@@ -138,7 +185,16 @@ export default function NotificationsButton({
             <DropdownMenuItem asChild>
               <Link
                 href="/admin/sales/inquiries"
-                onClick={() => setLiveCount(0)}
+                onClick={() => {
+                  setLiveItems((prev) =>
+                    prev.filter((row) => row.kind !== "inquiry")
+                  );
+                  setLiveCount(
+                    liveItems.filter((row) => row.kind === "vehicle-request")
+                      .length
+                  );
+                  void markCallbackInquiriesReadAction();
+                }}
               >
                 {t("notificationsViewAll")}
               </Link>

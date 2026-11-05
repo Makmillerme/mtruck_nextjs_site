@@ -433,7 +433,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 <CategoryFinderPanel
                   payload={{
                     showRootsBlock: true,
-                    availability: { rows: [] },
+                    availability: { paths: [], rows: [] },
                     roots: [
                       {
                         id: "lab-root",

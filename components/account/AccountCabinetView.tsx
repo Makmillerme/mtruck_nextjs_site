@@ -39,14 +39,20 @@ export type AccountSettingsProps = {
   canChangePassword: boolean;
 };
 
-function accountHref(
-  tab: AccountCabinetTab,
-  sheet?: { create?: boolean }
-) {
+function accountHref(tab: AccountCabinetTab) {
   const params = new URLSearchParams();
   params.set("tab", tab);
-  if (sheet?.create) params.set("create", "1");
   return `/account?${params.toString()}`;
+}
+
+/** Sheet open/close in URL without RSC remount (same idea as admin syncAdminSheetUrl). */
+function syncAccountSheetUrl(sheet: { create?: boolean }) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("tab", "orders");
+  if (sheet.create) url.searchParams.set("create", "1");
+  else url.searchParams.delete("create");
+  window.history.replaceState(null, "", url.toString());
 }
 
 function AccountFavoritesPanel({
@@ -134,6 +140,7 @@ export default function AccountCabinetView({
   favorites,
   settings,
   createOpen,
+  userPhone = null,
 }: {
   tab: AccountCabinetTab;
   locale: string;
@@ -141,6 +148,7 @@ export default function AccountCabinetView({
   favorites: AccountFavoriteRow[];
   settings: AccountSettingsProps | null;
   createOpen: boolean;
+  userPhone?: string | null;
 }) {
   const t = useTranslations("AccountCabinet");
   const router = useRouter();
@@ -156,9 +164,7 @@ export default function AccountCabinetView({
   }
 
   function onSheetUrlChange(sheet: { create?: boolean }) {
-    startTransition(() => {
-      router.replace(accountHref("orders", sheet));
-    });
+    syncAccountSheetUrl(sheet);
   }
 
   return (
@@ -181,6 +187,7 @@ export default function AccountCabinetView({
             locale={locale}
             items={orders}
             createOpen={createOpen && tab === "orders"}
+            userPhone={userPhone}
             onSheetUrlChange={onSheetUrlChange}
           />
         </TabsContent>

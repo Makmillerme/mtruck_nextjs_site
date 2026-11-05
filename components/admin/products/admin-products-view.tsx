@@ -4,15 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import { ADMIN_LIST_SEARCH_KEY } from "@/lib/admin/list-url";
 import {
-  ADMIN_LIST_PAGINATION_KEYS,
-  ADMIN_LIST_SEARCH_KEY,
-  syncAdminListUrl,
-} from "@/lib/admin/list-url";
-import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
+  adminPageCount,
+  adminPaginationParams,
+  clampAdminPage,
+  type AdminPageSize,
+} from "@/lib/admin/list-pagination";
+import { useSoftNavOptional } from "@/components/soft-nav/soft-nav";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import {
   catalogDraftToParams,
-  isCatalogFilterParam,
   parseCatalogQuery,
 } from "@/utils/catalog-query";
 import { formatCurrency } from "@/utils/format";
@@ -30,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import {
   loadAdminProductSheetAction,
+  loadAdminProductsFilterChromeAction,
   loadProductSheetMetaAction,
 } from "@/lib/catalog/product-sheet-meta";
 import type { AdminProductRowDTO } from "@/lib/admin/product-row";
@@ -121,17 +124,8 @@ import {
   LocalCatalogFilterProvider,
   type CatalogFilterDraft,
 } from "@/components/products/catalog-filters";
-import {
-  buildPathSlugs,
-  type FilterAvailabilityIndex,
-  type FilterAvailabilityRow,
-} from "@/lib/catalog/filter-availability";
-import { productMatchesCatalogDraft } from "@/lib/catalog/narrow-facets";
-import {
-  scopeFilterSchemaToRoot,
-  type PublicFilterSchema,
-} from "@/lib/catalog/public-filter";
-import { flattenTaxonomyTree } from "@/lib/catalog/taxonomy";
+import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import type { PublicFilterSchema } from "@/lib/catalog/public-filter";
 import { countActiveCatalogFilters } from "@/utils/catalog-query";
 import { LuArchive, LuColumns3, LuPen } from "react-icons/lu";
 
@@ -158,31 +152,6 @@ const AVAILABILITY_LABEL: Record<string, string> = {
 
 export type AdminProductSpec = AdminProductRowDTO["specs"][number];
 export type AdminProductRow = AdminProductRowDTO;
-
-function adminItemToFilterRow(
-  item: AdminProductRow,
-  byId: Map<string, { id: string; slug: string; parentId: string | null }>
-): FilterAvailabilityRow {
-  const specs: Record<string, string | number | boolean> = {};
-  for (const spec of item.specs) {
-    const key = spec.attributeKey;
-    if (!key) continue;
-    if (spec.optionSlug) {
-      specs[key] = spec.optionSlug;
-    } else if (
-      (spec.type === "NUMBER" || spec.type === "YEAR") &&
-      spec.numberValue != null
-    ) {
-      specs[key] = spec.numberValue;
-    } else if (spec.type === "BOOLEAN" && spec.booleanValue != null) {
-      specs[key] = spec.booleanValue;
-    }
-  }
-  return {
-    pathSlugs: buildPathSlugs(item.taxonomyNodeId, byId),
-    specs,
-  };
-}
 
 const STATUS_KEYS = [
   "DRAFT",
@@ -476,8 +445,9 @@ export default function AdminProductsView({
   nameWriterGroup = null,
   formationTemplates = [],
   canDelete = false,
-  filterSchema,
-  filterAvailability,
+  totalCount,
+  listPage,
+  listPageSize,
 }: {
   items: AdminProductRow[];
   locale: string;
@@ -491,18 +461,25 @@ export default function AdminProductsView({
   nameWriterGroup?: CatalogDisplayGroup | null;
   formationTemplates?: CatalogDisplayGroup[];
   canDelete?: boolean;
-  filterSchema: PublicFilterSchema;
-  filterAvailability: FilterAvailabilityIndex;
+  /** Server-paginated total (not just current page length). */
+  totalCount: number;
+  listPage: number;
+  listPageSize: AdminPageSize;
 }) {
   const t = useTranslations("Admin");
   const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const softNav = useSoftNavOptional();
+  const searchParams = useSearchParams();
   const [listItems, setListItems] = useState(items);
+  const [listTotal, setListTotal] = useState(totalCount);
   useEffect(() => {
     setListItems(items);
-  }, [items]);
+    setListTotal(totalCount);
+  }, [items, totalCount]);
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(listItems);
-  const searchParams = useSearchParams();
   const [sheetProduct, setSheetProduct] = useState<AdminProductRow | null>(
     null
   );
@@ -521,15 +498,13 @@ export default function AdminProductsView({
     };
   });
   const filterRootRef = useRef(listRootId);
-
-  const paginationResetKey = useMemo(
-    () =>
-      JSON.stringify({
-        search: search.trim(),
-        filter: appliedFilter,
-      }),
-    [search, appliedFilter]
+  const [filterSchema, setFilterSchema] = useState<PublicFilterSchema | null>(
+    null
   );
+  const [filterAvailability, setFilterAvailability] =
+    useState<FilterAvailabilityIndex | null>(null);
+  const [filterChromeLoading, setFilterChromeLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
   const [visibleSystemKeys, setVisibleSystemKeys] = useState<SystemColumnId[]>(
     () => [...SYSTEM_COLUMN_IDS]
@@ -558,12 +533,9 @@ export default function AdminProductsView({
     if (filterRootRef.current === listRootId) return;
     filterRootRef.current = listRootId;
     setAppliedFilter(EMPTY_CATALOG_FILTER_DRAFT);
+    setFilterSchema(null);
+    setFilterAvailability(null);
   }, [listRootId]);
-
-  const scopedFilterSchema = useMemo(
-    () => scopeFilterSchemaToRoot(filterSchema, listRootId),
-    [filterSchema, listRootId]
-  );
 
   const editProduct = useMemo(() => {
     if (!sheetEditId) return null;
@@ -640,21 +612,6 @@ export default function AdminProductsView({
     [tableAttributes, visibleKeys]
   );
 
-  const taxonomyById = useMemo(() => {
-    const map = new Map<
-      string,
-      { id: string; slug: string; parentId: string | null }
-    >();
-    for (const node of flattenTaxonomyTree(tree)) {
-      map.set(node.id, {
-        id: node.id,
-        slug: node.slug,
-        parentId: node.parentId,
-      });
-    }
-    return map;
-  }, [tree]);
-
   const activeFilterCount = countActiveCatalogFilters({
     folders: appliedFilter.folders,
     scopedFacets: appliedFilter.scopedFacets,
@@ -663,64 +620,77 @@ export default function AdminProductsView({
     ranges: {},
   });
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const catalogActive = activeFilterCount > 0;
-    return optimisticItems.filter((item) => {
-      if (q) {
-        const specHay = item.specs
-          .map((spec) =>
-            [
-              spec.optionLabel,
-              ...(spec.optionLabels ?? []),
-              spec.textValue,
-              spec.numberValue,
-            ]
-              .filter((value) => value != null && value !== "")
-              .join(" ")
-          )
-          .join(" ")
-          .toLowerCase();
-        const hay =
-          `${item.name} ${item.productCode} ${specHay}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      if (catalogActive) {
-        const row = adminItemToFilterRow(item, taxonomyById);
-        if (!productMatchesCatalogDraft(row, appliedFilter)) return false;
-      }
-      return true;
-    });
-  }, [
-    optimisticItems,
-    search,
-    appliedFilter,
-    activeFilterCount,
-    taxonomyById,
-  ]);
+  const page = clampAdminPage(
+    listPage,
+    adminPageCount(listTotal, listPageSize)
+  );
+  const pageSize = listPageSize;
+  const pageCount = adminPageCount(listTotal, pageSize);
+  const pagedItems = optimisticItems;
+  const showPagination = listTotal > 0;
 
-  const {
-    page,
-    pageSize,
-    pageCount,
-    pagedItems,
-    setPage,
-    setPageSize,
-    paginationParams,
-    showPagination,
-  } = useAdminTablePagination(filtered, paginationResetKey);
+  function commitListQuery(next: {
+    search?: string;
+    filter?: CatalogFilterDraft;
+    page?: number;
+    pageSize?: AdminPageSize;
+  }) {
+    const nextSearch = next.search ?? search;
+    const nextFilter = next.filter ?? appliedFilter;
+    const nextPageSize = next.pageSize ?? pageSize;
+    const nextPage = next.page ?? 1;
+    const params = new URLSearchParams();
+    const root = searchParams.get("root");
+    if (root) params.set("root", root);
+    const q = nextSearch.trim();
+    if (q) params.set(ADMIN_LIST_SEARCH_KEY, q);
+    const pagination = adminPaginationParams(nextPage, nextPageSize);
+    for (const [key, value] of Object.entries(pagination)) {
+      if (value) params.set(key, value);
+    }
+    for (const [key, value] of Object.entries(
+      catalogDraftToParams(nextFilter)
+    )) {
+      if (value) params.set(key, value);
+    }
+    // Preserve sheet keys while list query navigates.
+    for (const key of ["create", "edit", "node"] as const) {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    }
+    const href = params.toString() ? `${pathname}?${params}` : pathname;
+    const navigate = () => router.replace(href);
+    if (softNav) softNav.startTransition(navigate);
+    else navigate();
+  }
 
   useEffect(() => {
-    syncAdminListUrl(
-      [ADMIN_LIST_SEARCH_KEY, ...ADMIN_LIST_PAGINATION_KEYS],
-      {
-        ...catalogDraftToParams(appliedFilter),
-        [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
-        ...paginationParams,
-      },
-      isCatalogFilterParam
-    );
-  }, [appliedFilter, search, paginationParams]);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const urlQ = searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? "";
+    if (search.trim() === urlQ.trim()) return;
+    searchDebounceRef.current = setTimeout(() => {
+      commitListQuery({ search, page: 1 });
+    }, 300);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce search only
+  }, [search]);
+
+  async function ensureFilterChrome() {
+    if (filterSchema && filterAvailability) return;
+    if (filterChromeLoading) return;
+    setFilterChromeLoading(true);
+    try {
+      const chrome = await loadAdminProductsFilterChromeAction(listRootId);
+      setFilterSchema(chrome.schema);
+      setFilterAvailability(chrome.availability);
+    } finally {
+      setFilterChromeLoading(false);
+    }
+  }
+
+  const scopedFilterSchema = filterSchema;
 
   async function loadSheetMeta(nodeId: string | null) {
     try {
@@ -810,6 +780,20 @@ export default function AdminProductsView({
 
   function clearFilters() {
     setAppliedFilter(EMPTY_CATALOG_FILTER_DRAFT);
+    commitListQuery({ filter: EMPTY_CATALOG_FILTER_DRAFT, page: 1 });
+  }
+
+  function onFilterApplied(draft: CatalogFilterDraft) {
+    setAppliedFilter(draft);
+    commitListQuery({ filter: draft, page: 1 });
+  }
+
+  function setPage(next: number) {
+    commitListQuery({ page: next });
+  }
+
+  function setPageSize(next: AdminPageSize) {
+    commitListQuery({ pageSize: next, page: 1 });
   }
 
   function toggleColumn(key: string, checked: boolean) {
@@ -976,29 +960,38 @@ export default function AdminProductsView({
             applyLabel={t("filterApply")}
             onClear={clearFilters}
             hideFooter
+            onOpenChange={(open) => {
+              if (open) void ensureFilterChrome();
+            }}
           >
-            {({ close }) => (
-              <LocalCatalogFilterProvider
-                key={listRootId ?? "all"}
-                schema={scopedFilterSchema}
-                availability={filterAvailability}
-                applied={appliedFilter}
-                onAppliedChange={setAppliedFilter}
-                onSheetApplied={close}
-              >
-                <CatalogFilterFields
-                  idPrefix="admin-filter"
-                  clearBelowApply
-                />
-              </LocalCatalogFilterProvider>
-            )}
+            {({ close }) =>
+              scopedFilterSchema && filterAvailability ? (
+                <LocalCatalogFilterProvider
+                  key={listRootId ?? "all"}
+                  schema={scopedFilterSchema}
+                  availability={filterAvailability}
+                  applied={appliedFilter}
+                  onAppliedChange={onFilterApplied}
+                  onSheetApplied={close}
+                >
+                  <CatalogFilterFields
+                    idPrefix="admin-filter"
+                    clearBelowApply
+                  />
+                </LocalCatalogFilterProvider>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {filterChromeLoading ? "…" : t("filter")}
+                </p>
+              )
+            }
           </AdminFilterSheet>
         }
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {t("totalProducts", { count: filtered.length })}
+          {t("totalProducts", { count: listTotal })}
         </p>
         <Button variant="outline" size="sm" asChild>
           <Link href="/admin/archive?tab=products">
@@ -1008,7 +1001,7 @@ export default function AdminProductsView({
         </Button>
       </div>
 
-      {filtered.length === 0 ? (
+      {pagedItems.length === 0 ? (
         <EmptyList />
       ) : (
         <Card className="shadow-sm">

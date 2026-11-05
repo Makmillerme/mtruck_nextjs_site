@@ -95,6 +95,7 @@ export default async function AccountPage(props: {
   let orders: AccountOrderRow[] = [];
   let favorites: AccountFavoriteRow[] = [];
   let settings: AccountSettingsProps | null = null;
+  let userPhone: string | null = null;
 
   if (tab === "favorites") {
     favorites = await mapFavorites(await fetchUserFavorites(), locale);
@@ -106,15 +107,24 @@ export default async function AccountPage(props: {
         select: { phone: true },
       }),
     ]);
+    userPhone = profile?.phone ?? null;
     settings = {
       name: user.name,
       email: user.email,
       image: user.image ?? null,
-      phone: profile?.phone ?? null,
+      phone: userPhone,
       canChangePassword,
     };
   } else {
-    orders = await mapOrders(await fetchUserOrders());
+    const [ordersRaw, profile] = await Promise.all([
+      fetchUserOrders(),
+      db.user.findUnique({
+        where: { id: user.id },
+        select: { phone: true },
+      }),
+    ]);
+    orders = await mapOrders(ordersRaw);
+    userPhone = profile?.phone ?? null;
   }
 
   return (
@@ -125,6 +135,7 @@ export default async function AccountPage(props: {
       orders={orders}
       favorites={favorites}
       settings={settings}
+      userPhone={userPhone}
     />
   );
 }

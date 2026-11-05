@@ -102,10 +102,25 @@ model User {
   favorites     Favorite[]
   reviews       Review[]
   orders        Order[]
+  phones        UserPhone[]
   archivedAt    DateTime?
 
   @@index([phone])
   @@index([archivedAt])
+}
+
+// Extra phones from logged-in CTA/forms when primary User.phone is already set
+model UserPhone {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone     String
+  phoneNorm String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, phoneNorm])
+  @@index([userId])
 }
 
 model Session {
@@ -182,6 +197,9 @@ model Product {
   @@index([status])
   @@index([archivedAt])
   @@index([archivedAt, createdAt])
+  @@index([status, archivedAt, createdAt])
+  @@index([status, archivedAt, taxonomyNodeId, createdAt])
+  @@index([status, archivedAt, price])
 }
 
 model ProductImage {
@@ -472,6 +490,10 @@ model Favorite {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
 }
 
 model Review {
@@ -486,6 +508,10 @@ model Review {
   updatedAt      DateTime @updatedAt
   productId      String
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
 }
 
 model Order {
@@ -510,6 +536,8 @@ model Order {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   archivedAt     DateTime?
+  // Staff notification read (USER REQUEST leads)
+  readAt         DateTime?
 
   @@index([userId])
   @@index([productId])
@@ -518,6 +546,8 @@ model Order {
   @@index([status])
   @@index([origin])
   @@index([archivedAt])
+  @@index([readAt])
+  @@index([userId, archivedAt, createdAt])
 }
 
 // Phone callback / CTA lead (anonymous site inquiry).

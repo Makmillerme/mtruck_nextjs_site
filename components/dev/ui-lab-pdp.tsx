@@ -184,7 +184,7 @@ export default function UiLabPdp() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-        <div className="flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden">
           <ProductGallery images={DEMO_IMAGES} />
         </div>
         <ProductBuyBox

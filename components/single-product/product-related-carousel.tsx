@@ -60,6 +60,12 @@ export default function ProductRelatedCarousel({
       opts={{
         align: "start",
         containScroll: "trimSnaps",
+        // Nested ProductCard PhotoCarousel owns horizontal drag on the image.
+        watchDrag: (_emblaApi, event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return true;
+          return !target.closest("[data-photo-carousel]");
+        },
       }}
       className="relative w-full max-w-full min-w-0"
     >

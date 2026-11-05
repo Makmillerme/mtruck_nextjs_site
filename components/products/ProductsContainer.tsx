@@ -29,26 +29,26 @@ async function CatalogResults({
   query: Omit<CatalogQuery, "layout">;
 }) {
   const t = await getTranslations("Products");
-  const [{ products, total }, favorites] = await Promise.all([
-    fetchAllProducts({
-      search: query.search,
-      sort: query.sort,
-      folders: query.folders,
-      facets: query.facets,
-      ranges: query.ranges,
-      scopedFacets: query.scopedFacets,
-      scopedRanges: query.scopedRanges,
-      page: query.page,
-      pageSize: query.pageSize,
-    }),
-    fetchUserFavoriteIds(),
+  const { products, total } = await fetchAllProducts({
+    search: query.search,
+    sort: query.sort,
+    folders: query.folders,
+    facets: query.facets,
+    ranges: query.ranges,
+    scopedFacets: query.scopedFacets,
+    scopedRanges: query.scopedRanges,
+    page: query.page,
+    pageSize: query.pageSize,
+  });
+  const [favorites, layouts] = await Promise.all([
+    fetchUserFavoriteIds(products.map((product) => product.id)),
+    fetchCardPreviewLayoutsByNodeIds(
+      db,
+      products
+        .map((product) => product.taxonomyNodeId)
+        .filter((id): id is string => Boolean(id))
+    ),
   ]);
-  const layouts = await fetchCardPreviewLayoutsByNodeIds(
-    db,
-    products
-      .map((product) => product.taxonomyNodeId)
-      .filter((id): id is string => Boolean(id))
-  );
   const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
   const emptyLabel =
     total === 0

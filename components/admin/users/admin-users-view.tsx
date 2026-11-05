@@ -117,6 +117,21 @@ function UserFormFields({
         defaultValue={user?.phone ?? ""}
         required={false}
       />
+      {user && user.additionalPhones.length > 0 ? (
+        <div className="grid gap-2">
+          <p className="text-sm font-medium">{t("additionalPhones")}</p>
+          <ul className="grid gap-1.5 rounded-sm border bg-muted/40 px-3 py-2">
+            {user.additionalPhones.map((extraPhone) => (
+              <li
+                key={extraPhone}
+                className="text-sm tabular-nums text-foreground"
+              >
+                {extraPhone}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {canManageRoles ? (
         <CatalogMenuSelect
           name="role"

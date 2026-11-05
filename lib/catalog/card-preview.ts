@@ -217,3 +217,4 @@ export async function fetchCardPreviewLayoutsByNodeIds(
     rows.map((row) => [row.taxonomyNodeId, resolveCardPreviewLayout(row)] as const)
   );
 }
+

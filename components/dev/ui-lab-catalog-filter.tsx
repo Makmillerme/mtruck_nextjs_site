@@ -7,7 +7,10 @@ import {
 import CatalogPagination from "@/components/products/catalog-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
+import {
+  compactAvailabilityIndex,
+  type FilterAvailabilityIndex,
+} from "@/lib/catalog/filter-availability";
 import { narrowDraftAgainstIndex } from "@/lib/catalog/narrow-facets";
 import {
   findFilterNode,
@@ -101,50 +104,48 @@ const DEMO_TREE: PublicFilterNode[] = [
 ];
 
 /** Demo inventory: MAN has 20/40 + manual; Mercedes has 40/45 + auto/manual. */
-const DEMO_AVAILABILITY: FilterAvailabilityIndex = {
-  rows: [
-    {
-      pathSlugs: ["containers", "trucks"],
-      specs: {
-        make: "man",
-        model: "tgx",
-        containerType: "20ft",
-        gearbox: "manual",
-        year: 2018,
-      },
+const DEMO_AVAILABILITY: FilterAvailabilityIndex = compactAvailabilityIndex([
+  {
+    pathSlugs: ["containers", "trucks"],
+    specs: {
+      make: "man",
+      model: "tgx",
+      containerType: "20ft",
+      gearbox: "manual",
+      year: 2018,
     },
-    {
-      pathSlugs: ["containers", "trucks"],
-      specs: {
-        make: "man",
-        model: "tgs",
-        containerType: "40ft",
-        gearbox: "manual",
-        year: 2020,
-      },
+  },
+  {
+    pathSlugs: ["containers", "trucks"],
+    specs: {
+      make: "man",
+      model: "tgs",
+      containerType: "40ft",
+      gearbox: "manual",
+      year: 2020,
     },
-    {
-      pathSlugs: ["containers", "trucks"],
-      specs: {
-        make: "mercedes",
-        model: "actros",
-        containerType: "40ft",
-        gearbox: "auto",
-        year: 2021,
-      },
+  },
+  {
+    pathSlugs: ["containers", "trucks"],
+    specs: {
+      make: "mercedes",
+      model: "actros",
+      containerType: "40ft",
+      gearbox: "auto",
+      year: 2021,
     },
-    {
-      pathSlugs: ["containers", "trucks"],
-      specs: {
-        make: "mercedes",
-        model: "atego",
-        containerType: "45ft",
-        gearbox: "manual",
-        year: 2019,
-      },
+  },
+  {
+    pathSlugs: ["containers", "trucks"],
+    specs: {
+      make: "mercedes",
+      model: "atego",
+      containerType: "45ft",
+      gearbox: "manual",
+      year: 2019,
     },
-  ],
-};
+  },
+]);
 
 const LAB_LABELS = {
   from: "Від",

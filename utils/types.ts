@@ -1,3 +1,4 @@
+import type { AdminOrderRowDTO } from "@/lib/admin/order-row";
 import type { AdminProductRowDTO } from "@/lib/admin/product-row";
 import type { AdminUserRowDTO } from "@/lib/admin/user-row";
 
@@ -5,6 +6,7 @@ export type ActionState = {
   message: string;
   ok?: boolean;
   orderId?: string;
+  order?: AdminOrderRowDTO;
   product?: AdminProductRowDTO;
   user?: AdminUserRowDTO;
 };

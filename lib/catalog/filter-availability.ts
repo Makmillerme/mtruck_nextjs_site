@@ -5,16 +5,63 @@ import {
 } from "@/lib/catalog/cache-tags";
 import db from "@/utils/db";
 
-/** One published product’s facet values for client-side narrowing. */
+/** One product’s facet values (expanded form — admin row match / demos). */
 export type FilterAvailabilityRow = {
   /** Ancestors + self taxonomy slugs (folder match = slug ∈ path). */
   pathSlugs: string[];
   specs: Record<string, string | number | boolean>;
 };
 
+/**
+ * Wire format for RSC → client: path slug chains deduped; rows store pathIdx.
+ * Cuts repeated pathSlugs arrays across products in the same folder.
+ */
 export type FilterAvailabilityIndex = {
-  rows: FilterAvailabilityRow[];
+  paths: string[][];
+  rows: Array<{
+    pathIdx: number;
+    specs: Record<string, string | number | boolean>;
+  }>;
 };
+
+export function availabilityPathSlugs(
+  index: FilterAvailabilityIndex,
+  pathIdx: number
+): string[] {
+  return index.paths[pathIdx] ?? [];
+}
+
+/** Pack expanded rows into the compact index shipped to the browser. */
+export function compactAvailabilityIndex(
+  rows: FilterAvailabilityRow[]
+): FilterAvailabilityIndex {
+  const pathKeyToIdx = new Map<string, number>();
+  const paths: string[][] = [];
+  const compactRows: FilterAvailabilityIndex["rows"] = [];
+
+  for (const row of rows) {
+    const key = row.pathSlugs.join("\0");
+    let pathIdx = pathKeyToIdx.get(key);
+    if (pathIdx == null) {
+      pathIdx = paths.length;
+      pathKeyToIdx.set(key, pathIdx);
+      paths.push(row.pathSlugs);
+    }
+    compactRows.push({ pathIdx, specs: row.specs });
+  }
+
+  return { paths, rows: compactRows };
+}
+
+export function expandAvailabilityRow(
+  index: FilterAvailabilityIndex,
+  row: FilterAvailabilityIndex["rows"][number]
+): FilterAvailabilityRow {
+  return {
+    pathSlugs: availabilityPathSlugs(index, row.pathIdx),
+    specs: row.specs,
+  };
+}
 
 function buildPathSlugs(
   nodeId: string | null,
@@ -67,7 +114,7 @@ async function loadFilterAvailabilityIndex(options?: {
 
   const byId = new Map(nodes.map((node) => [node.id, node]));
 
-  const rows: FilterAvailabilityRow[] = products.map((product) => {
+  const expanded: FilterAvailabilityRow[] = products.map((product) => {
     const specs: Record<string, string | number | boolean> = {};
     for (const spec of product.specs) {
       const key = spec.attribute.key;
@@ -91,14 +138,14 @@ async function loadFilterAvailabilityIndex(options?: {
     };
   });
 
-  return { rows };
+  return compactAvailabilityIndex(expanded);
 }
 
 /** Cached inventory × facet index for live draft narrowing (public catalog). */
 export async function fetchFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
   return unstable_cache(
     () => loadFilterAvailabilityIndex(),
-    ["filter-availability-index"],
+    ["filter-availability-index-v2"],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.availability],
@@ -110,7 +157,7 @@ export async function fetchFilterAvailabilityIndex(): Promise<FilterAvailability
 export async function fetchAdminFilterAvailabilityIndex(): Promise<FilterAvailabilityIndex> {
   return unstable_cache(
     () => loadFilterAvailabilityIndex({ includeAllStatuses: true }),
-    ["admin-filter-availability-index"],
+    ["admin-filter-availability-index-v2"],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.availability],

@@ -1,8 +1,12 @@
 import ContactForm from "@/components/contact-form";
+import { fetchSessionPrimaryPhone } from "@/lib/user-phone";
 import { getTranslations } from "next-intl/server";
 
 export default async function CallbackCtaSection() {
-  const t = await getTranslations("ContactSection");
+  const [t, knownPhone] = await Promise.all([
+    getTranslations("ContactSection"),
+    fetchSessionPrimaryPhone(),
+  ]);
 
   return (
     <section
@@ -27,7 +31,7 @@ export default async function CallbackCtaSection() {
             </p>
           </header>
           <div className="lg:col-span-7">
-            <ContactForm />
+            <ContactForm knownPhone={knownPhone} />
           </div>
         </div>
       </div>

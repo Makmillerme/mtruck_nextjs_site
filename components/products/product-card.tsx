@@ -1,7 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { CardSignInButton } from "@/components/form/Buttons";
-import PhotoCarousel from "@/components/media/photo-carousel";
+import PhotoStatic from "@/components/media/photo-static";
 import FavoriteToggleForm from "@/components/products/FavoriteToggleForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,11 @@ import {
   type CardPreviewSpecsStyleId,
 } from "@/lib/catalog/card-preview";
 import { LuChevronRight, LuTag } from "react-icons/lu";
+
+const PhotoCarousel = dynamic(
+  () => import("@/components/media/photo-carousel"),
+  { ssr: true }
+);
 
 export type ProductCardStatus =
   | "PUBLISHED"
@@ -137,8 +143,11 @@ export default function ProductCard({
   const gallery = (product.images?.length ? product.images : [product.image]).map(
     (src) => ({ src, alt: product.name })
   );
-
+  const mediaSizes =
+    imageSizes ?? (layout === "list" ? LIST_IMAGE_SIZES : GRID_IMAGE_SIZES);
   const isList = layout === "list";
+  const mediaFrame = isList ? "fill" : "ratio";
+  const mediaClassName = isList ? "absolute inset-0 h-full" : undefined;
 
   return (
     <article className="group h-full">
@@ -157,21 +166,8 @@ export default function ProductCard({
               : "rounded-t-sm"
           )}
         >
-          <PhotoCarousel
-            variant="card"
-            frame={isList ? "fill" : "ratio"}
-            images={gallery}
-            href={product.href}
-            priority={priority}
-            className={isList ? "absolute inset-0 h-full" : undefined}
-            sizes={
-              imageSizes ??
-              (isList ? LIST_IMAGE_SIZES : GRID_IMAGE_SIZES)
-            }
-            prevLabel={tProduct("galleryPrev")}
-            nextLabel={tProduct("galleryNext")}
-            thumbLabel={tProduct("galleryThumb")}
-            overlay={
+          {(() => {
+            const mediaOverlay =
               showStatus || showFavorite ? (
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 sm:p-3">
                   {showStatus ? (
@@ -206,9 +202,39 @@ export default function ProductCard({
                     </div>
                   ) : null}
                 </div>
-              ) : undefined
+              ) : undefined;
+
+            if (gallery.length <= 1) {
+              return (
+                <PhotoStatic
+                  src={gallery[0]?.src ?? product.image}
+                  alt={product.name}
+                  href={product.href}
+                  priority={priority}
+                  frame={mediaFrame}
+                  className={mediaClassName}
+                  sizes={mediaSizes}
+                  overlay={mediaOverlay}
+                />
+              );
             }
-          />
+
+            return (
+              <PhotoCarousel
+                variant="card"
+                frame={mediaFrame}
+                images={gallery}
+                href={product.href}
+                priority={priority}
+                className={mediaClassName}
+                sizes={mediaSizes}
+                prevLabel={tProduct("galleryPrev")}
+                nextLabel={tProduct("galleryNext")}
+                thumbLabel={tProduct("galleryThumb")}
+                overlay={mediaOverlay}
+              />
+            );
+          })()}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col p-4 lg:p-5">

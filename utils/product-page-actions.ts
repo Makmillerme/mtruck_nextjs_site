@@ -184,8 +184,8 @@ export async function saveProductPageLayoutAction(
       }
     });
 
-    revalidatePath("/", "layout");
     revalidatePath("/admin/ui");
+    revalidatePath("/admin/catalog");
     return { message: t("productPageSaved"), ok: true };
   } catch (error) {
     console.error("saveProductPageLayoutAction", error);

@@ -4,7 +4,11 @@ import type {
   PublicFilterOption,
 } from "@/lib/catalog/public-filter";
 import { findFilterNode, pruneDependentFacetValues } from "@/lib/catalog/public-filter";
-import type { FilterAvailabilityIndex, FilterAvailabilityRow } from "@/lib/catalog/filter-availability";
+import {
+  availabilityPathSlugs,
+  type FilterAvailabilityIndex,
+  type FilterAvailabilityRow,
+} from "@/lib/catalog/filter-availability";
 import type {
   CatalogRange,
   CatalogScopedFacets,
@@ -19,13 +23,17 @@ export type NarrowFacetsResult = {
   groupAnchorKey: string | null;
 };
 
-function inFolder(row: FilterAvailabilityRow, folderSlug: string | null) {
+function inFolder(
+  index: FilterAvailabilityIndex,
+  row: FilterAvailabilityIndex["rows"][number],
+  folderSlug: string | null
+) {
   if (!folderSlug) return true;
-  return row.pathSlugs.includes(folderSlug);
+  return availabilityPathSlugs(index, row.pathIdx).includes(folderSlug);
 }
 
 export function matchesOtherFilters(
-  row: FilterAvailabilityRow,
+  row: Pick<FilterAvailabilityRow, "specs">,
   facets: Record<string, string[]>,
   ranges: Record<string, CatalogRange>,
   omitKey?: string
@@ -58,7 +66,7 @@ export function productMatchesCatalogDraft(
 ): boolean {
   const folder = draft.folders.find((slug) => slug.length > 0) ?? null;
   if (!folder) return true;
-  if (!inFolder(row, folder)) return false;
+  if (!row.pathSlugs.includes(folder)) return false;
   return matchesOtherFilters(
     row,
     draft.scopedFacets[folder] ?? {},
@@ -89,7 +97,9 @@ export function narrowFacetsForFolder(
   index: FilterAvailabilityIndex
 ): NarrowFacetsResult {
   const groupAnchorKey = firstIndependentSelectKey(leafFacets);
-  const folderRows = index.rows.filter((row) => inFolder(row, folderSlug));
+  const folderRows = index.rows.filter((row) =>
+    inFolder(index, row, folderSlug)
+  );
 
   const nextFacets: PublicFilterFacet[] = leafFacets.map((facet) => {
     const pool = folderRows.filter((row) =>

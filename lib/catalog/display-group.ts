@@ -142,13 +142,11 @@ export type FormationApplyResult = {
   attributeTextValues: Map<string, string>;
 };
 
-export async function applyFormationTemplates(
-  nodeId: string,
+/** Pure apply when display-group templates are already loaded for the node. */
+export function applyFormationTemplatesToSpecs(
+  templates: CatalogDisplayGroup[],
   specs: SpecValueSource[]
-): Promise<FormationApplyResult> {
-  const templates = resolveFormationTemplates(
-    await fetchDisplayGroupsForNode(nodeId)
-  );
+): FormationApplyResult {
   let name: string | null = null;
   const attributeTextValues = new Map<string, string>();
   for (const template of templates) {
@@ -162,6 +160,16 @@ export async function applyFormationTemplates(
     }
   }
   return { name, attributeTextValues };
+}
+
+export async function applyFormationTemplates(
+  nodeId: string,
+  specs: SpecValueSource[]
+): Promise<FormationApplyResult> {
+  return applyFormationTemplatesToSpecs(
+    resolveFormationTemplates(await fetchDisplayGroupsForNode(nodeId)),
+    specs
+  );
 }
 
 export async function resolveProductNameFromDisplayGroups(
@@ -200,6 +208,17 @@ export async function regenerateFormationInFolderSubtree(
     },
   });
 
+  const templatesByNodeId = new Map<string, CatalogDisplayGroup[]>();
+  async function templatesFor(nid: string) {
+    const cached = templatesByNodeId.get(nid);
+    if (cached) return cached;
+    const templates = resolveFormationTemplates(
+      await fetchDisplayGroupsForNode(nid)
+    );
+    templatesByNodeId.set(nid, templates);
+    return templates;
+  }
+
   let updatedNames = 0;
   let updatedSpecs = 0;
   let skipped = 0;
@@ -216,8 +235,8 @@ export async function regenerateFormationInFolderSubtree(
       textValue: spec.textValue,
       booleanValue: spec.booleanValue,
     }));
-    const applied = await applyFormationTemplates(
-      product.taxonomyNodeId,
+    const applied = applyFormationTemplatesToSpecs(
+      await templatesFor(product.taxonomyNodeId),
       specs
     );
 

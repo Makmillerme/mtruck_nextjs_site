@@ -6,6 +6,11 @@ import {
   fetchSingleProduct,
 } from "@/utils/actions";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
+import {
+  CATALOG_CACHE_REVALIDATE_SECONDS,
+  CATALOG_CACHE_TAGS,
+} from "@/lib/catalog/cache-tags";
 import { uniqueImages } from "@/lib/catalog/product-to-card";
 import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
 import ShareButton from "@/components/single-product/ShareButton";
@@ -41,19 +46,31 @@ import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
 import { LuFileText } from "react-icons/lu";
 
+async function fetchProductMetadata(productId: string) {
+  return unstable_cache(
+    () =>
+      db.product.findUnique({
+        where: { id: productId },
+        select: {
+          name: true,
+          description: true,
+          image: true,
+          archivedAt: true,
+        },
+      }),
+    ["product-metadata", productId],
+    {
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+      tags: [CATALOG_CACHE_TAGS.products],
+    }
+  )();
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ id: string; locale: string }>;
 }): Promise<Metadata> {
   const { id } = await props.params;
-  const product = await db.product.findUnique({
-    where: { id },
-    select: {
-      name: true,
-      description: true,
-      image: true,
-      archivedAt: true,
-    },
-  });
+  const product = await fetchProductMetadata(id);
 
   if (!product || product.archivedAt) {
     return {};
@@ -112,7 +129,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       fetchRelatedProducts({
         productId: product.id,
         taxonomyNodeId: product.taxonomyNodeId,
-        limit: 12,
+        limit: 4,
       }),
       product.taxonomyNodeId
         ? fetchCardPreviewLayoutsByNodeIds(db, [product.taxonomyNodeId])
@@ -242,8 +259,8 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
           categorySlug={categorySlug}
         />
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-12">
-          <div className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden lg:h-full">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+          <div className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden">
             <ProductGallery
               images={gallery}
               priority

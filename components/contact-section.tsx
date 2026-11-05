@@ -1,10 +1,14 @@
 import ContactForm from "@/components/contact-form";
+import { fetchSessionPrimaryPhone } from "@/lib/user-phone";
 import { getTranslations } from "next-intl/server";
 
 const FACT_KEYS = ["phone", "email", "address", "hours"] as const;
 
 export default async function ContactSection() {
-  const t = await getTranslations("ContactSection");
+  const [t, knownPhone] = await Promise.all([
+    getTranslations("ContactSection"),
+    fetchSessionPrimaryPhone(),
+  ]);
 
   return (
     <section
@@ -28,7 +32,7 @@ export default async function ContactSection() {
               {t("subtitle")}
             </p>
             <div className="mt-8">
-              <ContactForm />
+              <ContactForm knownPhone={knownPhone} />
             </div>
           </div>
 

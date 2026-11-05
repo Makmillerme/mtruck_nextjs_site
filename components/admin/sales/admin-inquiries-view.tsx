@@ -9,7 +9,7 @@ import {
   syncAdminListUrl,
 } from "@/lib/admin/list-url";
 import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import FormContainer from "@/components/form/FormContainer";
 import { Badge } from "@/components/ui/badge";
@@ -104,28 +104,35 @@ export default function AdminInquiriesView({
   locale: string;
 }) {
   const t = useTranslations("Admin");
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(
     () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
   );
+  const [listItems, setListItems] = useState(items);
+
+  useEffect(() => {
+    setListItems(items);
+  }, [items]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const result = await markCallbackInquiriesReadAction();
       if (cancelled || !result?.ok) return;
-      router.refresh();
+      const readAt = new Date().toISOString();
+      setListItems((prev) =>
+        prev.map((item) => (item.readAt ? item : { ...item, readAt }))
+      );
     })();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => {
+    if (!q) return listItems;
+    return listItems.filter((item) => {
       const hay = [
         item.phone,
         item.note,
@@ -138,7 +145,7 @@ export default function AdminInquiriesView({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [items, search]);
+  }, [listItems, search]);
 
   const paginationResetKey = useMemo(
     () => JSON.stringify({ search: search.trim() }),

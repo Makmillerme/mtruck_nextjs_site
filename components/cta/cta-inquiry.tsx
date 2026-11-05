@@ -44,10 +44,12 @@ function CtaInquiryDialog({
   open,
   onOpenChange,
   context,
+  knownPhone = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context: CtaInquiryContextValue | null;
+  knownPhone?: string | null;
 }) {
   const t = useTranslations("ContactSection");
   const productHint =
@@ -75,6 +77,7 @@ function CtaInquiryDialog({
           productId={context?.productId}
           productName={context?.productName}
           productCode={context?.productCode}
+          knownPhone={knownPhone}
           onSuccess={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -82,7 +85,13 @@ function CtaInquiryDialog({
   );
 }
 
-export function CtaInquiryProvider({ children }: { children: ReactNode }) {
+export function CtaInquiryProvider({
+  children,
+  userPhone = null,
+}: {
+  children: ReactNode;
+  userPhone?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [context, setContext] = useState<CtaInquiryContextValue | null>(null);
 
@@ -106,6 +115,7 @@ export function CtaInquiryProvider({ children }: { children: ReactNode }) {
       <CtaInquiryDialog
         open={open}
         context={context}
+        knownPhone={userPhone}
         onOpenChange={(next) => {
           setOpen(next);
           if (!next) setContext(null);

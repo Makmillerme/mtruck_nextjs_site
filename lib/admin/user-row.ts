@@ -4,6 +4,8 @@ export type AdminUserRowDTO = {
   name: string;
   email: string;
   phone: string | null;
+  /** Extra phones from CTA when primary already set. */
+  additionalPhones: string[];
   userCode: string;
   role: "USER" | "ADMIN" | "MANAGER";
   createdAt: string;
@@ -21,6 +23,10 @@ export const adminUserListSelect = {
   role: true,
   createdAt: true,
   archivedAt: true,
+  phones: {
+    select: { phone: true },
+    orderBy: { createdAt: "asc" as const },
+  },
   _count: { select: { products: true, orders: true } },
 } as const;
 
@@ -33,6 +39,7 @@ export function mapAdminUserRow(user: {
   role: "USER" | "ADMIN" | "MANAGER";
   createdAt: Date;
   archivedAt: Date | null;
+  phones?: { phone: string }[];
   _count: { products: number; orders: number };
 }): AdminUserRowDTO {
   return {
@@ -40,6 +47,7 @@ export function mapAdminUserRow(user: {
     name: user.name,
     email: user.email,
     phone: user.phone,
+    additionalPhones: (user.phones ?? []).map((p) => p.phone),
     userCode: user.userCode,
     role: user.role,
     createdAt: user.createdAt.toISOString(),

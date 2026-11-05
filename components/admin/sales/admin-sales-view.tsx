@@ -55,8 +55,9 @@ import {
   createAdminOrderAction,
   updateAdminOrderAction,
 } from "@/utils/actions";
-import type { actionFunction } from "@/utils/types";
+import type { ActionState, actionFunction } from "@/utils/types";
 import { formatCurrency, formatDate } from "@/utils/format";
+import type { AdminOrderRowDTO } from "@/lib/admin/order-row";
 import AdminListToolbar, {
   AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
@@ -64,23 +65,7 @@ import SearchableEntityPicker from "@/components/admin/searchable-entity-picker"
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
 import { LuArchive, LuPen } from "react-icons/lu";
 
-export type AdminOrderRow = {
-  id: string;
-  email: string;
-  userId: string;
-  userName: string;
-  kind: "CATALOG" | "REQUEST";
-  status: "NEW" | "IN_PROGRESS" | "CLOSED";
-  productId: string | null;
-  productName: string | null;
-  folderName: string | null;
-  products: number;
-  orderTotal: number;
-  tax: number;
-  shipping: number;
-  isPaid: boolean;
-  createdAt: string;
-};
+export type AdminOrderRow = AdminOrderRowDTO;
 
 export type AdminOrderUserOption = {
   id: string;
@@ -269,8 +254,12 @@ export default function AdminSalesView({
 }) {
   const t = useTranslations("Admin");
   const tOrders = useTranslations("Orders");
+  const [listItems, setListItems] = useState(items);
+  useEffect(() => {
+    setListItems(items);
+  }, [items]);
   const { optimisticItems, removeOptimistically } =
-    useOptimisticListRemove(items);
+    useOptimisticListRemove(listItems);
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(
     () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
@@ -293,9 +282,27 @@ export default function AdminSalesView({
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
   const [sheetSavePending, setSheetSavePending] = useState(false);
 
+  function onOrderSaved(state: ActionState) {
+    if (!state.order) return;
+    const saved = state.order;
+    setListItems((prev) => {
+      const index = prev.findIndex((item) => item.id === saved.id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = saved;
+        return next;
+      }
+      return [saved, ...prev];
+    });
+    setSheetSavePending(false);
+    setSheetCreateOpen(false);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
+
   const editOrder = useMemo(
-    () => items.find((item) => item.id === sheetEditId) ?? null,
-    [items, sheetEditId]
+    () => listItems.find((item) => item.id === sheetEditId) ?? null,
+    [listItems, sheetEditId]
   );
 
   const activeFilterCount = countSalesFilter(appliedFilter);
@@ -538,6 +545,7 @@ export default function AdminSalesView({
             <FormContainer
               key={sheetCreateOpen ? "create-open" : "create-closed"}
               action={createAdminOrderAction}
+              onSuccess={onOrderSaved}
               onPendingChange={setSheetSavePending}
             >
               <div className="grid gap-6">
@@ -570,6 +578,7 @@ export default function AdminSalesView({
                 <FormContainer
                   key={editOrder.id}
                   action={updateAdminOrderAction}
+                  onSuccess={onOrderSaved}
                   onPendingChange={setSheetSavePending}
                 >
                   <input type="hidden" name="orderId" value={editOrder.id} />
