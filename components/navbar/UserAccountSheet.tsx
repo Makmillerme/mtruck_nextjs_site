@@ -149,7 +149,7 @@ export default function UserAccountSheet({
             <Separator />
             <nav className="flex flex-col gap-1">
               <Link
-                href="/account"
+                href="/account?tab=settings"
                 className={cn(sheetLinkClass(false), "inline-flex items-center")}
                 onClick={close}
               >

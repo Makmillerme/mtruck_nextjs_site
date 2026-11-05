@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
+import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import {
+  ADMIN_LIST_PAGINATION_KEYS,
+  ADMIN_LIST_SEARCH_KEY,
+  syncAdminListUrl,
+} from "@/lib/admin/list-url";
+import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
 import { CatalogField } from "@/components/admin/catalog/catalog-fields";
@@ -275,12 +281,14 @@ export default function AdminSalesView({
   const [draftFilter, setDraftFilter] =
     useState<SalesFilterDraft>(appliedFilter);
 
-  useEffect(() => {
-    syncAdminListUrl([...SALES_FILTER_URL_KEYS, ADMIN_LIST_SEARCH_KEY], {
-      ...salesFilterToParams(appliedFilter),
-      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
-    });
-  }, [appliedFilter, search]);
+  const paginationResetKey = useMemo(
+    () =>
+      JSON.stringify({
+        search: search.trim(),
+        filter: appliedFilter,
+      }),
+    [search, appliedFilter]
+  );
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
   const [sheetSavePending, setSheetSavePending] = useState(false);
@@ -306,6 +314,28 @@ export default function AdminSalesView({
       return orderMatchesSalesFilter(item, appliedFilter);
     });
   }, [optimisticItems, search, appliedFilter]);
+
+  const {
+    page,
+    pageSize,
+    pageCount,
+    pagedItems,
+    setPage,
+    setPageSize,
+    paginationParams,
+    showPagination,
+  } = useAdminTablePagination(filtered, paginationResetKey);
+
+  useEffect(() => {
+    syncAdminListUrl(
+      [...SALES_FILTER_URL_KEYS, ADMIN_LIST_SEARCH_KEY, ...ADMIN_LIST_PAGINATION_KEYS],
+      {
+        ...salesFilterToParams(appliedFilter),
+        [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+        ...paginationParams,
+      }
+    );
+  }, [appliedFilter, search, paginationParams]);
 
   function setCreateOpen(open: boolean) {
     if (!open && sheetSavePending) return;
@@ -408,7 +438,7 @@ export default function AdminSalesView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((order) => (
+                {pagedItems.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
                       <Button
@@ -487,6 +517,16 @@ export default function AdminSalesView({
           </CardContent>
         </Card>
       )}
+
+      {showPagination ? (
+        <AdminTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
 
       <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>

@@ -1,4 +1,4 @@
-import { LuHeart, LuPhone } from "react-icons/lu";
+import { LuHeart, LuPhone, LuShoppingCart } from "react-icons/lu";
 
 function MockBar() {
   return (
@@ -21,6 +21,7 @@ function MockBar() {
       </nav>
       <div className="flex items-center justify-end gap-1">
         <LuPhone className="size-5" aria-hidden />
+        <LuShoppingCart className="size-5" aria-hidden />
         <LuHeart className="size-5" aria-hidden />
         <span className="px-1.5 text-sm font-medium">UA</span>
         <span className="flex size-8 items-center justify-center rounded-full border border-foreground/30 text-xs font-bold">

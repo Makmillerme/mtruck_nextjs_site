@@ -30,6 +30,8 @@ import {
   fetchSiblingNodes,
   getPathNodes,
   getSubtreeStats,
+  getTaxonomyNodeDepth,
+  TAXONOMY_MAX_PARENT_DEPTH,
 } from "@/lib/catalog/taxonomy";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
@@ -288,6 +290,11 @@ export const createTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
         const t = await getTranslations("CatalogAdmin");
         throw new Error(t("parentMissing"));
       }
+      const parentDepth = await getTaxonomyNodeDepth(parent.id);
+      if (parentDepth >= TAXONOMY_MAX_PARENT_DEPTH) {
+        const t = await getTranslations("CatalogAdmin");
+        throw new Error(t("folderMaxDepth"));
+      }
     }
     await db.taxonomyNode.create({
       data: {
@@ -315,18 +322,30 @@ export const renameTaxonomyNodeAction: TaxonomyAction = async (_prev, formData) 
       name: formData.get("name"),
       showInFilter: checkbox(formData, "showInFilter"),
       showInHomeFilter: checkbox(formData, "showInHomeFilter"),
+      productsAreUnique: checkbox(formData, "productsAreUnique"),
     });
+    const existing = await db.taxonomyNode.findUnique({
+      where: { id: data.nodeId },
+      select: { parentId: true },
+    });
+    if (!existing) {
+      const t = await getTranslations("CatalogAdmin");
+      throw new Error(t("folderMissing"));
+    }
     await db.taxonomyNode.update({
       where: { id: data.nodeId },
       data: {
         name: data.name,
         showInFilter: data.showInFilter,
         showInHomeFilter: data.showInHomeFilter,
+        ...(existing.parentId == null
+          ? { productsAreUnique: data.productsAreUnique }
+          : {}),
       },
     });
     revalidateCatalog();
     const t = await getTranslations("CatalogAdmin");
-    return { message: t("folderRenamed"), ok: true };
+    return { message: t("folderUpdated"), ok: true };
   } catch (error) {
     return renderTaxonomyError(error);
   }

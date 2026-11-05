@@ -30,6 +30,8 @@ export type TaxonomyNodeRow = {
   isActive: boolean;
   showInFilter: boolean;
   showInHomeFilter: boolean;
+  /** Meaningful on roots; children inherit via resolveProductsAreUnique. */
+  productsAreUnique: boolean;
 };
 
 export type TaxonomyTreeNode = TaxonomyNodeRow & {

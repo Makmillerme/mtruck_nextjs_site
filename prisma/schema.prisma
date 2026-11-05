@@ -206,6 +206,8 @@ model TaxonomyNode {
   isActive         Boolean @default(true)
   showInFilter     Boolean @default(true)
   showInHomeFilter Boolean @default(true)
+  /// Root-only setting; inherited by the whole branch. Unique listings lock order qty to 1.
+  productsAreUnique Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

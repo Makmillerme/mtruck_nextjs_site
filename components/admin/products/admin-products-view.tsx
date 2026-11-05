@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
+import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import {
+  ADMIN_LIST_PAGINATION_KEYS,
+  ADMIN_LIST_SEARCH_KEY,
+  syncAdminListUrl,
+} from "@/lib/admin/list-url";
+import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
 import {
   catalogDraftToParams,
   isCatalogFilterParam,
@@ -516,16 +522,14 @@ export default function AdminProductsView({
   });
   const filterRootRef = useRef(listRootId);
 
-  useEffect(() => {
-    syncAdminListUrl(
-      [ADMIN_LIST_SEARCH_KEY],
-      {
-        ...catalogDraftToParams(appliedFilter),
-        [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
-      },
-      isCatalogFilterParam
-    );
-  }, [appliedFilter, search]);
+  const paginationResetKey = useMemo(
+    () =>
+      JSON.stringify({
+        search: search.trim(),
+        filter: appliedFilter,
+      }),
+    [search, appliedFilter]
+  );
   const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
   const [visibleSystemKeys, setVisibleSystemKeys] = useState<SystemColumnId[]>(
     () => [...SYSTEM_COLUMN_IDS]
@@ -694,6 +698,29 @@ export default function AdminProductsView({
     activeFilterCount,
     taxonomyById,
   ]);
+
+  const {
+    page,
+    pageSize,
+    pageCount,
+    pagedItems,
+    setPage,
+    setPageSize,
+    paginationParams,
+    showPagination,
+  } = useAdminTablePagination(filtered, paginationResetKey);
+
+  useEffect(() => {
+    syncAdminListUrl(
+      [ADMIN_LIST_SEARCH_KEY, ...ADMIN_LIST_PAGINATION_KEYS],
+      {
+        ...catalogDraftToParams(appliedFilter),
+        [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+        ...paginationParams,
+      },
+      isCatalogFilterParam
+    );
+  }, [appliedFilter, search, paginationParams]);
 
   async function loadSheetMeta(nodeId: string | null) {
     try {
@@ -1006,7 +1033,7 @@ export default function AdminProductsView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((item) => (
+                {pagedItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Button
@@ -1066,6 +1093,16 @@ export default function AdminProductsView({
           </CardContent>
         </Card>
       )}
+
+      {showPagination ? (
+        <AdminTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
 
       <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>

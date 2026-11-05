@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import AccountEmptyState from "@/components/account/AccountEmptyState";
 import AccountOrdersView, {
@@ -8,25 +7,28 @@ import AccountOrdersView, {
 import AccountSettingsForms from "@/components/account/AccountSettingsForms";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import VehicleCard, {
-  type VehicleCardModel,
-} from "@/components/vehicles/vehicle-card";
+import ProductCard, {
+  type ProductCardModel,
+} from "@/components/products/product-card";
 import { SoftNavPending } from "@/components/soft-nav/soft-nav";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
-import type { TaxonomyTreeNode } from "@/lib/catalog/types";
-import { toggleFavoriteAction } from "@/utils/actions";
+import { notify } from "@/lib/ui/notify";
+import {
+  clearAllUserFavoritesAction,
+  toggleFavoriteAction,
+} from "@/utils/actions";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { LuHeart } from "react-icons/lu";
 
 export type AccountCabinetTab = "orders" | "favorites" | "settings";
 
-/** Favorite row with server-resolved VehicleCard (layouts + locale). */
+/** Favorite row with server-resolved ProductCard (layouts + locale). */
 export type AccountFavoriteRow = {
   id: string;
   productId: string;
-  vehicle: VehicleCardModel;
+  product: ProductCardModel;
 };
 
 export type AccountSettingsProps = {
@@ -39,12 +41,11 @@ export type AccountSettingsProps = {
 
 function accountHref(
   tab: AccountCabinetTab,
-  sheet?: { create?: boolean; edit?: string }
+  sheet?: { create?: boolean }
 ) {
   const params = new URLSearchParams();
   params.set("tab", tab);
   if (sheet?.create) params.set("create", "1");
-  if (sheet?.edit) params.set("edit", sheet.edit);
   return `/account?${params.toString()}`;
 }
 
@@ -55,6 +56,7 @@ function AccountFavoritesPanel({
 }) {
   const t = useTranslations("AccountCabinet");
   const pathname = usePathname();
+  const router = useRouter();
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(favorites);
 
@@ -71,9 +73,23 @@ function AccountFavoritesPanel({
 
   return (
     <div className="grid w-full min-w-0 grid-cols-1 gap-3">
-      <p className="text-sm text-muted-foreground">
-        {t("favoritesTotal", { count: optimisticItems.length })}
-      </p>
+      <div className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+        <p>{t("favoritesTotal", { count: optimisticItems.length })}</p>
+        <span aria-hidden>·</span>
+        <ConfirmDeleteCallbackIcon
+          label={t("removeAllFavorites")}
+          title={t("removeAllFavoritesTitle")}
+          description={t("removeAllFavoritesDescription")}
+          confirmLabel={t("removeAllFavorites")}
+          className="h-auto cursor-pointer gap-1 px-0 py-0 text-sm font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
+          iconClassName="size-3.5"
+          onConfirm={async () => {
+            const result = await clearAllUserFavoritesAction();
+            if (result.message) notify.fromAction(result);
+            if (result.ok) router.refresh();
+          }}
+        />
+      </div>
       {/* Full-width cabinet (no filter sidebar): denser than catalog — 1→2→3→4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-5 xl:grid-cols-4">
         {optimisticItems.map((favorite, index) => (
@@ -82,8 +98,8 @@ function AccountFavoritesPanel({
             className="relative animate-in fade-in duration-300 fill-mode-both"
             style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
           >
-            <VehicleCard
-              vehicle={favorite.vehicle}
+            <ProductCard
+              product={favorite.product}
               priority={index < 3}
               favoriteId={favorite.id}
               isAuthenticated
@@ -116,19 +132,15 @@ export default function AccountCabinetView({
   locale,
   orders,
   favorites,
-  tree,
   settings,
   createOpen,
-  editId,
 }: {
   tab: AccountCabinetTab;
   locale: string;
   orders: AccountOrderRow[];
   favorites: AccountFavoriteRow[];
-  tree: TaxonomyTreeNode[];
   settings: AccountSettingsProps | null;
   createOpen: boolean;
-  editId?: string;
 }) {
   const t = useTranslations("AccountCabinet");
   const router = useRouter();
@@ -143,7 +155,7 @@ export default function AccountCabinetView({
     });
   }
 
-  function onSheetUrlChange(sheet: { create?: boolean; edit?: string }) {
+  function onSheetUrlChange(sheet: { create?: boolean }) {
     startTransition(() => {
       router.replace(accountHref("orders", sheet));
     });
@@ -168,9 +180,7 @@ export default function AccountCabinetView({
           <AccountOrdersView
             locale={locale}
             items={orders}
-            tree={tree}
             createOpen={createOpen && tab === "orders"}
-            editId={tab === "orders" ? editId : undefined}
             onSheetUrlChange={onSheetUrlChange}
           />
         </TabsContent>

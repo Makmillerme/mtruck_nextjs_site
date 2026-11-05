@@ -1,0 +1,1 @@
+AccountOrdersSummary: compact side-by-side rows (label flex-1 wrap + amount shrink-0 tabular), tighter p-4, CTA h-11 with optional wrap on narrow. Replaces stacked amounts that looked sparse in sidebar.

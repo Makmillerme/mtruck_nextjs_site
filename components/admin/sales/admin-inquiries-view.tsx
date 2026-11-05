@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import {
+  ADMIN_LIST_PAGINATION_KEYS,
+  ADMIN_LIST_SEARCH_KEY,
+  syncAdminListUrl,
+} from "@/lib/admin/list-url";
+import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import FormContainer from "@/components/form/FormContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,11 +104,23 @@ export default function AdminInquiriesView({
   locale: string;
 }) {
   const t = useTranslations("Admin");
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(
+    () => searchParams.get(ADMIN_LIST_SEARCH_KEY) ?? ""
+  );
 
   useEffect(() => {
-    void markCallbackInquiriesReadAction();
-  }, []);
+    let cancelled = false;
+    void (async () => {
+      const result = await markCallbackInquiriesReadAction();
+      if (cancelled || !result?.ok) return;
+      router.refresh();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -119,6 +139,29 @@ export default function AdminInquiriesView({
       return hay.includes(q);
     });
   }, [items, search]);
+
+  const paginationResetKey = useMemo(
+    () => JSON.stringify({ search: search.trim() }),
+    [search]
+  );
+
+  const {
+    page,
+    pageSize,
+    pageCount,
+    pagedItems,
+    setPage,
+    setPageSize,
+    paginationParams,
+    showPagination,
+  } = useAdminTablePagination(filtered, paginationResetKey);
+
+  useEffect(() => {
+    syncAdminListUrl([ADMIN_LIST_SEARCH_KEY, ...ADMIN_LIST_PAGINATION_KEYS], {
+      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+      ...paginationParams,
+    });
+  }, [search, paginationParams]);
 
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
@@ -152,7 +195,7 @@ export default function AdminInquiriesView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => {
+              {pagedItems.map((item) => {
                 const vehicleLabel =
                   item.productName || item.productCode || t("inquiryNoProduct");
                 return (
@@ -211,6 +254,16 @@ export default function AdminInquiriesView({
           </Table>
         </div>
       )}
+
+      {showPagination ? (
+        <AdminTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
     </section>
   );
 }

@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   LuBanknote,
   LuChevronRight,
-  LuRefreshCw,
-  LuShieldCheck,
+  LuFileCheck,
+  LuSparkles,
   LuTruck,
   LuWrench,
 } from "react-icons/lu";
@@ -16,10 +16,11 @@ type TrustItem = {
   id: string;
   label: string;
   hint?: string;
-  Icon: typeof LuShieldCheck;
+  Icon: typeof LuTruck;
 };
 
-const TRUST_ICONS = [LuShieldCheck, LuWrench, LuTruck, LuRefreshCw] as const;
+/** Order matches PDP trustItems: delivery → service → prep → documents. */
+const TRUST_ICONS = [LuTruck, LuWrench, LuSparkles, LuFileCheck] as const;
 
 export default function ProductBuyBox({
   categoryLabel,

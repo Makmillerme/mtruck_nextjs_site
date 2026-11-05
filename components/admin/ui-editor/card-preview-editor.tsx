@@ -19,9 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import VehicleCard, {
-  type VehicleCardModel,
-} from "@/components/vehicles/vehicle-card";
+import ProductCard, {
+  type ProductCardModel,
+} from "@/components/products/product-card";
 import CascadeSelect from "@/components/form/cascade-select";
 import type { CardPreviewEditorPayload } from "@/lib/admin/card-preview-editor-data";
 import {
@@ -107,7 +107,7 @@ export default function CardPreviewEditor({
     [attributes]
   );
 
-  const previewVehicle = useMemo((): VehicleCardModel => {
+  const previewProduct = useMemo((): ProductCardModel => {
     const specItems = showSpecs
       ? slotAttributeIds
           .slice(0, slotMax)
@@ -479,8 +479,8 @@ export default function CardPreviewEditor({
               previewLayout === "grid" ? "max-w-sm" : "max-w-5xl"
             )}
           >
-            <VehicleCard
-              vehicle={previewVehicle}
+            <ProductCard
+              product={previewProduct}
               layout={previewLayout}
               isAuthenticated={false}
               showFavorite={false}

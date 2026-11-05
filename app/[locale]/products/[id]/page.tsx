@@ -6,7 +6,7 @@ import {
   fetchSingleProduct,
 } from "@/utils/actions";
 import type { Metadata } from "next";
-import { uniqueImages } from "@/lib/catalog/product-to-vehicle";
+import { uniqueImages } from "@/lib/catalog/product-to-card";
 import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
 import ShareButton from "@/components/single-product/ShareButton";
 import ProductGallery from "@/components/single-product/product-gallery";
@@ -15,8 +15,12 @@ import ProductDetailsTabs from "@/components/single-product/product-details-tabs
 import ProductRelated from "@/components/single-product/product-related";
 import ProductStickyCta from "@/components/single-product/product-sticky-cta";
 import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
-import RequestCatalogOrder from "@/components/single-product/RequestCatalogOrder";
+import {
+  CatalogOrderProvider,
+  CatalogOrderTrigger,
+} from "@/components/single-product/product-order-cta";
 import { getSession } from "@/utils/session";
+import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   buildProductDetailsTabs,
@@ -28,8 +32,11 @@ import {
   fetchProductPageLayoutsByNodeIds,
   resolveProductPageLayout,
 } from "@/lib/catalog/product-page-layout";
-import { fetchAttributesForNode } from "@/lib/catalog/taxonomy";
-import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
+import {
+  fetchAttributesForNode,
+  resolveProductsAreUnique,
+} from "@/lib/catalog/taxonomy";
+import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
 import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
 import { LuFileText } from "react-icons/lu";
@@ -86,6 +93,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const [
     favoriteId,
     openCatalogOrder,
+    productsAreUnique,
     related,
     relatedLayouts,
     pageLayouts,
@@ -100,6 +108,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             userId,
           })
         : Promise.resolve(null),
+      resolveProductsAreUnique(product.taxonomyNodeId),
       fetchRelatedProducts({
         productId: product.id,
         taxonomyNodeId: product.taxonomyNodeId,
@@ -115,6 +124,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         ? fetchAttributesForNode(product.taxonomyNodeId)
         : Promise.resolve([]),
     ]);
+  const allowsQuantity = !productsAreUnique;
 
   const gallery = uniqueImages(
     product.image,
@@ -168,8 +178,8 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     description,
     locale
   );
-  const relatedVehicles = related.map((item) =>
-    productWithSpecsToVehicle(
+  const relatedProducts = related.map((item) =>
+    productWithSpecsToCardModel(
       item,
       item.taxonomyNodeId
         ? relatedLayouts.get(item.taxonomyNodeId)
@@ -181,14 +191,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const availabilityLabel = availabilityInStock
     ? t("availabilityStock")
     : t("availabilityTransit");
-
-  const orderCta = (
-    <RequestCatalogOrder
-      productId={params.id}
-      isAuthenticated={isAuthenticated}
-      hasOpenOrder={Boolean(openCatalogOrder)}
-    />
-  );
 
   const offerCta = (
     <CtaInquiryTrigger
@@ -207,99 +209,114 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   );
 
   const trustItems = [
-    { id: "warranty", label: t("trustWarranty") },
-    { id: "service", label: t("trustService") },
     { id: "delivery", label: t("trustDelivery") },
-    {
-      id: "tradein",
-      label: t("trustTradeIn"),
-      hint: t("trustTradeInHint"),
-    },
+    { id: "service", label: t("trustService") },
+    { id: "prep", label: t("trustPrep") },
+    { id: "documents", label: t("trustDocuments") },
   ];
 
-  return (
-    <section
-      data-page-shell="product"
-      className="grid min-w-0 gap-8 pb-24 lg:pb-8"
-    >
-      <BreadCrumbs
-        name={product.name}
-        categoryLabel={categoryLabel}
-        categorySlug={categorySlug}
-      />
+  const orderAddedFlash =
+    (await cookies()).get("mtruck-order-added")?.value === params.id;
 
-      <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-        <div className="flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden">
-          <ProductGallery
-            images={gallery}
-            priority
-            sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 40vw"
+  return (
+    <CatalogOrderProvider
+      productId={params.id}
+      productName={name}
+      priceLabel={priceLabel}
+      imageSrc={gallery[0]?.src ?? product.image}
+      productCode={productCode}
+      isAuthenticated={isAuthenticated}
+      hasOpenOrder={Boolean(openCatalogOrder)}
+      openOrderId={openCatalogOrder?.id ?? null}
+      openOrderQuantity={openCatalogOrder?.products ?? 1}
+      allowsQuantity={allowsQuantity}
+      initialSheetOpen={orderAddedFlash}
+    >
+      <section
+        data-page-shell="product"
+        className="grid min-w-0 gap-8 pb-24 lg:pb-8"
+      >
+        <BreadCrumbs
+          name={product.name}
+          categoryLabel={categoryLabel}
+          categorySlug={categorySlug}
+        />
+
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-12">
+          <div className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden lg:h-full">
+            <ProductGallery
+              images={gallery}
+              priority
+              sizes="(max-width:768px) 100vw,(max-width:1200px) 50vw, 40vw"
+            />
+          </div>
+
+          <ProductBuyBox
+            className="min-w-0"
+            categoryLabel={categoryLabel}
+            name={name}
+            priceLabel={priceLabel}
+            priceHint={t("priceHint")}
+            availabilityLabel={availabilityLabel}
+            availabilityInStock={availabilityInStock}
+            facts={keyFacts}
+            articleLabel={
+              productCode ? t("articleCode", { code: productCode }) : null
+            }
+            financingLabel={t("financingFrom")}
+            financingAmount={t("financingPerMonth", {
+              amount: leasingAmountLabel,
+            })}
+            trustItems={trustItems}
+            actions={
+              <>
+                <FavoriteToggleButton
+                  productId={params.id}
+                  favoriteId={favoriteId}
+                  isAuthenticated={isAuthenticated}
+                  appearance="outline"
+                />
+                <ShareButton name={product.name} productId={params.id} />
+              </>
+            }
+            cta={<CatalogOrderTrigger />}
+            secondaryCta={offerCta}
           />
         </div>
 
-        <ProductBuyBox
-          className="min-w-0"
-          categoryLabel={categoryLabel}
-          name={name}
-          priceLabel={priceLabel}
-          priceHint={t("priceHint")}
-          availabilityLabel={availabilityLabel}
-          availabilityInStock={availabilityInStock}
-          facts={keyFacts}
-          articleLabel={
-            productCode ? t("articleCode", { code: productCode }) : null
+        <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
+
+        <ProductRelated
+          title={t("relatedTitle")}
+          products={relatedProducts}
+          catalogHref={
+            categorySlug
+              ? buildCatalogHref(new URLSearchParams(), {
+                  clearFacets: true,
+                  folders: [categorySlug],
+                  resetPage: true,
+                })
+              : "/products"
           }
-          financingLabel={t("financingFrom")}
-          financingAmount={t("financingPerMonth", {
-            amount: leasingAmountLabel,
-          })}
-          financingHint={t("financingHint")}
-          trustItems={trustItems}
-          actions={
-            <>
-              <FavoriteToggleButton
-                productId={params.id}
-                favoriteId={favoriteId}
-                isAuthenticated={isAuthenticated}
-                appearance="outline"
-              />
-              <ShareButton name={product.name} productId={params.id} />
-            </>
+          catalogLabel={t("relatedViewCategory")}
+          catalogHint={
+            categoryLabel
+              ? t("relatedCatalogHintInCategory", {
+                  category: categoryLabel,
+                })
+              : t("relatedCatalogHint")
           }
-          cta={orderCta}
-          secondaryCta={offerCta}
+          carouselPrevLabel={t("relatedCarouselPrev")}
+          carouselNextLabel={t("relatedCarouselNext")}
+          isAuthenticated={isAuthenticated}
         />
-      </div>
 
-      <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
-
-      <ProductRelated
-        title={t("relatedTitle")}
-        vehicles={relatedVehicles}
-        catalogHref={
-          categorySlug
-            ? buildCatalogHref(new URLSearchParams(), {
-                clearFacets: true,
-                folders: [categorySlug],
-                resetPage: true,
-              })
-            : "/products"
-        }
-        catalogLabel={t("relatedViewCategory")}
-        catalogHint={
-          categoryLabel
-            ? t("relatedCatalogHintInCategory", {
-                category: categoryLabel,
-              })
-            : t("relatedCatalogHint")
-        }
-        carouselPrevLabel={t("relatedCarouselPrev")}
-        carouselNextLabel={t("relatedCarouselNext")}
-        isAuthenticated={isAuthenticated}
-      />
-
-      <ProductStickyCta priceLabel={priceLabel} cta={orderCta} />
-    </section>
+        <ProductStickyCta
+          priceLabel={priceLabel}
+          cta={<CatalogOrderTrigger />}
+        />
+      </section>
+    </CatalogOrderProvider>
   );
 }
 

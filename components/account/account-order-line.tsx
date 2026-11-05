@@ -1,18 +1,119 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname, Link } from "@/i18n/navigation";
+import { usePathname, useRouter, Link } from "@/i18n/navigation";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import FormContainer from "@/components/form/FormContainer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toggleFavoriteAction } from "@/utils/actions";
+import type { actionFunction } from "@/utils/types";
 import { useTranslations } from "next-intl";
-import type { KeyboardEvent, MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { LuPackage, LuPen } from "react-icons/lu";
+import { LuMinus, LuPackage, LuPlus } from "react-icons/lu";
 
-export type AccountOrderLineStatus = "NEW" | "IN_PROGRESS" | "CLOSED";
+/** Delay before auto-repeat starts while the +/- button is held. */
+const QTY_HOLD_DELAY_MS = 420;
+/** Interval between auto-repeat steps. */
+const QTY_HOLD_INTERVAL_MS = 85;
+
+function QtyHoldButton({
+  delta,
+  quantity,
+  min,
+  max,
+  disabled,
+  "aria-label": ariaLabel,
+  onQuantityChange,
+  children,
+}: {
+  delta: 1 | -1;
+  quantity: number;
+  min: number;
+  max: number;
+  disabled?: boolean;
+  "aria-label": string;
+  onQuantityChange: (next: number) => void;
+  children: ReactNode;
+}) {
+  const quantityRef = useRef(quantity);
+  quantityRef.current = quantity;
+  const onChangeRef = useRef(onQuantityChange);
+  onChangeRef.current = onQuantityChange;
+  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function clearHold() {
+    if (delayRef.current) clearTimeout(delayRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    delayRef.current = null;
+    intervalRef.current = null;
+  }
+
+  useEffect(() => () => clearHold(), []);
+
+  function applyStep() {
+    const current = quantityRef.current;
+    const next = Math.min(max, Math.max(min, current + delta));
+    if (next === current) {
+      clearHold();
+      return false;
+    }
+    onChangeRef.current(next);
+    return true;
+  }
+
+  function startHold(event: PointerEvent<HTMLButtonElement>) {
+    if (disabled || event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    applyStep();
+    clearHold();
+    delayRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        if (!applyStep()) clearHold();
+      }, QTY_HOLD_INTERVAL_MS);
+    }, QTY_HOLD_DELAY_MS);
+  }
+
+  function endHold(event: PointerEvent<HTMLButtonElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    clearHold();
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-7 shrink-0 touch-manipulation"
+      disabled={disabled}
+      aria-label={ariaLabel}
+      onPointerDown={startHold}
+      onPointerUp={endHold}
+      onPointerCancel={endHold}
+      onLostPointerCapture={clearHold}
+      onContextMenu={(event) => event.preventDefault()}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        applyStep();
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
 
 function isInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof Element)) return false;
@@ -23,6 +124,40 @@ function isInteractiveTarget(target: EventTarget | null) {
   );
 }
 
+/** Phone + tablet: larger square. lg+ (with sidebar room): landscape 4:3. */
+function OrderPhoto({
+  productImage,
+  sizes,
+  className,
+}: {
+  productImage?: string | null;
+  sizes: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative aspect-square w-40 shrink-0 overflow-hidden bg-muted sm:w-44 md:w-52 lg:aspect-[4/3] lg:w-56 xl:w-64",
+        className
+      )}
+    >
+      {productImage ? (
+        <Image
+          src={productImage}
+          alt=""
+          fill
+          sizes={sizes}
+          className="object-cover object-center"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          <LuPackage className="size-7 sm:size-8" aria-hidden />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AccountOrderLine({
   id,
   title,
@@ -30,15 +165,17 @@ export default function AccountOrderLine({
   productId,
   productImage,
   productCode,
-  kindLabel,
-  status,
-  statusLabel,
+  note,
   priceLabel,
+  quantity = 1,
+  allowsQuantity = false,
+  quantityMax = 99,
+  quantityAction,
+  onQuantityChange,
   selected,
   selectable,
   onSelectedChange,
-  canEdit,
-  onEdit,
+  canDelete,
   onDelete,
   favoriteId = null,
   showFavorite = false,
@@ -50,15 +187,18 @@ export default function AccountOrderLine({
   productId?: string | null;
   productImage?: string | null;
   productCode?: string | null;
-  kindLabel: string;
-  status: AccountOrderLineStatus;
-  statusLabel: string;
+  note?: string | null;
   priceLabel: string;
+  quantity?: number;
+  allowsQuantity?: boolean;
+  quantityMax?: number;
+  quantityAction?: actionFunction;
+  /** Lab / local demo — skips server action when set. */
+  onQuantityChange?: (next: number) => void;
   selected: boolean;
   selectable: boolean;
   onSelectedChange: (checked: boolean) => void;
-  canEdit: boolean;
-  onEdit?: () => void;
+  canDelete: boolean;
   onDelete?: () => void;
   favoriteId?: string | null;
   showFavorite?: boolean;
@@ -67,6 +207,7 @@ export default function AccountOrderLine({
   const tProduct = useTranslations("Product");
   const t = useTranslations("AccountCabinet");
   const pathname = usePathname();
+  const router = useRouter();
   const isFavorite = Boolean(favoriteId);
 
   function toggleSelection() {
@@ -87,6 +228,143 @@ export default function AccountOrderLine({
     toggleSelection();
   }
 
+  const titleNode: ReactNode = href ? (
+    <Link
+      href={href}
+      className="line-clamp-2 max-w-full justify-self-end text-sm font-semibold leading-snug text-foreground hover:underline"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {title}
+    </Link>
+  ) : (
+    <p className="line-clamp-2 w-full max-w-full text-sm font-semibold leading-snug text-foreground">
+      {title}
+    </p>
+  );
+
+  const favoriteButton =
+    showFavorite && productId ? (
+      <FormContainer
+        action={toggleFavoriteAction.bind(null, {
+          productId,
+          favoriteId,
+          pathname,
+        })}
+        className="contents"
+      >
+        <Button
+          type="submit"
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 px-1.5 text-muted-foreground sm:h-8 sm:gap-1.5 sm:px-2"
+          aria-label={isFavorite ? t("inFavorites") : t("toFavorites")}
+        >
+          {isFavorite ? (
+            <FaHeart className="size-3.5" aria-hidden />
+          ) : (
+            <FaRegHeart className="size-3.5" aria-hidden />
+          )}
+          <span className="max-sm:sr-only">
+            {isFavorite ? t("inFavorites") : t("toFavorites")}
+          </span>
+        </Button>
+      </FormContainer>
+    ) : null;
+
+  const deleteButton =
+    canDelete && onDelete ? (
+      <ConfirmDeleteCallbackIcon
+        onConfirm={onDelete}
+        label={t("removeOrder")}
+        className="h-7 cursor-pointer gap-1 px-1.5 text-muted-foreground sm:h-8 sm:gap-1.5 sm:px-2"
+        iconClassName="size-3.5"
+        labelClassName="max-sm:sr-only"
+      />
+    ) : null;
+
+  const hasActions = Boolean(favoriteButton || deleteButton);
+  const showQty = allowsQuantity && quantity >= 1;
+
+  const qtyStepper = showQty ? (
+    <div
+      data-no-select
+      className="flex items-center gap-1 rounded-sm border border-border bg-background p-0.5"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {onQuantityChange ? (
+        <>
+          <QtyHoldButton
+            delta={-1}
+            quantity={quantity}
+            min={1}
+            max={quantityMax}
+            disabled={quantity <= 1}
+            aria-label={t("qtyDecrease")}
+            onQuantityChange={onQuantityChange}
+          >
+            <LuMinus className="size-3.5" aria-hidden />
+          </QtyHoldButton>
+          <span className="min-w-7 text-center text-sm font-medium tabular-nums">
+            {quantity}
+          </span>
+          <QtyHoldButton
+            delta={1}
+            quantity={quantity}
+            min={1}
+            max={quantityMax}
+            disabled={quantity >= quantityMax}
+            aria-label={t("qtyIncrease")}
+            onQuantityChange={onQuantityChange}
+          >
+            <LuPlus className="size-3.5" aria-hidden />
+          </QtyHoldButton>
+        </>
+      ) : quantityAction ? (
+        <>
+          <FormContainer
+            action={quantityAction}
+            className="contents"
+            onSuccess={() => router.refresh()}
+          >
+            <input type="hidden" name="orderId" value={id} />
+            <input type="hidden" name="quantity" value={quantity - 1} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0"
+              disabled={quantity <= 1}
+              aria-label={t("qtyDecrease")}
+            >
+              <LuMinus className="size-3.5" aria-hidden />
+            </Button>
+          </FormContainer>
+          <span className="min-w-7 text-center text-sm font-medium tabular-nums">
+            {quantity}
+          </span>
+          <FormContainer
+            action={quantityAction}
+            className="contents"
+            onSuccess={() => router.refresh()}
+          >
+            <input type="hidden" name="orderId" value={id} />
+            <input type="hidden" name="quantity" value={quantity + 1} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0"
+              disabled={quantity >= quantityMax}
+              aria-label={t("qtyIncrease")}
+            >
+              <LuPlus className="size-3.5" aria-hidden />
+            </Button>
+          </FormContainer>
+        </>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <div
       role="option"
@@ -96,8 +374,7 @@ export default function AccountOrderLine({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        // Shadow on this node — overflow-hidden only on the photo column (VehicleCard canon).
-        "flex rounded-sm border bg-card text-card-foreground shadow-sm transition-shadow duration-500",
+        "w-full overflow-hidden rounded-sm border bg-card text-card-foreground shadow-sm transition-shadow duration-500",
         selectable && "cursor-pointer hover:shadow-xl",
         !selectable && "cursor-default opacity-80",
         selected
@@ -107,110 +384,40 @@ export default function AccountOrderLine({
       )}
       data-order-id={id}
     >
-      <div className="relative aspect-[4/3] h-auto w-auto min-w-[6.5rem] shrink-0 self-stretch overflow-hidden rounded-l-sm bg-muted sm:min-w-[8rem]">
-        {productImage ? (
-          <Image
-            src={productImage}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 120px, 180px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-            <LuPackage className="size-8" aria-hidden />
+      {/* Phone/tablet: square; lg+: album 4:3 (same bp as sidebar) */}
+      <div className="flex items-start">
+        <OrderPhoto
+          productImage={productImage}
+          sizes="(max-width: 640px) 160px, (max-width: 1023px) 208px, (max-width: 1280px) 224px, 256px"
+        />
+        <div className="flex min-w-0 flex-1 flex-col items-end justify-between gap-1.5 self-stretch p-2 sm:gap-2 sm:p-3">
+          <div className="grid w-full justify-items-end gap-0.5 text-right sm:gap-1">
+            {titleNode}
+            {productCode ? (
+              <p className="text-[11px] text-muted-foreground sm:text-xs">
+                {tProduct("articleCode", { code: productCode })}
+              </p>
+            ) : null}
+            {note ? (
+              <p className="line-clamp-2 text-[11px] leading-snug text-muted-foreground sm:text-xs sm:leading-relaxed">
+                {note}
+              </p>
+            ) : null}
+            <p className="pt-0.5 text-sm font-bold tracking-tight text-foreground sm:text-base">
+              {priceLabel}
+            </p>
           </div>
-        )}
-      </div>
-
-      <div className="grid min-w-0 flex-1 gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-6 sm:p-5">
-        <div className="min-w-0 grid gap-1.5">
-          <p
-            className={cn(
-              "text-xs font-medium",
-              status === "CLOSED"
-                ? "text-muted-foreground"
-                : status === "IN_PROGRESS"
-                  ? "text-foreground"
-                  : "text-emerald-700"
-            )}
-          >
-            {statusLabel}
-            <span className="text-muted-foreground"> · {kindLabel}</span>
-          </p>
-
-          {href ? (
-            <Link
-              href={href}
-              className="max-w-full justify-self-start text-sm font-semibold leading-snug text-foreground hover:underline sm:text-base"
-              onClick={(event) => event.stopPropagation()}
-            >
-              {title}
-            </Link>
-          ) : (
-            <p className="w-fit max-w-full text-sm font-semibold leading-snug text-foreground sm:text-base">
-              {title}
-            </p>
-          )}
-
-          {productCode ? (
-            <p className="text-xs text-muted-foreground">
-              {tProduct("articleCode", { code: productCode })}
-            </p>
+          {qtyStepper || hasActions ? (
+            <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+              {hasActions ? (
+                <div className="flex flex-wrap items-center justify-end gap-0.5 sm:gap-1">
+                  {favoriteButton}
+                  {deleteButton}
+                </div>
+              ) : null}
+              {qtyStepper}
+            </div>
           ) : null}
-
-          <div className="mt-1 flex w-fit max-w-full flex-wrap items-center gap-1 justify-self-start">
-            {showFavorite && productId ? (
-              <FormContainer
-                action={toggleFavoriteAction.bind(null, {
-                  productId,
-                  favoriteId,
-                  pathname,
-                })}
-                className="contents"
-              >
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2 text-muted-foreground"
-                >
-                  {isFavorite ? (
-                    <FaHeart className="size-3.5" aria-hidden />
-                  ) : (
-                    <FaRegHeart className="size-3.5" aria-hidden />
-                  )}
-                  {isFavorite ? t("inFavorites") : t("toFavorites")}
-                </Button>
-              </FormContainer>
-            ) : null}
-
-            {canEdit && onEdit ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-muted-foreground"
-                onClick={onEdit}
-              >
-                <LuPen className="size-3.5" aria-hidden />
-                {t("editOrderShort")}
-              </Button>
-            ) : null}
-
-            {canEdit && onDelete ? (
-              <ConfirmDeleteCallbackIcon
-                onConfirm={onDelete}
-                label={t("removeOrder")}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-start justify-between sm:justify-end">
-          <p className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-            {priceLabel}
-          </p>
         </div>
       </div>
     </div>

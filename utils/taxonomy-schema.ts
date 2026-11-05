@@ -19,6 +19,8 @@ export const renameTaxonomyNodeSchema = z.object({
   name: z.string().trim().min(2).max(80),
   showInFilter: z.coerce.boolean().optional().default(false),
   showInHomeFilter: z.coerce.boolean().optional().default(false),
+  /** Only applied when the node is a root. */
+  productsAreUnique: z.coerce.boolean().optional().default(false),
 });
 
 export const nodeIdSchema = z.object({

@@ -8,6 +8,105 @@ import type {
   TaxonomyTreeNode,
 } from "./types";
 
+/** Root / type / subtype — depth indices 0, 1, 2. */
+export const TAXONOMY_MAX_DEPTH = 3;
+
+/** Deepest parent that may still receive a child (subtype cannot). */
+export const TAXONOMY_MAX_PARENT_DEPTH = TAXONOMY_MAX_DEPTH - 1;
+
+/** Walk parents until root; root depth = 0. */
+export async function getTaxonomyNodeDepth(nodeId: string): Promise<number> {
+  let depth = 0;
+  let currentId: string | null = nodeId;
+  const seen = new Set<string>();
+  while (currentId) {
+    if (seen.has(currentId)) return depth;
+    seen.add(currentId);
+    const node: { parentId: string | null } | null =
+      await db.taxonomyNode.findUnique({
+        where: { id: currentId },
+        select: { parentId: true },
+      });
+    if (!node?.parentId) return depth;
+    depth += 1;
+    currentId = node.parentId;
+    if (depth > TAXONOMY_MAX_DEPTH + 8) return depth;
+  }
+  return depth;
+}
+
+/** Nodes whose depth index is past the allowed max (depth >= TAXONOMY_MAX_DEPTH). */
+export async function findTaxonomyNodesBeyondMaxDepth(): Promise<
+  Array<{ id: string; name: string; slug: string; depth: number }>
+> {
+  const nodes = await db.taxonomyNode.findMany({
+    select: { id: true, name: true, slug: true, parentId: true },
+  });
+  const parentById = new Map<string, string | null>(
+    nodes.map((n) => [n.id, n.parentId])
+  );
+  const depthOf = (id: string): number => {
+    let depth = 0;
+    let current: string | null = id;
+    const seen = new Set<string>();
+    while (current) {
+      if (seen.has(current)) break;
+      seen.add(current);
+      const parentId: string | null = parentById.get(current) ?? null;
+      if (!parentId) break;
+      depth += 1;
+      current = parentId;
+      if (depth > TAXONOMY_MAX_DEPTH + 8) break;
+    }
+    return depth;
+  };
+  return nodes
+    .map((n) => ({ ...n, depth: depthOf(n.id) }))
+    .filter((n) => n.depth >= TAXONOMY_MAX_DEPTH);
+}
+
+/**
+ * Root `productsAreUnique` for the branch containing `taxonomyNodeId`.
+ * Missing node / no folder → false (qty allowed).
+ */
+export async function resolveProductsAreUnique(
+  taxonomyNodeId: string | null | undefined
+): Promise<boolean> {
+  if (!taxonomyNodeId) return false;
+  let currentId: string | null = taxonomyNodeId;
+  const seen = new Set<string>();
+  while (currentId) {
+    if (seen.has(currentId)) return false;
+    seen.add(currentId);
+    const node: {
+      parentId: string | null;
+      productsAreUnique: boolean;
+    } | null = await db.taxonomyNode.findUnique({
+      where: { id: currentId },
+      select: { parentId: true, productsAreUnique: true },
+    });
+    if (!node) return false;
+    if (!node.parentId) return Boolean(node.productsAreUnique);
+    currentId = node.parentId;
+  }
+  return false;
+}
+
+/** Batch resolve uniqueness for many folder ids (product.taxonomyNodeId). */
+export async function resolveProductsAreUniqueByNodeIds(
+  nodeIds: string[]
+): Promise<Map<string, boolean>> {
+  const unique = [...new Set(nodeIds.filter(Boolean))];
+  const result = new Map<string, boolean>();
+  if (unique.length === 0) return result;
+  await Promise.all(
+    unique.map(async (id) => {
+      result.set(id, await resolveProductsAreUnique(id));
+    })
+  );
+  return result;
+}
+
 export function buildTaxonomyTree(
   nodes: TaxonomyNodeRow[],
   productCountByNode: Map<string, number>,
@@ -66,6 +165,7 @@ export async function fetchTaxonomyNodes() {
       isActive: true,
       showInFilter: true,
       showInHomeFilter: true,
+      productsAreUnique: true,
     },
   });
 }
@@ -233,6 +333,7 @@ export async function getPathNodes(nodeId: string) {
       isActive: true,
       showInFilter: true,
       showInHomeFilter: true,
+      productsAreUnique: true,
     },
   });
   while (current) {
@@ -248,7 +349,8 @@ export async function getPathNodes(nodeId: string) {
         sortOrder: true,
         isActive: true,
         showInFilter: true,
-      showInHomeFilter: true,
+        showInHomeFilter: true,
+        productsAreUnique: true,
       },
     });
   }

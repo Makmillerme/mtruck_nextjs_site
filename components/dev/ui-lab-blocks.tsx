@@ -1,7 +1,7 @@
 import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PhotoCarousel from "@/components/media/photo-carousel";
 import ProductGallery from "@/components/single-product/product-gallery";
-import VehicleCard from "@/components/vehicles/vehicle-card";
+import ProductCard from "@/components/products/product-card";
 
 /** Distinct enough for Embla motion; real PDP uses product uploads. */
 const DEMO_IMAGES = [
@@ -11,7 +11,7 @@ const DEMO_IMAGES = [
   { src: "/images/hero.png", alt: "Slide D — png again" },
 ];
 
-const DEMO_VEHICLE = {
+const DEMO_PRODUCT = {
   id: "ui-lab",
   name: "MAN TGX 18.440",
   price: 38500,
@@ -35,23 +35,23 @@ export default async function UiLabBlocks() {
       <div className="page-container space-y-10 py-16 md:py-24">
         <header className="space-y-1">
           <h2 className="text-lg font-bold tracking-tight text-foreground">
-            Картка техніки
+            Картка товару
           </h2>
           <p className="text-sm text-muted-foreground">
-            Живий `VehicleCard`: PhotoCarousel на превʼю, ціна зверху, «Детальніше»
+            Живий `ProductCard`: PhotoCarousel на превʼю, ціна зверху, «Детальніше»
             на всю ширину знизу. Тінь + zoom на hover.
           </p>
         </header>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-5">
-          <VehicleCard vehicle={DEMO_VEHICLE} isAuthenticated={false} />
-          <VehicleCard
-            vehicle={{ ...DEMO_VEHICLE, id: "ui-lab-2", name: "Scania R450" }}
+          <ProductCard product={DEMO_PRODUCT} isAuthenticated={false} />
+          <ProductCard
+            product={{ ...DEMO_PRODUCT, id: "ui-lab-2", name: "Scania R450" }}
             isAuthenticated={false}
           />
-          <VehicleCard
-            vehicle={{
-              ...DEMO_VEHICLE,
+          <ProductCard
+            product={{
+              ...DEMO_PRODUCT,
               id: "ui-lab-3",
               name: "Volvo FH16 750",
             }}
@@ -65,10 +65,10 @@ export default async function UiLabBlocks() {
             Фото зліва на всю висоту рядка (md+), без білої смуги під превʼю.
             Той самий chrome, що в сітці.
           </p>
-          <VehicleCard
+          <ProductCard
             layout="list"
-            vehicle={{
-              ...DEMO_VEHICLE,
+            product={{
+              ...DEMO_PRODUCT,
               id: "ui-lab-list",
               name: "Mercedes-Benz Actros 1845",
               categoryLabel: "Контейнеровози",

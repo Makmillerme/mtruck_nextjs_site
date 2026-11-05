@@ -1,6 +1,6 @@
-import VehicleCard from "@/components/vehicles/vehicle-card";
+import ProductCard from "@/components/products/product-card";
 import type { CardPreviewLayoutResolved } from "@/lib/catalog/card-preview";
-import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
+import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
 import type { ProductListItem } from "@/utils/product-list";
 import { getLocale } from "next-intl/server";
 
@@ -21,10 +21,10 @@ async function ProductsList({
   return (
     <div className="grid gap-4 md:gap-5">
       {products.map((product, index) => (
-        <VehicleCard
+        <ProductCard
           key={product.id}
           layout="list"
-          vehicle={productWithSpecsToVehicle(
+          product={productWithSpecsToCardModel(
             product,
             product.taxonomyNodeId
               ? layouts?.get(product.taxonomyNodeId)

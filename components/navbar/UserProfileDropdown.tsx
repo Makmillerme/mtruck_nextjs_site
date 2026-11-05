@@ -61,7 +61,10 @@ export default function UserProfileDropdown({
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/account" className="flex cursor-pointer items-center">
+          <Link
+            href="/account?tab=settings"
+            className="flex cursor-pointer items-center"
+          >
             <LuSettings className="mr-2 h-4 w-4" />
             {tNav('manageAccount')}
           </Link>

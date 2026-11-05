@@ -14,7 +14,7 @@ import ShareButton from "@/components/single-product/ShareButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LuFileText, LuShoppingCart } from "react-icons/lu";
-import type { VehicleCardModel } from "@/components/vehicles/vehicle-card";
+import type { ProductCardModel } from "@/components/products/product-card";
 
 const DEMO_IMAGES = [
   { src: "/images/hero.webp", alt: "MAN TGX — front" },
@@ -56,7 +56,7 @@ const DEMO_SPEC_GROUPS = [
   },
 ];
 
-const DEMO_RELATED: VehicleCardModel[] = [
+const DEMO_RELATED: ProductCardModel[] = [
   {
     id: "pdp-rel-1",
     name: "Scania R450",
@@ -199,16 +199,11 @@ export default function UiLabPdp() {
           articleLabel="Артикул DEMO-TGX-18440"
           financingLabel="Фінансування від"
           financingAmount="≈ € 755/міс"
-          financingHint="Лізинг або кредит · орієнтовний розрахунок"
           trustItems={[
-            { id: "warranty", label: "Гарантія 12 місяців" },
+            { id: "delivery", label: "Доставка по Україні" },
             { id: "service", label: "Сервісне обслуговування" },
-            { id: "delivery", label: "Доставка по Україні та ЄС" },
-            {
-              id: "tradein",
-              label: "Trade-in",
-              hint: "Обмін вашої техніки",
-            },
+            { id: "prep", label: "Передпродажна підготовка" },
+            { id: "documents", label: "Повний комплект документів" },
           ]}
           actions={
             <>
@@ -304,7 +299,7 @@ export default function UiLabPdp() {
 
       <ProductRelated
         title="Схожі товари"
-        vehicles={DEMO_RELATED}
+        products={DEMO_RELATED}
         catalogHref="/products?folder=furhony"
         catalogLabel="Перейти в каталог"
         catalogHint="Більше пропозицій у категорії Фургони"

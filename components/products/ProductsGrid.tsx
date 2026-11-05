@@ -1,6 +1,6 @@
-import VehicleCard from "@/components/vehicles/vehicle-card";
+import ProductCard from "@/components/products/product-card";
 import type { CardPreviewLayoutResolved } from "@/lib/catalog/card-preview";
-import { productWithSpecsToVehicle } from "@/lib/catalog/product-to-vehicle";
+import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
 import type { ProductListItem } from "@/utils/product-list";
 import { getLocale } from "next-intl/server";
 
@@ -26,8 +26,8 @@ async function ProductsGrid({
           className="animate-in fade-in duration-300 fill-mode-both"
           style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
         >
-          <VehicleCard
-            vehicle={productWithSpecsToVehicle(
+          <ProductCard
+            product={productWithSpecsToCardModel(
               product,
               product.taxonomyNodeId
                 ? layouts?.get(product.taxonomyNodeId)

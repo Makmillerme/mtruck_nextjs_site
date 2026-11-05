@@ -1,18 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import AccountEmptyState from "@/components/account/AccountEmptyState";
 import AccountOrderLine from "@/components/account/account-order-line";
 import AccountOrdersSummary from "@/components/account/account-orders-summary";
-import ProductFolderPicker from "@/components/admin/catalog/product-folder-picker";
 import AdminListToolbar from "@/components/admin/admin-list-toolbar";
-import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { useCtaInquiry } from "@/components/cta/cta-inquiry";
 import { SubmitButton } from "@/components/form/Buttons";
+import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import FormContainer from "@/components/form/FormContainer";
 import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
-import { buttonVariants } from "@/components/ui/button";
+import { useRouter } from "@/i18n/navigation";
+import { notify } from "@/lib/ui/notify";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -22,18 +22,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Link } from "@/i18n/navigation";
-import type { TaxonomyTreeNode } from "@/lib/catalog/types";
-import { cn } from "@/lib/utils";
+import { ORDER_QUANTITY_MAX } from "@/lib/catalog/order-quantity";
 import {
   createUserRequestOrderAction,
+  deleteAllDeletableUserOrdersAction,
   deleteUserOrderAction,
-  updateUserOrderAction,
+  updateCatalogOrderQuantityAction,
 } from "@/utils/actions";
-import type { actionFunction } from "@/utils/types";
 import { formatCurrency } from "@/utils/format";
-import { tableLinkClassName } from "@/components/ui/table";
 import { LuShoppingCart } from "react-icons/lu";
+
+type QtyPatch = { quantity: number; orderTotal: number };
+
+const QTY_PERSIST_MS = 280;
 
 export type AccountOrderRow = {
   id: string;
@@ -49,10 +50,12 @@ export type AccountOrderRow = {
   taxonomyNodeName: string | null;
   note: string | null;
   orderTotal: number;
+  quantity: number;
+  allowsQuantity: boolean;
   createdAt: string;
 };
 
-function canEditOrder(order: AccountOrderRow) {
+function canDeleteOrder(order: AccountOrderRow) {
   return order.status === "NEW";
 }
 
@@ -66,81 +69,114 @@ function orderTitle(order: AccountOrderRow, customRequestLabel: string) {
 }
 
 function OrderRequestFields({
-  tree,
-  taxonomyNodeId,
   note,
+  noteRequired = false,
 }: {
-  tree: TaxonomyTreeNode[];
-  taxonomyNodeId?: string | null;
   note?: string | null;
+  noteRequired?: boolean;
 }) {
   const t = useTranslations("AccountCabinet");
-  const [folderId, setFolderId] = useState(taxonomyNodeId ?? "");
 
   return (
-    <div className="grid gap-6">
-      <ProductFolderPicker
-        tree={tree}
-        selectedId={folderId || undefined}
-        onNodeChange={(id) => setFolderId(id ?? "")}
+    <div className="grid gap-2">
+      <Label htmlFor="note">{t("orderNote")}</Label>
+      <Textarea
+        id="note"
+        name="note"
+        rows={5}
+        required={noteRequired}
+        minLength={noteRequired ? 10 : undefined}
+        defaultValue={note ?? ""}
+        placeholder={t("orderNotePlaceholder")}
+        className="leading-loose"
       />
-      <div className="grid gap-2">
-        <Label htmlFor="note">{t("orderNote")}</Label>
-        <Textarea
-          id="note"
-          name="note"
-          rows={5}
-          defaultValue={note ?? ""}
-          className="leading-loose"
-        />
-      </div>
     </div>
   );
 }
 
 export default function AccountOrdersView({
   items,
-  tree,
   locale,
   createOpen,
-  editId,
   onSheetUrlChange,
 }: {
   items: AccountOrderRow[];
-  tree: TaxonomyTreeNode[];
   locale: string;
   createOpen: boolean;
-  editId?: string;
   /** Sync sheet query without RSC (cabinet uses replaceState). */
-  onSheetUrlChange?: (next: { create?: boolean; edit?: string }) => void;
+  onSheetUrlChange?: (next: { create?: boolean }) => void;
 }) {
   const t = useTranslations("AccountCabinet");
   const tOrders = useTranslations("Orders");
-  const tAdmin = useTranslations("Admin");
+  const router = useRouter();
   const { open: openInquiry } = useCtaInquiry();
   const { optimisticItems, removeOptimistically } =
     useOptimisticListRemove(items);
   const [search, setSearch] = useState("");
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
-  const [sheetEditId, setSheetEditId] = useState<string | undefined>(editId);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(items.filter(isOpenOrder).map((order) => order.id))
   );
+  const [qtyPatch, setQtyPatch] = useState<Record<string, QtyPatch>>({});
+  const qtyTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const qtyLatestRef = useRef(new Map<string, number>());
+  const unitPriceRef = useRef(new Map<string, number>());
+  const qtyRequestGenRef = useRef(new Map<string, number>());
 
-  const editOrder = useMemo(
-    () => optimisticItems.find((item) => item.id === sheetEditId) ?? null,
-    [optimisticItems, sheetEditId]
+  // Soft-reconcile only: drop patch when server caught up to latest desired qty.
+  // Never wipe all patches — that flashes an intermediate number while clicking.
+  useEffect(() => {
+    setQtyPatch((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      const ids = new Set(items.map((order) => order.id));
+      for (const order of items) {
+        const patch = next[order.id];
+        if (!patch) continue;
+        const latest = qtyLatestRef.current.get(order.id) ?? patch.quantity;
+        if (order.quantity === latest) {
+          delete next[order.id];
+          changed = true;
+        }
+      }
+      for (const id of Object.keys(next)) {
+        if (!ids.has(id)) {
+          delete next[id];
+          qtyLatestRef.current.delete(id);
+          unitPriceRef.current.delete(id);
+          qtyRequestGenRef.current.delete(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
+
+  useEffect(() => {
+    const timers = qtyTimersRef.current;
+    return () => {
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
+
+  const displayItems = useMemo(
+    () =>
+      optimisticItems.map((order) => {
+        const patch = qtyPatch[order.id];
+        return patch ? { ...order, ...patch } : order;
+      }),
+    [optimisticItems, qtyPatch]
   );
-  const editAllowed = editOrder ? canEditOrder(editOrder) : false;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return optimisticItems;
-    return optimisticItems.filter((item) => {
+    if (!q) return displayItems;
+    return displayItems.filter((item) => {
       const hay = `${item.productName ?? ""} ${item.productCode ?? ""} ${item.taxonomyNodeName ?? ""} ${item.note ?? ""}`;
       return hay.toLowerCase().includes(q);
     });
-  }, [optimisticItems, search]);
+  }, [displayItems, search]);
 
   const selectedOrders = useMemo(
     () =>
@@ -155,25 +191,14 @@ export default function AccountOrdersView({
     0
   );
 
+  const deletableOrders = useMemo(
+    () => displayItems.filter(canDeleteOrder),
+    [displayItems]
+  );
+
   function setCreateOpen(open: boolean) {
     setSheetCreateOpen(open);
-    if (open) {
-      setSheetEditId(undefined);
-      onSheetUrlChange?.({ create: true });
-      return;
-    }
-    onSheetUrlChange?.({});
-  }
-
-  function setEditOpen(open: boolean, orderId?: string) {
-    if (open && orderId) {
-      setSheetCreateOpen(false);
-      setSheetEditId(orderId);
-      onSheetUrlChange?.({ edit: orderId });
-      return;
-    }
-    setSheetEditId(undefined);
-    onSheetUrlChange?.({});
+    onSheetUrlChange?.(open ? { create: true } : {});
   }
 
   function toggleSelected(orderId: string, checked: boolean) {
@@ -183,6 +208,64 @@ export default function AccountOrdersView({
       else next.delete(orderId);
       return next;
     });
+  }
+
+  function persistQuantity(orderId: string, quantity: number) {
+    qtyLatestRef.current.set(orderId, quantity);
+    const prevTimer = qtyTimersRef.current.get(orderId);
+    if (prevTimer) clearTimeout(prevTimer);
+    const timer = setTimeout(() => {
+      qtyTimersRef.current.delete(orderId);
+      const latest = qtyLatestRef.current.get(orderId);
+      if (latest == null) return;
+      const gen = (qtyRequestGenRef.current.get(orderId) ?? 0) + 1;
+      qtyRequestGenRef.current.set(orderId, gen);
+      const formData = new FormData();
+      formData.set("orderId", orderId);
+      formData.set("quantity", String(latest));
+      void updateCatalogOrderQuantityAction(
+        { message: "", ok: true },
+        formData
+      ).then((result) => {
+        if (qtyRequestGenRef.current.get(orderId) !== gen) return;
+        if (qtyLatestRef.current.get(orderId) !== latest) return;
+        if (result.message) notify.fromAction(result);
+        if (result.ok === false) {
+          setQtyPatch((prev) => {
+            const next = { ...prev };
+            delete next[orderId];
+            return next;
+          });
+          qtyLatestRef.current.delete(orderId);
+          unitPriceRef.current.delete(orderId);
+          router.refresh();
+        }
+      });
+    }, QTY_PERSIST_MS);
+    qtyTimersRef.current.set(orderId, timer);
+  }
+
+  function handleQuantityChange(order: AccountOrderRow, nextQty: number) {
+    const quantity = Math.min(
+      ORDER_QUANTITY_MAX,
+      Math.max(1, Math.trunc(nextQty))
+    );
+    let unitPrice = unitPriceRef.current.get(order.id);
+    if (unitPrice == null || !Number.isFinite(unitPrice)) {
+      unitPrice =
+        order.quantity > 0
+          ? order.orderTotal / order.quantity
+          : order.orderTotal;
+      unitPriceRef.current.set(order.id, unitPrice);
+    }
+    setQtyPatch((prev) => ({
+      ...prev,
+      [order.id]: {
+        quantity,
+        orderTotal: unitPrice * quantity,
+      },
+    }));
+    persistQuantity(order.id, quantity);
   }
 
   function handleCheckout() {
@@ -214,26 +297,50 @@ export default function AccountOrdersView({
         onCreate={() => setCreateOpen(true)}
       />
 
-      <p className="text-sm text-muted-foreground">
-        {t("ordersTotal", { count: filtered.length })}
-      </p>
+      <div className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+        <p>{t("ordersTotal", { count: filtered.length })}</p>
+        {deletableOrders.length > 0 ? (
+          <>
+            <span aria-hidden>·</span>
+            <ConfirmDeleteCallbackIcon
+              label={t("removeAllOrders")}
+              title={t("removeAllOrdersTitle")}
+              description={t("removeAllOrdersDescription")}
+              confirmLabel={t("removeAllOrders")}
+              className="h-auto cursor-pointer gap-1 px-0 py-0 text-sm font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
+              iconClassName="size-3.5"
+              onConfirm={async () => {
+                const result = await deleteAllDeletableUserOrdersAction();
+                if (result.message) notify.fromAction(result);
+                if (result.ok) {
+                  setSelectedIds(new Set());
+                  setQtyPatch({});
+                  router.refresh();
+                }
+              }}
+            />
+          </>
+        ) : null}
+      </div>
 
-      {optimisticItems.length === 0 ? (
+      {displayItems.length === 0 ? (
         <AccountEmptyState
           icon={LuShoppingCart}
           title={t("ordersEmptyTitle")}
           description={t("ordersEmptyDesc")}
           actionLabel={t("browseCatalog")}
+          secondaryActionLabel={t("emptyRequestAction")}
+          onSecondaryAction={() => setCreateOpen(true)}
         />
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("ordersEmptyTitle")}</p>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div
             role="listbox"
             aria-multiselectable="true"
             aria-label={t("orders")}
-            className="grid gap-3"
+            className="grid w-full min-w-0 gap-3"
           >
             {filtered.map((order) => {
               const title = orderTitle(order, tOrders("customRequest"));
@@ -249,37 +356,40 @@ export default function AccountOrdersView({
                   productId={order.productId}
                   productImage={order.productImage}
                   productCode={order.productCode}
-                  kindLabel={
-                    order.kind === "REQUEST"
-                      ? tOrders("kindRequest")
-                      : tOrders("kindCatalog")
+                  note={order.kind === "REQUEST" ? order.note : null}
+                  priceLabel={
+                    order.kind === "REQUEST" && order.orderTotal <= 0
+                      ? t("requestPricePending")
+                      : formatCurrency(order.orderTotal, locale)
                   }
-                  status={order.status}
-                  statusLabel={
-                    order.status === "IN_PROGRESS"
-                      ? tOrders("statusInProgress")
-                      : order.status === "CLOSED"
-                        ? tOrders("statusClosed")
-                        : tOrders("statusNew")
+                  quantity={order.quantity}
+                  allowsQuantity={order.allowsQuantity}
+                  quantityMax={ORDER_QUANTITY_MAX}
+                  onQuantityChange={
+                    order.allowsQuantity
+                      ? (next) => handleQuantityChange(order, next)
+                      : undefined
                   }
-                  priceLabel={formatCurrency(order.orderTotal, locale)}
                   selected={selectedIds.has(order.id)}
                   selectable={selectable}
                   onSelectedChange={(checked) =>
                     toggleSelected(order.id, checked)
                   }
-                  canEdit={canEditOrder(order)}
-                  onEdit={() => setEditOpen(true, order.id)}
-                  onDelete={() => {
-                    setSelectedIds((prev) => {
-                      const next = new Set(prev);
-                      next.delete(order.id);
-                      return next;
-                    });
-                    removeOptimistically(order.id, () =>
-                      deleteUserOrderAction({ orderId: order.id })
-                    );
-                  }}
+                  canDelete={canDeleteOrder(order)}
+                  onDelete={
+                    canDeleteOrder(order)
+                      ? () => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(order.id);
+                            return next;
+                          });
+                          removeOptimistically(order.id, () =>
+                            deleteUserOrderAction({ orderId: order.id })
+                          );
+                        }
+                      : undefined
+                  }
                   favoriteId={order.favoriteId}
                   showFavorite={Boolean(order.productId)}
                 />
@@ -308,83 +418,13 @@ export default function AccountOrdersView({
               action={createUserRequestOrderAction}
             >
               <div className="grid gap-6">
-                <OrderRequestFields tree={tree} />
-                <SubmitButton text={t("submitCreateOrder")} className="w-fit" />
+                <OrderRequestFields noteRequired />
+                <SubmitButton
+                  text={t("submitCreateOrder")}
+                  className="w-full sm:w-fit"
+                />
               </div>
             </FormContainer>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet
-        open={Boolean(editAllowed && editOrder)}
-        onOpenChange={(open) => setEditOpen(open, editOrder?.id)}
-      >
-        <SheetContent>
-          <div className="grid gap-6">
-            <SheetHeader>
-              <SheetTitle>{t("editOrderSheetTitle")}</SheetTitle>
-              <SheetDescription>{t("editOrderSheetLede")}</SheetDescription>
-            </SheetHeader>
-            {editAllowed && editOrder ? (
-              <>
-                <FormContainer key={editOrder.id} action={updateUserOrderAction}>
-                  <input type="hidden" name="orderId" value={editOrder.id} />
-                  <div className="grid gap-6">
-                    {editOrder.kind === "REQUEST" ? (
-                      <OrderRequestFields
-                        tree={tree}
-                        taxonomyNodeId={editOrder.taxonomyNodeId}
-                        note={editOrder.note}
-                      />
-                    ) : (
-                      <div className="grid gap-6">
-                        <p className="text-sm text-muted-foreground">
-                          {t("catalogOrderLockedHint")}
-                        </p>
-                        {editOrder.productId && editOrder.productName ? (
-                          <Link
-                            href={`/products/${editOrder.productId}`}
-                            className={cn(
-                              buttonVariants({ variant: "link" }),
-                              tableLinkClassName,
-                              "w-fit"
-                            )}
-                          >
-                            {editOrder.productName}
-                          </Link>
-                        ) : null}
-                        <div className="grid gap-2">
-                          <Label htmlFor="note">{t("orderNote")}</Label>
-                          <Textarea
-                            id="note"
-                            name="note"
-                            rows={5}
-                            defaultValue={editOrder.note ?? ""}
-                            className="leading-loose"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <SheetFormActions
-                      saveLabel={tAdmin("submitUpdate")}
-                      deleteFormId="delete-user-order-form"
-                    />
-                  </div>
-                </FormContainer>
-                <FormContainer
-                  id="delete-user-order-form"
-                  className="hidden"
-                  action={
-                    deleteUserOrderAction.bind(null, {
-                      orderId: editOrder.id,
-                    }) as unknown as actionFunction
-                  }
-                >
-                  <input type="hidden" name="orderId" value={editOrder.id} />
-                </FormContainer>
-              </>
-            ) : null}
           </div>
         </SheetContent>
       </Sheet>

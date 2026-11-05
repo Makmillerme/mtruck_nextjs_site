@@ -2,6 +2,22 @@
 
 Ідеї, які свідомо не впроваджуємо зараз. Агент додає записи за правилом `.cursor/rules/backlog.mdc`.
 
+## Сторінка оформлення замовлення (рахунок / кредит-лізинг)
+
+**Дата:** 2026-11-04
+
+**Суть:** Після Order-added Sheet кнопка «Оформити замовлення» зараз веде на `/account?tab=orders` (Замовлення = кошик). Окрема сторінка оформлення: вибір типу (рахунок vs кредит/лізинг), велика форма/кроки. Пов’язано з PDP фінансовим блоком і міні-CRM продажів.
+
+**Статус:** Відкладено (фаза після Order-added Sheet)
+
+## Order-added Sheet — розширений контент
+
+**Дата:** 2026-11-04
+
+**Суть:** Фаза 1 Sheet: title + thumb/name/price + Скасувати / Оформити. Як у Comfy можна додати рекомендації («це може знадобитися»), страховки тощо — окремим етапом.
+
+**Статус:** Відкладено
+
 ## Смарт-чат (менеджер + ШІ) на Pusher
 
 **Дата:** 2026-11-04
@@ -167,7 +183,7 @@
 - Сайдбар: `app/[locale]/admin/Sidebar.tsx` + `productRoots` патерн.
 - Поточний CMS: `app/[locale]/admin/catalog/page.tsx`, `components/admin/catalog/*`.
 - Публічний фільтр: `components/products/catalog-filters.tsx`, `lib/catalog/public-filter.ts`, `utils/catalog-query.ts`.
-- Картки: `components/vehicles/vehicle-card.tsx`, `mem:catalog-preview-cards`, `mem:marketing-vehicle-card-ui-spec-2026-09`.
+- Картки: `components/products/product-card.tsx`, `mem:catalog-preview-cards`, `mem:marketing-vehicle-card-ui-spec-2026-09`.
 - Display groups уже є в CMS — можлива точка розширення для UI-конфігу.
 
 **Статус:** Фаза 0–2 — сайдбар CMS; фільтри (головна + каталог) у моделі даних (`showInFilter` / `showInHomeFilter` / `isFacet`); `/admin/ui` Filter — заглушка. Далі: превʼю картки, картка товару, visual layout.

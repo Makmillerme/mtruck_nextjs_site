@@ -15,20 +15,20 @@ import {
 } from "@/lib/catalog/card-preview";
 import { LuChevronRight, LuTag } from "react-icons/lu";
 
-export type VehicleStatus =
+export type ProductCardStatus =
   | "PUBLISHED"
   | "RESERVED"
   | "DRAFT"
   | "PREPARING"
   | "SOLD";
 
-export type VehicleCardSpecItem = {
+export type ProductCardSpecItem = {
   key: string;
   label: string;
   value: string;
 };
 
-export type VehicleCardModel = {
+export type ProductCardModel = {
   id: string;
   name: string;
   price: number;
@@ -36,13 +36,13 @@ export type VehicleCardModel = {
   /** Cover + gallery URLs, unique, cover first */
   images?: string[];
   href: string;
-  status?: VehicleStatus;
+  status?: ProductCardStatus;
   year?: number | null;
   location?: string | null;
   categoryLabel?: string | null;
   /** Prefetch subtitle segments (fields + category). */
   subtitleParts?: string[];
-  specItems?: VehicleCardSpecItem[];
+  specItems?: ProductCardSpecItem[];
   specsStyle?: CardPreviewSpecsStyleId;
   specsGridCount?: number;
   showName?: boolean;
@@ -52,14 +52,14 @@ export type VehicleCardModel = {
   showSpecs?: boolean;
 };
 
-export function productToVehicle(product: {
+export function productToCardModel(product: {
   id: string;
   name: string;
   price: number;
   image: string;
   images?: { url: string }[];
   categoryLabel?: string | null;
-}): VehicleCardModel {
+}): ProductCardModel {
   const urls = [
     ...new Set(
       [product.image, ...(product.images?.map((item) => item.url) ?? [])]
@@ -80,7 +80,7 @@ export function productToVehicle(product: {
   };
 }
 
-const STATUS_DOT: Record<VehicleStatus, string> = {
+const STATUS_DOT: Record<ProductCardStatus, string> = {
   PUBLISHED: "bg-emerald-500",
   RESERVED: "bg-amber-500",
   DRAFT: "bg-slate-400",
@@ -94,8 +94,8 @@ const GRID_IMAGE_SIZES =
 
 const LIST_IMAGE_SIZES = "(max-width: 768px) 100vw, 448px";
 
-export default function VehicleCard({
-  vehicle,
+export default function ProductCard({
+  product,
   priority = false,
   favoriteId,
   isAuthenticated,
@@ -103,7 +103,7 @@ export default function VehicleCard({
   showFavorite = true,
   imageSizes,
 }: {
-  vehicle: VehicleCardModel;
+  product: ProductCardModel;
   priority?: boolean;
   favoriteId?: string | null;
   isAuthenticated?: boolean;
@@ -113,29 +113,29 @@ export default function VehicleCard({
   imageSizes?: string;
 }) {
   const locale = useLocale();
-  const t = useTranslations("VehicleCard");
+  const t = useTranslations("ProductCard");
   const tProduct = useTranslations("Product");
-  const status = vehicle.status ?? "PUBLISHED";
-  const price = formatProductPrice(vehicle.price, locale);
-  const showName = vehicle.showName !== false;
-  const showPrice = vehicle.showPrice !== false;
-  const showStatus = vehicle.showStatus !== false;
-  const showSubtitle = vehicle.showSubtitle !== false;
-  const showSpecs = vehicle.showSpecs !== false;
-  const specItems = showSpecs ? vehicle.specItems ?? [] : [];
-  const specsStyle = vehicle.specsStyle ?? "GRID";
-  const specsGridCount = vehicle.specsGridCount ?? specItems.length ?? 4;
+  const status = product.status ?? "PUBLISHED";
+  const price = formatProductPrice(product.price, locale);
+  const showName = product.showName !== false;
+  const showPrice = product.showPrice !== false;
+  const showStatus = product.showStatus !== false;
+  const showSubtitle = product.showSubtitle !== false;
+  const showSpecs = product.showSpecs !== false;
+  const specItems = showSpecs ? product.specItems ?? [] : [];
+  const specsStyle = product.specsStyle ?? "GRID";
+  const specsGridCount = product.specsGridCount ?? specItems.length ?? 4;
 
   const subtitleParts =
-    vehicle.subtitleParts && vehicle.subtitleParts.length > 0
-      ? vehicle.subtitleParts
+    product.subtitleParts && product.subtitleParts.length > 0
+      ? product.subtitleParts
       : [
-          vehicle.categoryLabel?.trim() || t("categoryFallback"),
-          vehicle.year ? t("year", { year: vehicle.year }) : null,
+          product.categoryLabel?.trim() || t("categoryFallback"),
+          product.year ? t("year", { year: product.year }) : null,
         ].filter(Boolean);
 
-  const gallery = (vehicle.images?.length ? vehicle.images : [vehicle.image]).map(
-    (src) => ({ src, alt: vehicle.name })
+  const gallery = (product.images?.length ? product.images : [product.image]).map(
+    (src) => ({ src, alt: product.name })
   );
 
   const isList = layout === "list";
@@ -161,7 +161,7 @@ export default function VehicleCard({
             variant="card"
             frame={isList ? "fill" : "ratio"}
             images={gallery}
-            href={vehicle.href}
+            href={product.href}
             priority={priority}
             className={isList ? "absolute inset-0 h-full" : undefined}
             sizes={
@@ -197,7 +197,7 @@ export default function VehicleCard({
                     <div className="pointer-events-auto shrink-0">
                       {isAuthenticated ? (
                         <FavoriteToggleForm
-                          productId={vehicle.id}
+                          productId={product.id}
                           favoriteId={favoriteId ?? null}
                         />
                       ) : (
@@ -212,7 +212,7 @@ export default function VehicleCard({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col p-4 lg:p-5">
-          <Link href={vehicle.href} className="block">
+          <Link href={product.href} className="block">
             {showSubtitle ? (
               <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
                 {subtitleParts.join(" • ")}
@@ -220,7 +220,7 @@ export default function VehicleCard({
             ) : null}
             {showName ? (
               <h3 className="mb-3 line-clamp-2 text-lg font-black leading-snug text-foreground lg:mb-4 lg:text-xl lg:leading-tight">
-                {vehicle.name}
+                {product.name}
               </h3>
             ) : null}
           </Link>
@@ -278,7 +278,7 @@ export default function VehicleCard({
               </div>
             ) : null}
             <Button asChild className="w-full">
-              <Link href={vehicle.href}>
+              <Link href={product.href}>
                 <span className="text-sm font-medium">{t("details")}</span>
                 <LuChevronRight className="size-4" aria-hidden />
               </Link>

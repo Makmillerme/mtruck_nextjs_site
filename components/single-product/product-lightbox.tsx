@@ -239,7 +239,7 @@ export default function ProductLightbox({
           )}
         >
           {slides.length > 1 ? (
-            <div className="hidden min-h-0 overflow-y-auto border-r border-border p-2 md:block">
+            <div className="app-scroll hidden min-h-0 border-r border-border p-2 md:block">
               <div className="grid gap-2">
                 {slides.map((item, i) => (
                   <button

@@ -36,7 +36,7 @@ import {
 } from './images';
 import { PRODUCT_IMAGE_MAX } from '@/lib/catalog/product-image-limits';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { revalidatePath, unstable_cache } from 'next/cache';
 import { after } from 'next/server';
 import {
@@ -44,6 +44,8 @@ import {
   CATALOG_CACHE_TAGS,
 } from '@/lib/catalog/cache-tags';
 import { revalidatePublicCatalog } from '@/lib/catalog/cache';
+import { ORDER_QUANTITY_MAX } from '@/lib/catalog/order-quantity';
+import { resolveProductsAreUnique } from '@/lib/catalog/taxonomy';
 import type { CatalogQuery, CatalogSort } from '@/utils/catalog-query';
 import { catalogQueryToWhere } from '@/lib/catalog/public-filter';
 import { productListSelect } from '@/utils/product-list';
@@ -889,6 +891,25 @@ export const toggleFavoriteAction = async (prevState: {
   }
 };
 
+/** Removes every favorite for the signed-in user. */
+export const clearAllUserFavoritesAction = async (): Promise<{
+  message: string;
+  ok: boolean;
+}> => {
+  const user = await getAuthUser();
+  try {
+    await db.favorite.deleteMany({
+      where: { userId: user.id },
+    });
+    revalidatePath('/account');
+    revalidatePath('/account/favorites');
+    const t = await getTranslations('Actions');
+    return { message: t('favoritesCleared'), ok: true };
+  } catch (error) {
+    return { ...(await renderError(error)), ok: false };
+  }
+};
+
 export const fetchUserFavorites = async () => {
   const user = await getAuthUser();
   const favorites = await db.favorite.findMany({
@@ -981,7 +1002,7 @@ export const submitCallbackInquiryAction = async (
         productCode = product.productCode;
       }
     }
-    await db.callbackInquiry.create({
+    const inquiry = await db.callbackInquiry.create({
       data: {
         phone: data.phone,
         productId: productId,
@@ -989,6 +1010,16 @@ export const submitCallbackInquiryAction = async (
         productCode,
         note,
       },
+    });
+    const { publishInquiryCreated } = await import(
+      "@/lib/realtime/pusher-server"
+    );
+    await publishInquiryCreated({
+      id: inquiry.id,
+      phone: inquiry.phone,
+      productName: inquiry.productName,
+      productCode: inquiry.productCode,
+      createdAt: inquiry.createdAt.toISOString(),
     });
     revalidatePath('/admin/sales/inquiries');
     const t = await getTranslations('Actions');
@@ -1040,6 +1071,7 @@ export const markCallbackInquiriesReadAction = async () => {
       data: { readAt: new Date() },
     });
     revalidatePath('/admin/sales/inquiries');
+    revalidatePath('/', 'layout');
     return { ok: true as const, message: '' };
   } catch (error) {
     return { ...(await renderError(error)), ok: false as const };
@@ -1065,6 +1097,7 @@ export const updateCallbackInquiryStatusAction = async (
       },
     });
     revalidatePath('/admin/sales/inquiries');
+    revalidatePath('/', 'layout');
     const t = await getTranslations('Admin');
     return { message: t('productSaved'), ok: true as const };
   } catch (error) {
@@ -1173,14 +1206,14 @@ export const fetchOpenCatalogOrderForProduct = async ({
       archivedAt: null,
       status: { in: ['NEW', 'IN_PROGRESS'] },
     },
-    select: { id: true },
+    select: { id: true, products: true },
   });
 };
 
 export const createCatalogOrderAction = async (
-  prevState: { message: string },
+  prevState: ActionState,
   formData: FormData
-): Promise<{ message: string }> => {
+): Promise<ActionState> => {
   const user = await getAuthUser();
   try {
     const productId = String(formData.get('productId') ?? '').trim();
@@ -1194,9 +1227,18 @@ export const createCatalogOrderAction = async (
     });
     if (openOrder) {
       const t = await getTranslations('Actions');
-      return { message: t('orderAlreadyOpen') };
+      return { message: t('orderAlreadyOpen'), ok: false };
     }
-    await db.order.create({
+    const unique = await resolveProductsAreUnique(product.taxonomyNodeId);
+    const rawQty = Number(formData.get('quantity'));
+    let quantity = 1;
+    if (!unique && Number.isFinite(rawQty)) {
+      quantity = Math.min(
+        ORDER_QUANTITY_MAX,
+        Math.max(1, Math.trunc(rawQty))
+      );
+    }
+    const order = await db.order.create({
       data: {
         userId: user.id,
         email: user.email,
@@ -1204,8 +1246,8 @@ export const createCatalogOrderAction = async (
         status: 'NEW',
         origin: 'USER',
         productId: product.id,
-        products: 1,
-        orderTotal: product.price,
+        products: quantity,
+        orderTotal: product.price * quantity,
         tax: 0,
         shipping: 0,
         isPaid: false,
@@ -1213,10 +1255,19 @@ export const createCatalogOrderAction = async (
     });
     revalidatePath('/account/orders');
     revalidatePath('/admin/sales');
+    // Flash cookie survives the Server Action soft-refresh remount so the
+    // PDP can reopen the order-added Sheet (client state is wiped).
+    const jar = await cookies();
+    jar.set('mtruck-order-added', product.id, {
+      path: '/',
+      maxAge: 120,
+      sameSite: 'lax',
+      httpOnly: false,
+    });
+    return { message: '', ok: true, orderId: order.id };
   } catch (error) {
-    return renderError(error);
+    return { ...(await renderError(error)), ok: false };
   }
-  return redirectLocalized('/account/orders');
 };
 
 export const fetchUserOrders = async () => {
@@ -1228,7 +1279,14 @@ export const fetchUserOrders = async () => {
     },
     include: {
       product: {
-        select: { id: true, name: true, image: true, productCode: true },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          productCode: true,
+          price: true,
+          taxonomyNodeId: true,
+        },
       },
       taxonomyNode: {
         select: { id: true, name: true },
@@ -1280,13 +1338,6 @@ export const createUserRequestOrderAction = async (
       userRequestOrderSchema,
       Object.fromEntries(formData)
     );
-    const node = await db.taxonomyNode.findUnique({
-      where: { id: data.taxonomyNodeId },
-      select: { id: true },
-    });
-    if (!node) {
-      throw new Error('Folder not found');
-    }
     await db.order.create({
       data: {
         userId: user.id,
@@ -1294,8 +1345,8 @@ export const createUserRequestOrderAction = async (
         kind: 'REQUEST',
         status: 'NEW',
         origin: 'USER',
-        taxonomyNodeId: node.id,
-        note: data.note || null,
+        taxonomyNodeId: null,
+        note: data.note,
         productId: null,
         products: 1,
         orderTotal: 0,
@@ -1341,18 +1392,11 @@ export const updateUserOrderAction = async (
         userRequestOrderSchema,
         Object.fromEntries(formData)
       );
-      const node = await db.taxonomyNode.findUnique({
-        where: { id: data.taxonomyNodeId },
-        select: { id: true },
-      });
-      if (!node) {
-        throw new Error('Folder not found');
-      }
       await db.order.update({
         where: { id: existing.id },
         data: {
-          taxonomyNodeId: node.id,
-          note: data.note || null,
+          taxonomyNodeId: null,
+          note: data.note,
         },
       });
     } else {
@@ -1370,6 +1414,57 @@ export const updateUserOrderAction = async (
     return renderError(error);
   }
   return redirectLocalized('/account/orders');
+};
+
+export const updateCatalogOrderQuantityAction = async (
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  const user = await getAuthUser();
+  try {
+    const orderId = String(formData.get('orderId') ?? '').trim();
+    const rawQty = Number(formData.get('quantity'));
+    if (!orderId || !Number.isFinite(rawQty)) {
+      throw new Error('Invalid quantity');
+    }
+    const t = await getTranslations('Actions');
+    const order = await db.order.findFirst({
+      where: { id: orderId, userId: user.id, archivedAt: null },
+      include: {
+        product: {
+          select: { id: true, price: true, taxonomyNodeId: true },
+        },
+      },
+    });
+    if (!order) throw new Error('Order not found');
+    if (order.kind !== 'CATALOG' || !order.product) {
+      return { message: t('orderQtyNotAllowed'), ok: false };
+    }
+    if (order.status !== 'NEW' && order.status !== 'IN_PROGRESS') {
+      return { message: t('orderLocked'), ok: false };
+    }
+    const unique = await resolveProductsAreUnique(order.product.taxonomyNodeId);
+    let quantity = Math.trunc(rawQty);
+    if (unique) {
+      quantity = 1;
+    } else {
+      quantity = Math.min(
+        ORDER_QUANTITY_MAX,
+        Math.max(1, quantity)
+      );
+    }
+    const orderTotal = order.product.price * quantity;
+    await db.order.update({
+      where: { id: order.id },
+      data: { products: quantity, orderTotal },
+    });
+    // Do not revalidate /account here — optimistic qty UI must not flash
+    // back to an intermediate RSC payload while the user keeps clicking.
+    revalidatePath('/admin/sales');
+    return { message: '', ok: true };
+  } catch (error) {
+    return { ...(await renderError(error)), ok: false };
+  }
 };
 
 export const deleteUserOrderAction = async (prevState: {
@@ -1397,6 +1492,30 @@ export const deleteUserOrderAction = async (prevState: {
     return { message: t('orderRemoved'), ok: true as const };
   } catch (error) {
     return { ...(await renderError(error)), ok: false as const };
+  }
+};
+
+/** Deletes every NEW order the user can still cancel (same rule as single delete). */
+export const deleteAllDeletableUserOrdersAction = async (): Promise<{
+  message: string;
+  ok: boolean;
+}> => {
+  const user = await getAuthUser();
+  try {
+    await db.order.deleteMany({
+      where: {
+        userId: user.id,
+        status: 'NEW',
+        archivedAt: null,
+      },
+    });
+    revalidatePath('/account');
+    revalidatePath('/account/orders');
+    revalidatePath('/admin/sales');
+    const t = await getTranslations('Actions');
+    return { message: t('ordersCleared'), ok: true };
+  } catch (error) {
+    return { ...(await renderError(error)), ok: false };
   }
 };
 

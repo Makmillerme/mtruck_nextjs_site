@@ -114,6 +114,8 @@ import UiLabTruckParking from "@/components/dev/ui-lab-truck-parking";
 import UiLabToast from "@/components/dev/ui-lab-toast";
 import UiLabPdp from "@/components/dev/ui-lab-pdp";
 import UiLabAccountOrders from "@/components/dev/ui-lab-account-orders";
+import UiLabAdminPaginationDemo from "@/components/dev/ui-lab-admin-pagination";
+import UiLabOrderAddedSheetDemo from "@/components/dev/ui-lab-order-added-sheet";
 import CategoryFinderPanel from "@/components/catalog/CategoryFinderPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -705,6 +707,16 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             </Section>
           </LabGate>
 
+          <LabGate id="admin-table-pagination" visibleIds={visibleIds}>
+            <Section
+              id="admin-table-pagination"
+              title="Admin table pagination"
+              hint="Стрілки outline + сторінка/усього + DropdownMenu 25/50/75 (default 25). Під таблицею адмінки."
+            >
+              <UiLabAdminPaginationDemo />
+            </Section>
+          </LabGate>
+
           <LabGate id="table" visibleIds={visibleIds}>
             <Section
               id="table"
@@ -1025,7 +1037,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
           </div>
         </div>
       </div>
-      {visibleIds.has("vehicle") ? children : null}
+      {visibleIds.has("product-card") ? children : null}
 
       {visibleIds.has("pdp") ? (
         <div className="page-container pb-16 pt-8">
@@ -1033,9 +1045,19 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="pdp"
               title="Сторінка товару (PDP)"
-              hint="Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related VehicleCard."
+              hint="Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related ProductCard."
             >
               <UiLabPdp />
+            </Section>
+          </LabGate>
+
+          <LabGate id="order-added-sheet" visibleIds={visibleIds}>
+            <Section
+              id="order-added-sheet"
+              title="Order confirm Sheet"
+              hint="Картка = AccountOrderLine (див. account-orders). Confirm: Скасувати|Створити. Ordered: Усі|Оформити."
+            >
+              <UiLabOrderAddedSheetDemo />
             </Section>
           </LabGate>
         </div>

@@ -52,6 +52,7 @@ export default function AdminListToolbar({
           type="button"
           size="sm"
           className="h-9 gap-2 whitespace-nowrap"
+          aria-label={createLabel}
           onClick={onCreate}
         >
           <LuPlus className="size-4 shrink-0" />

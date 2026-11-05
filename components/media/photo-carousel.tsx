@@ -113,13 +113,15 @@ export default function PhotoCarousel({
   /** Ignore stage click after a swipe/drag so lightbox does not steal the gesture. */
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const didDragRef = useRef(false);
+  const thumbStripRef = useRef<HTMLDivElement | null>(null);
+  const prevThumbIndexRef = useRef(safeStart);
   const DRAG_THRESHOLD_PX = 8;
   const stageClass =
     frame === "fill"
       ? "relative h-full min-h-0 w-full min-w-0 overflow-hidden bg-muted"
       : "relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-muted";
   const slideFrameClass =
-    frame === "fill"
+    frame === "fill" || variant === "page"
       ? "absolute inset-0 overflow-hidden"
       : "relative aspect-[4/3] w-full overflow-hidden";
 
@@ -138,6 +140,67 @@ export default function PhotoCarousel({
     if (!api) return;
     api.scrollTo(safeStart, true);
   }, [api, safeStart]);
+
+  /** Advance the strip ~1.5 thumbs before the active card hits the visible edge. */
+  useEffect(() => {
+    if (variant !== "page" || !multi) return;
+    const strip = thumbStripRef.current;
+    if (!strip) return;
+
+    const prev = prevThumbIndexRef.current;
+    prevThumbIndexRef.current = index;
+    const last = slides.length - 1;
+    const delta = index - prev;
+    const goingRight = delta === 1 || (prev === last && index === 0);
+    const goingLeft = delta === -1 || (prev === 0 && index === last);
+
+    const frame = requestAnimationFrame(() => {
+      const thumb = strip.querySelector<HTMLElement>(
+        `[data-thumb-index="${index}"]`
+      );
+      if (!thumb) return;
+
+      const gap = 8;
+      const step = thumb.offsetWidth + gap;
+      const lead = step * 1.5;
+      const stripRect = strip.getBoundingClientRect();
+      const thumbRect = thumb.getBoundingClientRect();
+      const thumbLeft = thumbRect.left - stripRect.left + strip.scrollLeft;
+      const thumbRight = thumbLeft + thumbRect.width;
+      const viewLeft = strip.scrollLeft;
+      const viewRight = viewLeft + strip.clientWidth;
+      const maxScroll = Math.max(0, strip.scrollWidth - strip.clientWidth);
+      const distRight = viewRight - thumbRight;
+      const distLeft = thumbLeft - viewLeft;
+
+      if (goingRight && distRight < lead) {
+        strip.scrollTo({
+          left: Math.min(maxScroll, thumbRight + lead - strip.clientWidth),
+          behavior: "smooth",
+        });
+      } else if (goingLeft && distLeft < lead) {
+        strip.scrollTo({
+          left: Math.max(0, thumbLeft - lead),
+          behavior: "smooth",
+        });
+      } else if (!goingRight && !goingLeft) {
+        // Direct thumb jump: only bring into view if clipped.
+        if (thumbRight > viewRight) {
+          strip.scrollTo({
+            left: Math.min(maxScroll, thumbRight - strip.clientWidth + gap),
+            behavior: "smooth",
+          });
+        } else if (thumbLeft < viewLeft) {
+          strip.scrollTo({
+            left: Math.max(0, thumbLeft - gap),
+            behavior: "smooth",
+          });
+        }
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [index, variant, multi, slides.length]);
 
   const scrollTo = useCallback(
     (next: number) => {
@@ -175,7 +238,8 @@ export default function PhotoCarousel({
     /** PDP single photo: fill stretched hero column (aspect alone leaves a dead gap under the frame). */
     const pageSingleClass =
       variant === "page"
-        ? "relative aspect-[4/3] h-full min-h-0 w-full min-w-0 overflow-hidden bg-muted"
+        ? // Mobile: intrinsic 4/3. lg+: fill column matched to buybox.
+          "relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-muted lg:aspect-auto lg:h-full lg:min-h-0"
         : stageClass;
     return (
       <div
@@ -223,7 +287,8 @@ export default function PhotoCarousel({
     <div
       className={cn(
         "min-w-0 w-full",
-        variant === "page" && "grid gap-3",
+        // Page: column matches buybox height; stage flex-1, thumbs shrink-0 (no stretched gap).
+        variant === "page" && "flex min-h-0 flex-col gap-3 lg:h-full",
         frame === "fill" && "h-full min-h-0",
         className
       )}
@@ -240,12 +305,16 @@ export default function PhotoCarousel({
         }}
         className={cn(
           "relative w-full overflow-hidden",
+          variant === "page" &&
+            "aspect-[4/3] lg:aspect-auto lg:min-h-0 lg:flex-1",
           frame === "fill" && "h-full"
         )}
       >
         <div
           className={cn(
-            stageClass,
+            variant === "page"
+              ? "relative h-full min-h-0 w-full min-w-0 overflow-hidden bg-muted"
+              : stageClass,
             "select-none",
             onImageClick && !href && "cursor-zoom-in"
           )}
@@ -258,7 +327,10 @@ export default function PhotoCarousel({
             {slides.map((item, i) => (
               <CarouselItem
                 key={`${item.src}-${i}`}
-                className="relative min-w-0 !basis-full !pl-0 h-full"
+                className={cn(
+                  "relative min-w-0 !basis-full !pl-0",
+                  (frame === "fill" || variant === "page") && "h-full"
+                )}
               >
                 <div className={slideFrameClass}>
                   <SlideImage
@@ -337,16 +409,22 @@ export default function PhotoCarousel({
       </Carousel>
 
       {variant === "page" ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+        <div
+          ref={thumbStripRef}
+          className="flex min-w-0 shrink-0 items-start gap-2 overflow-x-auto overflow-y-hidden p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {slides.map((item, i) => (
             <button
               key={`thumb-${item.src}-${i}`}
               type="button"
+              data-thumb-index={i}
               onClick={() => scrollTo(i)}
               aria-label={`${thumbLabel} ${i + 1}`}
               aria-current={i === index ? true : undefined}
               className={cn(
-                "relative aspect-[4/3] min-h-[4.5rem] overflow-hidden rounded-sm border bg-muted transition-opacity",
+                // Visible slots: 3 / 4 / 5 of strip width; items-start + h-auto so aspect 4/3 is not stretched.
+                "relative aspect-[4/3] h-auto w-[calc((100%-0.5rem*2)/3)] shrink-0 self-start overflow-hidden rounded-sm border bg-muted transition-opacity",
+                "sm:w-[calc((100%-0.5rem*3)/4)] md:w-[calc((100%-0.5rem*4)/5)]",
                 i === index
                   ? "border-foreground ring-1 ring-foreground"
                   : "border-border opacity-70 hover:opacity-100"
@@ -356,8 +434,9 @@ export default function PhotoCarousel({
                 src={item.src}
                 alt={item.alt ?? ""}
                 fill
-                sizes="120px"
+                sizes="(max-width:640px) 33vw, (max-width:768px) 25vw, 20vw"
                 className="object-cover"
+                draggable={false}
               />
             </button>
           ))}

@@ -113,6 +113,7 @@ export function ConfirmDeleteCallbackIcon({
   description,
   confirmLabel,
   label,
+  labelClassName,
   className,
   iconClassName,
   mode = "delete",
@@ -123,6 +124,7 @@ export function ConfirmDeleteCallbackIcon({
   confirmLabel?: string;
   /** Optional visible label (cart-style text action). */
   label?: string;
+  labelClassName?: string;
   className?: string;
   iconClassName?: string;
   mode?: "delete" | "archive";
@@ -170,7 +172,7 @@ export function ConfirmDeleteCallbackIcon({
         ) : (
           <LuTrash2 className={iconClassName ?? "size-4"} aria-hidden />
         )}
-        {label ? <span>{label}</span> : null}
+        {label ? <span className={labelClassName}>{label}</span> : null}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="z-[110]">

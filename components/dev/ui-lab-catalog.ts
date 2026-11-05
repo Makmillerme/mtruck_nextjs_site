@@ -123,6 +123,14 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
       "table таблиця sales orders products адмінка",
   },
   {
+    id: "admin-table-pagination",
+    category: "fields",
+    title: "Admin table pagination",
+    hint: "Стрілки + сторінка/усього + DropdownMenu 25/50/75. Під таблицею; default 25.",
+    keywords:
+      "pagination пагінація admin table page pagesize 25 50 75 products users sales archive",
+  },
+  {
     id: "marks",
     category: "marks",
     title: "Мітки і знаки",
@@ -172,16 +180,16 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "card",
     category: "cards",
     title: "Card (оболонка)",
-    hint: "Сирий shadcn Card. Картка техніки — нижче, окремим блоком.",
+    hint: "Сирий shadcn Card. Картка товару — нижче, окремим блоком.",
     keywords: "card картка оболонка shadcn",
   },
   {
-    id: "vehicle",
+    id: "product-card",
     category: "cards",
-    title: "Картка техніки",
-    hint: "Живий VehicleCard: сітка + list (фото на всю висоту). PhotoCarousel, ціна + Детальніше w-full. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
+    title: "Картка товару",
+    hint: "Живий ProductCard: сітка + list (фото на всю висоту). PhotoCarousel, ціна + Детальніше w-full. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
     keywords:
-      "vehicle card картка техніки тягач man overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
+      "product card картка товару каталог man overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
     chrome: "own",
   },
   {
@@ -191,6 +199,14 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     hint: "Галерея + lightbox, sticky buy-box (teaser, icon facts, leasing, trust), underline tabs, mobile sticky CTA, related.",
     keywords:
       "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
+  },
+  {
+    id: "order-added-sheet",
+    category: "overlays",
+    title: "Order confirm Sheet",
+    hint: "Confirm до POST: картка = AccountOrderLine (канон account-orders) + Скасувати|Створити під нею. Ordered: Усі|Оформити.",
+    keywords:
+      "order confirm sheet замовлення кошик cart створити скасувати оформити pdp account order line",
   },
   {
     id: "account-orders",
@@ -204,7 +220,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "carousel",
     category: "overlays",
     title: "PhotoCarousel",
-    hint: "Embla page/card + PDP ProductGallery lightbox (L-thumbs, zoom Ctrl+wheel). Admin: ProductImageGalleryField DnD.",
+    hint: "Embla page/card + PDP ProductGallery lightbox. Page thumbs: 1-row horizontal strip + auto-scroll to active. Admin: ProductImageGalleryField DnD.",
     keywords:
       "carousel карусель embla photo gallery галерея thumbs dots lightbox zoom свайп reorder dnd admin +",
   },

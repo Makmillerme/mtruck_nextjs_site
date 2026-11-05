@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  INQUIRY_CREATED_EVENT,
+  STAFF_NOTIFICATIONS_CHANNEL,
+  type InquiryCreatedPayload,
+} from "@/lib/realtime/channels";
+import { getPusherClient } from "@/lib/realtime/pusher-client";
 import { cn } from "@/lib/utils";
 import { LuBell } from "react-icons/lu";
 
@@ -34,8 +41,51 @@ export default function NotificationsButton({
   items?: NotificationPreview[];
 }) {
   const t = useTranslations("Admin");
+  const pathname = usePathname();
+  const onInquiriesPage = pathname.includes("/admin/sales/inquiries");
+  const [liveCount, setLiveCount] = useState(unreadCount);
+  const [liveItems, setLiveItems] = useState(items);
+
+  useEffect(() => {
+    setLiveCount(onInquiriesPage ? 0 : unreadCount);
+  }, [unreadCount, onInquiriesPage]);
+
+  useEffect(() => {
+    setLiveItems(items);
+  }, [items]);
+
+  useEffect(() => {
+    if (!isStaff) return;
+    const pusher = getPusherClient();
+    if (!pusher) return;
+
+    const channel = pusher.subscribe(STAFF_NOTIFICATIONS_CHANNEL);
+    const onCreated = (payload: InquiryCreatedPayload) => {
+      setLiveCount((prev) => prev + 1);
+      setLiveItems((prev) => {
+        if (prev.some((item) => item.id === payload.id)) return prev;
+        return [
+          {
+            id: payload.id,
+            phone: payload.phone,
+            productName: payload.productName,
+            productCode: payload.productCode,
+            createdAt: payload.createdAt,
+          },
+          ...prev,
+        ].slice(0, 5);
+      });
+    };
+
+    channel.bind(INQUIRY_CREATED_EVENT, onCreated);
+    return () => {
+      channel.unbind(INQUIRY_CREATED_EVENT, onCreated);
+      pusher.unsubscribe(STAFF_NOTIFICATIONS_CHANNEL);
+    };
+  }, [isStaff]);
+
   const badge =
-    unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : null;
+    liveCount > 0 ? (liveCount > 9 ? "9+" : String(liveCount)) : null;
 
   return (
     <DropdownMenu modal={false}>
@@ -61,14 +111,18 @@ export default function NotificationsButton({
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>{t("notifications")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {!isStaff || items.length === 0 ? (
+        {!isStaff || liveItems.length === 0 ? (
           <div className="px-2 py-3 text-sm text-muted-foreground">
             {t("notificationsEmpty")}
           </div>
         ) : (
-          items.map((item) => (
+          liveItems.map((item) => (
             <DropdownMenuItem key={item.id} asChild>
-              <Link href="/admin/sales/inquiries" className="flex flex-col items-start gap-0.5">
+              <Link
+                href="/admin/sales/inquiries"
+                className="flex flex-col items-start gap-0.5"
+                onClick={() => setLiveCount(0)}
+              >
                 <span className="text-sm font-medium">{t("notificationsInquiry")}</span>
                 <span className="font-mono text-xs text-muted-foreground">
                   {item.phone}
@@ -82,7 +136,12 @@ export default function NotificationsButton({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/sales/inquiries">{t("notificationsViewAll")}</Link>
+              <Link
+                href="/admin/sales/inquiries"
+                onClick={() => setLiveCount(0)}
+              >
+                {t("notificationsViewAll")}
+              </Link>
             </DropdownMenuItem>
           </>
         ) : null}

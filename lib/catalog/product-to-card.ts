@@ -1,4 +1,7 @@
-import type { VehicleCardModel, VehicleStatus } from "@/components/vehicles/vehicle-card";
+import type {
+  ProductCardModel,
+  ProductCardStatus,
+} from "@/components/products/product-card";
 import {
   FALLBACK_CARD_PREVIEW_LAYOUT,
   type CardPreviewLayoutResolved,
@@ -105,7 +108,7 @@ function buildSpecItems(
   });
 }
 
-export function productWithSpecsToVehicle(
+export function productWithSpecsToCardModel(
   product: {
     id: string;
     name: string;
@@ -118,7 +121,7 @@ export function productWithSpecsToVehicle(
   },
   layout: CardPreviewLayoutResolved | null | undefined = FALLBACK_CARD_PREVIEW_LAYOUT,
   locale = "uk"
-): VehicleCardModel {
+): ProductCardModel {
   const resolved = layout ?? FALLBACK_CARD_PREVIEW_LAYOUT;
   const specs = product.specs ?? [];
   const byKey = specMap(specs);
@@ -149,7 +152,7 @@ export function productWithSpecsToVehicle(
     image: images[0] ?? product.image,
     images,
     href: `/products/${product.id}`,
-    status: (product.status as VehicleStatus | undefined) ?? "PUBLISHED",
+    status: (product.status as ProductCardStatus | undefined) ?? "PUBLISHED",
     year: numberValue(byKey, "year"),
     location: textValue(byKey, "location"),
     categoryLabel,

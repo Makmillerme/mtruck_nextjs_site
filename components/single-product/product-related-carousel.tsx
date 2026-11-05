@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import CatalogTeaserCard from "@/components/single-product/catalog-teaser-card";
-import VehicleCard, {
-  type VehicleCardModel,
-} from "@/components/vehicles/vehicle-card";
+import ProductCard, {
+  type ProductCardModel,
+} from "@/components/products/product-card";
 import {
   type CarouselApi,
   Carousel,
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 export default function ProductRelatedCarousel({
   title,
-  vehicles,
+  products,
   catalogHref,
   catalogLabel,
   catalogHint,
@@ -27,7 +27,7 @@ export default function ProductRelatedCarousel({
   nextLabel,
 }: {
   title: string;
-  vehicles: VehicleCardModel[];
+  products: ProductCardModel[];
   catalogHref: string;
   catalogLabel: string;
   catalogHint?: string;
@@ -92,10 +92,10 @@ export default function ProductRelatedCarousel({
           "overflow-x-clip overflow-y-visible px-1 py-3"
         )}
       >
-        {vehicles.map((vehicle) => (
-          <CarouselItem key={vehicle.id} className={slideClassName}>
-            <VehicleCard
-              vehicle={{ ...vehicle, showStatus: false }}
+        {products.map((item) => (
+          <CarouselItem key={item.id} className={slideClassName}>
+            <ProductCard
+              product={{ ...item, showStatus: false }}
               isAuthenticated={isAuthenticated}
               showFavorite={false}
             />

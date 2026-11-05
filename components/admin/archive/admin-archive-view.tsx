@@ -1,7 +1,13 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import {
+  ADMIN_LIST_PAGINATION_KEYS,
+  syncAdminListUrl,
+} from "@/lib/admin/list-url";
+import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
 import EmptyList from "@/components/global/EmptyList";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Button } from "@/components/ui/button";
@@ -151,6 +157,43 @@ export default function AdminArchiveView({
     removeOptimistically: removeUser,
   } = useOptimisticListRemove(users);
 
+  const tabItems = useMemo((): readonly { id: string }[] => {
+    if (activeTab === "products") return optimisticProducts;
+    if (activeTab === "users") return optimisticUsers;
+    return optimisticOrders;
+  }, [activeTab, optimisticOrders, optimisticProducts, optimisticUsers]);
+
+  const {
+    page,
+    pageSize,
+    pageCount,
+    pagedItems,
+    setPage,
+    setPageSize,
+    paginationParams,
+    showPagination,
+  } = useAdminTablePagination(tabItems, activeTab);
+
+  useEffect(() => {
+    syncAdminListUrl(["tab", ...ADMIN_LIST_PAGINATION_KEYS], {
+      tab: activeTab === "sales" ? undefined : activeTab,
+      ...paginationParams,
+    });
+  }, [activeTab, paginationParams]);
+
+  const pagedOrders =
+    activeTab === "sales"
+      ? (pagedItems as unknown as ArchiveOrderRow[])
+      : optimisticOrders;
+  const pagedProducts =
+    activeTab === "products"
+      ? (pagedItems as unknown as ArchiveProductRow[])
+      : optimisticProducts;
+  const pagedUsers =
+    activeTab === "users"
+      ? (pagedItems as unknown as ArchiveUserRow[])
+      : optimisticUsers;
+
   function setTab(value: string) {
     const next: ArchiveTab =
       value === "products" || value === "users" || value === "sales"
@@ -158,10 +201,6 @@ export default function AdminArchiveView({
         : "sales";
     if (next === activeTab) return;
     setActiveTab(next);
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", next);
-    window.history.replaceState(null, "", url.toString());
   }
 
   return (
@@ -199,7 +238,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {optimisticOrders.map((order) => (
+                {pagedOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
                       <div className="grid gap-0.5">
@@ -250,6 +289,16 @@ export default function AdminArchiveView({
               </TableBody>
             </Table>
           </ArchiveTable>
+          {showPagination && activeTab === "sales" ? (
+            <AdminTablePagination
+              className="mt-4"
+              page={page}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          ) : null}
         </TabsContent>
 
         <TabsContent value="products" className="mt-6">
@@ -273,7 +322,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {optimisticProducts.map((item) => (
+                {pagedProducts.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="tabular-nums">
                       {item.productCode}
@@ -322,6 +371,16 @@ export default function AdminArchiveView({
               </TableBody>
             </Table>
           </ArchiveTable>
+          {showPagination && activeTab === "products" ? (
+            <AdminTablePagination
+              className="mt-4"
+              page={page}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          ) : null}
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
@@ -345,7 +404,7 @@ export default function AdminArchiveView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {optimisticUsers.map((item) => {
+                {pagedUsers.map((item) => {
                   const canMutate = canMutateUserArchive(item, currentUserId);
                   const canHardDelete =
                     canMutate &&
@@ -409,6 +468,16 @@ export default function AdminArchiveView({
               </TableBody>
             </Table>
           </ArchiveTable>
+          {showPagination && activeTab === "users" ? (
+            <AdminTablePagination
+              className="mt-4"
+              page={page}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          ) : null}
         </TabsContent>
       </Tabs>
     </section>

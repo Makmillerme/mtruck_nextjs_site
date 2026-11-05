@@ -72,6 +72,7 @@ type FolderSheet =
 
 function FolderRow({
   node,
+  depth,
   index,
   siblingCount,
   expanded,
@@ -82,6 +83,7 @@ function FolderRow({
   movePending,
 }: {
   node: TaxonomyTreeNode;
+  depth: number;
   index: number;
   siblingCount: number;
   expanded: Set<string>;
@@ -94,6 +96,7 @@ function FolderRow({
   const t = useTranslations("CatalogAdmin");
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
+  const canAddChild = depth < 2;
 
   return (
     <li>
@@ -165,16 +168,18 @@ function FolderRow({
             >
               <LuArrowDown className="size-4" />
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => onSheet({ mode: "create", parent: node })}
-              aria-label={t("addChildFolder")}
-              title={t("addChildFolder")}
-            >
-              <LuPlus className="size-4" />
-            </Button>
+            {canAddChild ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => onSheet({ mode: "create", parent: node })}
+                aria-label={t("addChildFolder")}
+                title={t("addChildFolder")}
+              >
+                <LuPlus className="size-4" />
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="ghost"
@@ -222,6 +227,7 @@ function FolderRow({
             <FolderRow
               key={child.id}
               node={child}
+              depth={depth + 1}
               index={childIndex}
               siblingCount={node.children.length}
               expanded={expanded}
@@ -320,6 +326,7 @@ export default function FolderTree({
             <FolderRow
               key={node.id}
               node={node}
+              depth={0}
               index={index}
               siblingCount={filteredTree.length}
               expanded={visibleExpanded}
@@ -403,6 +410,14 @@ export default function FolderTree({
                   label={t("flagShowInHomeFilter")}
                   defaultChecked={sheet.node.showInHomeFilter}
                 />
+                {sheet.node.parentId == null ? (
+                  <CatalogFlag
+                    name="productsAreUnique"
+                    label={t("flagProductsAreUnique")}
+                    hint={t("flagProductsAreUniqueHint")}
+                    defaultChecked={sheet.node.productsAreUnique}
+                  />
+                ) : null}
                 <CatalogSubmit text={t("saveFolder")} className="w-fit" />
               </CatalogForm>
             </div>

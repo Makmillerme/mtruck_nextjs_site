@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ADMIN_LIST_SEARCH_KEY, syncAdminListUrl } from "@/lib/admin/list-url";
+import AdminTablePagination from "@/components/admin/admin-table-pagination";
+import {
+  ADMIN_LIST_PAGINATION_KEYS,
+  ADMIN_LIST_SEARCH_KEY,
+  syncAdminListUrl,
+} from "@/lib/admin/list-url";
+import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { Link } from "@/i18n/navigation";
 import EmptyList from "@/components/global/EmptyList";
@@ -180,12 +186,14 @@ export default function AdminUsersView({
   const [sheetCreateOpen, setSheetCreateOpen] = useState(createOpen);
   const [sheetSavePending, setSheetSavePending] = useState(false);
 
-  useEffect(() => {
-    syncAdminListUrl(["role", ADMIN_LIST_SEARCH_KEY], {
-      role: roleFilter === "all" ? undefined : roleFilter,
-      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
-    });
-  }, [roleFilter, search]);
+  const paginationResetKey = useMemo(
+    () =>
+      JSON.stringify({
+        search: search.trim(),
+        role: roleFilter,
+      }),
+    [search, roleFilter]
+  );
 
   const roleOptions = [
     { value: "all", label: t("filterRoleAll"), keywords: [] as string[] },
@@ -241,6 +249,25 @@ export default function AdminUsersView({
       return hay.includes(q);
     });
   }, [optimisticItems, search, roleFilter]);
+
+  const {
+    page,
+    pageSize,
+    pageCount,
+    pagedItems,
+    setPage,
+    setPageSize,
+    paginationParams,
+    showPagination,
+  } = useAdminTablePagination(filtered, paginationResetKey);
+
+  useEffect(() => {
+    syncAdminListUrl(["role", ADMIN_LIST_SEARCH_KEY, ...ADMIN_LIST_PAGINATION_KEYS], {
+      role: roleFilter === "all" ? undefined : roleFilter,
+      [ADMIN_LIST_SEARCH_KEY]: search.trim() || undefined,
+      ...paginationParams,
+    });
+  }, [roleFilter, search, paginationParams]);
 
   function setCreateOpen(open: boolean) {
     if (!open && sheetSavePending) return;
@@ -335,7 +362,7 @@ export default function AdminUsersView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((item) => (
+                {pagedItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="tabular-nums">{item.userCode}</TableCell>
                     <TableCell>{item.name}</TableCell>
@@ -404,6 +431,16 @@ export default function AdminUsersView({
           </CardContent>
         </Card>
       )}
+
+      {showPagination ? (
+        <AdminTablePagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
 
       <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>

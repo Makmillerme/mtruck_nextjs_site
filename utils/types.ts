@@ -4,6 +4,7 @@ import type { AdminUserRowDTO } from "@/lib/admin/user-row";
 export type ActionState = {
   message: string;
   ok?: boolean;
+  orderId?: string;
   product?: AdminProductRowDTO;
   user?: AdminUserRowDTO;
 };

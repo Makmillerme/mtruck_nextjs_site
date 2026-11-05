@@ -42,7 +42,7 @@ function FormContainer({
     if (state.message) {
       notify.fromAction(state);
     }
-    if (state.ok) {
+    if (state.ok || state.orderId) {
       onSuccessRef.current?.(state);
     }
   }, [state]);

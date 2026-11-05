@@ -171,13 +171,11 @@ export const changePasswordSchema = z
   });
 
 export const userRequestOrderSchema = z.object({
-  taxonomyNodeId: z.string().min(1, { message: "Select a folder." }),
   note: z
     .string()
     .trim()
-    .max(2000, { message: "Note must be at most 2000 characters." })
-    .optional()
-    .transform((value) => value ?? ""),
+    .min(10, { message: "Describe the vehicle you need (at least 10 characters)." })
+    .max(2000, { message: "Note must be at most 2000 characters." }),
 });
 
 export const adminOrderSchema = z.object({

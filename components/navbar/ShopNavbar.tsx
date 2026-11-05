@@ -9,6 +9,7 @@ import Logo from "@/components/navbar/Logo";
 import NotificationsButton, {
   type NotificationPreview,
 } from "@/components/navbar/NotificationsButton";
+import OrdersButton from "@/components/navbar/OrdersButton";
 import { Button } from "@/components/ui/button";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -164,6 +165,7 @@ export default function ShopNavbar({
               unreadCount={unreadInquiryCount}
               items={notificationItems}
             />
+            {user ? <OrdersButton className={headerIconClass} /> : null}
             <FavoritesButton className={headerIconClass} />
             <LocaleSwitcher className={headerControlClass} />
             <LinksDropdown initialUser={user} isAdmin={isAdmin} />

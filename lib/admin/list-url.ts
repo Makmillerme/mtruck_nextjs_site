@@ -22,3 +22,9 @@ export function syncAdminListUrl(
 }
 
 export const ADMIN_LIST_SEARCH_KEY = "q";
+
+export {
+  ADMIN_LIST_PAGE_KEY,
+  ADMIN_LIST_PAGE_SIZE_KEY,
+  ADMIN_LIST_PAGINATION_KEYS,
+} from "@/lib/admin/list-pagination";

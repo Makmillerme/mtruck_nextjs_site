@@ -16,12 +16,16 @@ export default function AccountEmptyState({
   description,
   actionLabel,
   actionHref = "/products",
+  secondaryActionLabel,
+  onSecondaryAction,
 }: {
   icon: IconType;
   title: string;
   description: string;
   actionLabel: string;
   actionHref?: string;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }) {
   return (
     <Empty className="border border-dashed">
@@ -33,9 +37,16 @@ export default function AccountEmptyState({
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button asChild>
-          <Link href={actionHref}>{actionLabel}</Link>
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button asChild>
+            <Link href={actionHref}>{actionLabel}</Link>
+          </Button>
+          {secondaryActionLabel && onSecondaryAction ? (
+            <Button type="button" variant="outline" onClick={onSecondaryAction}>
+              {secondaryActionLabel}
+            </Button>
+          ) : null}
+        </div>
       </EmptyContent>
     </Empty>
   );

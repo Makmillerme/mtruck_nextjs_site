@@ -10,7 +10,7 @@ import type { CatalogDisplayGroup } from "@/lib/catalog/types";
 import {
   formatSpecDisplay,
   type SpecForCard,
-} from "@/lib/catalog/product-to-vehicle";
+} from "@/lib/catalog/product-to-card";
 
 export const PRODUCT_KEY_FACTS_MAX = 6;
 
