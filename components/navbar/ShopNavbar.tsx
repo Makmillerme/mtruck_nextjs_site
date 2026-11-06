@@ -148,7 +148,7 @@ export default function ShopNavbar({
               </Link>
             ))}
           </nav>
-          <div className="flex min-w-0 shrink-0 items-center justify-end justify-self-end gap-0.5 sm:gap-1">
+          <div className="flex min-w-0 shrink-0 items-center justify-end justify-self-end gap-1 sm:gap-1.5">
             <Button
               asChild
               variant="ghost"

@@ -6,6 +6,8 @@ export type ActionState = {
   message: string;
   ok?: boolean;
   orderId?: string;
+  /** Present after toggleFavoriteAction (null = removed). */
+  favoriteId?: string | null;
   order?: AdminOrderRowDTO;
   product?: AdminProductRowDTO;
   user?: AdminUserRowDTO;

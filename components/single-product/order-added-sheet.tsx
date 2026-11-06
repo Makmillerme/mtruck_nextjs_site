@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useFormStatus } from "react-dom";
 import { ReloadIcon } from "@radix-ui/react-icons";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import AccountOrderLine from "@/components/account/account-order-line";
 import FormContainer from "@/components/form/FormContainer";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ORDER_QUANTITY_MAX } from "@/lib/catalog/order-quantity";
+import { notify } from "@/lib/ui/notify";
 import {
   createCatalogOrderAction,
+  deleteUserOrderAction,
   updateCatalogOrderQuantityAction,
 } from "@/utils/actions";
 import type { ActionState } from "@/utils/types";
@@ -44,10 +46,13 @@ export type OrderConfirmProductSummary = {
   /** Open catalog order id when mode is ordered. */
   orderId?: string | null;
   quantity?: number;
+  favoriteId?: string | null;
 };
 
 type OpenOrderSheetOptions = {
   onCreated?: () => void;
+  /** After user deletes the NEW order from the sheet. */
+  onDeleted?: () => void;
 };
 
 type OrderAddedSheetApi = {
@@ -77,6 +82,7 @@ export function OrderAddedSheetProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<OrderSheetMode>("confirm");
   const [product, setProduct] = useState<OrderConfirmProductSummary | null>(null);
   const onCreatedRef = useRef<(() => void) | null>(null);
+  const onDeletedRef = useRef<(() => void) | null>(null);
 
   // Layout host survives soft-refresh; close only on real route change (skip mount).
   useEffect(() => {
@@ -86,6 +92,7 @@ export function OrderAddedSheetProvider({ children }: { children: ReactNode }) {
     setProduct(null);
     setMode("confirm");
     onCreatedRef.current = null;
+    onDeletedRef.current = null;
   }, [pathname]);
 
   const openSheet = useCallback(
@@ -95,6 +102,7 @@ export function OrderAddedSheetProvider({ children }: { children: ReactNode }) {
       options?: OpenOrderSheetOptions
     ) => {
       onCreatedRef.current = options?.onCreated ?? null;
+      onDeletedRef.current = options?.onDeleted ?? null;
       setProduct(next);
       setMode(nextMode);
       setOpen(true);
@@ -114,6 +122,11 @@ export function OrderAddedSheetProvider({ children }: { children: ReactNode }) {
   function onCreated() {
     setMode("ordered");
     onCreatedRef.current?.();
+  }
+
+  function onDeleted() {
+    setMode("confirm");
+    onDeletedRef.current?.();
   }
 
   return (
@@ -137,6 +150,7 @@ export function OrderAddedSheetProvider({ children }: { children: ReactNode }) {
           }
         }}
         onCreated={onCreated}
+        onDeleted={onDeleted}
       />
     </OrderAddedSheetContext.Provider>
   );
@@ -165,14 +179,17 @@ export default function OrderAddedSheet({
   product,
   mode = "confirm",
   onCreated,
+  onDeleted,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: OrderConfirmProductSummary;
   mode?: OrderSheetMode;
   onCreated?: () => void;
+  onDeleted?: () => void;
 }) {
   const t = useTranslations("Product");
+  const router = useRouter();
   const isOrdered = mode === "ordered";
   const allowsQuantity = Boolean(product.allowsQuantity);
   const isLabDemo = product.productId.startsWith("demo-");
@@ -183,12 +200,22 @@ export default function OrderAddedSheet({
   const [orderId, setOrderId] = useState<string | null>(
     product.orderId ?? null
   );
+  const [favoriteId, setFavoriteId] = useState<string | null>(
+    product.favoriteId ?? null
+  );
 
   useEffect(() => {
     if (!open) return;
     setQuantity(Math.max(1, product.quantity ?? 1));
     setOrderId(product.orderId ?? null);
-  }, [open, product.productId, product.quantity, product.orderId]);
+    setFavoriteId(product.favoriteId ?? null);
+  }, [
+    open,
+    product.productId,
+    product.quantity,
+    product.orderId,
+    product.favoriteId,
+  ]);
 
   const title = isOrdered ? t("orderInCartTitle") : t("orderConfirmTitle");
 
@@ -205,6 +232,25 @@ export default function OrderAddedSheet({
     formData.set("orderId", orderId);
     formData.set("quantity", String(clamped));
     void updateCatalogOrderQuantityAction({ message: "", ok: true }, formData);
+  }
+
+  function handleDelete() {
+    if (isLabDemo || !orderId) {
+      setOrderId(null);
+      onDeleted?.();
+      onOpenChange(false);
+      return;
+    }
+    void deleteUserOrderAction({ orderId }).then((result) => {
+      if (result.message) notify.fromAction(result);
+      if (!result.ok) return;
+      setOrderId(null);
+      document.cookie =
+        "mtruck-order-added=; Path=/; Max-Age=0; SameSite=Lax";
+      onDeleted?.();
+      onOpenChange(false);
+      router.refresh();
+    });
   }
 
   const actions = isOrdered ? (
@@ -262,7 +308,7 @@ export default function OrderAddedSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col">
+      <SheetContent side="right" className="flex flex-col">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
@@ -290,8 +336,11 @@ export default function OrderAddedSheet({
             selected={false}
             selectable={false}
             onSelectedChange={() => {}}
-            canDelete={false}
-            showFavorite={false}
+            canDelete={isOrdered}
+            onDelete={isOrdered ? handleDelete : undefined}
+            favoriteId={favoriteId}
+            showFavorite={isOrdered && Boolean(product.productId)}
+            onFavoriteChange={setFavoriteId}
           />
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

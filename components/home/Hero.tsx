@@ -25,7 +25,7 @@ async function Hero() {
           height={heroImage.height}
           fetchPriority="high"
           decoding="sync"
-          className="hero-photo absolute inset-0 size-full object-cover object-[52%_center] sm:object-[58%_center] md:object-[64%_center] lg:object-[78%_center]"
+          className="hero-photo absolute inset-0 size-full object-cover object-[80%_center] sm:object-[80%_center] md:object-[79%_center] lg:object-[78%_center]"
         />
       </div>
       <div className="page-container relative z-10 w-full">

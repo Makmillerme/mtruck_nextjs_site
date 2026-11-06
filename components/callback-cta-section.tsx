@@ -27,7 +27,7 @@ export default async function CallbackCtaSection() {
               {t("title")}
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground lg:text-lg">
-              {t("subtitle")}
+              {knownPhone?.trim() ? t("subtitleKnownPhone") : t("subtitle")}
             </p>
           </header>
           <div className="lg:col-span-7">

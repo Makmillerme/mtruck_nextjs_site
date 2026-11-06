@@ -29,7 +29,7 @@ export default async function ContactSection() {
               {t("title")}
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground lg:text-lg">
-              {t("subtitle")}
+              {knownPhone?.trim() ? t("subtitleKnownPhone") : t("subtitle")}
             </p>
             <div className="mt-8">
               <ContactForm knownPhone={knownPhone} />

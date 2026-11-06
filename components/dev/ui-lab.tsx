@@ -832,7 +832,9 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                 z-[110], щоб бути над Sheet. CMS folders/fields — двокрокове
                 підтвердження в sheet, не окремий dialog. Dialog/AlertDialog
                 footer: усі кнопки <code className="text-xs">h-11</code>, в ряд,
-                справа (<code className="text-xs">sm:justify-end</code>).
+                справа (<code className="text-xs">sm:justify-end</code>). Mobile:
+                Dialog inset (не full-bleed), Sheet side з просвітом оверлею;
+                lightbox лишається full-bleed.
               </p>
               <div className="mb-8 grid gap-8">
                 <div className="grid gap-2">
@@ -893,7 +895,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
                     <SheetHeader>
                       <SheetTitle>Фільтри</SheetTitle>
                       <SheetDescription>
-                        Приклад бічної панелі (мобільне меню / фільтри каталогу).
+                        Side sheet: на телефоні з просвітом оверлею (не 100vw).
                       </SheetDescription>
                     </SheetHeader>
                     <div className="grid gap-6">

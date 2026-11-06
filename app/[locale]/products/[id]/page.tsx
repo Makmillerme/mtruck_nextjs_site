@@ -247,6 +247,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       openOrderId={openCatalogOrder?.id ?? null}
       openOrderQuantity={openCatalogOrder?.products ?? 1}
       allowsQuantity={allowsQuantity}
+      favoriteId={favoriteId}
       initialSheetOpen={orderAddedFlash}
     >
       <section

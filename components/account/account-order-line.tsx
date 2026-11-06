@@ -124,7 +124,10 @@ function isInteractiveTarget(target: EventTarget | null) {
   );
 }
 
-/** Phone + tablet: larger square. lg+ (with sidebar room): landscape 4:3. */
+/**
+ * Photo width is capped (w-40/44) — viewport lg/xl used to inflate it inside a
+ * narrow sheet and crush the meta column on Full HD. Grid row still stretches height.
+ */
 function OrderPhoto({
   productImage,
   sizes,
@@ -137,7 +140,8 @@ function OrderPhoto({
   return (
     <div
       className={cn(
-        "relative aspect-square w-40 shrink-0 overflow-hidden bg-muted sm:w-44 md:w-52 lg:aspect-[4/3] lg:w-56 xl:w-64",
+        "relative isolate w-40 shrink-0 overflow-hidden bg-muted sm:w-44",
+        "max-md:aspect-square md:min-h-full",
         className
       )}
     >
@@ -179,6 +183,7 @@ export default function AccountOrderLine({
   onDelete,
   favoriteId = null,
   showFavorite = false,
+  onFavoriteChange,
   className,
 }: {
   id: string;
@@ -202,6 +207,8 @@ export default function AccountOrderLine({
   onDelete?: () => void;
   favoriteId?: string | null;
   showFavorite?: boolean;
+  /** Soft-update after toggleFavoriteAction (sheet / optimistic UI). */
+  onFavoriteChange?: (favoriteId: string | null) => void;
   className?: string;
 }) {
   const tProduct = useTranslations("Product");
@@ -250,7 +257,12 @@ export default function AccountOrderLine({
           favoriteId,
           pathname,
         })}
-        className="contents"
+        className="inline-flex shrink-0"
+        onSuccess={(state) => {
+          if (state.ok) {
+            onFavoriteChange?.(state.favoriteId ?? null);
+          }
+        }}
       >
         <Button
           type="submit"
@@ -384,13 +396,13 @@ export default function AccountOrderLine({
       )}
       data-order-id={id}
     >
-      {/* Phone/tablet: square; lg+: album 4:3 (same bp as sidebar) */}
-      <div className="flex items-start">
+      {/* Grid row = shared height: photo cell fills beside meta/actions. */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)]">
         <OrderPhoto
           productImage={productImage}
-          sizes="(max-width: 640px) 160px, (max-width: 1023px) 208px, (max-width: 1280px) 224px, 256px"
+          sizes="(max-width: 640px) 160px, 176px"
         />
-        <div className="flex min-w-0 flex-1 flex-col items-end justify-between gap-1.5 self-stretch p-2 sm:gap-2 sm:p-3">
+        <div className="flex min-w-0 flex-col items-end justify-between gap-1.5 p-2 sm:gap-2 sm:p-3">
           <div className="grid w-full justify-items-end gap-0.5 text-right sm:gap-1">
             {titleNode}
             {productCode ? (
@@ -408,14 +420,14 @@ export default function AccountOrderLine({
             </p>
           </div>
           {qtyStepper || hasActions ? (
-            <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+            <div className="flex flex-col items-end gap-1.5 sm:gap-2">
+              {qtyStepper}
               {hasActions ? (
-                <div className="flex flex-wrap items-center justify-end gap-0.5 sm:gap-1">
+                <div className="flex flex-nowrap items-center justify-end gap-0.5 sm:gap-1">
                   {favoriteButton}
                   {deleteButton}
                 </div>
               ) : null}
-              {qtyStepper}
             </div>
           ) : null}
         </div>

@@ -43,7 +43,8 @@ export function UiLabDialogFooterCanon() {
         <code className="text-xs">DialogFooter</code> /{" "}
         <code className="text-xs">AlertDialogFooter</code> —{" "}
         <code className="text-xs">sm:justify-end</code>. Variants: primary Save,{" "}
-        outline Cancel, destructive Delete/Archive.
+        outline Cancel, destructive Delete/Archive. На телефоні Dialog — inset
+        (відступ від країв + rounded-sm), не на всю ширину.
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <Dialog open={primaryOpen} onOpenChange={setPrimaryOpen}>

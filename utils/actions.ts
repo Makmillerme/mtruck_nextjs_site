@@ -948,6 +948,7 @@ export const toggleFavoriteAction = async (prevState: {
   const { productId, favoriteId, pathname } = prevState;
 
   try {
+    let nextFavoriteId: string | null = null;
     if (favoriteId) {
       await db.favorite.delete({
         where: {
@@ -955,12 +956,14 @@ export const toggleFavoriteAction = async (prevState: {
         },
       });
     } else {
-      await db.favorite.create({
+      const created = await db.favorite.create({
         data: {
           productId,
           userId: user.id,
         },
+        select: { id: true },
       });
+      nextFavoriteId = created.id;
     }
     revalidatePath(pathname);
     revalidatePath('/account');
@@ -968,6 +971,7 @@ export const toggleFavoriteAction = async (prevState: {
     return {
       message: favoriteId ? t('removedFromFavorites') : t('addedToFavorites'),
       ok: true as const,
+      favoriteId: nextFavoriteId,
     };
   } catch (error) {
     return { ...(await renderError(error)), ok: false as const };
@@ -1728,6 +1732,7 @@ export const deleteUserOrderAction = async (prevState: {
     revalidatePath('/account');
     revalidatePath('/account/orders');
     revalidatePath('/admin/sales');
+    revalidatePath('/products');
     const t = await getTranslations('Actions');
     return { message: t('orderRemoved'), ok: true as const };
   } catch (error) {

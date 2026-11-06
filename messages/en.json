@@ -307,6 +307,7 @@
     "eyebrow": "Get in touch",
     "title": "Request a callback",
     "subtitle": "Leave your number — a manager will call back during business hours and help you choose a truck.",
+    "subtitleKnownPhone": "A manager will call you during business hours on the number in your account and help you choose a truck.",
     "phonePlaceholder": "+380 XX XXX XX XX",
     "messageLabel": "Message",
     "messagePlaceholder": "Describe your request (optional)…",

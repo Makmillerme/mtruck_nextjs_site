@@ -52,6 +52,7 @@ function CtaInquiryDialog({
   knownPhone?: string | null;
 }) {
   const t = useTranslations("ContactSection");
+  const hasKnownPhone = Boolean(knownPhone?.trim());
   const productHint =
     context?.productName || context?.productCode
       ? [context.productName, context.productCode]
@@ -64,7 +65,9 @@ function CtaInquiryDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("subtitle")}</DialogDescription>
+          <DialogDescription>
+            {hasKnownPhone ? t("subtitleKnownPhone") : t("subtitle")}
+          </DialogDescription>
         </DialogHeader>
         {productHint ? (
           <p className="rounded-sm border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">

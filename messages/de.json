@@ -307,6 +307,7 @@
     "eyebrow": "Kontakt",
     "title": "Rückruf anfordern",
     "subtitle": "Hinterlassen Sie Ihre Nummer — ein Manager ruft während der Geschäftszeiten zurück und hilft bei der Auswahl.",
+    "subtitleKnownPhone": "Ein Manager ruft Sie während der Geschäftszeiten unter der Nummer aus Ihrem Konto an und hilft bei der Auswahl.",
     "phonePlaceholder": "+380 XX XXX XX XX",
     "messageLabel": "Nachricht",
     "messagePlaceholder": "Beschreiben Sie Ihre Anfrage (optional)…",

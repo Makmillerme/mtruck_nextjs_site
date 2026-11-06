@@ -142,9 +142,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "overlays",
     category: "overlays",
     title: "Dropdown / Popover / Tooltip / Sheet / AlertDialog",
-    hint: "Dialog/AlertDialog footer: h-11, justify-end; primary/outline/destructive. ConfirmDelete z-[110].",
+    hint: "Dialog/AlertDialog footer: h-11, justify-end. Mobile: Dialog inset, Sheet peek (не full-bleed). ConfirmDelete z-[110].",
     keywords:
-      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель scrollbar скролбар combobox sheet field searchable footer modal",
+      "dropdown popover tooltip sheet alert dialog confirm delete menu overlay меню фільтри панель scrollbar скролбар combobox sheet field searchable footer modal mobile inset",
 
   },
   {

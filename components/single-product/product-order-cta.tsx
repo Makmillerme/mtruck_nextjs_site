@@ -49,6 +49,7 @@ export function CatalogOrderProvider({
   openOrderId = null,
   openOrderQuantity = 1,
   allowsQuantity = false,
+  favoriteId = null,
   initialSheetOpen = false,
   children,
 }: {
@@ -63,6 +64,7 @@ export function CatalogOrderProvider({
   openOrderQuantity?: number;
   /** Root productsAreUnique === false. */
   allowsQuantity?: boolean;
+  favoriteId?: string | null;
   /** Flash cookie after Server Action — reopen ordered sheet if remount wiped host. */
   initialSheetOpen?: boolean;
   children: ReactNode;
@@ -81,6 +83,7 @@ export function CatalogOrderProvider({
       allowsQuantity,
       orderId: openOrderId,
       quantity: openOrderQuantity,
+      favoriteId,
     }),
     [
       productId,
@@ -91,6 +94,7 @@ export function CatalogOrderProvider({
       allowsQuantity,
       openOrderId,
       openOrderQuantity,
+      favoriteId,
     ]
   );
 
@@ -100,6 +104,7 @@ export function CatalogOrderProvider({
         mode ?? (hasOpenOrder || justAdded ? "ordered" : "confirm");
       orderAddedSheet.open(summary, nextMode, {
         onCreated: () => setJustAdded(true),
+        onDeleted: () => setJustAdded(false),
       });
     },
     [orderAddedSheet, summary, hasOpenOrder, justAdded]
@@ -110,7 +115,9 @@ export function CatalogOrderProvider({
     restoredFlashRef.current = true;
     document.cookie = "mtruck-order-added=; Path=/; Max-Age=0; SameSite=Lax";
     setJustAdded(true);
-    orderAddedSheet.open(summary, "ordered");
+    orderAddedSheet.open(summary, "ordered", {
+      onDeleted: () => setJustAdded(false),
+    });
   }, [initialSheetOpen, orderAddedSheet, summary]);
 
   useEffect(() => {
