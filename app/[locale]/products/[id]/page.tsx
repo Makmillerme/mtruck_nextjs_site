@@ -252,7 +252,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     >
       <section
         data-page-shell="product"
-        className="grid min-w-0 gap-8 pb-24 lg:pb-8"
+        className="grid min-w-0 grid-cols-1 gap-8 pb-24 lg:pb-8"
       >
         <BreadCrumbs
           name={product.name}
@@ -260,7 +260,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
           categorySlug={categorySlug}
         />
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+        <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
           <div className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden">
             <ProductGallery
               images={gallery}

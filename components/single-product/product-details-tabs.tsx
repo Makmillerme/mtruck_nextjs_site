@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 /** Content / underline tabs — PDP reading card. Framed navy Tabs stay default elsewhere. */
 export const contentTabsListClassName =
-  "h-auto w-full justify-start gap-6 rounded-none border-0 border-b border-border bg-transparent p-0 sm:w-full";
+  "h-auto w-full min-w-0 max-w-full justify-start gap-4 overflow-x-auto overflow-y-hidden rounded-none border-0 border-b border-border bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-full sm:gap-6 [&::-webkit-scrollbar]:hidden";
 
 export const contentTabsTriggerClassName =
   "h-auto min-w-0 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-3 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:bg-transparent hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none sm:flex-none";
@@ -38,8 +38,8 @@ export default function ProductDetailsTabs({
   const defaultValue = tabs[0]?.id;
 
   return (
-    <div className={cn("w-full scroll-mt-24", className)}>
-      <div className={contentTabsCardClassName}>
+    <div className={cn("w-full min-w-0 scroll-mt-24", className)}>
+      <div className={cn(contentTabsCardClassName, "min-w-0")}>
         <Tabs defaultValue={defaultValue} key={defaultValue}>
           <TabsList className={contentTabsListClassName}>
             {tabs.map((tab) => (
