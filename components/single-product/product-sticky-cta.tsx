@@ -14,8 +14,8 @@ export default function ProductStickyCta({
   cta: ReactNode;
 }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md lg:hidden">
-      <div className="page-container flex items-center justify-between gap-3 !px-0">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 py-3 backdrop-blur-md lg:hidden">
+      <div className="page-container flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-lg font-extrabold tracking-tight">
           {priceLabel}
         </p>

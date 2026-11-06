@@ -4,8 +4,9 @@
 
 One canon for `.page-container` / `.page-content` (navbar/footer share `.page-container`):
 
-- mobile `< 40rem`: `1.25rem` (20px)
-- tablet+: `clamp(2rem, 1.75rem + 0.5vw, 2.25rem)` (~32–36px)
+- mobile `< 40rem`: `padding-inline: max(1.25rem, safe-area-L, safe-area-R)` (20px+)
+- tablet+: `max(clamp(2rem, 1.75rem + 0.5vw, 2.25rem), safe-area…)` (~32–36px)
+- Mobile scrollbar: no `scrollbar-gutter: stable` (desktop fine-pointer only) — avoids L/R asymmetry
 
 Admin no longer has separate `2rem` padding — only `max-width: none` via shell / `data-page-shell="admin"`.
 

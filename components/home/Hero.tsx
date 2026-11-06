@@ -15,7 +15,7 @@ async function Hero() {
       id="hero"
       aria-label={t("heroAria")}
       data-header-surface="dark"
-      className="full-bleed relative -mt-14 flex min-h-[600px] items-center overflow-hidden bg-[#061020] lg:-mt-16 lg:min-h-[700px]"
+      className="full-bleed relative -mt-14 flex min-h-[600px] items-center overflow-hidden bg-[#061020] pt-16 lg:-mt-16 lg:min-h-[700px] lg:pt-20"
     >
       <div aria-hidden className="absolute inset-0 z-0 bg-[#061020]">
         <img

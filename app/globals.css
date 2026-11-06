@@ -76,15 +76,23 @@
   html {
     min-height: 100dvh;
     scroll-behavior: auto;
-    scrollbar-gutter: stable;
-  }
-
-  /* Thin site-wide scrollbar (Lab canon → production). */
-  html {
+    /*
+     * Thin scrollbar canon everywhere (html + .app-scroll).
+     * scrollbar-gutter: auto on mobile — `stable` reserves a right strip and
+     * breaks L/R content insets on phones (OnePlus/Android Chrome).
+     */
+    scrollbar-gutter: auto;
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
   }
 
+  @media (min-width: 768px) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
+
+  /* Thin site-wide scrollbar (Lab canon → production). Same look desktop + mobile. */
   html::-webkit-scrollbar,
   .app-scroll::-webkit-scrollbar {
     width: 8px;
@@ -148,14 +156,21 @@
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    /* Symmetric gutters; safe-area uses the larger inset on both sides so L/R stay equal. */
+    padding-inline: max(
+      1.25rem,
+      env(safe-area-inset-left, 0px),
+      env(safe-area-inset-right, 0px)
+    );
   }
 
   @media (min-width: 40rem) {
     .page-container {
-      padding-left: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
-      padding-right: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
+      padding-inline: max(
+        clamp(2rem, 1.75rem + 0.5vw, 2.25rem),
+        env(safe-area-inset-left, 0px),
+        env(safe-area-inset-right, 0px)
+      );
     }
   }
 
@@ -218,8 +233,11 @@
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-inline: max(
+      1.25rem,
+      env(safe-area-inset-left, 0px),
+      env(safe-area-inset-right, 0px)
+    );
     padding-top: clamp(1.5rem, 3vw, 2.5rem);
     padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
   }
@@ -231,8 +249,11 @@
 
   @media (min-width: 40rem) {
     .page-content {
-      padding-left: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
-      padding-right: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
+      padding-inline: max(
+        clamp(2rem, 1.75rem + 0.5vw, 2.25rem),
+        env(safe-area-inset-left, 0px),
+        env(safe-area-inset-right, 0px)
+      );
     }
   }
 }
