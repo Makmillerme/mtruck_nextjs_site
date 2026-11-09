@@ -12,8 +12,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { sheetScrollBodyClassName } from "@/lib/ui/sheet-field";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { LuListFilter, LuPlus, LuSearch } from "react-icons/lu";
+import { LuArchive, LuListFilter, LuPlus, LuSearch } from "react-icons/lu";
 
 export default function AdminListToolbar({
   search,
@@ -29,36 +30,45 @@ export default function AdminListToolbar({
   searchPlaceholder: string;
   filterSheet?: ReactNode;
   toolbarActions?: ReactNode;
-  createLabel: string;
-  onCreate: () => void;
+  /** Omit create when the list is read-only (e.g. archive). */
+  createLabel?: string;
+  onCreate?: () => void;
 }) {
+  const showActions = Boolean(
+    filterSheet || toolbarActions || (createLabel && onCreate)
+  );
+
   return (
-    <div className="flex w-full min-w-0 items-center gap-2">
-      <div className="relative min-w-0 flex-1">
+    <div className="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-center">
+      <div className="relative w-full min-w-0 md:flex-1">
         <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
           value={search}
           placeholder={searchPlaceholder}
-          className="h-9 min-w-0 pl-9"
+          className="h-9 w-full min-w-0 pl-9"
           onChange={(event) => onSearchChange(event.target.value)}
           aria-label={searchPlaceholder}
         />
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        {filterSheet}
-        {toolbarActions}
-        <Button
-          type="button"
-          size="sm"
-          className="h-9 gap-2 whitespace-nowrap"
-          aria-label={createLabel}
-          onClick={onCreate}
-        >
-          <LuPlus className="size-4 shrink-0" />
-          <span className="hidden sm:inline">{createLabel}</span>
-        </Button>
-      </div>
+      {showActions ? (
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 md:w-auto">
+          {filterSheet}
+          {toolbarActions}
+          {createLabel && onCreate ? (
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 gap-2 whitespace-nowrap"
+              aria-label={createLabel}
+              onClick={onCreate}
+            >
+              <LuPlus className="size-4 shrink-0" />
+              <span className="hidden sm:inline">{createLabel}</span>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -96,6 +106,31 @@ export const AdminFilterTrigger = React.forwardRef<
     </Button>
   );
 });
+
+/** Outline link with icon; label text from `sm+` (phone = icon-only). */
+export function AdminArchiveLink({
+  href,
+  label,
+  className,
+}: {
+  href: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={cn("h-9 gap-2", className)}
+      asChild
+    >
+      <Link href={href} aria-label={label}>
+        <LuArchive className="size-4 shrink-0" />
+        <span className="hidden sm:inline">{label}</span>
+      </Link>
+    </Button>
+  );
+}
 AdminFilterTrigger.displayName = "AdminFilterTrigger";
 
 type AdminFilterSheetHelpers = { close: () => void };

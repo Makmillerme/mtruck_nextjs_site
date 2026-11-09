@@ -125,8 +125,8 @@ function isInteractiveTarget(target: EventTarget | null) {
 }
 
 /**
- * Photo width is capped (w-40/44) — viewport lg/xl used to inflate it inside a
- * narrow sheet and crush the meta column on Full HD. Grid row still stretches height.
+ * Phone / narrow sheet: full-bleed photo on top (stack).
+ * md+: capped width beside meta (row) — lg/xl must not inflate and crush meta.
  */
 function OrderPhoto({
   productImage,
@@ -140,8 +140,9 @@ function OrderPhoto({
   return (
     <div
       className={cn(
-        "relative isolate w-40 shrink-0 overflow-hidden bg-muted sm:w-44",
-        "max-md:aspect-square md:min-h-full",
+        "relative isolate overflow-hidden bg-muted",
+        // Stack (phone): full width + 4/3. Row (md+): fixed width, fill grid row height.
+        "aspect-[4/3] w-full md:aspect-auto md:w-40 md:shrink-0 md:self-stretch md:min-h-full lg:w-44",
         className
       )}
     >
@@ -238,7 +239,7 @@ export default function AccountOrderLine({
   const titleNode: ReactNode = href ? (
     <Link
       href={href}
-      className="line-clamp-2 max-w-full justify-self-end text-sm font-semibold leading-snug text-foreground hover:underline"
+      className="line-clamp-2 max-w-full text-sm font-semibold leading-snug text-foreground hover:underline"
       onClick={(event) => event.stopPropagation()}
     >
       {title}
@@ -396,14 +397,14 @@ export default function AccountOrderLine({
       )}
       data-order-id={id}
     >
-      {/* Grid row = shared height: photo cell fills beside meta/actions. */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)]">
+      {/* Phone: vertical stack (photo → meta). md+: horizontal row. */}
+      <div className="grid grid-cols-1 md:grid-cols-[auto_minmax(0,1fr)]">
         <OrderPhoto
           productImage={productImage}
-          sizes="(max-width: 640px) 160px, 176px"
+          sizes="(max-width: 767px) 100vw, 176px"
         />
-        <div className="flex min-w-0 flex-col items-end justify-between gap-1.5 p-2 sm:gap-2 sm:p-3">
-          <div className="grid w-full justify-items-end gap-0.5 text-right sm:gap-1">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2 p-3 sm:gap-3">
+          <div className="grid min-w-0 content-start justify-items-start gap-0.5 text-left sm:gap-1">
             {titleNode}
             {productCode ? (
               <p className="text-[11px] text-muted-foreground sm:text-xs">
@@ -420,14 +421,23 @@ export default function AccountOrderLine({
             </p>
           </div>
           {qtyStepper || hasActions ? (
-            <div className="flex flex-col items-end gap-1.5 sm:gap-2">
-              {qtyStepper}
+            <div
+              className={cn(
+                "flex flex-col items-end gap-2 self-stretch",
+                hasActions && qtyStepper
+                  ? "justify-between"
+                  : hasActions
+                    ? "justify-start"
+                    : "justify-end"
+              )}
+            >
               {hasActions ? (
                 <div className="flex flex-nowrap items-center justify-end gap-0.5 sm:gap-1">
                   {favoriteButton}
                   {deleteButton}
                 </div>
               ) : null}
+              {qtyStepper}
             </div>
           ) : null}
         </div>

@@ -21,19 +21,19 @@ async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isAdmin = isAdminRole(role);
 
   return (
-    <section
-      data-page-shell="admin"
-      className="grid min-h-0 w-full min-w-0 flex-1 grid-cols-1 gap-8 pb-8 lg:grid-cols-[16rem_minmax(0,1fr)]"
-    >
-      {/* Static nav chrome immediately — never skeleton the aside.
-          Product roots stream in when taxonomy resolves. */}
-      <SoftNavProvider>
+    <SoftNavProvider>
+      <section
+        data-page-shell="admin"
+        className="grid min-h-0 w-full min-w-0 flex-1 grid-cols-1 content-start gap-4 pb-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:content-stretch lg:items-start lg:gap-8"
+      >
+        {/* Static nav chrome immediately — never skeleton the aside.
+            SoftNavProvider stays outside the grid so aside + content are real tracks. */}
         <Suspense fallback={<Sidebar isAdmin={isAdmin} productRoots={[]} />}>
           <AdminSidebar isAdmin={isAdmin} />
         </Suspense>
         <SoftNavPending className="min-w-0 w-full">{children}</SoftNavPending>
-      </SoftNavProvider>
-    </section>
+      </section>
+    </SoftNavProvider>
   );
 }
 export default DashboardLayout;

@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import {
+  AdminListMobileActions,
+  AdminListMobileCard,
+  AdminListResponsive,
+} from "@/components/admin/admin-list-mobile";
 import AdminTablePagination from "@/components/admin/admin-table-pagination";
 import {
   ADMIN_LIST_PAGINATION_KEYS,
@@ -172,13 +177,13 @@ export default function AdminInquiriesView({
 
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
-      <div className="relative min-w-0 max-w-md">
+      <div className="relative w-full min-w-0 md:max-w-md">
         <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
           value={search}
           placeholder={t("searchInquiriesPlaceholder")}
-          className="h-9 pl-9"
+          className="h-9 w-full pl-9"
           onChange={(event) => setSearch(event.target.value)}
           aria-label={t("searchInquiriesPlaceholder")}
         />
@@ -189,77 +194,135 @@ export default function AdminInquiriesView({
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("inquiriesEmpty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-sm border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("inquiryPhone")}</TableHead>
-                <TableHead>{t("inquiryNote")}</TableHead>
-                <TableHead>{t("vehicle")}</TableHead>
-                <TableHead>{t("inquiryStatusLabel")}</TableHead>
-                <TableHead>{t("createdAt")}</TableHead>
-                <TableHead className="w-[1%]">{t("actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pagedItems.map((item) => {
-                const vehicleLabel =
-                  item.productName || item.productCode || t("inquiryNoProduct");
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-mono text-sm">
-                      <a href={`tel:${item.phone}`} className={tableLinkClassName}>
-                        {item.phone}
-                      </a>
-                      {!item.readAt ? (
-                        <Badge className="ml-2" variant="default">
-                          {t("inquiryUnread")}
-                        </Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="max-w-[16rem]">
-                      {item.note ? (
-                        <p className="line-clamp-3 whitespace-pre-wrap text-sm text-foreground">
-                          {item.note}
-                        </p>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.productId ? (
-                        <Link
-                          href={`/products/${item.productId}`}
+        <AdminListResponsive
+          mobile={pagedItems.map((item) => {
+            const vehicleLabel =
+              item.productName || item.productCode || t("inquiryNoProduct");
+            return (
+              <AdminListMobileCard
+                key={item.id}
+                title={
+                  <span className="inline-flex flex-wrap items-center gap-2">
+                    <a href={`tel:${item.phone}`} className={tableLinkClassName}>
+                      {item.phone}
+                    </a>
+                    {!item.readAt ? (
+                      <Badge variant="default">{t("inquiryUnread")}</Badge>
+                    ) : null}
+                  </span>
+                }
+                subtitle={
+                  item.productId ? (
+                    <Link
+                      href={`/products/${item.productId}`}
+                      className={tableLinkClassName}
+                    >
+                      {vehicleLabel}
+                    </Link>
+                  ) : (
+                    vehicleLabel
+                  )
+                }
+                actions={
+                  <AdminListMobileActions>
+                    <Button asChild variant="outline" size="sm" className="h-9">
+                      <a href={`tel:${item.phone}`}>{t("inquiryCall")}</a>
+                    </Button>
+                  </AdminListMobileActions>
+                }
+                meta={
+                  <>
+                    {item.note ? (
+                      <p className="line-clamp-3 whitespace-pre-wrap text-foreground">
+                        {item.note}
+                      </p>
+                    ) : null}
+                    <InquiryStatusForm id={item.id} status={item.status} />
+                    <p>{formatDate(new Date(item.createdAt), locale)}</p>
+                  </>
+                }
+              />
+            );
+          })}
+          desktop={
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("inquiryPhone")}</TableHead>
+                  <TableHead>{t("inquiryNote")}</TableHead>
+                  <TableHead>{t("vehicle")}</TableHead>
+                  <TableHead>{t("inquiryStatusLabel")}</TableHead>
+                  <TableHead>{t("createdAt")}</TableHead>
+                  <TableHead className="w-[1%]">{t("actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pagedItems.map((item) => {
+                  const vehicleLabel =
+                    item.productName ||
+                    item.productCode ||
+                    t("inquiryNoProduct");
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-sm">
+                        <a
+                          href={`tel:${item.phone}`}
                           className={tableLinkClassName}
                         >
-                          {vehicleLabel}
-                          {item.productCode ? (
-                            <span className="ml-1 font-mono text-xs text-muted-foreground">
-                              {item.productCode}
-                            </span>
-                          ) : null}
-                        </Link>
-                      ) : (
-                        <span className="text-muted-foreground">{vehicleLabel}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <InquiryStatusForm id={item.id} status={item.status} />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                      {formatDate(new Date(item.createdAt), locale)}
-                    </TableCell>
-                    <TableCell>
-                      <Button asChild variant="outline" size="sm">
-                        <a href={`tel:${item.phone}`}>{t("inquiryCall")}</a>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                          {item.phone}
+                        </a>
+                        {!item.readAt ? (
+                          <Badge className="ml-2" variant="default">
+                            {t("inquiryUnread")}
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="max-w-[16rem]">
+                        {item.note ? (
+                          <p className="line-clamp-3 whitespace-pre-wrap text-sm text-foreground">
+                            {item.note}
+                          </p>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {item.productId ? (
+                          <Link
+                            href={`/products/${item.productId}`}
+                            className={tableLinkClassName}
+                          >
+                            {vehicleLabel}
+                            {item.productCode ? (
+                              <span className="ml-1 font-mono text-xs text-muted-foreground">
+                                {item.productCode}
+                              </span>
+                            ) : null}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {vehicleLabel}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <InquiryStatusForm id={item.id} status={item.status} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                        {formatDate(new Date(item.createdAt), locale)}
+                      </TableCell>
+                      <TableCell>
+                        <Button asChild variant="outline" size="sm">
+                          <a href={`tel:${item.phone}`}>{t("inquiryCall")}</a>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          }
+        />
       )}
 
       {showPagination ? (

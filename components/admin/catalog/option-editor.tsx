@@ -280,8 +280,8 @@ export default function OptionEditor({
 
   return (
     <div className="grid gap-3">
-      <div className="flex w-full min-w-0 items-end gap-2">
-        <div className="relative min-w-0 flex-1">
+      <div className="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-end">
+        <div className="relative w-full min-w-0 md:flex-1">
           <label htmlFor="option-search" className="sr-only">
             {t("optionSearchPlaceholder")}
           </label>
@@ -291,14 +291,14 @@ export default function OptionEditor({
             type="search"
             value={query}
             placeholder={t("optionSearchPlaceholder")}
-            className="h-11 min-w-0 pl-9"
+            className="h-11 w-full min-w-0 pl-9"
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
         <Button
           type="button"
           variant="outline"
-          className="h-11 shrink-0 gap-2"
+          className="h-11 w-full shrink-0 gap-2 md:w-auto"
           disabled={createDisabled}
           onClick={() => setCreateOpen(true)}
         >

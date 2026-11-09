@@ -209,16 +209,16 @@ function CatalogFilterSheet({
           ) : null}
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <CatalogFilterProvider
           schema={schema}
           availability={availability}
           onApplied={() => setOpen(false)}
         >
-          <SheetHeader className="flex shrink-0 flex-row items-center space-y-0 px-6 pt-6 pr-14">
+          <SheetHeader className="flex shrink-0 flex-row items-center space-y-0 px-6 pr-14 pt-2">
             <SheetTitle>{t("filter")}</SheetTitle>
           </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-6 pt-4">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-2 pt-4">
             <CatalogFilterFields
               idPrefix="catalog-mobile"
               clearBelowApply

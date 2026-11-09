@@ -7,7 +7,7 @@ Every destructive delete needs explicit confirmation before submit.
 - `components/ui/alert-dialog.tsx` — shadcn AlertDialog; overlay/content `z-[110]` (above Sheet z-100).
 - `components/form/ConfirmDelete.tsx`:
   - `ConfirmDeleteIcon` — trash icon opens dialog, then FormContainer + server action.
-  - `ConfirmDeleteFormButton` — destructive button submits external form by `formId` after confirm.
+  - `ConfirmDeleteFormButton` — destructive button opens AlertDialog; confirm is `type=button` + `form.requestSubmit()` (never `type=submit`+immediate unmount — that aborted React actions and caused full-page navigations).
 - `components/admin/sheet-form-actions.tsx` — save + optional `ConfirmDeleteFormButton` via `deleteFormId`.
 
 ## Wired call sites

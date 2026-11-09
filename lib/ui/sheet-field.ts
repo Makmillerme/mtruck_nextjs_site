@@ -2,7 +2,7 @@ import { de, enGB, uk } from "react-day-picker/locale";
 
 /** Shared Sheet field trigger — admin + cabinet (combobox look). */
 export const sheetFieldTriggerClassName =
-  "h-11 w-full justify-between font-normal";
+  "h-11 w-full min-w-0 justify-between overflow-hidden font-normal";
 
 /**
  * 1px inset inside overflow-auto/hidden ancestors so Input/Button borders

@@ -192,7 +192,8 @@ export default function UiLabAccountOrders() {
       <p className="max-w-2xl text-sm text-muted-foreground">
         Канон кошика «Замовлення»: qty-stepper лише коли root-гілка не
         «унікальна» (демо: Volvo з qty, Scania без). Утримання +/- ≈420 мс →
-        автоповтор. До lg — квадратне фото; від lg — альбом 4:3 + sticky сайдбар.
+        автоповтор. Мета: текст зліва; обране/видалити — правий верх; +/- —
+        правий низ. До md — фото зверху; від md — ряд фото+мета.
       </p>
 
       <div className="grid gap-3">
@@ -223,7 +224,7 @@ export default function UiLabAccountOrders() {
 
       <div className="grid gap-3">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Phone sim · max-w-[24rem] (COMFY stack)
+          Phone sim · max-w-[24rem] (vertical card stack)
         </p>
         <div className="max-w-[24rem] overflow-hidden rounded-sm border border-dashed border-border p-3">
           <OrdersCanonLayout

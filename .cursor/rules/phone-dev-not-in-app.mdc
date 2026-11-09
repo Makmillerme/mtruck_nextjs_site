@@ -8,7 +8,8 @@ alwaysApply: true
 Тест на Android до релізу — **поза** продуктом.
 
 - Не додавати `dev:lan` / `adb:reverse` у `package.json`
-- Не змінювати `next.config.mjs` чи `app/` заради LAN/ADB (це не `next.config.ts` і не `src/`)
-- Інструмент: `/phone-dev` і `.cursor/scripts/phone-dev.ps1`
+- Не змінювати `app/` заради LAN/ADB
+- Єдина дозволена зміна в `next.config.mjs`: `allowedDevOrigins` (Next 16 блокує `/_next/*` з LAN IP). Без цього Wi‑Fi phone preview ламає JS/HMR. Не додавати інші LAN-хаки в конфіг.
+- Інструмент: `/phone-dev` і `.cursor/scripts/phone-dev.ps1` (`-Mode Lan` для Wi‑Fi)
 - Не створювати MCP для `adb reverse`
 - Не запускати `npm run dev` без явного прохання

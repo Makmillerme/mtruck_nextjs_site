@@ -91,7 +91,7 @@ export default function SearchableEntityPicker({
   }, [options, queryTrimmed, showSearch]);
 
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 gap-2">
       {hideLabel ? (
         <span className="sr-only">{label}</span>
       ) : (

@@ -360,7 +360,7 @@ export default function FieldsPanel({
                   }))}
                 />
                 <FieldFlags />
-                <CatalogSubmit text={t("addField")} className="w-fit" />
+                <CatalogSubmit text={t("addField")} className="w-full sm:w-fit" />
               </CatalogForm>
             </div>
           ) : null}
@@ -441,7 +441,7 @@ export default function FieldsPanel({
                     showInHomeFilter: active.showInHomeFilter,
                   }}
                 />
-                <CatalogSubmit text={t("saveField")} className="w-fit" />
+                <CatalogSubmit text={t("saveField")} className="w-full sm:w-fit" />
               </CatalogForm>
               {attributeHasOptions(active.type) ? (
                 <>

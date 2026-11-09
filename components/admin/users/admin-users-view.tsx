@@ -24,7 +24,6 @@ import FormContainer from "@/components/form/FormContainer";
 import FormInput from "@/components/form/FormInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -48,11 +47,17 @@ import {
 } from "@/utils/actions";
 import type { ActionState, actionFunction } from "@/utils/types";
 import { formatDate } from "@/utils/format";
+import {
+  AdminListMobileActions,
+  AdminListMobileCard,
+  AdminListResponsive,
+} from "@/components/admin/admin-list-mobile";
 import AdminListToolbar, {
+  AdminArchiveLink,
   AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
 import { canMutateUserArchive } from "@/utils/user-roles";
-import { LuArchive, LuPen, LuShoppingBag } from "react-icons/lu";
+import { LuPen, LuShoppingBag } from "react-icons/lu";
 
 type UserRoleFilter = "all" | AdminUserRow["role"];
 
@@ -254,6 +259,16 @@ export default function AdminUsersView({
     syncAdminSheetUrl({});
   }
 
+  function onUserArchived(state: ActionState) {
+    if (state.ok === false) return;
+    const id = sheetEditId;
+    if (!id) return;
+    setListItems((prev) => prev.filter((item) => item.id !== id));
+    setSheetSavePending(false);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return optimisticItems.filter((item) => {
@@ -349,19 +364,80 @@ export default function AdminUsersView({
         <p className="text-sm text-muted-foreground">
           {t("totalUsers", { count: filtered.length })}
         </p>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/archive?tab=users">
-            <LuArchive className="size-4" />
-            {t("archive")}
-          </Link>
-        </Button>
+        <AdminArchiveLink
+          href="/admin/archive?tab=users"
+          label={t("archive")}
+        />
       </div>
 
       {filtered.length === 0 ? (
         <EmptyList />
       ) : (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
+        <AdminListResponsive
+          mobile={pagedItems.map((item) => {
+            const roleLabel =
+              item.role === "ADMIN"
+                ? t("roleAdmin")
+                : item.role === "MANAGER"
+                  ? t("roleManager")
+                  : t("roleUser");
+            return (
+              <AdminListMobileCard
+                key={item.id}
+                title={item.name}
+                subtitle={`${item.userCode} · ${item.email}`}
+                onActivateAction={
+                  canEditUser(item)
+                    ? () => setEditOpen(true, item.id)
+                    : undefined
+                }
+                actions={
+                  <AdminListMobileActions>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="cursor-pointer text-muted-foreground"
+                      asChild
+                    >
+                      <Link
+                        href={`/admin/sales?create=1&userId=${item.id}`}
+                        aria-label={t("createOrderForUser")}
+                      >
+                        <LuShoppingBag className="size-4" aria-hidden />
+                      </Link>
+                    </Button>
+                    {canArchiveUser(item) && !item.archivedAt ? (
+                      <ArchiveUser
+                        userId={item.id}
+                        onArchive={(userId) =>
+                          removeOptimistically(userId, () =>
+                            archiveAdminUserAction({ userId })
+                          )
+                        }
+                      />
+                    ) : null}
+                  </AdminListMobileActions>
+                }
+                meta={
+                  <>
+                    <p>{item.phone || "—"}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          item.role === "USER" ? "secondary" : "default"
+                        }
+                      >
+                        {roleLabel}
+                      </Badge>
+                      <span>{formatDate(new Date(item.createdAt), locale)}</span>
+                    </div>
+                  </>
+                }
+              />
+            );
+          })}
+          desktop={
             <Table>
               <TableHeader>
                 <TableRow>
@@ -400,7 +476,7 @@ export default function AdminUsersView({
                       {formatDate(new Date(item.createdAt), locale)}
                     </TableCell>
                     <TableCell className={tableActionsClassName}>
-                      <div className="inline-flex items-center justify-center gap-1">
+                      <AdminListMobileActions>
                         <Button
                           type="button"
                           variant="ghost"
@@ -412,7 +488,7 @@ export default function AdminUsersView({
                             href={`/admin/sales?create=1&userId=${item.id}`}
                             aria-label={t("createOrderForUser")}
                           >
-                            <LuShoppingBag />
+                            <LuShoppingBag className="size-4" aria-hidden />
                           </Link>
                         </Button>
                         {canEditUser(item) ? (
@@ -424,7 +500,7 @@ export default function AdminUsersView({
                             onClick={() => setEditOpen(true, item.id)}
                             aria-label={t("editUser")}
                           >
-                            <LuPen />
+                            <LuPen className="size-4" aria-hidden />
                           </Button>
                         ) : null}
                         {canArchiveUser(item) && !item.archivedAt ? (
@@ -437,14 +513,14 @@ export default function AdminUsersView({
                             }
                           />
                         ) : null}
-                      </div>
+                      </AdminListMobileActions>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
 
       {showPagination ? (
@@ -474,7 +550,7 @@ export default function AdminUsersView({
                   includePassword
                   canManageRoles={canManageRoles}
                 />
-                <SubmitButton text={t("submitCreateUser")} className="w-fit" />
+                <SubmitButton text={t("submitCreateUser")} className="w-full sm:w-fit" />
               </div>
             </FormContainer>
           </div>
@@ -519,6 +595,8 @@ export default function AdminUsersView({
                     id="archive-user-form"
                     className="hidden"
                     action={archiveUser}
+                    onSuccess={onUserArchived}
+                    onPendingChange={setSheetSavePending}
                   >
                     <input type="hidden" name="userId" value={editUser.id} />
                   </FormContainer>

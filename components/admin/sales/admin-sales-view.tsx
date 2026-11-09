@@ -20,7 +20,6 @@ import SheetFormActions from "@/components/admin/sheet-form-actions";
 import FormContainer from "@/components/form/FormContainer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   countSalesFilter,
@@ -58,12 +57,18 @@ import {
 import type { ActionState, actionFunction } from "@/utils/types";
 import { formatCurrency, formatDate } from "@/utils/format";
 import type { AdminOrderRowDTO } from "@/lib/admin/order-row";
+import {
+  AdminListMobileActions,
+  AdminListMobileCard,
+  AdminListResponsive,
+} from "@/components/admin/admin-list-mobile";
 import AdminListToolbar, {
+  AdminArchiveLink,
   AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
 import SearchableEntityPicker from "@/components/admin/searchable-entity-picker";
 import { syncAdminSheetUrl } from "@/lib/admin/sheet-url";
-import { LuArchive, LuPen } from "react-icons/lu";
+import { LuPen } from "react-icons/lu";
 
 export type AdminOrderRow = AdminOrderRowDTO;
 
@@ -168,7 +173,7 @@ function OrderFormFields({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-4">
       <SearchableEntityPicker
         name="userId"
         label={t("customer")}
@@ -197,7 +202,7 @@ function OrderFormFields({
 
       <CatalogField
         name="products"
-        label={tOrders("products")}
+        label={t("productsCount")}
         defaultValue={productsCount}
         key={`products-${productsCount}`}
       />
@@ -296,6 +301,16 @@ export default function AdminSalesView({
     });
     setSheetSavePending(false);
     setSheetCreateOpen(false);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
+
+  function onOrderArchived(state: ActionState) {
+    if (state.ok === false) return;
+    const id = sheetEditId;
+    if (!id) return;
+    setListItems((prev) => prev.filter((item) => item.id !== id));
+    setSheetSavePending(false);
     setSheetEditId(undefined);
     syncAdminSheetUrl({});
   }
@@ -418,19 +433,70 @@ export default function AdminSalesView({
         <p className="text-sm text-muted-foreground">
           {t("totalOrders", { count: filtered.length })}
         </p>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/archive?tab=sales">
-            <LuArchive className="size-4" />
-            {t("archive")}
-          </Link>
-        </Button>
+        <AdminArchiveLink
+          href="/admin/archive?tab=sales"
+          label={t("archive")}
+        />
       </div>
 
       {filtered.length === 0 ? (
         <EmptyList />
       ) : (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
+        <AdminListResponsive
+          mobile={pagedItems.map((order) => {
+            const vehicle =
+              order.productName ??
+              order.folderName ??
+              t("vehicleUnset");
+            return (
+              <AdminListMobileCard
+                key={order.id}
+                title={order.email}
+                subtitle={order.userName || undefined}
+                onActivateAction={() => setEditOpen(true, order.id)}
+                actions={
+                  canDelete ? (
+                    <AdminListMobileActions>
+                      <ArchiveOrder
+                        orderId={order.id}
+                        onArchive={(orderId) =>
+                          removeOptimistically(orderId, () =>
+                            archiveAdminOrderAction({ orderId })
+                          )
+                        }
+                      />
+                    </AdminListMobileActions>
+                  ) : null
+                }
+                meta={
+                  <>
+                    <p>
+                      {order.productId && order.productName ? (
+                        <Link
+                          href={`/products/${order.productId}`}
+                          className={tableLinkClassName}
+                        >
+                          {order.productName}
+                        </Link>
+                      ) : (
+                        <span className="text-foreground">{vehicle}</span>
+                      )}
+                    </p>
+                    <p className="font-medium text-foreground">
+                      {formatCurrency(order.orderTotal, locale)}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={order.isPaid ? "default" : "secondary"}>
+                        {order.isPaid ? t("paid") : t("unpaid")}
+                      </Badge>
+                      <span>{formatDate(new Date(order.createdAt), locale)}</span>
+                    </div>
+                  </>
+                }
+              />
+            );
+          })}
+          desktop={
             <Table>
               <TableHeader>
                 <TableRow>
@@ -494,7 +560,7 @@ export default function AdminSalesView({
                       {formatDate(new Date(order.createdAt), locale)}
                     </TableCell>
                     <TableCell className={tableActionsClassName}>
-                      <div className="inline-flex items-center justify-center gap-1">
+                      <AdminListMobileActions>
                         <Button
                           type="button"
                           variant="ghost"
@@ -503,7 +569,7 @@ export default function AdminSalesView({
                           onClick={() => setEditOpen(true, order.id)}
                           aria-label={t("editOrder")}
                         >
-                          <LuPen />
+                          <LuPen className="size-4" aria-hidden />
                         </Button>
                         {canDelete ? (
                           <ArchiveOrder
@@ -515,14 +581,14 @@ export default function AdminSalesView({
                             }
                           />
                         ) : null}
-                      </div>
+                      </AdminListMobileActions>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
 
       {showPagination ? (
@@ -537,7 +603,7 @@ export default function AdminSalesView({
 
       <Sheet open={sheetCreateOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
-          <div className="grid gap-6">
+          <div className="grid min-w-0 gap-6">
             <SheetHeader>
               <SheetTitle>{t("createOrderSheetTitle")}</SheetTitle>
               <SheetDescription>{t("createOrderSheetLede")}</SheetDescription>
@@ -548,7 +614,7 @@ export default function AdminSalesView({
               onSuccess={onOrderSaved}
               onPendingChange={setSheetSavePending}
             >
-              <div className="grid gap-6">
+              <div className="grid min-w-0 gap-6">
                 <OrderFormFields
                   users={users}
                   products={products}
@@ -556,7 +622,7 @@ export default function AdminSalesView({
                     userId: preselectedUserId,
                   }}
                 />
-                <SubmitButton text={t("submitCreateOrder")} className="w-fit" />
+                <SubmitButton text={t("submitCreateOrder")} className="w-full sm:w-fit" />
               </div>
             </FormContainer>
           </div>
@@ -568,7 +634,7 @@ export default function AdminSalesView({
         onOpenChange={(open) => setEditOpen(open, editOrder?.id)}
       >
         <SheetContent>
-          <div className="grid gap-6">
+          <div className="grid min-w-0 gap-6">
             <SheetHeader>
               <SheetTitle>{t("editOrderSheetTitle")}</SheetTitle>
               <SheetDescription>{t("editOrderSheetLede")}</SheetDescription>
@@ -582,7 +648,7 @@ export default function AdminSalesView({
                   onPendingChange={setSheetSavePending}
                 >
                   <input type="hidden" name="orderId" value={editOrder.id} />
-                  <div className="grid gap-6">
+                  <div className="grid min-w-0 gap-6">
                     <OrderFormFields
                       users={users}
                       products={products}
@@ -613,6 +679,8 @@ export default function AdminSalesView({
                         orderId: editOrder.id,
                       }) as unknown as actionFunction
                     }
+                    onSuccess={onOrderArchived}
+                    onPendingChange={setSheetSavePending}
                   >
                     <input type="hidden" name="orderId" value={editOrder.id} />
                   </FormContainer>

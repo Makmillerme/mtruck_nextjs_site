@@ -48,7 +48,6 @@ import TextAreaInput from "@/components/form/TextAreaInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sheet,
@@ -79,6 +78,7 @@ import type {
   CatalogDisplayGroup,
   TaxonomyTreeNode,
 } from "@/lib/catalog/types";
+import { cn } from "@/lib/utils";
 
 function hasNameTemplate(
   group: CatalogDisplayGroup | null | undefined
@@ -115,7 +115,13 @@ import {
   updateProductAction,
 } from "@/utils/actions";
 import type { actionFunction } from "@/utils/types";
+import {
+  AdminListMobileActions,
+  AdminListMobileCard,
+  AdminListResponsive,
+} from "@/components/admin/admin-list-mobile";
 import AdminListToolbar, {
+  AdminArchiveLink,
   AdminFilterSheet,
 } from "@/components/admin/admin-list-toolbar";
 import {
@@ -127,7 +133,7 @@ import {
 import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import type { PublicFilterSchema } from "@/lib/catalog/public-filter";
 import { countActiveCatalogFilters } from "@/utils/catalog-query";
-import { LuArchive, LuColumns3, LuPen } from "react-icons/lu";
+import { LuColumns3, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
 const SYSTEM_COLUMNS_STORAGE_KEY =
@@ -724,6 +730,18 @@ export default function AdminProductsView({
     syncAdminSheetUrl({});
   }
 
+  function onProductArchived(state: ActionState) {
+    if (state.ok === false) return;
+    const id = sheetEditId;
+    if (!id) return;
+    setListItems((prev) => prev.filter((item) => item.id !== id));
+    setListTotal((total) => Math.max(0, total - 1));
+    setSheetSavePending(false);
+    setSheetProduct(null);
+    setSheetEditId(undefined);
+    syncAdminSheetUrl({});
+  }
+
   function setCreateOpen(open: boolean) {
     if (!open && sheetSavePending) return;
     setSheetCreateOpen(open);
@@ -869,9 +887,10 @@ export default function AdminProductsView({
                 variant="outline"
                 size="sm"
                 className="h-9 gap-2"
+                aria-label={t("columns")}
               >
                 <LuColumns3 className="size-4" />
-                {t("columns")}
+                <span className="hidden sm:inline">{t("columns")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent>
@@ -993,19 +1012,96 @@ export default function AdminProductsView({
         <p className="text-sm text-muted-foreground">
           {t("totalProducts", { count: listTotal })}
         </p>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/archive?tab=products">
-            <LuArchive className="size-4" />
-            {t("archive")}
-          </Link>
-        </Button>
+        <AdminArchiveLink
+          href="/admin/archive?tab=products"
+          label={t("archive")}
+        />
       </div>
 
       {pagedItems.length === 0 ? (
         <EmptyList />
       ) : (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
+        <AdminListResponsive
+          mobile={pagedItems.map((item) => {
+            const systemFields = SYSTEM_COLUMN_IDS.filter((id) =>
+              visibleSystemKeys.includes(id)
+            );
+            const hasFields =
+              systemFields.length > 0 || visibleAttributes.length > 0;
+            return (
+              <AdminListMobileCard
+                key={item.id}
+                title={
+                  <Link
+                    href={`/products/${item.id}`}
+                    className={tableLinkClassName}
+                  >
+                    {item.name}
+                  </Link>
+                }
+                subtitle={item.productCode}
+                onActivateAction={() => setEditOpen(true, item.id)}
+                actions={
+                  canDelete ? (
+                    <AdminListMobileActions>
+                      <ArchiveProduct
+                        productId={item.id}
+                        onArchive={(productId) =>
+                          removeOptimistically(productId, () =>
+                            archiveProductAction({ productId })
+                          )
+                        }
+                      />
+                    </AdminListMobileActions>
+                  ) : null
+                }
+                meta={
+                  hasFields ? (
+                    <dl className="grid gap-1.5">
+                      {systemFields.map((columnId) => (
+                        <div
+                          key={columnId}
+                          className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+                        >
+                          <dt className="text-xs text-muted-foreground">
+                            {t(SYSTEM_COLUMN_LABEL[columnId])}
+                          </dt>
+                          <dd
+                            className={cn(
+                              "text-right text-sm text-foreground",
+                              columnId === "price" && "font-medium"
+                            )}
+                          >
+                            {renderSystemCell(columnId, item)}
+                          </dd>
+                        </div>
+                      ))}
+                      {visibleAttributes.map((attribute) => (
+                        <div
+                          key={attribute.key}
+                          className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+                        >
+                          <dt className="text-xs text-muted-foreground">
+                            {attribute.name}
+                          </dt>
+                          <dd className="text-right text-sm text-foreground">
+                            {formatSpecCell(
+                              attribute,
+                              findSpecForAttribute(item.specs, attribute),
+                              t("columnsYes"),
+                              t("columnsNo"),
+                              t("columnsEmptyCell")
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null
+                }
+              />
+            );
+          })}
+          desktop={
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1056,7 +1152,7 @@ export default function AdminProductsView({
                       </TableCell>
                     ))}
                     <TableCell className={tableActionsClassName}>
-                      <div className="inline-flex items-center justify-center gap-1">
+                      <AdminListMobileActions>
                         <Button
                           type="button"
                           variant="ghost"
@@ -1065,7 +1161,7 @@ export default function AdminProductsView({
                           onClick={() => setEditOpen(true, item.id)}
                           aria-label={t("editProduct")}
                         >
-                          <LuPen />
+                          <LuPen className="size-4" aria-hidden />
                         </Button>
                         {canDelete ? (
                           <ArchiveProduct
@@ -1077,14 +1173,14 @@ export default function AdminProductsView({
                             }
                           />
                         ) : null}
-                      </div>
+                      </AdminListMobileActions>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
 
       {showPagination ? (
@@ -1122,7 +1218,7 @@ export default function AdminProductsView({
                   nameWriterGroup={sheetNameWriterGroup}
                   formationTemplates={sheetFormationTemplates}
                 />
-                <SubmitButton text={t("submitCreate")} className="w-fit" />
+                <SubmitButton text={t("submitCreate")} className="w-full sm:w-fit" />
               </div>
             </FormContainer>
           </div>
@@ -1174,6 +1270,8 @@ export default function AdminProductsView({
                     id="archive-product-form"
                     className="hidden"
                     action={archiveProduct}
+                    onSuccess={onProductArchived}
+                    onPendingChange={setSheetSavePending}
                   >
                     <input
                       type="hidden"

@@ -31,16 +31,16 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 flex h-full flex-col gap-6 overflow-x-clip overflow-y-auto bg-card p-6 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 flex h-full min-w-0 flex-col gap-6 overflow-x-clip overflow-y-auto bg-card p-6 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {
         top: "inset-x-0 top-0 h-auto max-h-[90dvh] border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
         bottom:
           "inset-x-0 bottom-0 h-auto max-h-[90dvh] border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 w-[min(100%-4.5rem,28rem)] border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:w-full sm:max-w-lg",
+        left: "inset-y-0 left-0 w-[min(100%-4.5rem,28rem)] max-w-[min(100%-4.5rem,28rem)] border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:w-full sm:max-w-lg",
         right:
-          "inset-y-0 right-0 w-[min(100%-4.5rem,28rem)] border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:w-full sm:max-w-lg",
+          "inset-y-0 right-0 w-[min(100%-4.5rem,28rem)] max-w-[min(100%-4.5rem,28rem)] border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:w-full sm:max-w-lg",
       },
     },
     defaultVariants: {
@@ -74,6 +74,8 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+const OUTSIDE_CLOSE_GUARD_MS = 400
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
@@ -89,34 +91,51 @@ const SheetContent = React.forwardRef<
       ...props
     },
     ref
-  ) => (
-    <SheetPortal>
-      <SheetOverlay />
-      <SheetPrimitive.Content
-        ref={ref}
-        className={cn(sheetVariants({ side }), className)}
-        onPointerDownOutside={(event) => {
-          if (isFloatingLayer(eventTarget(event))) event.preventDefault()
-          onPointerDownOutside?.(event)
-        }}
-        onInteractOutside={(event) => {
-          if (isFloatingLayer(eventTarget(event))) event.preventDefault()
-          onInteractOutside?.(event)
-        }}
-        onFocusOutside={(event) => {
-          if (isFloatingLayer(eventTarget(event))) event.preventDefault()
-          onFocusOutside?.(event)
-        }}
-        {...props}
-      >
-        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-          <LuX className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
-        {children}
-      </SheetPrimitive.Content>
-    </SheetPortal>
-  )
+  ) => {
+    const openedAtRef = React.useRef(0)
+    React.useEffect(() => {
+      openedAtRef.current = Date.now()
+    }, [])
+
+    function shouldGuardOutsideClose() {
+      return Date.now() - openedAtRef.current < OUTSIDE_CLOSE_GUARD_MS
+    }
+
+    return (
+      <SheetPortal>
+        <SheetOverlay />
+        <SheetPrimitive.Content
+          ref={ref}
+          className={cn(sheetVariants({ side }), className)}
+          onPointerDownOutside={(event) => {
+            if (shouldGuardOutsideClose() || isFloatingLayer(eventTarget(event))) {
+              event.preventDefault()
+            }
+            onPointerDownOutside?.(event)
+          }}
+          onInteractOutside={(event) => {
+            if (shouldGuardOutsideClose() || isFloatingLayer(eventTarget(event))) {
+              event.preventDefault()
+            }
+            onInteractOutside?.(event)
+          }}
+          onFocusOutside={(event) => {
+            if (shouldGuardOutsideClose() || isFloatingLayer(eventTarget(event))) {
+              event.preventDefault()
+            }
+            onFocusOutside?.(event)
+          }}
+          {...props}
+        >
+          <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+            <LuX className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+          {children}
+        </SheetPrimitive.Content>
+      </SheetPortal>
+    )
+  }
 )
 SheetContent.displayName = SheetPrimitive.Content.displayName
 

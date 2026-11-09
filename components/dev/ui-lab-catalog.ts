@@ -204,7 +204,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "order-added-sheet",
     category: "overlays",
     title: "Order confirm Sheet",
-    hint: "Confirm до POST: картка = AccountOrderLine (канон account-orders) + Скасувати|Створити під нею. Ordered: Усі|Оформити.",
+    hint: "Confirm до POST: AccountOrderLine (phone — вертикальний стек; md+ — рядок) + Скасувати|Створити. Ordered: Усі|Оформити.",
     keywords:
       "order confirm sheet замовлення кошик cart створити скасувати оформити pdp account order line",
   },

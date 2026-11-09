@@ -96,10 +96,9 @@ export const getAdminUser = cache(async () => {
 /** Staff allowed in; non-admin get an error (for delete mutations). */
 export async function requireAdminMutation() {
   const ctx = await getSessionUserContext();
-  if (!ctx || !isStaffRole(ctx.row.role)) {
-    return redirectHome();
-  }
-  if (!isAdminRole(ctx.row.role)) {
+  // Mutations must throw (not redirectHome): a redirect from a server action
+  // full-navigates the browser to "/" and skips confirm/toast UX.
+  if (!ctx || !isStaffRole(ctx.row.role) || !isAdminRole(ctx.row.role)) {
     const t = await getTranslations("Admin");
     throw new Error(t("forbiddenDelete"));
   }

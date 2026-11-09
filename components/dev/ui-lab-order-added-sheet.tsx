@@ -30,8 +30,8 @@ export default function UiLabOrderAddedSheetDemo() {
     <div className="grid max-w-xl gap-3">
       <p className="max-w-2xl text-sm text-muted-foreground">
         Картка = канон AccountOrderLine (секція account-orders), не каталожна grid-картка.
-        Confirm: Скасувати | Створити під карткою. Ordered: Усі | Оформити + в картці
-        «В обрані» / «Видалити» (і qty-степпер якщо allowsQuantity).
+        На phone/sheet — вертикальний стек (фото зверху); від md — рядок. Confirm:
+        Скасувати | Створити. Ordered: Усі | Оформити + «В обрані» / «Видалити».
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" className="w-fit" onClick={() => openDemo("confirm")}>

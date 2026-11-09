@@ -6,10 +6,11 @@ const WIDTH_SPAN: Record<SheetWidthName, number> = {
   THIRD: 2,
 };
 
+/** Responsive spans: full-width stack below md; packing widths from md+. */
 export const SHEET_WIDTH_CLASS: Record<SheetWidthName, string> = {
-  FULL: "col-span-6",
-  HALF: "col-span-3",
-  THIRD: "col-span-2",
+  FULL: "col-span-1 md:col-span-6",
+  HALF: "col-span-1 md:col-span-3",
+  THIRD: "col-span-1 md:col-span-2",
 };
 
 export type SheetLayoutItem = {

@@ -57,8 +57,10 @@ export function SoftNavPending({
   return (
     <div
       className={cn(
-        "transition-opacity motion-reduce:transition-none",
-        isPending && "pointer-events-none opacity-60",
+        // Only transition into pending — avoid fade flash under sheet overlays.
+        isPending
+          ? "pointer-events-none opacity-60 transition-opacity motion-reduce:transition-none"
+          : null,
         className
       )}
       aria-busy={isPending || undefined}

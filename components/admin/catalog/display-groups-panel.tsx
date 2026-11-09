@@ -511,7 +511,7 @@ export default function DisplayGroupsPanel({
                 />
                 <Button
                   type="button"
-                  className="w-fit"
+                  className="w-full sm:w-fit"
                   disabled={isPending || templateName.trim().length < 2}
                   onClick={onSaveClick}
                 >

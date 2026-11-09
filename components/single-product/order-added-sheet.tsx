@@ -308,7 +308,7 @@ export default function OrderAddedSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex flex-col">
+      <SheetContent side="right">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>

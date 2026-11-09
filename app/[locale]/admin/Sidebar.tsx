@@ -32,7 +32,9 @@ function isCmsSection(pathname: string) {
     pathname === "/admin/catalog" ||
     pathname.startsWith("/admin/catalog/") ||
     pathname === "/admin/ui" ||
-    pathname.startsWith("/admin/ui/")
+    pathname.startsWith("/admin/ui/") ||
+    pathname === "/admin/finance" ||
+    pathname.startsWith("/admin/finance/")
   );
 }
 
@@ -44,6 +46,12 @@ function isCmsDataModel(pathname: string) {
 
 function isCmsUiEditor(pathname: string) {
   return pathname === "/admin/ui" || pathname.startsWith("/admin/ui/");
+}
+
+function isCmsFinance(pathname: string) {
+  return (
+    pathname === "/admin/finance" || pathname.startsWith("/admin/finance/")
+  );
 }
 
 function isSalesSection(pathname: string) {
@@ -64,6 +72,7 @@ function isSalesInquiries(pathname: string) {
 const CMS_NAV_CHILDREN = [
   { href: "/admin/catalog", labelKey: "cmsDataModel" as const },
   { href: "/admin/ui", labelKey: "cmsUiEditor" as const },
+  { href: "/admin/finance", labelKey: "finance" as const },
 ];
 
 const SALES_NAV_CHILDREN = [
@@ -139,8 +148,8 @@ function Sidebar({
   }, [onSales]);
 
   return (
-    <aside className="min-w-0">
-      <Card className="sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto shadow-sm lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
+    <aside className="min-w-0 lg:h-full lg:min-h-0">
+      <Card className="shadow-sm lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
         <CardContent className="grid gap-1 p-3">
           {links.map((link) => {
             if (link.href === "/admin/sales") {
@@ -217,7 +226,9 @@ function Sidebar({
                         const active =
                           child.href === "/admin/ui"
                             ? isCmsUiEditor(pathname)
-                            : isCmsDataModel(pathname);
+                            : child.href === "/admin/finance"
+                              ? isCmsFinance(pathname)
+                              : isCmsDataModel(pathname);
                         return (
                           <Button
                             key={child.href}

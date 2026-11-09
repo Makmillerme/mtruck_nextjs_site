@@ -16,15 +16,16 @@ import {
 } from "@/lib/ui/number-input";
 import { cn } from "@/lib/utils";
 
-/** Literals must live under components/ so Tailwind JIT emits col-span utilities. */
+/** Literals must live under components/ so Tailwind JIT emits col-span utilities.
+ * Below md: ignore sheetWidth (full-width stack). md+: 6-col packing spans. */
 function sheetWidthClass(width: SheetWidthName | undefined) {
   switch (width) {
     case "HALF":
-      return "col-span-3";
+      return "col-span-1 md:col-span-3";
     case "THIRD":
-      return "col-span-2";
+      return "col-span-1 md:col-span-2";
     default:
-      return "col-span-6";
+      return "col-span-1 md:col-span-6";
   }
 }
 
@@ -105,7 +106,7 @@ export default function ProductSpecFields({
       {showHeading ? (
         <p className="font-medium">{t("productSpecs")}</p>
       ) : null}
-      <div className="grid grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-6 md:gap-6">
         {layout.map(({ attribute }) => {
           const className = sheetWidthClass(attribute.sheetWidth);
           const label = attribute.unit

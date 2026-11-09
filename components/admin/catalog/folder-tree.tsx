@@ -378,7 +378,7 @@ export default function FolderTree({
                   label={t("flagShowInHomeFilter")}
                   defaultChecked
                 />
-                <CatalogSubmit text={t("createFolder")} className="w-fit" />
+                <CatalogSubmit text={t("createFolder")} className="w-full sm:w-fit" />
               </CatalogForm>
             </div>
           ) : null}
@@ -418,7 +418,7 @@ export default function FolderTree({
                     defaultChecked={sheet.node.productsAreUnique}
                   />
                 ) : null}
-                <CatalogSubmit text={t("saveFolder")} className="w-fit" />
+                <CatalogSubmit text={t("saveFolder")} className="w-full sm:w-fit" />
               </CatalogForm>
             </div>
           ) : null}

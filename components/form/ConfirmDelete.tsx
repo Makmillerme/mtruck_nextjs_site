@@ -209,6 +209,7 @@ export function ConfirmDeleteFormButton({
   confirmLabel,
   size = "default",
   mode = "delete",
+  className,
 }: {
   formId: string;
   label: string;
@@ -217,6 +218,7 @@ export function ConfirmDeleteFormButton({
   confirmLabel?: string;
   size?: "default" | "lg" | "sm";
   mode?: "delete" | "archive";
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("Common");
@@ -233,13 +235,27 @@ export function ConfirmDeleteFormButton({
     confirmLabel ??
     (isArchive ? t("confirmArchive") : t("confirmDelete"));
 
+  function submitExternalForm() {
+    const form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+    // requestSubmit keeps React Server Actions; native submit() hits the
+    // javascript:throw progressive-enhancement stub and can full-navigate.
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    }
+    // Defer close so unmounting this dialog does not abort the submit.
+    queueMicrotask(() => setOpen(false));
+  }
+
   return (
     <>
       <Button
         type="button"
         variant="destructive"
         size={size}
-        className="w-fit"
+        className={className ?? "w-fit"}
         onClick={() => setOpen(true)}
       >
         {label}
@@ -255,11 +271,10 @@ export function ConfirmDeleteFormButton({
           <AlertDialogFooter>
             <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <Button
-              type="submit"
-              form={formId}
+              type="button"
               variant="destructive"
               size="default"
-              onClick={() => setOpen(false)}
+              onClick={submitExternalForm}
             >
               {resolvedConfirm}
             </Button>

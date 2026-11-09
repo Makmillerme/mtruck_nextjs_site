@@ -42,30 +42,30 @@ export default function AdminTablePagination({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3",
+        "flex w-full flex-nowrap items-center justify-between gap-1.5 sm:gap-3",
         className
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="size-9"
+          className="size-9 shrink-0"
           disabled={safePage <= 1}
           aria-label={t("prevPage")}
           onClick={() => onPageChange(safePage - 1)}
         >
           <LuChevronLeft className="size-4" />
         </Button>
-        <p className="min-w-[4.5rem] text-center text-sm tabular-nums text-muted-foreground">
+        <p className="min-w-0 shrink-0 px-0.5 text-center text-sm tabular-nums text-muted-foreground sm:min-w-[4.5rem]">
           {t("pageOf", { page: safePage, total: safeCount })}
         </p>
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="size-9"
+          className="size-9 shrink-0"
           disabled={safePage >= safeCount}
           aria-label={t("nextPage")}
           onClick={() => onPageChange(safePage + 1)}
@@ -74,8 +74,10 @@ export default function AdminTablePagination({
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">{t("pageSize")}</span>
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
+        <span className="hidden text-sm text-muted-foreground min-[380px]:inline">
+          {t("pageSize")}
+        </span>
         <DropdownMenu
           modal={false}
           onOpenChange={(open) => onOpenChange(open, triggerRef.current)}
@@ -86,7 +88,7 @@ export default function AdminTablePagination({
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 min-w-[4.5rem] gap-1.5"
+              className="h-9 min-w-[3.25rem] shrink-0 gap-1 sm:min-w-[4.5rem] sm:gap-1.5"
               aria-label={t("pageSize")}
             >
               {pageSize}

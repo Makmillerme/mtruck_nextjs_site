@@ -8,10 +8,15 @@ import {
   syncAdminListUrl,
 } from "@/lib/admin/list-url";
 import { useAdminTablePagination } from "@/lib/admin/use-admin-table-pagination";
+import {
+  AdminListMobileActions,
+  AdminListMobileCard,
+  AdminListResponsive,
+} from "@/components/admin/admin-list-mobile";
+import AdminListToolbar from "@/components/admin/admin-list-toolbar";
 import EmptyList from "@/components/global/EmptyList";
 import { ConfirmDeleteCallbackIcon } from "@/components/form/ConfirmDelete";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -87,11 +92,15 @@ function RestoreIcon({
       type="button"
       size="icon"
       variant="ghost"
-      className="cursor-pointer text-muted-foreground"
+      className="size-9 cursor-pointer text-muted-foreground"
       aria-label={label}
-      onClick={onRestore}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onRestore();
+      }}
     >
-      <LuRotateCcw />
+      <LuRotateCcw className="size-4" aria-hidden />
     </Button>
   );
 }
@@ -99,11 +108,13 @@ function RestoreIcon({
 function ArchiveTable({
   empty,
   count,
-  children,
+  mobile,
+  desktop,
 }: {
   empty: boolean;
   count: number;
-  children: ReactNode;
+  mobile: ReactNode;
+  desktop: ReactNode;
 }) {
   const t = useTranslations("Admin");
   return (
@@ -114,9 +125,7 @@ function ArchiveTable({
       {empty ? (
         <EmptyList heading={t("archiveEmpty")} />
       ) : (
-        <Card className="shadow-sm">
-          <CardContent className="p-0">{children}</CardContent>
-        </Card>
+        <AdminListResponsive mobile={mobile} desktop={desktop} />
       )}
     </div>
   );
@@ -141,6 +150,7 @@ export default function AdminArchiveView({
 }) {
   const t = useTranslations("Admin");
   const [activeTab, setActiveTab] = useState<ArchiveTab>(tab);
+  const [search, setSearch] = useState("");
   useEffect(() => {
     setActiveTab(tab);
   }, [tab]);
@@ -157,11 +167,40 @@ export default function AdminArchiveView({
     removeOptimistically: removeUser,
   } = useOptimisticListRemove(users);
 
+  const query = search.trim().toLowerCase();
+  const filteredOrders = useMemo(() => {
+    if (!query) return optimisticOrders;
+    return optimisticOrders.filter((order) =>
+      [order.email, order.userName, order.productName ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [optimisticOrders, query]);
+  const filteredProducts = useMemo(() => {
+    if (!query) return optimisticProducts;
+    return optimisticProducts.filter((product) =>
+      [product.name, product.productCode]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [optimisticProducts, query]);
+  const filteredUsers = useMemo(() => {
+    if (!query) return optimisticUsers;
+    return optimisticUsers.filter((user) =>
+      [user.name, user.email, user.userCode]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [optimisticUsers, query]);
+
   const tabItems = useMemo((): readonly { id: string }[] => {
-    if (activeTab === "products") return optimisticProducts;
-    if (activeTab === "users") return optimisticUsers;
-    return optimisticOrders;
-  }, [activeTab, optimisticOrders, optimisticProducts, optimisticUsers]);
+    if (activeTab === "products") return filteredProducts;
+    if (activeTab === "users") return filteredUsers;
+    return filteredOrders;
+  }, [activeTab, filteredOrders, filteredProducts, filteredUsers]);
 
   const {
     page,
@@ -172,7 +211,7 @@ export default function AdminArchiveView({
     setPageSize,
     paginationParams,
     showPagination,
-  } = useAdminTablePagination(tabItems, activeTab);
+  } = useAdminTablePagination(tabItems, `${activeTab}:${query}`);
 
   useEffect(() => {
     syncAdminListUrl(["tab", ...ADMIN_LIST_PAGINATION_KEYS], {
@@ -184,15 +223,15 @@ export default function AdminArchiveView({
   const pagedOrders =
     activeTab === "sales"
       ? (pagedItems as unknown as ArchiveOrderRow[])
-      : optimisticOrders;
+      : filteredOrders;
   const pagedProducts =
     activeTab === "products"
       ? (pagedItems as unknown as ArchiveProductRow[])
-      : optimisticProducts;
+      : filteredProducts;
   const pagedUsers =
     activeTab === "users"
       ? (pagedItems as unknown as ArchiveUserRow[])
-      : optimisticUsers;
+      : filteredUsers;
 
   function setTab(value: string) {
     const next: ArchiveTab =
@@ -205,6 +244,11 @@ export default function AdminArchiveView({
 
   return (
     <section className="grid w-full min-w-0 grid-cols-1 gap-6">
+      <AdminListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t("searchArchivePlaceholder")}
+      />
       <Tabs value={activeTab} onValueChange={setTab}>
         <TabsList className="w-full sm:w-full">
           <TabsTrigger value="sales" className="sm:flex-1">
@@ -218,77 +262,124 @@ export default function AdminArchiveView({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sales" className="mt-6">
+        <TabsContent value="sales" className="mt-4 md:mt-6">
           <ArchiveTable
-            empty={optimisticOrders.length === 0}
-            count={optimisticOrders.length}
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("email")}</TableHead>
-                  <TableHead>{t("vehicle")}</TableHead>
-                  <TableHead>{t("price")}</TableHead>
-                  <TableHead>{t("archivedAt")}</TableHead>
-                  {canDelete ? (
-                    <TableHead className={tableActionsClassName}>
-                      {t("actions")}
-                    </TableHead>
-                  ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagedOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <div className="grid gap-0.5">
-                        <span>{order.email}</span>
-                        {order.userName ? (
-                          <span className="text-xs text-muted-foreground">
-                            {order.userName}
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>{order.productName ?? "—"}</TableCell>
-                    <TableCell>
+            empty={filteredOrders.length === 0}
+            count={filteredOrders.length}
+            mobile={pagedOrders.map((order) => (
+              <AdminListMobileCard
+                key={order.id}
+                title={order.email}
+                subtitle={order.userName || undefined}
+                actions={
+                  canDelete ? (
+                    <AdminListMobileActions>
+                      <RestoreIcon
+                        label={t("restore")}
+                        onRestore={() =>
+                          removeOrder(order.id, () =>
+                            restoreAdminOrderAction({ orderId: order.id })
+                          )
+                        }
+                      />
+                      <ConfirmDeleteCallbackIcon
+                        onConfirm={() =>
+                          removeOrder(order.id, () =>
+                            deleteAdminOrderAction({ orderId: order.id })
+                          )
+                        }
+                      />
+                    </AdminListMobileActions>
+                  ) : null
+                }
+                meta={
+                  <>
+                    <p>
+                      <span className="text-foreground">
+                        {order.productName ?? "—"}
+                      </span>
+                    </p>
+                    <p className="font-medium text-foreground">
                       {formatCurrency(order.orderTotal, locale)}
-                    </TableCell>
-                    <TableCell>
+                    </p>
+                    <p>
+                      {t("archivedAt")}:{" "}
                       {order.archivedAt
                         ? formatDate(new Date(order.archivedAt), locale)
                         : "—"}
-                    </TableCell>
+                    </p>
+                  </>
+                }
+              />
+            ))}
+            desktop={
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("vehicle")}</TableHead>
+                    <TableHead>{t("price")}</TableHead>
+                    <TableHead>{t("archivedAt")}</TableHead>
                     {canDelete ? (
-                      <TableCell className={tableActionsClassName}>
-                        <div className="inline-flex items-center justify-center gap-1">
-                          <RestoreIcon
-                            label={t("restore")}
-                            onRestore={() =>
-                              removeOrder(order.id, () =>
-                                restoreAdminOrderAction({
-                                  orderId: order.id,
-                                })
-                              )
-                            }
-                          />
-                          <ConfirmDeleteCallbackIcon
-                            onConfirm={() =>
-                              removeOrder(order.id, () =>
-                                deleteAdminOrderAction({
-                                  orderId: order.id,
-                                })
-                              )
-                            }
-                          />
-                        </div>
-                      </TableCell>
+                      <TableHead className={tableActionsClassName}>
+                        {t("actions")}
+                      </TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ArchiveTable>
+                </TableHeader>
+                <TableBody>
+                  {pagedOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <div className="grid gap-0.5">
+                          <span>{order.email}</span>
+                          {order.userName ? (
+                            <span className="text-xs text-muted-foreground">
+                              {order.userName}
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell>{order.productName ?? "—"}</TableCell>
+                      <TableCell>
+                        {formatCurrency(order.orderTotal, locale)}
+                      </TableCell>
+                      <TableCell>
+                        {order.archivedAt
+                          ? formatDate(new Date(order.archivedAt), locale)
+                          : "—"}
+                      </TableCell>
+                      {canDelete ? (
+                        <TableCell className={tableActionsClassName}>
+                          <AdminListMobileActions>
+                            <RestoreIcon
+                              label={t("restore")}
+                              onRestore={() =>
+                                removeOrder(order.id, () =>
+                                  restoreAdminOrderAction({
+                                    orderId: order.id,
+                                  })
+                                )
+                              }
+                            />
+                            <ConfirmDeleteCallbackIcon
+                              onConfirm={() =>
+                                removeOrder(order.id, () =>
+                                  deleteAdminOrderAction({
+                                    orderId: order.id,
+                                  })
+                                )
+                              }
+                            />
+                          </AdminListMobileActions>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            }
+          />
           {showPagination && activeTab === "sales" ? (
             <AdminTablePagination
               className="mt-4"
@@ -301,76 +392,123 @@ export default function AdminArchiveView({
           ) : null}
         </TabsContent>
 
-        <TabsContent value="products" className="mt-6">
+        <TabsContent value="products" className="mt-4 md:mt-6">
           <ArchiveTable
-            empty={optimisticProducts.length === 0}
-            count={optimisticProducts.length}
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("userCode")}</TableHead>
-                  <TableHead>{t("productName")}</TableHead>
-                  <TableHead>{t("price")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead>{t("archivedAt")}</TableHead>
-                  {canDelete ? (
-                    <TableHead className={tableActionsClassName}>
-                      {t("actions")}
-                    </TableHead>
-                  ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagedProducts.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="tabular-nums">
-                      {item.productCode}
-                    </TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>
+            empty={filteredProducts.length === 0}
+            count={filteredProducts.length}
+            mobile={pagedProducts.map((item) => (
+              <AdminListMobileCard
+                key={item.id}
+                title={item.name}
+                subtitle={item.productCode}
+                actions={
+                  canDelete ? (
+                    <AdminListMobileActions>
+                      <RestoreIcon
+                        label={t("restore")}
+                        onRestore={() =>
+                          removeProduct(item.id, () =>
+                            restoreProductAction({ productId: item.id })
+                          )
+                        }
+                      />
+                      <ConfirmDeleteCallbackIcon
+                        onConfirm={() =>
+                          removeProduct(item.id, () =>
+                            deleteProductAction({ productId: item.id })
+                          )
+                        }
+                      />
+                    </AdminListMobileActions>
+                  ) : null
+                }
+                meta={
+                  <>
+                    <p className="font-medium text-foreground">
                       {formatCurrency(item.price, locale)}
-                    </TableCell>
-                    <TableCell>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="secondary">
                         {t(STATUS_KEY[item.status])}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {item.archivedAt
-                        ? formatDate(new Date(item.archivedAt), locale)
-                        : "—"}
-                    </TableCell>
+                      <span>
+                        {t("archivedAt")}:{" "}
+                        {item.archivedAt
+                          ? formatDate(new Date(item.archivedAt), locale)
+                          : "—"}
+                      </span>
+                    </div>
+                  </>
+                }
+              />
+            ))}
+            desktop={
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("userCode")}</TableHead>
+                    <TableHead>{t("productName")}</TableHead>
+                    <TableHead>{t("price")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead>{t("archivedAt")}</TableHead>
                     {canDelete ? (
-                      <TableCell className={tableActionsClassName}>
-                        <div className="inline-flex items-center justify-center gap-1">
-                          <RestoreIcon
-                            label={t("restore")}
-                            onRestore={() =>
-                              removeProduct(item.id, () =>
-                                restoreProductAction({
-                                  productId: item.id,
-                                })
-                              )
-                            }
-                          />
-                          <ConfirmDeleteCallbackIcon
-                            onConfirm={() =>
-                              removeProduct(item.id, () =>
-                                deleteProductAction({
-                                  productId: item.id,
-                                })
-                              )
-                            }
-                          />
-                        </div>
-                      </TableCell>
+                      <TableHead className={tableActionsClassName}>
+                        {t("actions")}
+                      </TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ArchiveTable>
+                </TableHeader>
+                <TableBody>
+                  {pagedProducts.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="tabular-nums">
+                        {item.productCode}
+                      </TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>
+                        {formatCurrency(item.price, locale)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {t(STATUS_KEY[item.status])}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {item.archivedAt
+                          ? formatDate(new Date(item.archivedAt), locale)
+                          : "—"}
+                      </TableCell>
+                      {canDelete ? (
+                        <TableCell className={tableActionsClassName}>
+                          <AdminListMobileActions>
+                            <RestoreIcon
+                              label={t("restore")}
+                              onRestore={() =>
+                                removeProduct(item.id, () =>
+                                  restoreProductAction({
+                                    productId: item.id,
+                                  })
+                                )
+                              }
+                            />
+                            <ConfirmDeleteCallbackIcon
+                              onConfirm={() =>
+                                removeProduct(item.id, () =>
+                                  deleteProductAction({
+                                    productId: item.id,
+                                  })
+                                )
+                              }
+                            />
+                          </AdminListMobileActions>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            }
+          />
           {showPagination && activeTab === "products" ? (
             <AdminTablePagination
               className="mt-4"
@@ -383,91 +521,156 @@ export default function AdminArchiveView({
           ) : null}
         </TabsContent>
 
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="users" className="mt-4 md:mt-6">
           <ArchiveTable
-            empty={optimisticUsers.length === 0}
-            count={optimisticUsers.length}
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("userCode")}</TableHead>
-                  <TableHead>{t("userName")}</TableHead>
-                  <TableHead>{t("email")}</TableHead>
-                  <TableHead>{t("role")}</TableHead>
-                  <TableHead>{t("archivedAt")}</TableHead>
-                  {canDelete ? (
-                    <TableHead className={tableActionsClassName}>
-                      {t("actions")}
-                    </TableHead>
-                  ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagedUsers.map((item) => {
-                  const canMutate = canMutateUserArchive(item, currentUserId);
-                  const canHardDelete =
-                    canMutate &&
-                    item.productCount === 0 &&
-                    item.orderCount === 0;
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="tabular-nums">
-                        {item.userCode}
-                      </TableCell>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.email}</TableCell>
-                      <TableCell>
+            empty={filteredUsers.length === 0}
+            count={filteredUsers.length}
+            mobile={pagedUsers.map((item) => {
+              const canMutate = canMutateUserArchive(item, currentUserId);
+              const canHardDelete =
+                canMutate &&
+                item.productCount === 0 &&
+                item.orderCount === 0;
+              const roleLabel =
+                item.role === "ADMIN"
+                  ? t("roleAdmin")
+                  : item.role === "MANAGER"
+                    ? t("roleManager")
+                    : t("roleUser");
+              return (
+                <AdminListMobileCard
+                  key={item.id}
+                  title={item.name}
+                  subtitle={`${item.userCode} · ${item.email}`}
+                  actions={
+                    canDelete && canMutate ? (
+                      <AdminListMobileActions>
+                        <RestoreIcon
+                          label={t("restore")}
+                          onRestore={() =>
+                            removeUser(item.id, () =>
+                              restoreAdminUserAction({ userId: item.id })
+                            )
+                          }
+                        />
+                        {canHardDelete ? (
+                          <ConfirmDeleteCallbackIcon
+                            onConfirm={() =>
+                              removeUser(item.id, () =>
+                                deleteAdminUserAction({ userId: item.id })
+                              )
+                            }
+                          />
+                        ) : null}
+                      </AdminListMobileActions>
+                    ) : null
+                  }
+                  meta={
+                    <>
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge
-                          variant={item.role === "USER" ? "secondary" : "default"}
+                          variant={
+                            item.role === "USER" ? "secondary" : "default"
+                          }
                         >
-                          {item.role === "ADMIN"
-                            ? t("roleAdmin")
-                            : item.role === "MANAGER"
-                              ? t("roleManager")
-                              : t("roleUser")}
+                          {roleLabel}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {item.archivedAt
-                          ? formatDate(new Date(item.archivedAt), locale)
-                          : "—"}
-                      </TableCell>
-                      {canDelete && canMutate ? (
-                        <TableCell className={tableActionsClassName}>
-                          <div className="inline-flex items-center justify-center gap-1">
-                            <RestoreIcon
-                              label={t("restore")}
-                              onRestore={() =>
-                                removeUser(item.id, () =>
-                                  restoreAdminUserAction({
-                                    userId: item.id,
-                                  })
-                                )
-                              }
-                            />
-                            {canHardDelete ? (
-                              <ConfirmDeleteCallbackIcon
-                                onConfirm={() =>
+                        <span>
+                          {t("archivedAt")}:{" "}
+                          {item.archivedAt
+                            ? formatDate(new Date(item.archivedAt), locale)
+                            : "—"}
+                        </span>
+                      </div>
+                    </>
+                  }
+                />
+              );
+            })}
+            desktop={
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("userCode")}</TableHead>
+                    <TableHead>{t("userName")}</TableHead>
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("role")}</TableHead>
+                    <TableHead>{t("archivedAt")}</TableHead>
+                    {canDelete ? (
+                      <TableHead className={tableActionsClassName}>
+                        {t("actions")}
+                      </TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagedUsers.map((item) => {
+                    const canMutate = canMutateUserArchive(item, currentUserId);
+                    const canHardDelete =
+                      canMutate &&
+                      item.productCount === 0 &&
+                      item.orderCount === 0;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="tabular-nums">
+                          {item.userCode}
+                        </TableCell>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell>{item.email}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              item.role === "USER" ? "secondary" : "default"
+                            }
+                          >
+                            {item.role === "ADMIN"
+                              ? t("roleAdmin")
+                              : item.role === "MANAGER"
+                                ? t("roleManager")
+                                : t("roleUser")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {item.archivedAt
+                            ? formatDate(new Date(item.archivedAt), locale)
+                            : "—"}
+                        </TableCell>
+                        {canDelete && canMutate ? (
+                          <TableCell className={tableActionsClassName}>
+                            <AdminListMobileActions>
+                              <RestoreIcon
+                                label={t("restore")}
+                                onRestore={() =>
                                   removeUser(item.id, () =>
-                                    deleteAdminUserAction({
+                                    restoreAdminUserAction({
                                       userId: item.id,
                                     })
                                   )
                                 }
                               />
-                            ) : null}
-                          </div>
-                        </TableCell>
-                      ) : canDelete ? (
-                        <TableCell className={tableActionsClassName} />
-                      ) : null}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </ArchiveTable>
+                              {canHardDelete ? (
+                                <ConfirmDeleteCallbackIcon
+                                  onConfirm={() =>
+                                    removeUser(item.id, () =>
+                                      deleteAdminUserAction({
+                                        userId: item.id,
+                                      })
+                                    )
+                                  }
+                                />
+                              ) : null}
+                            </AdminListMobileActions>
+                          </TableCell>
+                        ) : canDelete ? (
+                          <TableCell className={tableActionsClassName} />
+                        ) : null}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            }
+          />
           {showPagination && activeTab === "users" ? (
             <AdminTablePagination
               className="mt-4"

@@ -174,11 +174,13 @@ export function LoadingAdminTable({
 }) {
   return (
     <div className="grid gap-6">
-      <div className="flex w-full min-w-0 items-center gap-2">
-        <Skeleton className="h-11 min-w-0 flex-1" />
-        <Skeleton className="h-9 w-20" />
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-36" />
+      <div className="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-center">
+        <Skeleton className="h-9 w-full min-w-0 md:h-11 md:flex-1" />
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 md:w-auto">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-36" />
+        </div>
       </div>
       <Skeleton className="h-5 w-40" />
       <div className="rounded-xl border bg-card p-4 shadow-sm">

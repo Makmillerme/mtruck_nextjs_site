@@ -153,7 +153,7 @@ function DemoCta() {
   return (
     <Button type="button" size="lg" className="w-full">
       <LuShoppingCart className="size-4" aria-hidden />
-      Замовити товар
+      Замовити
     </Button>
   );
 }
