@@ -31,12 +31,14 @@ export function formatProductSpecValue(
 export function formatProductPrice(
   amount: number | null,
   locale = "uk",
-  currency = "USD"
+  currency = "USD",
+  displayMode: "CODE" | "SYMBOL" = "CODE"
 ) {
   const value = amount || 0;
   return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
+    currencyDisplay: displayMode === "SYMBOL" ? "symbol" : "code",
     maximumFractionDigits: 0,
   }).format(value);
 }

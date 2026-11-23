@@ -26,6 +26,7 @@ export default async function FinanceCurrenciesPanel() {
               baseCurrencyCode: settings.baseCurrencyCode,
               siteCurrencyCode: settings.siteCurrencyCode,
               allowBuyerCurrencySwitch: settings.allowBuyerCurrencySwitch,
+              currencyDisplayMode: settings.currencyDisplayMode,
             }
           : null
       }

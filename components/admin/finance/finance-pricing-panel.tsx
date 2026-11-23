@@ -36,6 +36,7 @@ export default async function FinancePricingPanel() {
           mainCurrencyCode: fallbackMain,
           vatDisplayCurrencyCode: fallbackMain,
           allowBuyerCurrencySwitch: false,
+          financingEnabled: true,
           extraCurrencyCodes: [] as string[],
         };
 

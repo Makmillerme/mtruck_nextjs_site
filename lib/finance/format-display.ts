@@ -1,9 +1,18 @@
 import { formatProductPrice } from "@/lib/catalog/product-page";
-import type { DisplayMoney } from "@/lib/finance/types";
+import type {
+  CurrencyDisplayMode,
+  DisplayMoney,
+} from "@/lib/finance/types";
 
 export function formatDisplayMoneyLabel(
   display: DisplayMoney,
-  locale = "uk"
+  locale = "uk",
+  displayMode: CurrencyDisplayMode = "CODE"
 ): string {
-  return formatProductPrice(display.amount, locale, display.currencyCode);
+  return formatProductPrice(
+    display.amount,
+    locale,
+    display.currencyCode,
+    displayMode
+  );
 }

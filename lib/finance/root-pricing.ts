@@ -21,6 +21,7 @@ function mapRootPricing(row: {
   mainCurrencyCode: string;
   vatDisplayCurrencyCode: string | null;
   allowBuyerCurrencySwitch: boolean;
+  financingEnabled: boolean;
   extraCurrencies: { currencyCode: string; sortOrder: number }[];
 }): RootPricingDto {
   return {
@@ -36,6 +37,7 @@ function mapRootPricing(row: {
     mainCurrencyCode: row.mainCurrencyCode,
     vatDisplayCurrencyCode: row.vatDisplayCurrencyCode,
     allowBuyerCurrencySwitch: row.allowBuyerCurrencySwitch,
+    financingEnabled: row.financingEnabled,
     extraCurrencyCodes: [...row.extraCurrencies]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((item) => item.currencyCode),
@@ -132,6 +134,7 @@ export async function defaultRootPricingDraft(
     mainCurrencyCode: main,
     vatDisplayCurrencyCode: main,
     allowBuyerCurrencySwitch: false,
+    financingEnabled: true,
     extraCurrencyCodes: [],
   };
 }
@@ -269,6 +272,66 @@ export async function upsertRootPricing(input: UpsertRootPricingInput) {
   }
 
   await upsertOne(input.taxonomyNodeId, payload);
+}
+
+export async function setRootFinancingEnabled(
+  taxonomyNodeId: string | "ALL",
+  financingEnabled: boolean
+) {
+  if (taxonomyNodeId === "ALL") {
+    const roots = await listCatalogRoots();
+    if (roots.length === 0) throw new Error("ROOT_REQUIRED");
+    for (const root of roots) {
+      await setRootFinancingEnabledOne(root.id, financingEnabled);
+    }
+    return;
+  }
+  await setRootFinancingEnabledOne(taxonomyNodeId, financingEnabled);
+}
+
+async function setRootFinancingEnabledOne(
+  taxonomyNodeId: string,
+  financingEnabled: boolean
+) {
+  const root = await prisma.taxonomyNode.findUnique({
+    where: { id: taxonomyNodeId },
+    select: { id: true, parentId: true },
+  });
+  if (!root || root.parentId) {
+    throw new Error("ROOT_REQUIRED");
+  }
+
+  const existing = await prisma.rootPricing.findUnique({
+    where: { taxonomyNodeId },
+    select: { id: true },
+  });
+  if (existing) {
+    await prisma.rootPricing.update({
+      where: { taxonomyNodeId },
+      data: { financingEnabled },
+    });
+    return;
+  }
+
+  const draft = await defaultRootPricingDraft(taxonomyNodeId);
+  await upsertOne(taxonomyNodeId, {
+    vatEnabled: draft.vatEnabled,
+    entryMode: draft.entryMode,
+    storefrontPriceMode: draft.storefrontPriceMode,
+    vatPercent: draft.vatPercent,
+    showPriceWithVat: draft.showPriceWithVat,
+    showPriceWithoutVat: draft.showPriceWithoutVat,
+    showVatAmount: draft.showVatAmount,
+    displayMode: draft.displayMode,
+    mainCurrencyCode: draft.mainCurrencyCode,
+    vatDisplayCurrencyCode: draft.vatDisplayCurrencyCode,
+    allowBuyerCurrencySwitch: draft.allowBuyerCurrencySwitch,
+    extraCurrencyCodes: draft.extraCurrencyCodes,
+  });
+  await prisma.rootPricing.update({
+    where: { taxonomyNodeId },
+    data: { financingEnabled },
+  });
 }
 
 export const anyRootAllowsBuyerSwitch = cache(async (): Promise<boolean> => {

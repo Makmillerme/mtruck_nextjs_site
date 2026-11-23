@@ -43,6 +43,9 @@ export type ProductCardModel = {
   priceLabel?: string;
   priceHint?: string | null;
   struckLabel?: string | null;
+  currencyDisplayMode?: "CODE" | "SYMBOL";
+  financingLabel?: string | null;
+  financingAmountLabel?: string | null;
   priceLines?: {
     kind: string;
     amount: number;
@@ -111,6 +114,78 @@ const GRID_IMAGE_SIZES =
 
 const LIST_IMAGE_SIZES = "(max-width: 768px) 100vw, 448px";
 
+function CardPriceBlock({
+  price,
+  struckLabel,
+  priceLines,
+  locale,
+  currencyDisplayMode,
+  financingLabel,
+  financingAmountLabel,
+}: {
+  price: string;
+  struckLabel?: string | null;
+  priceLines?: ProductCardModel["priceLines"];
+  locale: string;
+  currencyDisplayMode: "CODE" | "SYMBOL";
+  financingLabel?: string | null;
+  financingAmountLabel?: string | null;
+}) {
+  const extras = (priceLines ?? []).filter((line) => line.kind === "extra");
+  const showFinancing = Boolean(financingLabel || financingAmountLabel);
+  const hasStack = extras.length > 0 || showFinancing;
+
+  return (
+    <div
+      className={cn(
+        "min-w-0 grid",
+        hasStack ? "gap-1" : "gap-0.5",
+        hasStack && "text-right"
+      )}
+    >
+      {struckLabel ? (
+        <p className="truncate text-sm text-muted-foreground line-through tabular-nums">
+          {struckLabel}
+        </p>
+      ) : null}
+      <p className="truncate text-xl font-extrabold tabular-nums tracking-tight text-foreground lg:text-2xl">
+        {price}
+      </p>
+      {extras.length > 0 ? (
+        <div className="grid gap-0.5">
+          {extras.map((line) => (
+            <p
+              key={`${line.kind}-${line.currencyCode}`}
+              className="truncate text-sm font-bold tabular-nums tracking-tight text-foreground lg:text-base"
+            >
+              {formatProductPrice(
+                line.amount,
+                locale,
+                line.currencyCode,
+                currencyDisplayMode
+              )}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {showFinancing ? (
+        <div className="grid gap-0.5 border-t border-border/60 pt-1">
+          {financingLabel ? (
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              {financingLabel}
+            </p>
+          ) : null}
+          {financingAmountLabel ? (
+            <p className="truncate text-sm font-semibold tabular-nums tracking-tight text-foreground">
+              {financingAmountLabel}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ProductCard({
   product,
   priority = false,
@@ -132,11 +207,16 @@ export default function ProductCard({
   const locale = useLocale();
   const t = useTranslations("ProductCard");
   const tProduct = useTranslations("Product");
-  const tFinance = useTranslations("FinanceAdmin");
   const status = product.status ?? "PUBLISHED";
+  const currencyDisplayMode = product.currencyDisplayMode ?? "CODE";
   const price =
     product.priceLabel ??
-    formatProductPrice(product.price, locale, product.currency ?? "USD");
+    formatProductPrice(
+      product.price,
+      locale,
+      product.currency ?? "USD",
+      currencyDisplayMode
+    );
   const showName = product.showName !== false;
   const showPrice = product.showPrice !== false;
   const showStatus = product.showStatus !== false;
@@ -310,55 +390,15 @@ export default function ProductCard({
 
           <div className="mt-auto grid gap-3">
             {showPrice ? (
-              <div className="min-w-0 grid gap-1">
-                {product.struckLabel ? (
-                  <p className="truncate text-sm text-muted-foreground line-through">
-                    {product.struckLabel}
-                  </p>
-                ) : null}
-                <p className="truncate text-xl font-extrabold tracking-tight text-foreground lg:text-2xl">
-                  {price}
-                </p>
-                {product.priceHint ? (
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {product.priceHint}
-                  </p>
-                ) : null}
-                {(product.priceLines?.length ?? 0) > 0 ? (
-                  <div className="mt-0.5 grid gap-0.5">
-                    {(product.priceLines ?? []).map((line, index, all) => {
-                      const amount = formatProductPrice(
-                        line.amount,
-                        locale,
-                        line.currencyCode
-                      );
-                      const prefix =
-                        line.labelKey === "priceWithVat"
-                          ? tFinance("priceWithVat")
-                          : line.labelKey === "priceWithoutVat"
-                            ? tFinance("priceWithoutVat")
-                            : line.labelKey === "vatAmount"
-                              ? tFinance("vatAmount")
-                              : null;
-                      const isLast = index === all.length - 1;
-                      const triple = all.length >= 3;
-                      return (
-                        <p
-                          key={`${line.kind}-${line.currencyCode}`}
-                          className={cn(
-                            "truncate text-sm tabular-nums tracking-tight",
-                            triple && isLast
-                              ? "font-medium text-foreground"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {prefix ? `${prefix}: ${amount}` : amount}
-                        </p>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
+              <CardPriceBlock
+                price={price}
+                struckLabel={product.struckLabel}
+                priceLines={product.priceLines}
+                locale={locale}
+                currencyDisplayMode={currencyDisplayMode}
+                financingLabel={product.financingLabel}
+                financingAmountLabel={product.financingAmountLabel}
+              />
             ) : null}
             <Button asChild className="w-full">
               <Link href={product.href}>

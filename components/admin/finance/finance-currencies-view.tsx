@@ -51,6 +51,7 @@ export type FinanceSettingsRow = {
   baseCurrencyCode: string;
   siteCurrencyCode: string;
   allowBuyerCurrencySwitch: boolean;
+  currencyDisplayMode: "CODE" | "SYMBOL";
 };
 
 type SheetMode =
@@ -153,11 +154,15 @@ export default function FinanceCurrenciesView({
     settings?.allowBuyerCurrencySwitch ?? false
   );
   const [baseCode, setBaseCode] = useState(savedBase);
+  const [displayMode, setDisplayMode] = useState<
+    "CODE" | "SYMBOL"
+  >(settings?.currencyDisplayMode ?? "CODE");
   const [createCode, setCreateCode] = useState("");
   const initialSettings = {
     base: savedBase,
     site: savedBase,
     allow: settings?.allowBuyerCurrencySwitch ?? false,
+    display: (settings?.currencyDisplayMode ?? "CODE") as "CODE" | "SYMBOL",
   };
   const lastConfirmed = useRef(initialSettings);
   const settingsDraft = useRef({ ...initialSettings });
@@ -176,14 +181,31 @@ export default function FinanceCurrenciesView({
     const pending =
       settingsDraft.current.base !== lastConfirmed.current.base ||
       settingsDraft.current.site !== lastConfirmed.current.site ||
-      settingsDraft.current.allow !== lastConfirmed.current.allow;
+      settingsDraft.current.allow !== lastConfirmed.current.allow ||
+      settingsDraft.current.display !== lastConfirmed.current.display;
     if (pending) return;
     const allow = settings?.allowBuyerCurrencySwitch ?? false;
+    const display = settings?.currencyDisplayMode ?? "CODE";
     setAllowSwitch(allow);
     setBaseCode(savedBase);
-    settingsDraft.current = { base: savedBase, site: savedBase, allow };
-    lastConfirmed.current = { base: savedBase, site: savedBase, allow };
-  }, [savedBase, settings?.allowBuyerCurrencySwitch]);
+    setDisplayMode(display);
+    settingsDraft.current = {
+      base: savedBase,
+      site: savedBase,
+      allow,
+      display,
+    };
+    lastConfirmed.current = {
+      base: savedBase,
+      site: savedBase,
+      allow,
+      display,
+    };
+  }, [
+    savedBase,
+    settings?.allowBuyerCurrencySwitch,
+    settings?.currencyDisplayMode,
+  ]);
 
   useEffect(() => {
     if (createState?.ok) {
@@ -203,16 +225,28 @@ export default function FinanceCurrenciesView({
     }
   }, [updateState, t]);
 
-  function persistSettings(nextBase: string, nextSite: string, nextAllow: boolean) {
-    const attempt = { base: nextBase, site: nextSite, allow: nextAllow };
+  function persistSettings(
+    nextBase: string,
+    nextSite: string,
+    nextAllow: boolean,
+    nextDisplay: "CODE" | "SYMBOL" = settingsDraft.current.display
+  ) {
+    const attempt = {
+      base: nextBase,
+      site: nextSite,
+      allow: nextAllow,
+      display: nextDisplay,
+    };
     settingsDraft.current = attempt;
     setBaseCode(attempt.base);
     setAllowSwitch(attempt.allow);
+    setDisplayMode(attempt.display);
     const confirmed = lastConfirmed.current;
     if (
       attempt.base === confirmed.base &&
       attempt.site === confirmed.site &&
-      attempt.allow === confirmed.allow
+      attempt.allow === confirmed.allow &&
+      attempt.display === confirmed.display
     ) {
       return;
     }
@@ -223,13 +257,15 @@ export default function FinanceCurrenciesView({
       "allowBuyerCurrencySwitch",
       attempt.allow ? "true" : "false"
     );
+    formData.set("currencyDisplayMode", attempt.display);
     settingsChain.current = settingsChain.current
       .catch(() => undefined)
       .then(async () => {
         const stillCurrent = () =>
           settingsDraft.current.base === attempt.base &&
           settingsDraft.current.site === attempt.site &&
-          settingsDraft.current.allow === attempt.allow;
+          settingsDraft.current.allow === attempt.allow &&
+          settingsDraft.current.display === attempt.display;
         try {
           const result = await updateFinanceSettingsAction(null, formData);
           if (result.ok) {
@@ -245,6 +281,7 @@ export default function FinanceCurrenciesView({
             settingsDraft.current = { ...back };
             setBaseCode(back.base);
             setAllowSwitch(back.allow);
+            setDisplayMode(back.display);
             notify.error(errorMessage(t, result.error));
           }
         } catch {
@@ -253,6 +290,7 @@ export default function FinanceCurrenciesView({
             settingsDraft.current = { ...back };
             setBaseCode(back.base);
             setAllowSwitch(back.allow);
+            setDisplayMode(back.display);
             notify.error(t("errorSaveFailed"));
           }
         }
@@ -281,21 +319,42 @@ export default function FinanceCurrenciesView({
 
   return (
     <div className="grid gap-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            {currencies.length === 0
-              ? t("emptyCurrencies")
-              : t("currenciesMeta", {
-                  count: currencies.length,
-                  base: 1,
-                })}
-          </p>
-          <AdminInfoTip label={t("helpLabel")}>
-            <p>{t("helpList1")}</p>
-            <p>{t("helpList2")}</p>
-            <p>{t("helpList3")}</p>
-          </AdminInfoTip>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid min-w-0 flex-1 gap-2 sm:max-w-md">
+          {currencies.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("emptyCurrencies")}</p>
+          ) : (
+            <>
+              <TipLabel
+                label={t("currencyDisplayMode")}
+                tip={t("helpCurrencyDisplayMode")}
+              />
+              <CatalogMenuSelect
+                name="currencyDisplayMode"
+                label={t("currencyDisplayMode")}
+                hideLabel
+                required
+                allowClear={false}
+                searchable={false}
+                value={displayMode}
+                onValueChange={(next) => {
+                  const mode = next === "SYMBOL" ? "SYMBOL" : "CODE";
+                  persistSettings(
+                    settingsDraft.current.base,
+                    settingsDraft.current.site,
+                    settingsDraft.current.allow,
+                    mode
+                  );
+                }}
+                disabled={settingsSaving || !settings}
+                options={[
+                  { value: "CODE", label: t("currencyDisplayCode") },
+                  { value: "SYMBOL", label: t("currencyDisplaySymbol") },
+                ]}
+                emptyLabel="—"
+              />
+            </>
+          )}
         </div>
         <Button
           type="button"

@@ -39,7 +39,7 @@ export default function FinanceTabs({
 
   return (
     <Tabs value={tab} onValueChange={openTab}>
-      <TabsList className="h-auto w-full flex-wrap sm:w-full">
+      <TabsList className="w-full sm:w-full">
         <TabsTrigger value="currencies" className="sm:flex-1">
           {t("tabCurrencies")}
         </TabsTrigger>

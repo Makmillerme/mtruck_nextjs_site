@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { MemberOrderPicker } from "@/components/admin/catalog/display-groups-panel";
 import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
 import { Button } from "@/components/ui/button";
@@ -146,7 +146,7 @@ export default function ProductPageEditor({
 }: ProductPageEditorPayload) {
   const t = useTranslations("UiEditor");
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [keyFactsMax, setKeyFactsMax] = useState(
     clampKeyFactsMax(initialKeyFactsMax)
   );
@@ -164,6 +164,9 @@ export default function ProductPageEditor({
     "create"
   );
   const [tabDialogName, setTabDialogName] = useState("");
+  const hydrating = useRef(true);
+  const lastSaved = useRef("");
+  const saveChain = useRef(Promise.resolve());
 
   const hasFolder = Boolean(selectedNodeId);
   const byId = useMemo(
@@ -185,6 +188,7 @@ export default function ProductPageEditor({
   );
 
   useEffect(() => {
+    hydrating.current = true;
     setKeyFactsMax(clampKeyFactsMax(initialKeyFactsMax));
     setKeyFactIds(
       initialKeyFactSlots
@@ -420,29 +424,68 @@ export default function ProductPageEditor({
     [attributes, t]
   );
 
-  function save() {
-    if (!selectedNodeId) {
-      notify.error(t("noFolder"));
+  useEffect(() => {
+    if (hydrating.current) {
+      hydrating.current = false;
+      lastSaved.current = JSON.stringify({
+        selectedNodeId,
+        keyFactsMax,
+        keyFactIds,
+        tabs,
+      });
       return;
     }
-    startTransition(async () => {
-      const result = await saveProductPageLayoutAction({
-        taxonomyNodeId: selectedNodeId,
-        keyFactsMax,
-        keyFactSlots: keyFactIds.map((attributeId) => ({
-          attributeId,
-          visible: true,
-        })),
-        tabs: tabs.map((tab) => ({
-          id: tab.id,
-          name: tab.name,
-          kind: tab.kind,
-          slots: tab.slots,
-        })),
-      });
-      notify.fromAction(result);
+    if (!selectedNodeId) return;
+    const snapshot = JSON.stringify({
+      selectedNodeId,
+      keyFactsMax,
+      keyFactIds,
+      tabs,
     });
-  }
+    if (snapshot === lastSaved.current) return;
+
+    const handle = window.setTimeout(() => {
+      saveChain.current = saveChain.current
+        .catch(() => undefined)
+        .then(async () => {
+          const still =
+            JSON.stringify({
+              selectedNodeId,
+              keyFactsMax,
+              keyFactIds,
+              tabs,
+            }) === snapshot;
+          if (!still) return;
+          try {
+            const result = await saveProductPageLayoutAction({
+              taxonomyNodeId: selectedNodeId,
+              keyFactsMax,
+              keyFactSlots: keyFactIds.map((attributeId) => ({
+                attributeId,
+                visible: true,
+              })),
+              tabs: tabs.map((tab) => ({
+                id: tab.id,
+                name: tab.name,
+                kind: tab.kind,
+                slots: tab.slots,
+              })),
+            });
+            if (result.ok) {
+              lastSaved.current = snapshot;
+            }
+            notify.fromAction(result);
+          } catch {
+            notify.error(t("noFolder"));
+          }
+        });
+      startTransition(async () => {
+        await saveChain.current;
+      });
+    }, 400);
+
+    return () => window.clearTimeout(handle);
+  }, [selectedNodeId, keyFactsMax, keyFactIds, tabs, t]);
 
   return (
     <div className="grid gap-6">
@@ -669,11 +712,6 @@ export default function ProductPageEditor({
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
-            <Button type="button" disabled={isPending} onClick={save}>
-              {t("saveProductPage")}
-            </Button>
-          </div>
         </>
       ) : (
         <p className="text-sm text-muted-foreground">{t("stubProductCard")}</p>

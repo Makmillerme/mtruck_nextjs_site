@@ -9,7 +9,10 @@ import {
   updateCurrency,
   updateFinanceSettings,
 } from "@/lib/finance/currencies";
-import { upsertRootPricing } from "@/lib/finance/root-pricing";
+import {
+  setRootFinancingEnabled,
+  upsertRootPricing,
+} from "@/lib/finance/root-pricing";
 import { getAdminUser } from "@/utils/session";
 import type { ActionState } from "@/utils/types";
 
@@ -24,6 +27,7 @@ const settingsFormSchema = z.object({
   baseCurrencyCode: z.string().trim().min(3).max(3),
   siteCurrencyCode: z.string().trim().min(3).max(3),
   allowBuyerCurrencySwitch: z.boolean(),
+  currencyDisplayMode: z.enum(["CODE", "SYMBOL"]),
 });
 
 function formBool(formData: FormData, key: string): boolean {
@@ -155,6 +159,7 @@ export async function updateFinanceSettingsAction(
     baseCurrencyCode: formData.get("baseCurrencyCode"),
     siteCurrencyCode: formData.get("siteCurrencyCode"),
     allowBuyerCurrencySwitch: formBool(formData, "allowBuyerCurrencySwitch"),
+    currencyDisplayMode: formData.get("currencyDisplayMode") || "CODE",
   });
   if (!parsed.success) {
     return { ok: false, error: "VALIDATION" };
@@ -229,6 +234,28 @@ export async function upsertRootPricingAction(
       taxonomyNodeId: parsed.data.taxonomyNodeId as string | "ALL",
       vatDisplayCurrencyCode: parsed.data.vatDisplayCurrencyCode ?? null,
     });
+    revalidatePath("/admin/finance");
+    revalidatePath("/");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: mapFinanceError(error) };
+  }
+}
+
+export async function setRootFinancingEnabledAction(
+  _prev: { ok: boolean; error?: string } | null,
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
+  await getAdminUser();
+  const taxonomyNodeId = String(formData.get("taxonomyNodeId") ?? "").trim();
+  if (!taxonomyNodeId) {
+    return { ok: false, error: "VALIDATION" };
+  }
+  try {
+    await setRootFinancingEnabled(
+      taxonomyNodeId as string | "ALL",
+      formBool(formData, "financingEnabled")
+    );
     revalidatePath("/admin/finance");
     revalidatePath("/");
     return { ok: true };

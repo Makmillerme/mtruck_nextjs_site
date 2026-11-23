@@ -1,4 +1,6 @@
 import { getTranslations } from "next-intl/server";
+import { formatProductPrice } from "@/lib/catalog/product-page";
+import { estimateMonthlyFinancing } from "@/lib/finance/financing-estimate";
 import { buildStorefrontPriceDisplay } from "@/lib/finance/resolve-storefront-price";
 import type { PromoKind, StorefrontPriceDisplay } from "@/lib/finance/types";
 import type { Decimal } from "@prisma/client/runtime/library";
@@ -21,28 +23,37 @@ export async function resolveStorefrontPriceDisplay(
   );
   const tFinance = await getTranslations({ locale, namespace: "FinanceAdmin" });
   const tProduct = await getTranslations({ locale, namespace: "Product" });
+
+  let financingLabel: string | null = null;
+  let financingAmountLabel: string | null = null;
+  if (display.financingEnabled) {
+    const main = display.lines.find((line) => line.kind === "main");
+    if (main) {
+      const monthly = estimateMonthlyFinancing(main.amount);
+      const amount = formatProductPrice(
+        monthly,
+        locale,
+        main.currencyCode,
+        display.currencyDisplayMode
+      );
+      financingLabel = tProduct("financingFrom");
+      financingAmountLabel = tProduct("financingPerMonth", { amount });
+    }
+  }
+
   if (display.priceHint === "rateMissing") {
     return {
       ...display,
       priceHint: tFinance("rateMissingHint"),
+      financingLabel,
+      financingAmountLabel,
     };
   }
-  // Different VAT currency: main amount speaks for itself — no caption.
-  if (display.vatCurrenciesDiffer) {
-    return {
-      ...display,
-      priceHint: null,
-    };
-  }
-  // Same currency: short entry-mode caption without the word «Вартість».
-  const modeHint =
-    display.priceMode === "INCL_VAT"
-      ? tProduct("priceHintInclShort")
-      : display.priceMode === "EXCL_VAT"
-        ? tProduct("priceHintExclShort")
-        : tProduct("priceHintPlainShort");
+  // Mode captions (Вартість / з ПДВ / без ПДВ) removed from storefront canon.
   return {
     ...display,
-    priceHint: modeHint,
+    priceHint: null,
+    financingLabel,
+    financingAmountLabel,
   };
 }

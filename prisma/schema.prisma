@@ -199,14 +199,20 @@ model Currency {
   rootPricingExtra RootPricingCurrency[]
 }
 
+enum CurrencyDisplayMode {
+  CODE
+  SYMBOL
+}
+
 model FinanceSettings {
-  id                       String   @id @default("default")
+  id                       String              @id @default("default")
   baseCurrencyCode         String
-  baseCurrency             Currency @relation("FinanceBaseCurrency", fields: [baseCurrencyCode], references: [code], onDelete: Restrict)
+  baseCurrency             Currency            @relation("FinanceBaseCurrency", fields: [baseCurrencyCode], references: [code], onDelete: Restrict)
   siteCurrencyCode         String
-  siteCurrency             Currency @relation("FinanceSiteCurrency", fields: [siteCurrencyCode], references: [code], onDelete: Restrict)
-  allowBuyerCurrencySwitch Boolean  @default(false)
-  updatedAt                DateTime @updatedAt
+  siteCurrency             Currency            @relation("FinanceSiteCurrency", fields: [siteCurrencyCode], references: [code], onDelete: Restrict)
+  allowBuyerCurrencySwitch Boolean             @default(false)
+  currencyDisplayMode      CurrencyDisplayMode @default(CODE)
+  updatedAt                DateTime            @updatedAt
 }
 
 model Product {
@@ -301,6 +307,8 @@ model RootPricing {
   vatDisplayCurrencyCode   String?
   vatDisplayCurrency       Currency?        @relation("RootPricingVatDisplayCurrency", fields: [vatDisplayCurrencyCode], references: [code], onDelete: Restrict)
   allowBuyerCurrencySwitch Boolean          @default(false)
+  /// Show financing estimate on PDP for products under this root.
+  financingEnabled         Boolean          @default(true)
   extraCurrencies          RootPricingCurrency[]
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt

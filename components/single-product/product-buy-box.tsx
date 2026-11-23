@@ -71,10 +71,9 @@ export default function ProductBuyBox({
   categoryLabel,
   name,
   priceLabel,
-  priceHint,
   struckLabel,
+  extraPriceLines = [],
   priceLines = [],
-  vatCurrenciesDiffer = false,
   availabilityLabel,
   availabilityInStock,
   facts = [],
@@ -91,11 +90,10 @@ export default function ProductBuyBox({
   categoryLabel?: string | null;
   name: string;
   priceLabel: string;
-  priceHint?: string | null;
   struckLabel?: string | null;
+  /** Converted amounts under the main price (STACKED extras) — not the VAT column. */
+  extraPriceLines?: string[];
   priceLines?: { label: string; muted?: boolean; emphasize?: boolean }[];
-  /** When true, hide entry-mode caption; VAT lines sit beside the main price. */
-  vatCurrenciesDiffer?: boolean;
   availabilityLabel: string;
   availabilityInStock: boolean;
   facts?: ProductKeyFact[];
@@ -114,10 +112,32 @@ export default function ProductBuyBox({
 }) {
   const showFinancing = Boolean(financingLabel || financingAmount);
   const hasVatBreakdown = priceLines.length > 0;
+  const hasExtras = extraPriceLines.length > 0;
   const trust: TrustItem[] = trustItems.map((item, index) => ({
     ...item,
     Icon: TRUST_ICONS[index % TRUST_ICONS.length]!,
   }));
+
+  const mainPriceBlock = (
+    <>
+      {struckLabel ? (
+        <p className="text-sm text-muted-foreground line-through">{struckLabel}</p>
+      ) : null}
+      <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
+        {priceLabel}
+      </p>
+      {hasExtras
+        ? extraPriceLines.map((line) => (
+            <p
+              key={line}
+              className="text-base font-bold tabular-nums tracking-tight text-foreground lg:text-lg"
+            >
+              {line}
+            </p>
+          ))
+        : null}
+    </>
+  );
 
   return (
     <div className={cn("flex flex-col gap-5", className)}>
@@ -168,20 +188,8 @@ export default function ProductBuyBox({
         {hasVatBreakdown ? (
           <div className="rounded-sm border border-border bg-card p-4">
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-border">
-              <div className="grid content-center gap-1 sm:pr-5">
-                {struckLabel ? (
-                  <p className="text-sm text-muted-foreground line-through">
-                    {struckLabel}
-                  </p>
-                ) : null}
-                <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
-                  {priceLabel}
-                </p>
-                {!vatCurrenciesDiffer && priceHint ? (
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {priceHint}
-                  </p>
-                ) : null}
+              <div className="grid content-center gap-1 text-right sm:pr-5">
+                {mainPriceBlock}
               </div>
               <div className="grid content-center gap-1 border-t border-border pt-4 sm:border-t-0 sm:pt-0 sm:pl-5">
                 {priceLines.map((line) => (
@@ -221,14 +229,10 @@ export default function ProductBuyBox({
             <div
               className={cn(
                 "grid content-center gap-1",
+                hasExtras && "text-right",
                 showFinancing && "sm:pr-5"
               )}
             >
-              {priceHint ? (
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  {priceHint}
-                </p>
-              ) : null}
               {struckLabel ? (
                 <p className="text-sm text-muted-foreground line-through">
                   {struckLabel}
@@ -237,6 +241,16 @@ export default function ProductBuyBox({
               <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
                 {priceLabel}
               </p>
+              {hasExtras
+                ? extraPriceLines.map((line) => (
+                    <p
+                      key={line}
+                      className="text-base font-bold tabular-nums tracking-tight text-foreground lg:text-lg"
+                    >
+                      {line}
+                    </p>
+                  ))
+                : null}
             </div>
             {showFinancing ? (
               <FinancingRow

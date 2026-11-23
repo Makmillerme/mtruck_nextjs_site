@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import AdminInfoTip from "@/components/admin/catalog/admin-info-tip";
 import { CatalogMenuSelect } from "@/components/admin/catalog/catalog-fields";
-import SheetFormActions from "@/components/admin/sheet-form-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +14,21 @@ import { numberInputClassName } from "@/lib/ui/number-input";
 import { notify } from "@/lib/ui/notify";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
+
+function serializePricing(draft: RootPricingDto, vatText: string, scope: string) {
+  return JSON.stringify({
+    scope,
+    vatEnabled: draft.vatEnabled,
+    entryMode: draft.entryMode,
+    storefrontPriceMode: draft.storefrontPriceMode,
+    vatText,
+    displayMode: draft.displayMode,
+    mainCurrencyCode: draft.mainCurrencyCode,
+    vatDisplayCurrencyCode: draft.vatDisplayCurrencyCode,
+    allowBuyerCurrencySwitch: draft.allowBuyerCurrencySwitch,
+    extraCurrencyCodes: [...draft.extraCurrencyCodes].sort(),
+  });
+}
 
 const ALL_SCOPE = "ALL";
 
@@ -53,26 +67,36 @@ export default function FinancePricingView({
 }) {
   const t = useTranslations("FinanceAdmin");
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [scope, setScope] = useState(initialScope);
   const [draft, setDraft] = useState<RootPricingDto>(initialPricing);
   const [vatText, setVatText] = useState(() => String(initialPricing.vatPercent));
+  const hydrating = useRef(true);
+  const lastSaved = useRef(
+    serializePricing(initialPricing, String(initialPricing.vatPercent), initialScope)
+  );
+  const saveChain = useRef(Promise.resolve());
 
+  // Sync draft only when the user changes scope — not after router.refresh(),
+  // otherwise autosave + new pricingByRoot identity loops forever.
   useEffect(() => {
+    hydrating.current = true;
     if (scope === ALL_SCOPE) {
-      setDraft((prev) => ({
-        ...prev,
-        taxonomyNodeId: ALL_SCOPE,
-      }));
+      setDraft((prev) => {
+        const next = { ...prev, taxonomyNodeId: ALL_SCOPE };
+        lastSaved.current = serializePricing(next, String(prev.vatPercent), scope);
+        return next;
+      });
       return;
     }
     const next = pricingByRoot[scope];
     if (next) {
       setDraft(next);
       setVatText(String(next.vatPercent));
+      lastSaved.current = serializePricing(next, String(next.vatPercent), scope);
       return;
     }
-    setDraft({
+    const fallback = {
       ...initialPricing,
       taxonomyNodeId: scope,
       storefrontPriceMode:
@@ -81,9 +105,92 @@ export default function FinancePricingView({
         "INCL_VAT",
       mainCurrencyCode:
         initialPricing.mainCurrencyCode || currencyOptions[0]?.value || "USD",
-    });
+    };
+    setDraft(fallback);
     setVatText(String(initialPricing.vatPercent));
-  }, [scope, pricingByRoot, initialPricing, currencyOptions]);
+    lastSaved.current = serializePricing(
+      fallback,
+      String(initialPricing.vatPercent),
+      scope
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: scope-only hydrate
+  }, [scope]);
+
+  useEffect(() => {
+    if (hydrating.current) {
+      hydrating.current = false;
+      lastSaved.current = serializePricing(draft, vatText, scope);
+      return;
+    }
+    const snapshot = serializePricing(draft, vatText, scope);
+    if (snapshot === lastSaved.current) return;
+
+    const vatRaw = vatText.trim().replace(",", ".");
+    if (vatRaw === "." || (vatRaw !== "" && !/^\d*\.?\d*$/.test(vatRaw))) {
+      return;
+    }
+    const vatPercent = vatRaw === "" ? 0 : Number(vatRaw);
+    if (!Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) {
+      return;
+    }
+
+    const handle = window.setTimeout(() => {
+      const formData = new FormData();
+      formData.set("taxonomyNodeId", scope);
+      formData.set("vatEnabled", draft.vatEnabled ? "true" : "false");
+      formData.set("entryMode", draft.entryMode);
+      formData.set(
+        "storefrontPriceMode",
+        draft.storefrontPriceMode ?? draft.entryMode
+      );
+      formData.set("vatPercent", String(vatPercent));
+      formData.set("showPriceWithVat", "false");
+      formData.set("showPriceWithoutVat", "false");
+      formData.set("showVatAmount", "false");
+      formData.set("displayMode", draft.displayMode);
+      formData.set("mainCurrencyCode", draft.mainCurrencyCode);
+      formData.set(
+        "vatDisplayCurrencyCode",
+        draft.vatDisplayCurrencyCode || draft.mainCurrencyCode
+      );
+      formData.set(
+        "allowBuyerCurrencySwitch",
+        draft.displayMode === "SINGLE" && draft.allowBuyerCurrencySwitch
+          ? "true"
+          : "false"
+      );
+      for (const code of draft.extraCurrencyCodes) {
+        formData.append("extraCurrencyCodes", code);
+      }
+
+      saveChain.current = saveChain.current
+        .catch(() => undefined)
+        .then(async () => {
+          const stillCurrent =
+            serializePricing(draft, vatText, scope) === snapshot;
+          if (!stillCurrent) return;
+          try {
+            const result = await upsertRootPricingAction(null, formData);
+            if (result.ok) {
+              lastSaved.current = snapshot;
+              notify.success(t("toastSaved"));
+              router.refresh();
+              return;
+            }
+            notify.error(
+              t(`error${result.error ?? "SAVE_FAILED"}` as "errorSAVE_FAILED")
+            );
+          } catch {
+            notify.error(t("errorSAVE_FAILED"));
+          }
+        });
+      startTransition(async () => {
+        await saveChain.current;
+      });
+    }, 350);
+
+    return () => window.clearTimeout(handle);
+  }, [draft, vatText, scope, router, t]);
 
   const scopeOptions = useMemo(
     () => [
@@ -106,52 +213,6 @@ export default function FinancePricingView({
     });
   }
 
-  function onSubmit(formData: FormData) {
-    formData.set("taxonomyNodeId", scope);
-    formData.set("vatEnabled", draft.vatEnabled ? "true" : "false");
-    formData.set("entryMode", draft.entryMode);
-    formData.set(
-      "storefrontPriceMode",
-      draft.storefrontPriceMode ?? draft.entryMode
-    );
-    const vatRaw = String(formData.get("vatPercent") ?? "")
-      .trim()
-      .replace(",", ".");
-    const vatPercent = vatRaw === "" || vatRaw === "." ? 0 : Number(vatRaw);
-    if (!Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) {
-      notify.error(t("errorSAVE_FAILED"));
-      return;
-    }
-    formData.set("vatPercent", String(vatPercent));
-    formData.set("showPriceWithVat", "false");
-    formData.set("showPriceWithoutVat", "false");
-    formData.set("showVatAmount", "false");
-    formData.set("displayMode", draft.displayMode);
-    formData.set("mainCurrencyCode", draft.mainCurrencyCode);
-    formData.set(
-      "vatDisplayCurrencyCode",
-      draft.vatDisplayCurrencyCode || draft.mainCurrencyCode
-    );
-    formData.set(
-      "allowBuyerCurrencySwitch",
-      draft.displayMode === "SINGLE" && draft.allowBuyerCurrencySwitch
-        ? "true"
-        : "false"
-    );
-    for (const code of draft.extraCurrencyCodes) {
-      formData.append("extraCurrencyCodes", code);
-    }
-    startTransition(async () => {
-      const result = await upsertRootPricingAction(null, formData);
-      if (result.ok) {
-        notify.success(t("toastSaved"));
-        router.refresh();
-        return;
-      }
-      notify.error(t(`error${result.error ?? "SAVE_FAILED"}` as "errorSAVE_FAILED"));
-    });
-  }
-
   if (roots.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">{t("pricingNoRoots")}</p>
@@ -167,7 +228,7 @@ export default function FinancePricingView({
   }
 
   return (
-    <form action={onSubmit} className="grid gap-8">
+    <div className="grid gap-8">
       <div className="grid gap-2 sm:max-w-md">
         <TipLabel label={t("pricingScope")} tip={t("helpPricingScope")} />
         <CatalogMenuSelect
@@ -400,9 +461,6 @@ export default function FinancePricingView({
         )}
       </section>
 
-      <SheetFormActions
-        saveLabel={pending ? t("saving") : t("save")}
-      />
-    </form>
+    </div>
   );
 }

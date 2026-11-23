@@ -173,6 +173,7 @@ export type UpdateFinanceSettingsInput = {
   baseCurrencyCode: string;
   siteCurrencyCode: string;
   allowBuyerCurrencySwitch: boolean;
+  currencyDisplayMode: "CODE" | "SYMBOL";
 };
 
 export async function updateFinanceSettings(input: UpdateFinanceSettingsInput) {
@@ -215,6 +216,7 @@ export async function updateFinanceSettings(input: UpdateFinanceSettingsInput) {
         baseCurrencyCode: base,
         siteCurrencyCode: base,
         allowBuyerCurrencySwitch: input.allowBuyerCurrencySwitch,
+        currencyDisplayMode: input.currencyDisplayMode,
       },
     });
   });

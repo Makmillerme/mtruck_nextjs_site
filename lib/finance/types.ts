@@ -18,11 +18,14 @@ export type CurrencyDto = {
   sortOrder: number;
 };
 
+export type CurrencyDisplayMode = "CODE" | "SYMBOL";
+
 export type FinanceSettingsDto = {
   id: string;
   baseCurrencyCode: string;
   siteCurrencyCode: string;
   allowBuyerCurrencySwitch: boolean;
+  currencyDisplayMode: CurrencyDisplayMode;
 };
 
 export type DisplayMoney = {
@@ -53,6 +56,7 @@ export type RootPricingDto = {
   /** Empty/null means same as mainCurrencyCode. */
   vatDisplayCurrencyCode: string | null;
   allowBuyerCurrencySwitch: boolean;
+  financingEnabled: boolean;
   extraCurrencyCodes: string[];
 };
 
@@ -85,6 +89,13 @@ export type StorefrontPriceDisplay = {
   priceHint: string | null;
   /** True when main display currency ≠ VAT display currency (triple VAT lines). */
   vatCurrenciesDiffer: boolean;
+  /** Site-wide currency notation from FinanceSettings. */
+  currencyDisplayMode: CurrencyDisplayMode;
+  /** Root pricing: show financing estimate on card/PDP. */
+  financingEnabled: boolean;
+  /** Prefetched monthly estimate label (i18n), when financing is on. */
+  financingLabel: string | null;
+  financingAmountLabel: string | null;
   lines: PriceLine[];
   struckLabel: string | null;
 };

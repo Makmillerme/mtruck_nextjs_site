@@ -126,6 +126,10 @@ export function productWithSpecsToCardModel(
     priceLabel: string;
     priceHint?: string | null;
     struckLabel?: string | null;
+    currencyDisplayMode?: "CODE" | "SYMBOL";
+    financingEnabled?: boolean;
+    financingLabel?: string | null;
+    financingAmountLabel?: string | null;
     lines?: {
       kind: string;
       amount: number;
@@ -165,8 +169,15 @@ export function productWithSpecsToCardModel(
     priceLabel: display?.priceLabel,
     priceHint: display?.priceHint,
     struckLabel: display?.struckLabel ?? null,
+    currencyDisplayMode: display?.currencyDisplayMode ?? "CODE",
+    financingLabel: display?.financingEnabled
+      ? display.financingLabel ?? null
+      : null,
+    financingAmountLabel: display?.financingEnabled
+      ? display.financingAmountLabel ?? null
+      : null,
     priceLines: (display?.lines ?? [])
-      .filter((line) => line.kind === "extra" || line.kind === "net" || line.kind === "gross" || line.kind === "vat")
+      .filter((line) => line.kind === "extra")
       .map((line) => ({
         kind: line.kind,
         amount: line.amount,

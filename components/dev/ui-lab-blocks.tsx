@@ -14,7 +14,16 @@ const DEMO_IMAGES = [
 const DEMO_PRODUCT = {
   id: "ui-lab",
   name: "MAN TGX 18.440",
-  price: 38500,
+  price: 2594400,
+  currency: "UAH",
+  priceLabel: "2 594 400 UAH",
+  currencyDisplayMode: "CODE" as const,
+  financingLabel: "Фінансування від",
+  financingAmountLabel: "≈ 50 871 UAH/міс",
+  priceLines: [
+    { kind: "extra", amount: 56400, currencyCode: "USD" },
+    { kind: "extra", amount: 52000, currencyCode: "EUR" },
+  ],
   image: "/images/hero.webp",
   images: ["/images/hero.webp", "/images/hero.png", "/images/hero.webp"],
   href: "/products",
@@ -38,8 +47,8 @@ export default async function UiLabBlocks() {
             Картка товару
           </h2>
           <p className="text-sm text-muted-foreground">
-            Живий `ProductCard`: PhotoCarousel на превʼю, ціна зверху, «Детальніше»
-            на всю ширину знизу. Тінь + zoom на hover.
+            Живий `ProductCard`: PhotoCarousel, стек валют (основна + додаткові),
+            «Детальніше» на всю ширину. Тінь + zoom на hover.
           </p>
         </header>
 

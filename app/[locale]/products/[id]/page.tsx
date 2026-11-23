@@ -33,6 +33,8 @@ import {
   formatProductPrice,
 } from "@/lib/catalog/product-page";
 import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
+import { estimateMonthlyFinancing } from "@/lib/finance/financing-estimate";
+import { getRootPricingForProductNode } from "@/lib/finance/root-pricing";
 import { resolveStorefrontPriceDisplay } from "@/lib/finance/storefront-card-price";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import {
@@ -115,46 +117,52 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     buyerCurrency
   );
   const priceLabel = storefrontPrice.priceLabel;
-  const priceHint = storefrontPrice.priceHint;
+  const currencyDisplayMode = storefrontPrice.currencyDisplayMode;
+  const rootPricing = await getRootPricingForProductNode(
+    product.taxonomyNodeId
+  );
+  const financingEnabled = rootPricing?.financingEnabled !== false;
   const mainLine = storefrontPrice.lines.find((line) => line.kind === "main");
-  const leasingEstimate = Math.max(
-    1,
-    Math.round((mainLine?.amount || price || 0) / 51)
+  const leasingEstimate = estimateMonthlyFinancing(
+    mainLine?.amount || price || 0
   );
   const leasingAmountLabel = formatProductPrice(
     leasingEstimate,
     locale,
-    mainLine?.currencyCode ?? currency
+    mainLine?.currencyCode ?? currency,
+    currencyDisplayMode
   );
   const vatLineKinds = new Set(["net", "gross", "vat"]);
-  const priceLines = storefrontPrice.lines
-    .filter((line) => line.kind !== "main" && line.kind !== "was")
-    .map((line, index, all) => {
-      const amount = formatProductPrice(
+  const extraPriceLines = storefrontPrice.lines
+    .filter((line) => line.kind === "extra")
+    .map((line) =>
+      formatProductPrice(
         line.amount,
         locale,
-        line.currencyCode
-      );
-      const prefix = line.labelKey ? tFinance(line.labelKey) : null;
-      const isVatLine = vatLineKinds.has(line.kind);
-      let lastVatIndex = -1;
-      for (let i = all.length - 1; i >= 0; i -= 1) {
-        if (vatLineKinds.has(all[i]!.kind)) {
-          lastVatIndex = i;
-          break;
-        }
-      }
-      const emphasize =
-        Boolean(isVatLine) &&
-        index === lastVatIndex &&
-        storefrontPrice.vatCurrenciesDiffer;
-      return {
-        label: prefix ? `${prefix}: ${amount}` : amount,
-        // Same currencies: all VAT lines muted. Differ: last (З ПДВ) stays strong.
-        muted: line.kind === "extra" || (isVatLine && !emphasize),
-        emphasize,
-      };
-    });
+        line.currencyCode,
+        currencyDisplayMode
+      )
+    );
+  const vatLines = storefrontPrice.lines.filter((line) =>
+    vatLineKinds.has(line.kind)
+  );
+  const priceLines = vatLines.map((line, index, all) => {
+    const amount = formatProductPrice(
+      line.amount,
+      locale,
+      line.currencyCode,
+      currencyDisplayMode
+    );
+    const prefix = line.labelKey ? tFinance(line.labelKey) : null;
+    const emphasize =
+      index === all.length - 1 && storefrontPrice.vatCurrenciesDiffer;
+    return {
+      label: prefix ? `${prefix}: ${amount}` : amount,
+      // Same currencies: all VAT lines muted. Differ: last (З ПДВ) stays strong.
+      muted: !emphasize,
+      emphasize,
+    };
+  });
   const user = session?.user;
   const userId = user?.id;
   const isAuthenticated = Boolean(userId);
@@ -338,20 +346,23 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             categoryLabel={categoryLabel}
             name={name}
             priceLabel={priceLabel}
-            priceHint={priceHint}
             struckLabel={storefrontPrice.struckLabel}
+            extraPriceLines={extraPriceLines}
             priceLines={priceLines}
-            vatCurrenciesDiffer={storefrontPrice.vatCurrenciesDiffer}
             availabilityLabel={availabilityLabel}
             availabilityInStock={availabilityInStock}
             facts={keyFacts}
             articleLabel={
               productCode ? t("articleCode", { code: productCode }) : null
             }
-            financingLabel={t("financingFrom")}
-            financingAmount={t("financingPerMonth", {
-              amount: leasingAmountLabel,
-            })}
+            financingLabel={
+              financingEnabled ? t("financingFrom") : null
+            }
+            financingAmount={
+              financingEnabled
+                ? t("financingPerMonth", { amount: leasingAmountLabel })
+                : null
+            }
             trustItems={trustItems}
             actions={
               <>

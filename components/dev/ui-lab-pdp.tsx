@@ -194,7 +194,7 @@ export default function UiLabPdp() {
           categoryLabel="Сідельні тягачі"
           name="MAN TGX 18.440"
           priceLabel="2 677 200 ₴"
-          priceHint="без ПДВ"
+          extraPriceLines={["68 500 USD", "63 200 EUR"]}
           priceLines={[
             { label: "З ПДВ: 3 212 640 ₴", muted: true },
             { label: "ПДВ: 535 440 ₴", muted: true },

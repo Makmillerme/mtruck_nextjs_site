@@ -83,6 +83,7 @@ export async function buildStorefrontPriceDisplay(
 ): Promise<StorefrontPriceDisplay> {
   const context = await loadStorefrontPriceContext();
   const { settings, rates, currencies } = context;
+  const currencyDisplayMode = settings?.currencyDisplayMode ?? "CODE";
   const rootId = rootIdFromParentIndex(product.taxonomyNodeId, context.parents);
   const pricing = rootId ? context.pricingByRoot.get(rootId) ?? null : null;
 
@@ -107,6 +108,7 @@ export async function buildStorefrontPriceDisplay(
     mainCurrencyCode: settings?.baseCurrencyCode ?? sourceCode,
     vatDisplayCurrencyCode: settings?.baseCurrencyCode ?? sourceCode,
     allowBuyerCurrencySwitch: false,
+    financingEnabled: true,
     extraCurrencyCodes: [],
   };
   const config = pricing ?? defaults;
@@ -158,11 +160,16 @@ export async function buildStorefrontPriceDisplay(
           hintKey: "rateMissing",
           original: { amount: product.price, currencyCode: sourceCode },
         },
-        locale
+        locale,
+        currencyDisplayMode
       ),
       priceMode,
       priceHint: "rateMissing",
       vatCurrenciesDiffer: false,
+      currencyDisplayMode,
+      financingEnabled: config.financingEnabled,
+      financingLabel: null,
+      financingAmountLabel: null,
       lines: [
         {
           kind: "main",
@@ -308,7 +315,8 @@ export async function buildStorefrontPriceDisplay(
           converted: true,
           original: { amount: wasAmount, currencyCode: sourceCode },
         },
-        locale
+        locale,
+        currencyDisplayMode
       );
       lines.push({
         kind: "was",
@@ -328,11 +336,16 @@ export async function buildStorefrontPriceDisplay(
         converted: main.currencyCode !== sourceCode,
         original: { amount: product.price, currencyCode: sourceCode },
       },
-      locale
+      locale,
+      currencyDisplayMode
     ),
     priceMode,
     priceHint: null,
     vatCurrenciesDiffer,
+    currencyDisplayMode,
+    financingEnabled: config.financingEnabled,
+    financingLabel: null,
+    financingAmountLabel: null,
     lines,
     struckLabel,
   };

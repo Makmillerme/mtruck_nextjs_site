@@ -187,9 +187,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "product-card",
     category: "cards",
     title: "Картка товару",
-    hint: "Живий ProductCard: сітка + list (фото на всю висоту). PhotoCarousel, ціна + Детальніше w-full. Тінь + zoom — не те саме, що кнопки без drop-shadow.",
+    hint: "Живий ProductCard: сітка + list. Стек цін (основна + додаткові валюти вправо), PhotoCarousel, Детальніше w-full.",
     keywords:
-      "product card картка товару каталог man overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
+      "product card картка товару каталог man currency валюта usd uah price ціна overlay статус heart сердечко тінь zoom hover shadow carousel карусель details детальніше",
     chrome: "own",
   },
   {

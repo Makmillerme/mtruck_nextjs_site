@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { MemberOrderPicker } from "@/components/admin/catalog/display-groups-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +58,7 @@ export default function CardPreviewEditor({
 }: CardPreviewEditorPayload) {
   const t = useTranslations("UiEditor");
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<"grid" | "list">("grid");
   const [showName, setShowName] = useState(initialShowName);
@@ -74,12 +74,31 @@ export default function CardPreviewEditor({
   const [slotAttributeIds, setSlotAttributeIds] = useState(initialSlots);
   const [subtitleAttributeIds, setSubtitleAttributeIds] =
     useState(initialSubtitleSlots);
+  const hydrating = useRef(true);
+  const lastSaved = useRef("");
+  const saveChain = useRef(Promise.resolve());
 
   const slotMax = slotMaxForSpecsStyle(specsStyle, specsGridCount);
   const tagsUnlimited = isTagsSpecsStyle(specsStyle);
   const hasFolder = Boolean(selectedNodeId);
 
+  function serializeCardDraft() {
+    return JSON.stringify({
+      selectedNodeId,
+      showName,
+      showPrice,
+      showStatus,
+      showSubtitle,
+      showSpecs,
+      specsStyle,
+      specsGridCount,
+      slotAttributeIds,
+      subtitleAttributeIds,
+    });
+  }
+
   useEffect(() => {
+    hydrating.current = true;
     setShowName(initialShowName);
     setShowPrice(initialShowPrice);
     setShowStatus(initialShowStatus);
@@ -206,30 +225,67 @@ export default function CardPreviewEditor({
     setSubtitleAttributeIds(next);
   }
 
-  function save() {
-    if (!selectedNodeId) {
-      notify.error(t("noFolder"));
+  useEffect(() => {
+    if (hydrating.current) {
+      hydrating.current = false;
+      lastSaved.current = serializeCardDraft();
       return;
     }
-    startTransition(async () => {
-      const result = await saveCardPreviewLayoutAction({
-        taxonomyNodeId: selectedNodeId,
-        showName,
-        showPrice,
-        showStatus,
-        showSubtitle,
-        showSpecs,
-        specsStyle,
-        specsGridCount,
-        slotAttributeIds: slotAttributeIds.slice(0, CARD_PREVIEW_SLOT_MAX),
-        subtitleAttributeIds: subtitleAttributeIds.slice(
-          0,
-          CARD_PREVIEW_SUBTITLE_FIELD_MAX
-        ),
+    if (!selectedNodeId) return;
+    const snapshot = serializeCardDraft();
+    if (snapshot === lastSaved.current) return;
+
+    const handle = window.setTimeout(() => {
+      saveChain.current = saveChain.current
+        .catch(() => undefined)
+        .then(async () => {
+          if (serializeCardDraft() !== snapshot) return;
+          try {
+            const result = await saveCardPreviewLayoutAction({
+              taxonomyNodeId: selectedNodeId,
+              showName,
+              showPrice,
+              showStatus,
+              showSubtitle,
+              showSpecs,
+              specsStyle,
+              specsGridCount,
+              slotAttributeIds: slotAttributeIds.slice(
+                0,
+                CARD_PREVIEW_SLOT_MAX
+              ),
+              subtitleAttributeIds: subtitleAttributeIds.slice(
+                0,
+                CARD_PREVIEW_SUBTITLE_FIELD_MAX
+              ),
+            });
+            if (result.ok) {
+              lastSaved.current = snapshot;
+            }
+            notify.fromAction(result);
+          } catch {
+            notify.error(t("noFolder"));
+          }
+        });
+      startTransition(async () => {
+        await saveChain.current;
       });
-      notify.fromAction(result);
-    });
-  }
+    }, 400);
+
+    return () => window.clearTimeout(handle);
+  }, [
+    selectedNodeId,
+    showName,
+    showPrice,
+    showStatus,
+    showSubtitle,
+    showSpecs,
+    specsStyle,
+    specsGridCount,
+    slotAttributeIds,
+    subtitleAttributeIds,
+    t,
+  ]);
 
   const layoutToggle = (
     <div className="inline-flex h-11 w-full max-w-xs items-center gap-1 rounded-sm border-2 border-primary bg-background p-1 sm:w-fit">
@@ -449,14 +505,6 @@ export default function CardPreviewEditor({
             </Card>
           ) : null}
 
-          <Button
-            type="button"
-            className="w-full sm:w-fit"
-            disabled={isPending}
-            onClick={save}
-          >
-            {t("saveLayout")}
-          </Button>
         </>
       ) : (
         <p className="text-sm text-muted-foreground">{t("noFolderEmptyTree")}</p>
