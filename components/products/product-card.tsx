@@ -38,6 +38,17 @@ export type ProductCardModel = {
   id: string;
   name: string;
   price: number;
+  currency?: string;
+  /** Prefetched storefront label (FX-aware). */
+  priceLabel?: string;
+  priceHint?: string | null;
+  struckLabel?: string | null;
+  priceLines?: {
+    kind: string;
+    amount: number;
+    currencyCode: string;
+    labelKey?: string;
+  }[];
   image: string;
   /** Cover + gallery URLs, unique, cover first */
   images?: string[];
@@ -121,8 +132,11 @@ export default function ProductCard({
   const locale = useLocale();
   const t = useTranslations("ProductCard");
   const tProduct = useTranslations("Product");
+  const tFinance = useTranslations("FinanceAdmin");
   const status = product.status ?? "PUBLISHED";
-  const price = formatProductPrice(product.price, locale);
+  const price =
+    product.priceLabel ??
+    formatProductPrice(product.price, locale, product.currency ?? "USD");
   const showName = product.showName !== false;
   const showPrice = product.showPrice !== false;
   const showStatus = product.showStatus !== false;
@@ -296,11 +310,54 @@ export default function ProductCard({
 
           <div className="mt-auto grid gap-3">
             {showPrice ? (
-              <div className="min-w-0">
+              <div className="min-w-0 grid gap-1">
+                {product.struckLabel ? (
+                  <p className="truncate text-sm text-muted-foreground line-through">
+                    {product.struckLabel}
+                  </p>
+                ) : null}
                 <p className="truncate text-xl font-extrabold tracking-tight text-foreground lg:text-2xl">
                   {price}
                 </p>
-                <p className="text-xs text-muted-foreground">{t("priceHint")}</p>
+                {product.priceHint ? (
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {product.priceHint}
+                  </p>
+                ) : null}
+                {(product.priceLines?.length ?? 0) > 0 ? (
+                  <div className="mt-0.5 grid gap-0.5">
+                    {(product.priceLines ?? []).map((line, index, all) => {
+                      const amount = formatProductPrice(
+                        line.amount,
+                        locale,
+                        line.currencyCode
+                      );
+                      const prefix =
+                        line.labelKey === "priceWithVat"
+                          ? tFinance("priceWithVat")
+                          : line.labelKey === "priceWithoutVat"
+                            ? tFinance("priceWithoutVat")
+                            : line.labelKey === "vatAmount"
+                              ? tFinance("vatAmount")
+                              : null;
+                      const isLast = index === all.length - 1;
+                      const triple = all.length >= 3;
+                      return (
+                        <p
+                          key={`${line.kind}-${line.currencyCode}`}
+                          className={cn(
+                            "truncate text-sm tabular-nums tracking-tight",
+                            triple && isLast
+                              ? "font-medium text-foreground"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {prefix ? `${prefix}: ${amount}` : amount}
+                        </p>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             <Button asChild className="w-full">

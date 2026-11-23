@@ -4,6 +4,7 @@ import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import FavoritesButton from "@/components/navbar/FavoritesButton";
 import LinksDropdown from "@/components/navbar/LinksDropdown";
+import CurrencySwitcher from "@/components/navbar/CurrencySwitcher";
 import LocaleSwitcher from "@/components/navbar/LocaleSwitcher";
 import Logo from "@/components/navbar/Logo";
 import NotificationsButton, {
@@ -112,11 +113,16 @@ export default function ShopNavbar({
   isAdmin = false,
   unreadInquiryCount = 0,
   notificationItems = [],
+  currencySwitcher = null,
 }: {
   user: SessionUser | null;
   isAdmin?: boolean;
   unreadInquiryCount?: number;
   notificationItems?: NotificationPreview[];
+  currencySwitcher?: {
+    options: { code: string; label: string }[];
+    value: string;
+  } | null;
 }) {
   const t = useTranslations("Navbar");
   const pathname = usePathname();
@@ -167,6 +173,13 @@ export default function ShopNavbar({
             />
             {user ? <OrdersButton className={headerIconClass} /> : null}
             <FavoritesButton className={headerIconClass} />
+            {currencySwitcher ? (
+              <CurrencySwitcher
+                className={headerControlClass}
+                options={currencySwitcher.options}
+                value={currencySwitcher.value}
+              />
+            ) : null}
             <LocaleSwitcher className={headerControlClass} />
             <LinksDropdown initialUser={user} isAdmin={isAdmin} />
           </div>

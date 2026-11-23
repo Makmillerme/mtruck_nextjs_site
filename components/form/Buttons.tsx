@@ -17,6 +17,7 @@ type SubmitButtonProps = {
   text?: string;
   size?: btnSize;
   form?: string;
+  disabled?: boolean;
 };
 
 export function SubmitButton({
@@ -24,6 +25,7 @@ export function SubmitButton({
   text,
   size = "lg",
   form,
+  disabled = false,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
   const t = useTranslations("Common");
@@ -32,7 +34,7 @@ export function SubmitButton({
     <Button
       type="submit"
       form={form}
-      disabled={pending}
+      disabled={pending || disabled}
       className={className}
       size={size}
     >

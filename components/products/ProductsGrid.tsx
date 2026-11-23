@@ -1,6 +1,8 @@
 import ProductCard from "@/components/products/product-card";
 import type { CardPreviewLayoutResolved } from "@/lib/catalog/card-preview";
 import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
+import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
+import { resolveStorefrontPriceDisplay } from "@/lib/finance/storefront-card-price";
 import type { ProductListItem } from "@/utils/product-list";
 import { getLocale } from "next-intl/server";
 
@@ -17,7 +19,15 @@ async function ProductsGrid({
   isAuthenticated?: boolean;
   priorityCount?: number;
 }) {
-  const locale = await getLocale();
+  const [locale, buyerCurrency] = await Promise.all([
+    getLocale(),
+    getBuyerCurrencyCookie(),
+  ]);
+  const displays = await Promise.all(
+    products.map((product) =>
+      resolveStorefrontPriceDisplay(product, locale, buyerCurrency)
+    )
+  );
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-5">
       {products.map((product, index) => (
@@ -32,7 +42,8 @@ async function ProductsGrid({
               product.taxonomyNodeId
                 ? layouts?.get(product.taxonomyNodeId)
                 : undefined,
-              locale
+              locale,
+              displays[index]
             )}
             priority={index < priorityCount}
             favoriteId={favoriteByProductId?.get(product.id) ?? null}

@@ -1,16 +1,5 @@
-# Admin: Фінанси — таби + валюти
+# Admin Finance
 
-**Дата:** 2026-11-09
-
-## Навігація
-- Child у CMS-акордеоні: `/admin/finance` (`CMS_NAV_CHILDREN`).
-
-## UI
-- Сторінка: `app/[locale]/admin/finance/page.tsx` — Card + title + `FinanceTabs` (`?tab=`).
-- Таби: `currencies` | `pricing` | `taxes` | `financing` (`lib/admin/finance-tab.ts`).
-- Компоненти: `components/admin/finance/finance-tabs.tsx`, `finance-currencies-panel.tsx` (UAH/USD/EUR mock), `finance-stub-panel.tsx` для інших табів.
-- Канон табів: shadcn `Tabs` як у CMS/UI editor.
-- i18n: `FinanceAdmin.*` (uk/en/de).
-
-## Дані
-Поки UI-приклад (disclaimer `uiExampleNote`), без Prisma/курсів.
+Nav: CMS accordion child `/admin/finance`.
+Currencies tab is live (v1) — see `mem:finance-currencies-v1-2026-11-09`.
+Other tabs (pricing/taxes/financing) still stubs.

@@ -36,10 +36,19 @@ enum ProductAvailability {
   TRANSIT
 }
 
-enum ProductCurrency {
-  USD
-  EUR
-  UAH
+enum PriceEntryMode {
+  INCL_VAT
+  EXCL_VAT
+}
+
+enum PriceDisplayMode {
+  SINGLE
+  STACKED
+}
+
+enum PromoKind {
+  AMOUNT
+  PERCENT
 }
 
 enum OrderKind {
@@ -169,13 +178,47 @@ model Verification {
   @@index([identifier])
 }
 
+model Currency {
+  code            String    @id
+  name            String
+  nameEn          String
+  numericCode     Int?
+  minorUnits      Int       @default(2)
+  isActive        Boolean   @default(true)
+  isBuyerVisible  Boolean   @default(true)
+  rateToBase      Decimal?  @db.Decimal(18, 8)
+  rateUpdatedAt   DateTime?
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  products        Product[]
+  baseForSettings FinanceSettings[] @relation("FinanceBaseCurrency")
+  siteForSettings FinanceSettings[] @relation("FinanceSiteCurrency")
+  rootPricingMain RootPricing[] @relation("RootPricingMainCurrency")
+  rootPricingVatDisplay RootPricing[] @relation("RootPricingVatDisplayCurrency")
+  rootPricingExtra RootPricingCurrency[]
+}
+
+model FinanceSettings {
+  id                       String   @id @default("default")
+  baseCurrencyCode         String
+  baseCurrency             Currency @relation("FinanceBaseCurrency", fields: [baseCurrencyCode], references: [code], onDelete: Restrict)
+  siteCurrencyCode         String
+  siteCurrency             Currency @relation("FinanceSiteCurrency", fields: [siteCurrencyCode], references: [code], onDelete: Restrict)
+  allowBuyerCurrencySwitch Boolean  @default(false)
+  updatedAt                DateTime @updatedAt
+}
+
 model Product {
   id             String               @id @default(uuid())
   name           String
   description    String
   image          String
   price          Int
-  currency       ProductCurrency      @default(USD)
+  currency       String               @default("USD")
+  currencyRef    Currency             @relation(fields: [currency], references: [code], onDelete: Restrict)
+  promoKind      PromoKind?
+  promoValue     Decimal?             @db.Decimal(18, 4)
   productCode    String               @unique
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
@@ -235,8 +278,44 @@ model TaxonomyNode {
   orders              Order[]
   cardPreviewLayout   CardPreviewLayout?
   productPageLayout   ProductPageLayout?
+  rootPricing         RootPricing?
 
   @@index([parentId])
+}
+
+model RootPricing {
+  id                       String           @id @default(uuid())
+  taxonomyNodeId           String           @unique
+  taxonomyNode             TaxonomyNode     @relation(fields: [taxonomyNodeId], references: [id], onDelete: Cascade)
+  vatEnabled               Boolean          @default(true)
+  entryMode                PriceEntryMode   @default(INCL_VAT)
+  /// Which amount buyers see as the main price: with VAT or without.
+  storefrontPriceMode      PriceEntryMode   @default(INCL_VAT)
+  vatPercent               Decimal          @default(0) @db.Decimal(8, 4)
+  showPriceWithVat         Boolean          @default(true)
+  showPriceWithoutVat      Boolean          @default(false)
+  showVatAmount            Boolean          @default(false)
+  displayMode              PriceDisplayMode @default(SINGLE)
+  mainCurrencyCode         String
+  mainCurrency             Currency         @relation("RootPricingMainCurrency", fields: [mainCurrencyCode], references: [code], onDelete: Restrict)
+  vatDisplayCurrencyCode   String?
+  vatDisplayCurrency       Currency?        @relation("RootPricingVatDisplayCurrency", fields: [vatDisplayCurrencyCode], references: [code], onDelete: Restrict)
+  allowBuyerCurrencySwitch Boolean          @default(false)
+  extraCurrencies          RootPricingCurrency[]
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+}
+
+model RootPricingCurrency {
+  id            String      @id @default(uuid())
+  rootPricingId String
+  rootPricing   RootPricing @relation(fields: [rootPricingId], references: [id], onDelete: Cascade)
+  currencyCode  String
+  currency      Currency    @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+  sortOrder     Int         @default(0)
+
+  @@unique([rootPricingId, currencyCode])
+  @@index([rootPricingId])
 }
 
 model AttributeDefinition {

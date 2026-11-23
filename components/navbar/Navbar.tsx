@@ -1,5 +1,11 @@
 import ShopNavbar from "./ShopNavbar";
 import { ensureUserCode } from "@/lib/codes";
+import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
+import {
+  getFinanceSettings,
+} from "@/lib/finance/settings";
+import { listBuyerVisibleCurrencies } from "@/lib/finance/currencies";
+import { anyRootAllowsBuyerSwitch } from "@/lib/finance/root-pricing";
 import { loadNavbarStaffNotifications } from "@/utils/actions";
 import { getSession, getUserRole, isStaffRole } from "@/utils/session";
 import type { SessionUser } from "@/utils/session";
@@ -50,12 +56,43 @@ async function Navbar() {
     }
   }
 
+  let currencySwitcher: {
+    options: { code: string; label: string }[];
+    value: string;
+  } | null = null;
+  try {
+    const [settings, buyerCurrencies, cookieCurrency, allowSwitch] =
+      await Promise.all([
+        getFinanceSettings(),
+        listBuyerVisibleCurrencies(),
+        getBuyerCurrencyCookie(),
+        anyRootAllowsBuyerSwitch(),
+      ]);
+    if (settings && allowSwitch && buyerCurrencies.length > 1) {
+      const value =
+        cookieCurrency &&
+        buyerCurrencies.some((c) => c.code === cookieCurrency)
+          ? cookieCurrency
+          : settings.baseCurrencyCode;
+      currencySwitcher = {
+        value,
+        options: buyerCurrencies.map((c) => ({
+          code: c.code,
+          label: c.code,
+        })),
+      };
+    }
+  } catch {
+    currencySwitcher = null;
+  }
+
   return (
     <ShopNavbar
       user={user}
       isAdmin={isAdmin}
       unreadInquiryCount={unreadInquiryCount}
       notificationItems={notificationItems}
+      currencySwitcher={currencySwitcher}
     />
   );
 }

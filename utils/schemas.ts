@@ -12,7 +12,11 @@ export const productSchema = z.object({
   price: z.coerce.number().int().min(0, {
     message: "price must be a positive number.",
   }),
-  currency: z.enum(["USD", "EUR", "UAH"]).default("USD"),
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, { message: "currency must be a 3-letter ISO code." }),
   description: z
     .string()
     .default("")

@@ -7,6 +7,8 @@ import type { AccountOrderRow } from "@/components/account/account-orders-view";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
 import { resolveProductsAreUniqueByNodeIds } from "@/lib/catalog/taxonomy";
+import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
+import { resolveStorefrontPriceDisplay } from "@/lib/finance/storefront-card-price";
 import {
   fetchUserFavorites,
   fetchUserOrders,
@@ -63,14 +65,27 @@ async function mapOrders(
 
 async function mapFavorites(
   favorites: Awaited<ReturnType<typeof fetchUserFavorites>>,
-  locale: string
+  locale: string,
+  buyerCurrency?: string | null
 ): Promise<AccountFavoriteRow[]> {
   const nodeIds = favorites
     .map((favorite) => favorite.product.taxonomyNodeId)
     .filter((id): id is string => Boolean(id));
   const layouts = await fetchCardPreviewLayoutsByNodeIds(db, nodeIds);
+  const displays = await Promise.all(
+    favorites.map((favorite) =>
+      resolveStorefrontPriceDisplay(
+        {
+          price: favorite.product.price,
+          currency: favorite.product.currency,
+        },
+        locale,
+        buyerCurrency
+      )
+    )
+  );
 
-  return favorites.map((favorite) => ({
+  return favorites.map((favorite, index) => ({
     id: favorite.id,
     productId: favorite.product.id,
     product: productWithSpecsToCardModel(
@@ -78,7 +93,8 @@ async function mapFavorites(
       favorite.product.taxonomyNodeId
         ? layouts.get(favorite.product.taxonomyNodeId)
         : undefined,
-      locale
+      locale,
+      displays[index]
     ),
   }));
 }
@@ -98,7 +114,12 @@ export default async function AccountPage(props: {
   let userPhone: string | null = null;
 
   if (tab === "favorites") {
-    favorites = await mapFavorites(await fetchUserFavorites(), locale);
+    const buyerCurrency = await getBuyerCurrencyCookie();
+    favorites = await mapFavorites(
+      await fetchUserFavorites(),
+      locale,
+      buyerCurrency
+    );
   } else if (tab === "settings") {
     const [canChangePassword, profile] = await Promise.all([
       userHasCredentialAccount(),

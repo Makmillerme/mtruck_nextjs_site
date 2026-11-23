@@ -23,6 +23,8 @@ export type AdminProductRowDTO = {
   productCode: string;
   price: number;
   currency: string;
+  promoKind: "AMOUNT" | "PERCENT" | null;
+  promoValue: string | null;
   status: string;
   availability: string;
   description: string;
@@ -110,6 +112,8 @@ export function mapAdminProductRow(
     productCode: product.productCode,
     price: product.price,
     currency: product.currency,
+    promoKind: product.promoKind,
+    promoValue: product.promoValue?.toString() ?? null,
     status: product.status,
     availability: product.availability,
     description: product.description,
@@ -129,6 +133,8 @@ export function mapAdminProductSlimRow(
     productCode: product.productCode,
     price: product.price,
     currency: product.currency,
+    promoKind: product.promoKind,
+    promoValue: product.promoValue?.toString() ?? null,
     status: product.status,
     availability: product.availability,
     description: "",

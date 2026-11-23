@@ -1,0 +1,3 @@
+Finance settings save works (updateFinanceSettingsAction). The currency list looked unchanged because one badge «Основна» was used for both base and site, and «Для сайту» meant buyer-visible.
+
+2026-11-23 fix: list roles follow the two selects immediately (controlled CatalogMenuSelect value/onValueChange). Badges: badgeBase only for system base, badgePrimary only for site currency, badgeBuyer is the buyer switcher («У перемикачі»). Rate line uses the selected base; if the base draft differs from saved settings, other rates show as not set until save. Saved state at that moment: base USD, site UAH, UAH rate cleared.

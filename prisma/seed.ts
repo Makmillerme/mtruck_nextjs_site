@@ -4,6 +4,7 @@ import { seedCatalogTaxonomyIfEmpty } from "../lib/catalog/seed-taxonomy";
 import { ensureTruckCatalogFields } from "../lib/catalog/ensure-truck-fields";
 import { wipeAndSeedDemoVehicles } from "../lib/catalog/seed-demo-vehicles";
 import { ensureCardPreviewLayouts } from "../lib/catalog/seed-card-preview";
+import { ensureFinanceCurrencies } from "../lib/finance/seed-currencies";
 import { auth } from "../lib/auth";
 
 const prisma = new PrismaClient();
@@ -65,6 +66,7 @@ async function main() {
     });
   }
 
+  await ensureFinanceCurrencies(prisma);
   await seedCatalogTaxonomyIfEmpty(prisma);
   await ensureTruckCatalogFields(prisma);
   await ensureCardPreviewLayouts(prisma);

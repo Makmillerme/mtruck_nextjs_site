@@ -18,6 +18,9 @@ import {
   parseAdminPageSize,
 } from "@/lib/admin/list-pagination";
 import { ADMIN_LIST_SEARCH_KEY } from "@/lib/admin/list-url";
+import { listActiveCurrencies } from "@/lib/finance/currencies";
+import { listRootPricing } from "@/lib/finance/root-pricing";
+import { getFinanceSettings } from "@/lib/finance/settings";
 import { fetchAdminProducts } from "@/utils/actions";
 import { parseCatalogQuery } from "@/utils/catalog-query";
 import { getLocale } from "next-intl/server";
@@ -49,10 +52,39 @@ async function AdminProductsPage(props: {
       : undefined
   );
 
-  const [tree, tableAttributes] = await Promise.all([
-    fetchTaxonomyTree(),
-    fetchRootCatalogAttributes(),
-  ]);
+  const [tree, tableAttributes, activeCurrencies, financeSettings, rootPricing] =
+    await Promise.all([
+      fetchTaxonomyTree(),
+      fetchRootCatalogAttributes(),
+      listActiveCurrencies(),
+      getFinanceSettings(),
+      listRootPricing(),
+    ]);
+  const vatByRootId = Object.fromEntries(
+    rootPricing.map((row) => [
+      row.taxonomyNodeId,
+      {
+        vatEnabled: row.vatEnabled,
+        entryMode: row.entryMode,
+        vatPercent: row.vatPercent,
+        vatDisplayCurrencyCode: row.vatDisplayCurrencyCode,
+        mainCurrencyCode: row.mainCurrencyCode,
+      },
+    ])
+  );
+  const currencyOptions = activeCurrencies.map((row) => ({
+    value: row.code,
+    label: row.code,
+  }));
+  const ratesByCode = Object.fromEntries(
+    activeCurrencies.map((row) => [
+      row.code,
+      row.rateToBase == null ? null : Number(row.rateToBase),
+    ])
+  );
+  const minorUnitsByCode = Object.fromEntries(
+    activeCurrencies.map((row) => [row.code, row.minorUnits])
+  );
   const flatFolders = flattenTaxonomyTree(tree);
   const rootParam =
     typeof searchParams.root === "string"
@@ -126,6 +158,11 @@ async function AdminProductsPage(props: {
       totalCount={total}
       listPage={page}
       listPageSize={pageSize}
+      currencyOptions={currencyOptions}
+      siteCurrencyCode={financeSettings?.baseCurrencyCode ?? ""}
+      vatByRootId={vatByRootId}
+      ratesByCode={ratesByCode}
+      minorUnitsByCode={minorUnitsByCode}
     />
   );
 }

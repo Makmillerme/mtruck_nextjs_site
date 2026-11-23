@@ -44,6 +44,13 @@ import { useOptimisticListRemove } from "@/lib/admin/optimistic-list";
 import FormContainer from "@/components/form/FormContainer";
 import ProductImageGalleryField from "@/components/admin/products/product-image-gallery-field";
 import PriceInput from "@/components/form/PriceInput";
+import {
+  applyPromoPreview,
+  formatPromoInput,
+} from "@/lib/finance/promo-format";
+import { convertViaBasePlain } from "@/lib/finance/convert-plain";
+import { splitVat } from "@/lib/finance/vat";
+import type { RootVatUiConfig } from "@/lib/finance/types";
 import TextAreaInput from "@/components/form/TextAreaInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +140,8 @@ import {
 import type { FilterAvailabilityIndex } from "@/lib/catalog/filter-availability";
 import type { PublicFilterSchema } from "@/lib/catalog/public-filter";
 import { countActiveCatalogFilters } from "@/utils/catalog-query";
-import { LuColumns3, LuPen } from "react-icons/lu";
+import { notify } from "@/lib/ui/notify";
+import { LuCheck, LuColumns3, LuCopy, LuPen } from "react-icons/lu";
 
 const COLUMNS_STORAGE_KEY = "mtruck.admin.products.visibleColumns";
 const SYSTEM_COLUMNS_STORAGE_KEY =
@@ -142,19 +150,80 @@ const SYSTEM_COLUMNS_STORAGE_KEY =
 const STATUS_COLUMN_STORAGE_KEY = "mtruck.admin.products.showStatusColumn";
 
 const SYSTEM_COLUMN_IDS = ["status", "availability", "price"] as const;
+const PRICE_SUB_COLUMN_IDS = [
+  "priceGross",
+  "priceNet",
+  "priceVat",
+  "promo",
+] as const;
 
-type SystemColumnId = (typeof SYSTEM_COLUMN_IDS)[number];
+type SystemColumnId =
+  | (typeof SYSTEM_COLUMN_IDS)[number]
+  | (typeof PRICE_SUB_COLUMN_IDS)[number];
+
+const ALL_SYSTEM_COLUMN_IDS: SystemColumnId[] = [
+  ...SYSTEM_COLUMN_IDS,
+  ...PRICE_SUB_COLUMN_IDS,
+];
 
 const SYSTEM_COLUMN_LABEL: Record<SystemColumnId, string> = {
   status: "status",
   availability: "availability",
   price: "price",
+  priceGross: "priceWithVatField",
+  priceNet: "priceWithoutVatField",
+  priceVat: "vatAmountField",
+  promo: "promo",
 };
+
+const PRICE_SUB_SET = new Set<string>(PRICE_SUB_COLUMN_IDS);
 
 const AVAILABILITY_LABEL: Record<string, string> = {
   IN_STOCK: "availabilityStock",
   TRANSIT: "availabilityTransit",
 };
+
+function orderedVisibleSystemColumns(
+  visible: SystemColumnId[]
+): SystemColumnId[] {
+  const set = new Set(visible);
+  const out: SystemColumnId[] = [];
+  for (const id of SYSTEM_COLUMN_IDS) {
+    if (!set.has(id)) continue;
+    out.push(id);
+    if (id === "price") {
+      for (const sub of PRICE_SUB_COLUMN_IDS) {
+        if (set.has(sub)) out.push(sub);
+      }
+    }
+  }
+  return out;
+}
+
+function rootIdForNode(
+  nodeId: string | null | undefined,
+  tree: TaxonomyTreeNode[]
+): string | null {
+  if (!nodeId) return null;
+  const parentOf = new Map<string, string | null>();
+  function walk(nodes: TaxonomyTreeNode[], parent: string | null) {
+    for (const node of nodes) {
+      parentOf.set(node.id, parent);
+      walk(node.children, node.id);
+    }
+  }
+  walk(tree, null);
+  let current: string | null = nodeId;
+  const seen = new Set<string>();
+  while (current) {
+    if (seen.has(current)) break;
+    seen.add(current);
+    const nextParent: string | null = parentOf.get(current) ?? null;
+    if (!nextParent) return current;
+    current = nextParent;
+  }
+  return null;
+}
 
 export type AdminProductSpec = AdminProductRowDTO["specs"][number];
 export type AdminProductRow = AdminProductRowDTO;
@@ -251,6 +320,11 @@ function ProductSheetFields({
   product,
   nameWriterGroup = null,
   formationTemplates = [],
+  currencyOptions,
+  siteCurrencyCode,
+  vatByRootId,
+  ratesByCode,
+  minorUnitsByCode,
 }: {
   tree: TaxonomyTreeNode[];
   listRootId?: string;
@@ -260,9 +334,43 @@ function ProductSheetFields({
   product?: AdminProductRow;
   nameWriterGroup?: CatalogDisplayGroup | null;
   formationTemplates?: CatalogDisplayGroup[];
+  currencyOptions: { value: string; label: string }[];
+  siteCurrencyCode: string;
+  vatByRootId: Record<string, RootVatUiConfig>;
+  ratesByCode: Record<string, number | null>;
+  minorUnitsByCode: Record<string, number>;
 }) {
   const t = useTranslations("Admin");
   const catalogT = useTranslations("CatalogAdmin");
+  const vatConfig = useMemo(() => {
+    const fallback: RootVatUiConfig = {
+      vatEnabled: false,
+      entryMode: "INCL_VAT",
+      vatPercent: 0,
+      vatDisplayCurrencyCode: null,
+      mainCurrencyCode: siteCurrencyCode || "USD",
+    };
+    if (!selectedNodeId) return fallback;
+    const parentOf = new Map<string, string | null>();
+    const walk = (nodes: TaxonomyTreeNode[], parentId: string | null) => {
+      for (const node of nodes) {
+        parentOf.set(node.id, parentId);
+        walk(node.children, node.id);
+      }
+    };
+    walk(tree, null);
+    let current: string | null = selectedNodeId;
+    const seen = new Set<string>();
+    while (current) {
+      if (seen.has(current)) break;
+      seen.add(current);
+      const parentId: string | null = parentOf.get(current) ?? null;
+      if (!parentId) return vatByRootId[current] ?? fallback;
+      current = parentId;
+    }
+    return fallback;
+  }, [selectedNodeId, tree, vatByRootId, siteCurrencyCode]);
+  const entryMode = vatConfig.entryMode;
   const nameTemplate = hasNameTemplate(nameWriterGroup) ? nameWriterGroup : null;
   const textFormationTemplates = useMemo(
     () =>
@@ -400,8 +508,30 @@ function ProductSheetFields({
           />
         </div>
         <PriceInput
+          key={`${product?.id ?? "new"}-${entryMode}-${vatConfig.vatEnabled}-${selectedNodeId ?? ""}`}
           defaultValue={product?.price}
-          defaultCurrency={product?.currency ?? "USD"}
+          defaultCurrency={product?.currency ?? siteCurrencyCode}
+          defaultPromo={formatPromoInput(
+            product?.promoKind,
+            product?.promoValue
+          )}
+          entryMode={entryMode}
+          vatEnabled={vatConfig.vatEnabled}
+          vatPercent={vatConfig.vatPercent}
+          vatDisplayCurrencyCode={
+            vatConfig.vatDisplayCurrencyCode || vatConfig.mainCurrencyCode
+          }
+          ratesByCode={ratesByCode}
+          minorUnitsByCode={minorUnitsByCode}
+          currencyOptions={
+            product?.currency &&
+            !currencyOptions.some((opt) => opt.value === product.currency)
+              ? [
+                  ...currencyOptions,
+                  { value: product.currency, label: product.currency },
+                ]
+              : currencyOptions
+          }
         />
         <TextAreaInput
           name="description"
@@ -439,6 +569,60 @@ function ProductSheetFields({
   );
 }
 
+async function writeProductCode(code: string) {
+  try {
+    await navigator.clipboard.writeText(code);
+  } catch {
+    const field = document.createElement("textarea");
+    field.value = code;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.top = "0";
+    field.style.left = "0";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.focus();
+    field.select();
+    const copied = document.execCommand("copy");
+    field.remove();
+    if (!copied) throw new Error("copy failed");
+  }
+}
+
+function CopyProductCodeButton({ code }: { code: string }) {
+  const t = useTranslations("Admin");
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await writeProductCode(code);
+      setCopied(true);
+      notify.success(t("productCodeCopied"));
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      notify.error(t("productCodeCopyFailed"));
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="h-7 shrink-0 gap-1.5 border-border bg-background px-2 font-medium tabular-nums text-foreground shadow-none hover:border-border hover:bg-foreground/10 hover:text-foreground"
+      aria-label={t("copyProductCode", { code })}
+      onClick={() => void handleCopy()}
+    >
+      {code}
+      {copied ? (
+        <LuCheck className="size-3.5 text-emerald-600" />
+      ) : (
+        <LuCopy className="size-3.5" />
+      )}
+    </Button>
+  );
+}
+
 export default function AdminProductsView({
   items,
   tree,
@@ -454,6 +638,11 @@ export default function AdminProductsView({
   totalCount,
   listPage,
   listPageSize,
+  currencyOptions,
+  siteCurrencyCode,
+  vatByRootId,
+  ratesByCode,
+  minorUnitsByCode,
 }: {
   items: AdminProductRow[];
   locale: string;
@@ -471,6 +660,11 @@ export default function AdminProductsView({
   totalCount: number;
   listPage: number;
   listPageSize: AdminPageSize;
+  currencyOptions: { value: string; label: string }[];
+  siteCurrencyCode: string;
+  vatByRootId: Record<string, RootVatUiConfig>;
+  ratesByCode: Record<string, number | null>;
+  minorUnitsByCode: Record<string, number>;
 }) {
   const t = useTranslations("Admin");
   const locale = useLocale();
@@ -574,7 +768,7 @@ export default function AdminProductsView({
         if (Array.isArray(parsed)) {
           setVisibleSystemKeys(
             parsed.filter((key): key is SystemColumnId =>
-              SYSTEM_COLUMN_IDS.includes(key as SystemColumnId)
+              ALL_SYSTEM_COLUMN_IDS.includes(key as SystemColumnId)
             )
           );
         }
@@ -825,23 +1019,75 @@ export default function AdminProductsView({
   }
 
   function toggleSystemColumn(id: SystemColumnId, checked: boolean) {
-    setVisibleSystemKeys((current) =>
-      checked
-        ? current.includes(id)
-          ? current
-          : [...current, id]
-        : current.filter((item) => item !== id)
-    );
+    setVisibleSystemKeys((current) => {
+      if (id === "price") {
+        if (checked) {
+          const next = new Set(current);
+          next.add("price");
+          for (const sub of PRICE_SUB_COLUMN_IDS) next.add(sub);
+          return ALL_SYSTEM_COLUMN_IDS.filter((key) => next.has(key));
+        }
+        return current.filter((item) => item !== "price" && !PRICE_SUB_SET.has(item));
+      }
+      if (PRICE_SUB_SET.has(id)) {
+        if (checked) {
+          const next = new Set(current);
+          next.add("price");
+          next.add(id);
+          return ALL_SYSTEM_COLUMN_IDS.filter((key) => next.has(key));
+        }
+        return current.filter((item) => item !== id);
+      }
+      if (checked) {
+        return current.includes(id) ? current : [...current, id];
+      }
+      return current.filter((item) => item !== id);
+    });
   }
 
   function selectAllColumns() {
-    setVisibleSystemKeys([...SYSTEM_COLUMN_IDS]);
+    setVisibleSystemKeys([...ALL_SYSTEM_COLUMN_IDS]);
     setVisibleKeys(tableAttributes.map((attribute) => attribute.key));
   }
 
   function clearAllColumns() {
     setVisibleSystemKeys([]);
     setVisibleKeys([]);
+  }
+
+  function vatBreakdownForItem(item: AdminProductRow) {
+    const rootId = rootIdForNode(item.taxonomyNodeId, tree);
+    const vatConfig = rootId ? vatByRootId[rootId] : null;
+    if (!vatConfig?.vatEnabled) return null;
+    const source = (item.currency || siteCurrencyCode || "USD").toUpperCase();
+    const promoRaw = formatPromoInput(item.promoKind, item.promoValue);
+    const saleAmount = applyPromoPreview(item.price, promoRaw);
+    const minor = minorUnitsByCode[source] ?? 0;
+    const split = splitVat(
+      saleAmount,
+      vatConfig.entryMode,
+      vatConfig.vatPercent,
+      minor
+    );
+    const vatCurrency = (
+      vatConfig.vatDisplayCurrencyCode ||
+      vatConfig.mainCurrencyCode ||
+      source
+    ).toUpperCase();
+    const toVat = (amount: number) =>
+      convertViaBasePlain(
+        amount,
+        source,
+        vatCurrency,
+        ratesByCode,
+        minorUnitsByCode[vatCurrency] ?? 2
+      );
+    return {
+      gross: toVat(split.gross),
+      net: toVat(split.net),
+      vat: toVat(split.vat),
+      currency: vatCurrency,
+    };
   }
 
   function renderSystemCell(id: SystemColumnId, item: AdminProductRow) {
@@ -853,16 +1099,32 @@ export default function AdminProductsView({
         return key ? t(key) : item.availability;
       }
       case "price": {
-        const currency =
-          item.currency === "EUR" || item.currency === "UAH"
-            ? item.currency
-            : "USD";
-        return formatCurrency(item.price, locale, currency);
+        return formatCurrency(item.price, locale, item.currency || "USD");
+      }
+      case "priceGross":
+      case "priceNet":
+      case "priceVat": {
+        const breakdown = vatBreakdownForItem(item);
+        if (!breakdown) return t("columnsEmptyCell");
+        const amount =
+          id === "priceGross"
+            ? breakdown.gross
+            : id === "priceNet"
+              ? breakdown.net
+              : breakdown.vat;
+        if (amount == null) return t("columnsEmptyCell");
+        return formatCurrency(amount, locale, breakdown.currency);
+      }
+      case "promo": {
+        const promo = formatPromoInput(item.promoKind, item.promoValue);
+        return promo || t("columnsEmptyCell");
       }
       default:
         return t("columnsEmptyCell");
     }
   }
+
+  const visibleSystemColumns = orderedVisibleSystemColumns(visibleSystemKeys);
 
   const archiveProduct =
     editProduct != null
@@ -921,21 +1183,50 @@ export default function AdminProductsView({
                   <p className="text-sm font-medium">{t("columnsSystemSection")}</p>
                   {SYSTEM_COLUMN_IDS.map((columnId) => {
                     const id = `admin-sys-col-${columnId}`;
+                    const priceChecked = visibleSystemKeys.includes("price");
                     return (
-                      <label
-                        key={columnId}
-                        htmlFor={id}
-                        className="flex cursor-pointer items-center gap-3 text-sm"
-                      >
-                        <Checkbox
-                          id={id}
-                          checked={visibleSystemKeys.includes(columnId)}
-                          onCheckedChange={(value) =>
-                            toggleSystemColumn(columnId, value === true)
-                          }
-                        />
-                        {t(SYSTEM_COLUMN_LABEL[columnId])}
-                      </label>
+                      <div key={columnId} className="grid gap-2">
+                        <label
+                          htmlFor={id}
+                          className="flex cursor-pointer items-center gap-3 text-sm"
+                        >
+                          <Checkbox
+                            id={id}
+                            checked={
+                              columnId === "price"
+                                ? priceChecked
+                                : visibleSystemKeys.includes(columnId)
+                            }
+                            onCheckedChange={(value) =>
+                              toggleSystemColumn(columnId, value === true)
+                            }
+                          />
+                          {t(SYSTEM_COLUMN_LABEL[columnId])}
+                        </label>
+                        {columnId === "price" ? (
+                          <div className="ml-7 grid gap-2">
+                            {PRICE_SUB_COLUMN_IDS.map((subId) => {
+                              const subHtmlId = `admin-sys-col-${subId}`;
+                              return (
+                                <label
+                                  key={subId}
+                                  htmlFor={subHtmlId}
+                                  className="flex cursor-pointer items-center gap-3 text-sm"
+                                >
+                                  <Checkbox
+                                    id={subHtmlId}
+                                    checked={visibleSystemKeys.includes(subId)}
+                                    onCheckedChange={(value) =>
+                                      toggleSystemColumn(subId, value === true)
+                                    }
+                                  />
+                                  {t(SYSTEM_COLUMN_LABEL[subId])}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -1023,9 +1314,7 @@ export default function AdminProductsView({
       ) : (
         <AdminListResponsive
           mobile={pagedItems.map((item) => {
-            const systemFields = SYSTEM_COLUMN_IDS.filter((id) =>
-              visibleSystemKeys.includes(id)
-            );
+            const systemFields = visibleSystemColumns;
             const hasFields =
               systemFields.length > 0 || visibleAttributes.length > 0;
             return (
@@ -1106,9 +1395,7 @@ export default function AdminProductsView({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("productName")}</TableHead>
-                  {SYSTEM_COLUMN_IDS.filter((id) =>
-                    visibleSystemKeys.includes(id)
-                  ).map((columnId) => (
+                  {visibleSystemColumns.map((columnId) => (
                     <TableHead key={columnId}>
                       {t(SYSTEM_COLUMN_LABEL[columnId])}
                     </TableHead>
@@ -1133,9 +1420,7 @@ export default function AdminProductsView({
                         <Link href={`/products/${item.id}`}>{item.name}</Link>
                       </Button>
                     </TableCell>
-                    {SYSTEM_COLUMN_IDS.filter((id) =>
-                      visibleSystemKeys.includes(id)
-                    ).map((columnId) => (
+                    {visibleSystemColumns.map((columnId) => (
                       <TableCell key={columnId}>
                         {renderSystemCell(columnId, item)}
                       </TableCell>
@@ -1217,8 +1502,17 @@ export default function AdminProductsView({
                   attributes={sheetAttributes}
                   nameWriterGroup={sheetNameWriterGroup}
                   formationTemplates={sheetFormationTemplates}
+                  currencyOptions={currencyOptions}
+                  siteCurrencyCode={siteCurrencyCode}
+                  vatByRootId={vatByRootId}
+                  ratesByCode={ratesByCode}
+                  minorUnitsByCode={minorUnitsByCode}
                 />
-                <SubmitButton text={t("submitCreate")} className="w-full sm:w-fit" />
+                <SubmitButton
+                  text={t("submitCreate")}
+                  className="w-full sm:w-fit"
+                  disabled={currencyOptions.length === 0}
+                />
               </div>
             </FormContainer>
           </div>
@@ -1232,7 +1526,12 @@ export default function AdminProductsView({
         <SheetContent>
           <div className="grid gap-6">
             <SheetHeader>
-              <SheetTitle>{t("editSheetTitle")}</SheetTitle>
+              <div className="flex min-w-0 items-baseline gap-2 pr-8">
+                <SheetTitle className="pr-0 leading-7">{t("editSheetTitle")}</SheetTitle>
+                {editProduct?.productCode ? (
+                  <CopyProductCodeButton code={editProduct.productCode} />
+                ) : null}
+              </div>
             </SheetHeader>
             {editProduct ? (
               <>
@@ -1256,6 +1555,11 @@ export default function AdminProductsView({
                       product={editProduct}
                       nameWriterGroup={sheetNameWriterGroup}
                       formationTemplates={sheetFormationTemplates}
+                      currencyOptions={currencyOptions}
+                      siteCurrencyCode={siteCurrencyCode}
+                      vatByRootId={vatByRootId}
+                      ratesByCode={ratesByCode}
+                      minorUnitsByCode={minorUnitsByCode}
                     />
                     <SheetFormActions
                       saveLabel={t("submitUpdate")}

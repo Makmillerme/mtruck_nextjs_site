@@ -1,7 +1,7 @@
 export const formatCurrency = (
   amount: number | null,
   locale = "uk",
-  currency: "USD" | "EUR" | "UAH" = "USD"
+  currency = "USD"
 ) => {
   const value = amount || 0;
   const intlLocale =

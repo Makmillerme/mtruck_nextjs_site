@@ -18,13 +18,11 @@ export default function FinanceTabs({
   tab,
   currencies,
   pricing,
-  taxes,
   financing,
 }: {
   tab: FinanceTab;
   currencies: ReactNode;
   pricing: ReactNode;
-  taxes: ReactNode;
   financing: ReactNode;
 }) {
   const t = useTranslations("FinanceAdmin");
@@ -48,9 +46,6 @@ export default function FinanceTabs({
         <TabsTrigger value="pricing" className="sm:flex-1">
           {t("tabPricing")}
         </TabsTrigger>
-        <TabsTrigger value="taxes" className="sm:flex-1">
-          {t("tabTaxes")}
-        </TabsTrigger>
         <TabsTrigger value="financing" className="sm:flex-1">
           {t("tabFinancing")}
         </TabsTrigger>
@@ -61,9 +56,6 @@ export default function FinanceTabs({
         </TabsContent>
         <TabsContent value="pricing" className="mt-6">
           {pricing}
-        </TabsContent>
-        <TabsContent value="taxes" className="mt-6">
-          {taxes}
         </TabsContent>
         <TabsContent value="financing" className="mt-6">
           {financing}

@@ -196,9 +196,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "pdp",
     category: "cards",
     title: "Сторінка товару (PDP)",
-    hint: "Галерея + lightbox, sticky buy-box (teaser, icon facts, leasing, trust), underline tabs, mobile sticky CTA, related.",
+    hint: "Галерея + lightbox; buy-box: вартість|ПДВ, фінансування під сумою (або справа якщо ПДВ вимкнено); sticky CTA; related.",
     keywords:
-      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
+      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing financing фінансування vat пдв trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
   },
   {
     id: "order-added-sheet",

@@ -1,0 +1,1 @@
+Rate field layout: one row, 1 {main code} = [input] {edited code}. The input replaces the question mark. Main currency still has no rate field.

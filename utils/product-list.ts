@@ -26,6 +26,9 @@ export function buildProductListSelect(specKeys: string[] = []) {
     name: true,
     image: true,
     price: true,
+    currency: true,
+    promoKind: true,
+    promoValue: true,
     createdAt: true,
     status: true,
     taxonomyNodeId: true,
@@ -52,6 +55,9 @@ export type ProductListItem = {
   name: string;
   image: string;
   price: number;
+  currency: string;
+  promoKind: "AMOUNT" | "PERCENT" | null;
+  promoValue: import("@prisma/client/runtime/library").Decimal | null;
   createdAt: Date;
   status: string;
   taxonomyNodeId: string | null;

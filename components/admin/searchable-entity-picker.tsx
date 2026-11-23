@@ -50,6 +50,7 @@ export default function SearchableEntityPicker({
   disabled = false,
   hideLabel = false,
   searchable,
+  triggerClassName,
 }: {
   name: string;
   label: string;
@@ -70,6 +71,7 @@ export default function SearchableEntityPicker({
    * `options.length >= SHEET_COMBOBOX_SEARCH_MIN`.
    */
   searchable?: boolean;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -120,7 +122,7 @@ export default function SearchableEntityPicker({
             role="combobox"
             aria-expanded={open}
             disabled={disabled}
-            className={sheetFieldTriggerClassName}
+            className={cn(sheetFieldTriggerClassName, triggerClassName)}
           >
             <span className="truncate text-left">
               {selected?.label ?? placeholder}

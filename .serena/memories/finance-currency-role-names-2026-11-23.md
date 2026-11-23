@@ -1,0 +1,1 @@
+Ukrainian UI name for the rate-anchor currency is «Основна», not «Базова» (2026-11-23). Customer currency stays «Валюта покупця» / badge «Для покупця». The third role is the product price currency on Product.currency, not a list badge.

@@ -1047,7 +1047,7 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="pdp"
               title="Сторінка товару (PDP)"
-              hint="Галерея + lightbox, sticky buy-box, key facts, згруповані specs, mobile sticky CTA, related ProductCard."
+              hint="Галерея + lightbox; buy-box панель вартість|ПДВ + фінансування; key facts; specs; mobile sticky CTA; related."
             >
               <UiLabPdp />
             </Section>

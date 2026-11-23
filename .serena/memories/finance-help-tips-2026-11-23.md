@@ -1,0 +1,1 @@
+2026-11-23: removed the large circle-i next to the Finance tabs (helpBlock1/2). Field tips inside the currencies panel stay.

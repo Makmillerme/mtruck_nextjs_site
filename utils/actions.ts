@@ -35,6 +35,8 @@ import {
   uploadProductImages,
 } from './images';
 import { PRODUCT_IMAGE_MAX } from '@/lib/catalog/product-image-limits';
+import { assertProductCurrency } from '@/lib/finance/assert-product-currency';
+import { parsePromoInput } from '@/lib/finance/promo';
 import { auth } from '@/lib/auth';
 import { cookies, headers } from 'next/headers';
 import { revalidatePath, unstable_cache } from 'next/cache';
@@ -146,7 +148,7 @@ export const fetchFeaturedProducts = async (take = 6) => {
         take,
       });
     },
-    ['featured-products', String(take)],
+    ['featured-products-fx', String(take)],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
@@ -235,7 +237,7 @@ export const fetchAllProducts = async (args: {
   });
   return unstable_cache(
     () => fetchAllProductsUncached(args),
-    ["catalog-products", key],
+    ["catalog-products-fx", key],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
@@ -347,7 +349,7 @@ export const fetchRelatedProducts = async ({
         take: limit,
       });
     },
-    ['related-products', productId, taxonomyNodeId, String(limit)],
+    ['related-products-fx', productId, taxonomyNodeId, String(limit)],
     {
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
       tags: [CATALOG_CACHE_TAGS.root, CATALOG_CACHE_TAGS.products],
@@ -375,6 +377,19 @@ export const createProductAction = async (
     if (!taxonomyNodeId) {
       const catalogT = await getTranslations('CatalogAdmin');
       throw new Error(catalogT('productFolderRequired'));
+    }
+    const currencyCode = String(formData.get('currency') ?? '')
+      .trim()
+      .toUpperCase();
+    const activeCurrency = currencyCode
+      ? await db.currency.findFirst({
+          where: { code: currencyCode, isActive: true },
+          select: { code: true },
+        })
+      : null;
+    if (!activeCurrency) {
+      const adminT = await getTranslations('Admin');
+      throw new Error(adminT('priceNeedsCurrency'));
     }
     let specCreates: ReturnType<typeof toPrismaSpecCreates> = [];
     const node = await db.taxonomyNode.findUnique({
@@ -434,11 +449,22 @@ export const createProductAction = async (
 
     const { generateUniqueProductCode } = await import("@/lib/codes");
     const productCode = await generateUniqueProductCode();
+    const currency = await assertProductCurrency(
+      validatedFields.currency ?? 'USD'
+    );
+    let promo: ReturnType<typeof parsePromoInput> = null;
+    try {
+      promo = parsePromoInput(formData.get('promo'));
+    } catch {
+      throw new Error('Invalid promo discount');
+    }
     const created = await db.product.create({
       data: {
         name: validatedFields.name,
         price: validatedFields.price,
-        currency: validatedFields.currency ?? "USD",
+        currency,
+        promoKind: promo?.kind ?? null,
+        promoValue: promo?.value ?? null,
         description: validatedFields.description ?? "",
         image: cover,
         productCode,
@@ -784,12 +810,31 @@ export const updateProductAction = async (
       if (!existing.image && newUrls[0]) cover = newUrls[0];
     }
 
-    const currency = validatedFields.currency ?? 'USD';
+    const currency = await assertProductCurrency(
+      validatedFields.currency ?? 'USD',
+      existing.currency
+    );
     const description = validatedFields.description ?? '';
     const data: Prisma.ProductUpdateInput = {};
     if (validatedFields.name !== existing.name) data.name = validatedFields.name;
     if (validatedFields.price !== existing.price) data.price = validatedFields.price;
-    if (currency !== existing.currency) data.currency = currency;
+    if (currency !== existing.currency) {
+      data.currencyRef = { connect: { code: currency } };
+    }
+    let promo: ReturnType<typeof parsePromoInput> = null;
+    try {
+      promo = parsePromoInput(formData.get('promo'));
+    } catch {
+      throw new Error('Invalid promo discount');
+    }
+    const nextPromoKind = promo?.kind ?? null;
+    const nextPromoValue = promo?.value ?? null;
+    if (nextPromoKind !== existing.promoKind) data.promoKind = nextPromoKind;
+    const existingPromo = existing.promoValue?.toString() ?? null;
+    const nextPromoStr = nextPromoValue?.toString() ?? null;
+    if (nextPromoStr !== existingPromo) {
+      data.promoValue = nextPromoValue;
+    }
     if (description !== existing.description) data.description = description;
     if (cover !== existing.image) data.image = cover;
     if (taxonomyNodeId !== (existing.taxonomyNodeId ?? '')) {

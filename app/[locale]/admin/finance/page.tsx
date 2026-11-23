@@ -1,4 +1,5 @@
 import FinanceCurrenciesPanel from "@/components/admin/finance/finance-currencies-panel";
+import FinancePricingPanel from "@/components/admin/finance/finance-pricing-panel";
 import FinanceStubPanel from "@/components/admin/finance/finance-stub-panel";
 import FinanceTabs from "@/components/admin/finance/finance-tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,18 +24,7 @@ async function AdminFinancePage(props: {
           <FinanceTabs
             tab={tab}
             currencies={<FinanceCurrenciesPanel />}
-            pricing={
-              <FinanceStubPanel
-                heading={t("pricingHeading")}
-                description={t("pricingDescription")}
-              />
-            }
-            taxes={
-              <FinanceStubPanel
-                heading={t("taxesHeading")}
-                description={t("taxesDescription")}
-              />
-            }
+            pricing={<FinancePricingPanel />}
             financing={
               <FinanceStubPanel
                 heading={t("financingHeading")}

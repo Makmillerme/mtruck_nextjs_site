@@ -32,6 +32,8 @@ import {
   buildProductKeyFacts,
   formatProductPrice,
 } from "@/lib/catalog/product-page";
+import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
+import { resolveStorefrontPriceDisplay } from "@/lib/finance/storefront-card-price";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import {
   fetchProductPageLayoutsByNodeIds,
@@ -91,16 +93,68 @@ export async function generateMetadata(props: {
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const [product, locale, t, session] = await Promise.all([
-    fetchSingleProduct(params.id),
-    getLocale(),
-    getTranslations("Product"),
-    getSession(),
-  ]);
-  const { name, description, price, productCode } = product;
-  const priceLabel = formatProductPrice(price, locale);
-  const leasingEstimate = Math.max(1, Math.round((price || 0) / 51));
-  const leasingAmountLabel = formatProductPrice(leasingEstimate, locale);
+  const [product, locale, t, tFinance, session, buyerCurrency] =
+    await Promise.all([
+      fetchSingleProduct(params.id),
+      getLocale(),
+      getTranslations("Product"),
+      getTranslations("FinanceAdmin"),
+      getSession(),
+      getBuyerCurrencyCookie(),
+    ]);
+  const { name, description, price, currency, productCode } = product;
+  const storefrontPrice = await resolveStorefrontPriceDisplay(
+    {
+      price,
+      currency,
+      taxonomyNodeId: product.taxonomyNodeId,
+      promoKind: product.promoKind,
+      promoValue: product.promoValue,
+    },
+    locale,
+    buyerCurrency
+  );
+  const priceLabel = storefrontPrice.priceLabel;
+  const priceHint = storefrontPrice.priceHint;
+  const mainLine = storefrontPrice.lines.find((line) => line.kind === "main");
+  const leasingEstimate = Math.max(
+    1,
+    Math.round((mainLine?.amount || price || 0) / 51)
+  );
+  const leasingAmountLabel = formatProductPrice(
+    leasingEstimate,
+    locale,
+    mainLine?.currencyCode ?? currency
+  );
+  const vatLineKinds = new Set(["net", "gross", "vat"]);
+  const priceLines = storefrontPrice.lines
+    .filter((line) => line.kind !== "main" && line.kind !== "was")
+    .map((line, index, all) => {
+      const amount = formatProductPrice(
+        line.amount,
+        locale,
+        line.currencyCode
+      );
+      const prefix = line.labelKey ? tFinance(line.labelKey) : null;
+      const isVatLine = vatLineKinds.has(line.kind);
+      let lastVatIndex = -1;
+      for (let i = all.length - 1; i >= 0; i -= 1) {
+        if (vatLineKinds.has(all[i]!.kind)) {
+          lastVatIndex = i;
+          break;
+        }
+      }
+      const emphasize =
+        Boolean(isVatLine) &&
+        index === lastVatIndex &&
+        storefrontPrice.vatCurrenciesDiffer;
+      return {
+        label: prefix ? `${prefix}: ${amount}` : amount,
+        // Same currencies: all VAT lines muted. Differ: last (З ПДВ) stays strong.
+        muted: line.kind === "extra" || (isVatLine && !emphasize),
+        emphasize,
+      };
+    });
   const user = session?.user;
   const userId = user?.id;
   const isAuthenticated = Boolean(userId);
@@ -195,13 +249,23 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     description,
     locale
   );
-  const relatedProducts = related.map((item) =>
+  const relatedDisplays = await Promise.all(
+    related.map((item) =>
+      resolveStorefrontPriceDisplay(
+        { price: item.price, currency: item.currency },
+        locale,
+        buyerCurrency
+      )
+    )
+  );
+  const relatedProducts = related.map((item, index) =>
     productWithSpecsToCardModel(
       item,
       item.taxonomyNodeId
         ? relatedLayouts.get(item.taxonomyNodeId)
         : undefined,
-      locale
+      locale,
+      relatedDisplays[index]
     )
   );
   const availabilityInStock = product.availability === "IN_STOCK";
@@ -274,7 +338,10 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             categoryLabel={categoryLabel}
             name={name}
             priceLabel={priceLabel}
-            priceHint={t("priceHint")}
+            priceHint={priceHint}
+            struckLabel={storefrontPrice.struckLabel}
+            priceLines={priceLines}
+            vatCurrenciesDiffer={storefrontPrice.vatCurrenciesDiffer}
             availabilityLabel={availabilityLabel}
             availabilityInStock={availabilityInStock}
             facts={keyFacts}

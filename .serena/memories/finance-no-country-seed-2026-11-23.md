@@ -1,0 +1,1 @@
+Finance no longer seeds UAH. An empty currency table stays empty. The first currency added in admin becomes both the main currency and the customer currency, with quote 1. Existing UAH/USD rows stay because they are saved data; USD is still referenced by products.

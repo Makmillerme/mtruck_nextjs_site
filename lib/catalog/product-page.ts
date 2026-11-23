@@ -31,7 +31,7 @@ export function formatProductSpecValue(
 export function formatProductPrice(
   amount: number | null,
   locale = "uk",
-  currency: "USD" | "EUR" | "UAH" = "USD"
+  currency = "USD"
 ) {
   const value = amount || 0;
   return new Intl.NumberFormat(intlLocale(locale), {

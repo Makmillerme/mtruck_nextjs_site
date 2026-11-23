@@ -128,6 +128,10 @@ export function CatalogMenuSelect({
   hideLabel = false,
   required = false,
   searchable,
+  triggerClassName,
+  value: valueProp,
+  onValueChange,
+  disabled = false,
 }: {
   name: string;
   label: string;
@@ -147,6 +151,10 @@ export function CatalogMenuSelect({
    * Pass `false` for short enums (status, currency, type).
    */
   searchable?: boolean;
+  triggerClassName?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
 }) {
   const hasDefault =
     defaultValue != null &&
@@ -160,15 +168,23 @@ export function CatalogMenuSelect({
       : allowClear
         ? ""
         : (options[0]?.value ?? "");
-  const [value, setValue] = useState(initial);
+  const controlled = valueProp !== undefined;
+  const [uncontrolled, setUncontrolled] = useState(initial);
+  const value = controlled ? valueProp : uncontrolled;
+
+  function commit(next: string) {
+    if (!controlled) setUncontrolled(next);
+    onValueChange?.(next);
+  }
 
   // Sync only when defaultValue changes (e.g. sheet hydrate). Do NOT depend on
   // `options` — callers often pass a fresh array each render, which would reset
   // the user's selection (role, status, etc.) back to the prop default.
   useEffect(() => {
+    if (controlled) return;
     if (defaultValue == null || defaultValue === "") return;
-    setValue(defaultValue);
-  }, [defaultValue]);
+    setUncontrolled(defaultValue);
+  }, [controlled, defaultValue]);
 
   return (
     <div className={cn(className)}>
@@ -181,7 +197,7 @@ export function CatalogMenuSelect({
           keywords: [option.label, option.value],
         }))}
         value={value}
-        onValueChange={setValue}
+        onValueChange={commit}
         placeholder={placeholder ?? clearLabel ?? label}
         searchPlaceholder={searchPlaceholder ?? label}
         emptyLabel={emptyLabel}
@@ -190,6 +206,8 @@ export function CatalogMenuSelect({
         hideLabel={hideLabel}
         required={required}
         searchable={searchable}
+        triggerClassName={triggerClassName}
+        disabled={disabled}
       />
     </div>
   );

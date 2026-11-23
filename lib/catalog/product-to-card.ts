@@ -113,6 +113,7 @@ export function productWithSpecsToCardModel(
     id: string;
     name: string;
     price: number;
+    currency?: string;
     image: string;
     status?: string;
     taxonomyNode?: { name: string } | null;
@@ -120,7 +121,18 @@ export function productWithSpecsToCardModel(
     images?: { url: string }[];
   },
   layout: CardPreviewLayoutResolved | null | undefined = FALLBACK_CARD_PREVIEW_LAYOUT,
-  locale = "uk"
+  locale = "uk",
+  display?: {
+    priceLabel: string;
+    priceHint?: string | null;
+    struckLabel?: string | null;
+    lines?: {
+      kind: string;
+      amount: number;
+      currencyCode: string;
+      labelKey?: string;
+    }[];
+  }
 ): ProductCardModel {
   const resolved = layout ?? FALLBACK_CARD_PREVIEW_LAYOUT;
   const specs = product.specs ?? [];
@@ -149,6 +161,18 @@ export function productWithSpecsToCardModel(
     id: product.id,
     name: product.name,
     price: product.price,
+    currency: product.currency,
+    priceLabel: display?.priceLabel,
+    priceHint: display?.priceHint,
+    struckLabel: display?.struckLabel ?? null,
+    priceLines: (display?.lines ?? [])
+      .filter((line) => line.kind === "extra" || line.kind === "net" || line.kind === "gross" || line.kind === "vat")
+      .map((line) => ({
+        kind: line.kind,
+        amount: line.amount,
+        currencyCode: line.currencyCode,
+        labelKey: line.labelKey,
+      })),
     image: images[0] ?? product.image,
     images,
     href: `/products/${product.id}`,

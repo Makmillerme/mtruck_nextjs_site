@@ -166,8 +166,10 @@ export default function UiLabPdp() {
       <div className="grid gap-2">
         <p className="text-sm text-muted-foreground">
           Канон PDP hero. Buy-box без sticky; price+CTA+trust одразу під
-          key facts (без `mt-auto`). 2 CTA: замовлення + заявка. Mobile
-          sticky CTA — демо-бар нижче.
+          key facts. Панель вартості — одна картка: зліва сума, справа ПДВ,
+          фінансування врізаною рискою внизу (той самий фон). Без ПДВ —
+          фінансування
+          справа як раніше. 2 CTA. Mobile sticky CTA — нижче.
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">z-40 sticky CTA</Badge>
@@ -191,14 +193,18 @@ export default function UiLabPdp() {
           className="min-w-0"
           categoryLabel="Сідельні тягачі"
           name="MAN TGX 18.440"
-          priceLabel="€ 38 500"
-          priceHint="ціна з ПДВ"
+          priceLabel="2 677 200 ₴"
+          priceHint="без ПДВ"
+          priceLines={[
+            { label: "З ПДВ: 3 212 640 ₴", muted: true },
+            { label: "ПДВ: 535 440 ₴", muted: true },
+          ]}
           availabilityLabel="В наявності"
           availabilityInStock
           facts={DEMO_FACTS}
           articleLabel="Артикул DEMO-TGX-18440"
           financingLabel="Фінансування від"
-          financingAmount="≈ € 755/міс"
+          financingAmount="≈ 52 494 ₴/міс"
           trustItems={[
             { id: "delivery", label: "Доставка по Україні" },
             { id: "service", label: "Сервісне обслуговування" },
@@ -308,7 +314,7 @@ export default function UiLabPdp() {
       />
 
       {showSticky ? (
-        <ProductStickyCta priceLabel="€ 38 500" cta={<DemoCta />} />
+        <ProductStickyCta priceLabel="2 677 200 ₴" cta={<DemoCta />} />
       ) : null}
 
       {showSticky ? <div className="h-16 lg:hidden" aria-hidden /> : null}

@@ -22,11 +22,59 @@ type TrustItem = {
 /** Order matches PDP trustItems: delivery → service → prep → documents. */
 const TRUST_ICONS = [LuTruck, LuWrench, LuSparkles, LuFileCheck] as const;
 
+function FinancingRow({
+  financingLabel,
+  financingAmount,
+  financingHint,
+  className,
+}: {
+  financingLabel?: string | null;
+  financingAmount?: string | null;
+  financingHint?: string | null;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-center gap-3", className)}>
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-sm border border-border/80 bg-background text-foreground"
+        aria-hidden
+      >
+        <LuBanknote className="size-3.5" strokeWidth={1.75} />
+      </span>
+      <div className="grid min-w-0 flex-1 gap-0.5">
+        {financingLabel ? (
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {financingLabel}
+          </p>
+        ) : null}
+        {financingAmount ? (
+          <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+            {financingAmount}
+          </p>
+        ) : null}
+        {financingHint ? (
+          <p className="text-[10px] leading-snug text-muted-foreground/80">
+            {financingHint}
+          </p>
+        ) : null}
+      </div>
+      <LuChevronRight
+        className="size-3.5 shrink-0 text-muted-foreground/70"
+        strokeWidth={2}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export default function ProductBuyBox({
   categoryLabel,
   name,
   priceLabel,
   priceHint,
+  struckLabel,
+  priceLines = [],
+  vatCurrenciesDiffer = false,
   availabilityLabel,
   availabilityInStock,
   facts = [],
@@ -43,7 +91,11 @@ export default function ProductBuyBox({
   categoryLabel?: string | null;
   name: string;
   priceLabel: string;
-  priceHint?: string;
+  priceHint?: string | null;
+  struckLabel?: string | null;
+  priceLines?: { label: string; muted?: boolean; emphasize?: boolean }[];
+  /** When true, hide entry-mode caption; VAT lines sit beside the main price. */
+  vatCurrenciesDiffer?: boolean;
   availabilityLabel: string;
   availabilityInStock: boolean;
   facts?: ProductKeyFact[];
@@ -61,6 +113,7 @@ export default function ProductBuyBox({
   className?: string;
 }) {
   const showFinancing = Boolean(financingLabel || financingAmount);
+  const hasVatBreakdown = priceLines.length > 0;
   const trust: TrustItem[] = trustItems.map((item, index) => ({
     ...item,
     Icon: TRUST_ICONS[index % TRUST_ICONS.length]!,
@@ -112,66 +165,89 @@ export default function ProductBuyBox({
       ) : null}
 
       <div className="grid shrink-0 gap-5">
-        <div
-          className={cn(
-            "grid gap-4 rounded-sm border border-border bg-card p-4",
-            showFinancing &&
-              "sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-border"
-          )}
-        >
-          <div
-            className={cn(
-              "grid content-center gap-1",
-              showFinancing && "sm:pr-5"
-            )}
-          >
-            {priceHint ? (
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                {priceHint}
-              </p>
-            ) : null}
-            <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
-              {priceLabel}
-            </p>
-          </div>
-          {showFinancing ? (
-            <div
-              className={cn(
-                "flex items-center gap-3 border-t border-border pt-4",
-                "sm:border-t-0 sm:pt-0 sm:pl-5"
-              )}
-            >
-              <span
-                className="flex size-10 shrink-0 items-center justify-center rounded-sm border border-border bg-muted/40 text-foreground"
-                aria-hidden
-              >
-                <LuBanknote className="size-4" strokeWidth={2} />
-              </span>
-              <div className="grid min-w-0 flex-1 gap-0.5">
-                {financingLabel ? (
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    {financingLabel}
+        {hasVatBreakdown ? (
+          <div className="rounded-sm border border-border bg-card p-4">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-border">
+              <div className="grid content-center gap-1 sm:pr-5">
+                {struckLabel ? (
+                  <p className="text-sm text-muted-foreground line-through">
+                    {struckLabel}
                   </p>
                 ) : null}
-                {financingAmount ? (
-                  <p className="truncate text-base font-bold tracking-tight text-foreground">
-                    {financingAmount}
-                  </p>
-                ) : null}
-                {financingHint ? (
-                  <p className="text-[10px] leading-snug text-muted-foreground/80">
-                    {financingHint}
+                <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
+                  {priceLabel}
+                </p>
+                {!vatCurrenciesDiffer && priceHint ? (
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {priceHint}
                   </p>
                 ) : null}
               </div>
-              <LuChevronRight
-                className="size-4 shrink-0 text-muted-foreground"
-                strokeWidth={2}
-                aria-hidden
-              />
+              <div className="grid content-center gap-1 border-t border-border pt-4 sm:border-t-0 sm:pt-0 sm:pl-5">
+                {priceLines.map((line) => (
+                  <p
+                    key={line.label}
+                    className={cn(
+                      "text-sm tabular-nums tracking-tight",
+                      line.emphasize
+                        ? "font-semibold text-foreground"
+                        : line.muted
+                          ? "text-muted-foreground"
+                          : "text-foreground"
+                    )}
+                  >
+                    {line.label}
+                  </p>
+                ))}
+              </div>
             </div>
-          ) : null}
-        </div>
+            {showFinancing ? (
+              <FinancingRow
+                financingLabel={financingLabel}
+                financingAmount={financingAmount}
+                financingHint={financingHint}
+                className="mt-4 border-t border-border pt-3"
+              />
+            ) : null}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "grid gap-4 rounded-sm border border-border bg-card p-4",
+              showFinancing &&
+                "sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-border"
+            )}
+          >
+            <div
+              className={cn(
+                "grid content-center gap-1",
+                showFinancing && "sm:pr-5"
+              )}
+            >
+              {priceHint ? (
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {priceHint}
+                </p>
+              ) : null}
+              {struckLabel ? (
+                <p className="text-sm text-muted-foreground line-through">
+                  {struckLabel}
+                </p>
+              ) : null}
+              <p className="text-3xl font-extrabold tracking-tight text-foreground lg:text-[2.125rem] lg:leading-none">
+                {priceLabel}
+              </p>
+            </div>
+            {showFinancing ? (
+              <FinancingRow
+                financingLabel={financingLabel}
+                financingAmount={financingAmount}
+                financingHint={financingHint}
+                className="border-t border-border pt-4 sm:border-t-0 sm:pt-0 sm:pl-5"
+              />
+            ) : null}
+          </div>
+        )}
 
         {cta || secondaryCta ? (
           <div className="grid gap-3 sm:grid-cols-2">
