@@ -1531,6 +1531,8 @@ export const fetchUserOrders = async () => {
     where: {
       userId: user.id,
       archivedAt: null,
+      // REQUEST leads are inquiries, not cabinet order cards
+      kind: 'CATALOG',
     },
     include: {
       product: {
@@ -1596,55 +1598,46 @@ export const createUserRequestOrderAction = async (
     );
     const profile = await db.user.findUnique({
       where: { id: user.id },
-      select: { phone: true, email: true },
+      select: { phone: true },
     });
     const phoneInput = String(formData.get('phone') ?? '').trim();
-    if (!profile?.phone?.trim()) {
+    let phone = profile?.phone?.trim() || '';
+    if (!phone) {
       const phoneData = validateWithZodSchema(
         callbackInquirySchema.pick({ phone: true }),
         { phone: formData.get('phone') }
       );
-      await rememberUserPhone(user.id, phoneData.phone);
+      phone = phoneData.phone;
+      await rememberUserPhone(user.id, phone);
     } else if (phoneInput) {
+      phone = phoneInput;
       await rememberUserPhone(user.id, phoneInput);
     }
-    const order = await db.order.create({
+
+    // Free-form product request = inquiry (заявка), not an Order card.
+    const inquiry = await db.callbackInquiry.create({
       data: {
-        userId: user.id,
-        email: profile?.email ?? user.email,
-        kind: 'REQUEST',
-        status: 'NEW',
-        origin: 'USER',
-        taxonomyNodeId: null,
-        note: data.note,
+        phone,
         productId: null,
-        products: 1,
-        orderTotal: 0,
-        tax: 0,
-        shipping: 0,
-        isPaid: false,
+        productName: null,
+        productCode: null,
+        note: data.note,
       },
     });
-    const phoneForStaff =
-      (
-        await db.user.findUnique({
-          where: { id: user.id },
-          select: { phone: true },
-        })
-      )?.phone?.trim() ||
-      profile?.phone?.trim() ||
-      '';
-    const { publishOrderRequestCreated } = await import(
+
+    const { publishInquiryCreated } = await import(
       '@/lib/realtime/pusher-server'
     );
-    await publishOrderRequestCreated({
-      id: order.id,
-      phone: phoneForStaff || user.email,
-      note: data.note?.trim() || null,
-      createdAt: order.createdAt.toISOString(),
+    await publishInquiryCreated({
+      id: inquiry.id,
+      phone: inquiry.phone,
+      productName: inquiry.productName,
+      productCode: inquiry.productCode,
+      createdAt: inquiry.createdAt.toISOString(),
     });
+
     revalidatePath('/account');
-    revalidatePath('/admin/sales');
+    revalidatePath('/admin/sales/inquiries');
     const t = await getTranslations('Actions');
     return { message: t('orderCreated'), ok: true };
   } catch (error) {
