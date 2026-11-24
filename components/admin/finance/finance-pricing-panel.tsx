@@ -40,6 +40,13 @@ export default async function FinancePricingPanel() {
           extraCurrencyCodes: [] as string[],
         };
 
+  const ratesByCode = Object.fromEntries(
+    currencies.map((row) => [
+      row.code,
+      row.rateToBase == null ? null : Number(row.rateToBase),
+    ])
+  );
+
   return (
     <FinancePricingView
       roots={roots.map((root) => ({ id: root.id, name: root.name }))}
@@ -48,6 +55,8 @@ export default async function FinancePricingPanel() {
         value: row.code,
         label: `${row.code} — ${row.name}`,
       }))}
+      ratesByCode={ratesByCode}
+      baseCurrencyCode={fallbackMain}
       initialScope={roots[0]?.id ?? "ALL"}
       initialPricing={initial}
     />

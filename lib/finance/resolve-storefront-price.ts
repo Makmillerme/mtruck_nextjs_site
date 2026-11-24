@@ -150,131 +150,125 @@ export async function buildStorefrontPriceDisplay(
     minorByCode.get(targetMain) ?? 0
   );
 
-  if (mainConverted == null) {
-    return {
-      priceLabel: formatDisplayMoneyLabel(
-        {
-          amount: product.price,
-          currencyCode: sourceCode,
-          converted: false,
-          hintKey: "rateMissing",
-          original: { amount: product.price, currencyCode: sourceCode },
-        },
-        locale,
-        currencyDisplayMode
-      ),
-      priceMode,
-      priceHint: "rateMissing",
-      vatCurrenciesDiffer: false,
-      currencyDisplayMode,
-      financingEnabled: config.financingEnabled,
-      financingLabel: null,
-      financingAmountLabel: null,
-      lines: [
-        {
-          kind: "main",
-          amount: product.price,
-          currencyCode: sourceCode,
-        },
-      ],
-      struckLabel: null,
-    };
-  }
+  // Pricing.mainCurrencyCode is the buyer-facing currency. Finance base currency
+  // is only the FX anchor — never substitute it for a successful main line.
+  const mainRateMissing = mainConverted == null;
+  const displayMainCode = mainRateMissing ? sourceCode : targetMain;
+  const displayMainAmount = mainRateMissing ? primaryAmount : mainConverted;
 
   lines.push({
     kind: "main",
-    amount: mainConverted,
-    currencyCode: targetMain,
+    amount: displayMainAmount,
+    currencyCode: displayMainCode,
   });
 
   // Compare the currency of the on-screen main amount with VAT sums currency
   // (not the product's stored currency — after FX they can diverge).
   const vatCurrenciesDiffer =
-    config.vatEnabled && targetMain.toUpperCase() !== vatCurrency;
+    config.vatEnabled && displayMainCode.toUpperCase() !== vatCurrency;
 
   if (config.vatEnabled) {
+    const wantNet = config.showPriceWithoutVat;
+    const wantVat = config.showVatAmount;
+    const wantGross = config.showPriceWithVat;
+
     if (vatCurrenciesDiffer) {
-      // Без ПДВ → ПДВ → З ПДВ when VAT sums currency ≠ main display currency.
-      pushConverted(
-        lines,
-        "net",
-        vat.net,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "priceWithoutVat"
-      );
-      pushConverted(
-        lines,
-        "vat",
-        vat.vat,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "vatAmount"
-      );
-      pushConverted(
-        lines,
-        "gross",
-        vat.gross,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "priceWithVat"
-      );
+      // Order: Без ПДВ → ПДВ → З ПДВ when VAT currency ≠ main display currency.
+      if (wantNet) {
+        pushConverted(
+          lines,
+          "net",
+          vat.net,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "priceWithoutVat"
+        );
+      }
+      if (wantVat) {
+        pushConverted(
+          lines,
+          "vat",
+          vat.vat,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "vatAmount"
+        );
+      }
+      if (wantGross) {
+        pushConverted(
+          lines,
+          "gross",
+          vat.gross,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "priceWithVat"
+        );
+      }
     } else if (storefrontMode === "INCL_VAT") {
-      // Main shows gross → complement pair is net + vat.
-      pushConverted(
-        lines,
-        "net",
-        vat.net,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "priceWithoutVat"
-      );
-      pushConverted(
-        lines,
-        "vat",
-        vat.vat,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "vatAmount"
-      );
+      // Main already shows gross — only complements.
+      if (wantNet) {
+        pushConverted(
+          lines,
+          "net",
+          vat.net,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "priceWithoutVat"
+        );
+      }
+      if (wantVat) {
+        pushConverted(
+          lines,
+          "vat",
+          vat.vat,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "vatAmount"
+        );
+      }
     } else {
-      // Main shows net → complement pair is gross + vat.
-      pushConverted(
-        lines,
-        "gross",
-        vat.gross,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "priceWithVat"
-      );
-      pushConverted(
-        lines,
-        "vat",
-        vat.vat,
-        sourceCode,
-        vatCurrency,
-        rates,
-        minorByCode,
-        "vatAmount"
-      );
+      // Main already shows net — only complements.
+      if (wantGross) {
+        pushConverted(
+          lines,
+          "gross",
+          vat.gross,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "priceWithVat"
+        );
+      }
+      if (wantVat) {
+        pushConverted(
+          lines,
+          "vat",
+          vat.vat,
+          sourceCode,
+          vatCurrency,
+          rates,
+          minorByCode,
+          "vatAmount"
+        );
+      }
     }
   }
 
   if (config.displayMode === "STACKED") {
     for (const code of config.extraCurrencyCodes) {
-      if (code === targetMain) continue;
+      // Skip the intended main and the fallback main to avoid duplicates.
+      if (code === targetMain || code === displayMainCode) continue;
       pushConverted(
         lines,
         "extra",
@@ -288,7 +282,7 @@ export async function buildStorefrontPriceDisplay(
   }
 
   let struckLabel: string | null = null;
-  if (hasPromo) {
+  if (hasPromo && !mainRateMissing) {
     const wasVat = splitVat(
       product.price,
       config.entryMode,
@@ -333,14 +327,15 @@ export async function buildStorefrontPriceDisplay(
       {
         amount: main.amount,
         currencyCode: main.currencyCode,
-        converted: main.currencyCode !== sourceCode,
+        converted: !mainRateMissing && main.currencyCode !== sourceCode,
+        hintKey: mainRateMissing ? "rateMissing" : undefined,
         original: { amount: product.price, currencyCode: sourceCode },
       },
       locale,
       currencyDisplayMode
     ),
     priceMode,
-    priceHint: null,
+    priceHint: mainRateMissing ? "rateMissing" : null,
     vatCurrenciesDiffer,
     currencyDisplayMode,
     financingEnabled: config.financingEnabled,

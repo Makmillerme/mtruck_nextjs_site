@@ -14,6 +14,7 @@ import {
   specsGridClassName,
   type CardPreviewSpecsStyleId,
 } from "@/lib/catalog/card-preview";
+import { useLayoutEffect, useRef } from "react";
 import { LuChevronRight, LuTag } from "react-icons/lu";
 
 const PhotoCarousel = dynamic(
@@ -116,47 +117,63 @@ const LIST_IMAGE_SIZES = "(max-width: 768px) 100vw, 448px";
 
 function CardPriceBlock({
   price,
+  priceHint,
   struckLabel,
   priceLines,
   locale,
   currencyDisplayMode,
   financingLabel,
   financingAmountLabel,
+  layout = "grid",
 }: {
   price: string;
+  priceHint?: string | null;
   struckLabel?: string | null;
   priceLines?: ProductCardModel["priceLines"];
   locale: string;
   currencyDisplayMode: "CODE" | "SYMBOL";
   financingLabel?: string | null;
   financingAmountLabel?: string | null;
+  layout?: "grid" | "list";
 }) {
   const extras = (priceLines ?? []).filter((line) => line.kind === "extra");
   const showFinancing = Boolean(financingLabel || financingAmountLabel);
-  const hasStack = extras.length > 0 || showFinancing;
+  const hasExtras = extras.length > 0;
+  const hasMeta = Boolean(struckLabel || priceHint || hasExtras);
+  const isList = layout === "list";
 
-  return (
+  const priceCol = (
     <div
       className={cn(
         "min-w-0 grid",
-        hasStack ? "gap-1" : "gap-0.5",
-        hasStack && "text-right"
+        showFinancing && "flex-1",
+        hasMeta ? "gap-0.5" : "gap-0",
+        (showFinancing || hasExtras || priceHint) && "text-right"
       )}
     >
       {struckLabel ? (
-        <p className="truncate text-sm text-muted-foreground line-through tabular-nums">
+        <p className="truncate text-sm leading-none text-muted-foreground line-through tabular-nums">
           {struckLabel}
         </p>
       ) : null}
-      <p className="truncate text-xl font-extrabold tabular-nums tracking-tight text-foreground lg:text-2xl">
-        {price}
-      </p>
-      {extras.length > 0 ? (
-        <div className="grid gap-0.5">
+      <FitPriceText
+        text={price}
+        align={
+          showFinancing || hasExtras || priceHint ? "right" : "left"
+        }
+        className="font-extrabold tabular-nums tracking-tight text-foreground"
+      />
+      {priceHint ? (
+        <p className="truncate text-[11px] leading-snug text-muted-foreground">
+          {priceHint}
+        </p>
+      ) : null}
+      {hasExtras ? (
+        <div className="grid gap-0.5 pt-0.5">
           {extras.map((line) => (
             <p
               key={`${line.kind}-${line.currencyCode}`}
-              className="truncate text-sm font-bold tabular-nums tracking-tight text-foreground lg:text-base"
+              className="truncate text-sm font-bold leading-tight tabular-nums tracking-tight text-foreground lg:text-base"
             >
               {formatProductPrice(
                 line.amount,
@@ -168,20 +185,99 @@ function CardPriceBlock({
           ))}
         </div>
       ) : null}
-      {showFinancing ? (
-        <div className="grid gap-0.5 border-t border-border/60 pt-1">
-          {financingLabel ? (
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              {financingLabel}
-            </p>
-          ) : null}
-          {financingAmountLabel ? (
-            <p className="truncate text-sm font-semibold tabular-nums tracking-tight text-foreground">
-              {financingAmountLabel}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+    </div>
+  );
+
+  if (!showFinancing) {
+    return priceCol;
+  }
+
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <div
+        className={cn(
+          "grid min-w-0 shrink-0 gap-1 text-left",
+          isList
+            ? "w-[min(48%,14rem)]"
+            : "w-[min(48%,12rem)]"
+        )}
+      >
+        {financingLabel ? (
+          <p className="font-mono text-[10px] leading-none uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px] sm:tracking-[0.15em]">
+            {financingLabel}
+          </p>
+        ) : null}
+        {financingAmountLabel ? (
+          <p className="text-base font-bold leading-tight tabular-nums tracking-tight text-foreground [overflow-wrap:anywhere]">
+            {financingAmountLabel}
+          </p>
+        ) : null}
+      </div>
+      {priceCol}
+    </div>
+  );
+}
+
+/**
+ * Main card price: keep one line; if it overflows the column, step down size
+ * once (layout/size adapt), then a light scale if still tight.
+ */
+function FitPriceText({
+  text,
+  align = "left",
+  className,
+}: {
+  text: string;
+  align?: "left" | "right";
+  className?: string;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const el = textRef.current;
+    if (!wrap || !el) return;
+
+    const origin = align === "right" ? "right center" : "left center";
+
+    const fit = () => {
+      el.style.transform = "none";
+      el.style.transformOrigin = origin;
+      const available = wrap.clientWidth;
+      if (available <= 0) return;
+      const needed = el.scrollWidth;
+      if (needed <= available + 0.5) return;
+      // Shrink proportionally; never below ~82% so the price stays readable.
+      const scale = Math.max(0.82, available / needed);
+      el.style.transform = `scale(${scale})`;
+    };
+
+    fit();
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(fit);
+    });
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [text, align]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className={cn(
+        "min-w-0 overflow-hidden",
+        align === "right" && "text-right"
+      )}
+    >
+      <p
+        ref={textRef}
+        className={cn(
+          "inline-block whitespace-nowrap text-xl leading-none lg:text-2xl",
+          className
+        )}
+      >
+        {text}
+      </p>
     </div>
   );
 }
@@ -392,12 +488,14 @@ export default function ProductCard({
             {showPrice ? (
               <CardPriceBlock
                 price={price}
+                priceHint={product.priceHint}
                 struckLabel={product.struckLabel}
                 priceLines={product.priceLines}
                 locale={locale}
                 currencyDisplayMode={currencyDisplayMode}
                 financingLabel={product.financingLabel}
                 financingAmountLabel={product.financingAmountLabel}
+                layout={layout}
               />
             ) : null}
             <Button asChild className="w-full">

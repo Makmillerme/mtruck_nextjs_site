@@ -344,13 +344,14 @@ export default function CascadeSelect({
       role="combobox"
       aria-expanded={open}
       disabled={disabled}
-      className={cn(
-        sheetFieldTriggerClassName,
-        !label && "text-muted-foreground",
-        triggerClassName
-      )}
+      className={cn(sheetFieldTriggerClassName, triggerClassName)}
     >
-      <span className="min-w-0 truncate text-left">
+      <span
+        className={cn(
+          "min-w-0 truncate text-left",
+          !label && "text-muted-foreground"
+        )}
+      >
         {label || placeholder}
       </span>
       <LuChevronsUpDown className="size-4 shrink-0 opacity-50" />

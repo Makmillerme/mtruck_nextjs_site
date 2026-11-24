@@ -1,9 +1,8 @@
-## Product card financing estimate (2026-11-23)
+## Product card financing + fit price (2026-11-24)
 
-When `RootPricing.financingEnabled`, catalog cards show under the price stack (right-aligned):
-- mono eyebrow `financingFrom`
-- `financingPerMonth` with shared `estimateMonthlyFinancing(amount/51)` from `lib/finance/financing-estimate.ts`
+`CardPriceBlock` (grid + list):
+- Row `flex items-center justify-between gap-3` — financing vertically centered vs price stack.
+- Financing: fixed-ish `w-[min(48%,12rem)]` (list `14rem`) `shrink-0`; label mono 10–11px; amount `text-base font-bold`.
+- Price column `flex-1 min-w-0` right-aligned when financing/extras; `FitPriceText` tiers 0→1 size drop→2 scale 0.92.
 
-Wired via `StorefrontPriceDisplay.financingLabel|AmountLabel` filled in `resolveStorefrontPriceDisplay`, passed through `product-to-card` → `CardPriceBlock`. VAT still PDP-only.
-
-Related: `mem:product-card-currency-stack-2026-11-23`, `mem:finance-autosave-financing-ui-editor-2026-11-23`.
+Pass `layout` from `ProductCard`. VAT still PDP-only.

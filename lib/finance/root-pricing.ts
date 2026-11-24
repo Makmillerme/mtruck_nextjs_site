@@ -191,11 +191,9 @@ async function upsertOne(
   const allowSwitch =
     input.displayMode === "SINGLE" ? input.allowBuyerCurrencySwitch : false;
 
-  const showPriceWithVat =
-    input.vatEnabled && input.storefrontPriceMode === "EXCL_VAT";
-  const showPriceWithoutVat =
-    input.vatEnabled && input.storefrontPriceMode === "INCL_VAT";
-  const showVatAmount = input.vatEnabled;
+  const showPriceWithVat = input.vatEnabled && input.showPriceWithVat;
+  const showPriceWithoutVat = input.vatEnabled && input.showPriceWithoutVat;
+  const showVatAmount = input.vatEnabled && input.showVatAmount;
 
   return prisma.$transaction(async (tx) => {
     const row = await tx.rootPricing.upsert({

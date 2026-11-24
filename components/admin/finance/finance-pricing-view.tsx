@@ -22,6 +22,9 @@ function serializePricing(draft: RootPricingDto, vatText: string, scope: string)
     entryMode: draft.entryMode,
     storefrontPriceMode: draft.storefrontPriceMode,
     vatText,
+    showPriceWithVat: draft.showPriceWithVat,
+    showPriceWithoutVat: draft.showPriceWithoutVat,
+    showVatAmount: draft.showVatAmount,
     displayMode: draft.displayMode,
     mainCurrencyCode: draft.mainCurrencyCode,
     vatDisplayCurrencyCode: draft.vatDisplayCurrencyCode,
@@ -56,12 +59,17 @@ export default function FinancePricingView({
   roots,
   pricingByRoot,
   currencyOptions,
+  ratesByCode,
+  baseCurrencyCode,
   initialScope,
   initialPricing,
 }: {
   roots: { id: string; name: string }[];
   pricingByRoot: Record<string, RootPricingDto>;
   currencyOptions: { value: string; label: string }[];
+  /** null = rate not set (base currency is always quoted as 1). */
+  ratesByCode: Record<string, number | null>;
+  baseCurrencyCode: string;
   initialScope: string;
   initialPricing: RootPricingDto;
 }) {
@@ -144,9 +152,18 @@ export default function FinancePricingView({
         draft.storefrontPriceMode ?? draft.entryMode
       );
       formData.set("vatPercent", String(vatPercent));
-      formData.set("showPriceWithVat", "false");
-      formData.set("showPriceWithoutVat", "false");
-      formData.set("showVatAmount", "false");
+      formData.set(
+        "showPriceWithVat",
+        draft.vatEnabled && draft.showPriceWithVat ? "true" : "false"
+      );
+      formData.set(
+        "showPriceWithoutVat",
+        draft.vatEnabled && draft.showPriceWithoutVat ? "true" : "false"
+      );
+      formData.set(
+        "showVatAmount",
+        draft.vatEnabled && draft.showVatAmount ? "true" : "false"
+      );
       formData.set("displayMode", draft.displayMode);
       formData.set("mainCurrencyCode", draft.mainCurrencyCode);
       formData.set(
@@ -204,6 +221,17 @@ export default function FinancePricingView({
     (option) => option.value !== draft.mainCurrencyCode
   );
 
+  const base = baseCurrencyCode.toUpperCase();
+  function currencyNeedsRate(code: string) {
+    const normalized = code.toUpperCase();
+    if (!normalized || normalized === base) return false;
+    return ratesByCode[normalized] == null;
+  }
+  const displayRateGaps = [
+    draft.mainCurrencyCode,
+    ...draft.extraCurrencyCodes,
+  ].filter((code, index, all) => all.indexOf(code) === index && currencyNeedsRate(code));
+
   function toggleExtra(code: string, checked: boolean) {
     setDraft((prev) => {
       const set = new Set(prev.extraCurrencyCodes);
@@ -246,25 +274,13 @@ export default function FinancePricingView({
       </div>
 
       <section className="grid gap-4 rounded-sm border border-border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-tight">
-              {t("pricingEntryTitle")}
-            </h3>
-            <AdminInfoTip label={t("helpLabel")} size="sm">
-              <p>{t("helpPricingEntry")}</p>
-            </AdminInfoTip>
-          </div>
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <Switch
-              checked={draft.vatEnabled}
-              onCheckedChange={(checked) =>
-                setDraft((prev) => ({ ...prev, vatEnabled: checked }))
-              }
-              aria-label={t("vatEnabled")}
-            />
-            <span>{t("vatEnabled")}</span>
-          </label>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold tracking-tight">
+            {t("pricingEntryTitle")}
+          </h3>
+          <AdminInfoTip label={t("helpLabel")} size="sm">
+            <p>{t("helpPricingEntry")}</p>
+          </AdminInfoTip>
         </div>
         {draft.vatEnabled ? (
           <div className="grid max-w-md gap-4">
@@ -332,6 +348,101 @@ export default function FinancePricingView({
                 className={cn(numberInputClassName)}
               />
             </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">{t("vatEntryDisabledHint")}</p>
+            <input type="hidden" name="vatPercent" value={vatText || "0"} />
+          </>
+        )}
+      </section>
+
+      <section className="grid gap-4 rounded-sm border border-border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-tight">
+              {t("vatDisplayTitle")}
+            </h3>
+            <AdminInfoTip label={t("helpLabel")} size="sm">
+              <p>{t("helpVatDisplay")}</p>
+            </AdminInfoTip>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <Switch
+              checked={draft.vatEnabled}
+              onCheckedChange={(checked) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  vatEnabled: checked,
+                  ...(checked
+                    ? {
+                        showPriceWithVat:
+                          prev.showPriceWithVat ||
+                          prev.showPriceWithoutVat ||
+                          prev.showVatAmount
+                            ? prev.showPriceWithVat
+                            : true,
+                        showPriceWithoutVat:
+                          prev.showPriceWithVat ||
+                          prev.showPriceWithoutVat ||
+                          prev.showVatAmount
+                            ? prev.showPriceWithoutVat
+                            : true,
+                        showVatAmount:
+                          prev.showPriceWithVat ||
+                          prev.showPriceWithoutVat ||
+                          prev.showVatAmount
+                            ? prev.showVatAmount
+                            : true,
+                      }
+                    : {}),
+                }))
+              }
+              aria-label={t("vatEnabled")}
+            />
+            <span>{t("vatEnabled")}</span>
+          </label>
+        </div>
+        {draft.vatEnabled ? (
+          <div className="grid max-w-md gap-4">
+            <div className="grid gap-3">
+              <label className="flex items-center gap-3 text-sm">
+                <Checkbox
+                  checked={draft.showPriceWithVat}
+                  onCheckedChange={(checked) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      showPriceWithVat: checked === true,
+                    }))
+                  }
+                />
+                <span>{t("vatShowGross")}</span>
+              </label>
+              <label className="flex items-center gap-3 text-sm">
+                <Checkbox
+                  checked={draft.showPriceWithoutVat}
+                  onCheckedChange={(checked) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      showPriceWithoutVat: checked === true,
+                    }))
+                  }
+                />
+                <span>{t("vatShowNet")}</span>
+              </label>
+              <label className="flex items-center gap-3 text-sm">
+                <Checkbox
+                  checked={draft.showVatAmount}
+                  onCheckedChange={(checked) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      showVatAmount: checked === true,
+                    }))
+                  }
+                />
+                <span>{t("vatShowAmount")}</span>
+              </label>
+            </div>
             <div className="grid gap-2">
               <Label>{t("vatDisplayCurrency")}</Label>
               <CatalogMenuSelect
@@ -355,9 +466,7 @@ export default function FinancePricingView({
               />
             </div>
           </div>
-        ) : (
-          <input type="hidden" name="vatPercent" value={vatText || "0"} />
-        )}
+        ) : null}
       </section>
 
       <section className="grid gap-4 rounded-sm border border-border p-4">
@@ -369,6 +478,14 @@ export default function FinancePricingView({
             <p>{t("helpPricingDisplay")}</p>
           </AdminInfoTip>
         </div>
+        {displayRateGaps.length > 0 ? (
+          <p className="rounded-sm border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-foreground">
+            {t("pricingRateMissingWarning", {
+              codes: displayRateGaps.join(", "),
+              base,
+            })}
+          </p>
+        ) : null}
         <div className="grid gap-2 sm:max-w-md">
           <Label>{t("pricingDisplayMode")}</Label>
           <CatalogMenuSelect

@@ -29,6 +29,7 @@ export default function TemplateFolderPicker({
       }}
       placeholder={t("templateFolderPlaceholder")}
       emptyLabel={t("emptyFolders")}
+      variant="tree"
     />
   );
 }

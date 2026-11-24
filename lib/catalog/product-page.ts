@@ -35,10 +35,12 @@ export function formatProductPrice(
   displayMode: "CODE" | "SYMBOL" = "CODE"
 ) {
   const value = amount || 0;
+  // uk/de CLDR often uses the ISO code as `symbol` for USD/EUR/GBP;
+  // `narrowSymbol` yields $, €, £ while UAH stays ₴.
   return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
-    currencyDisplay: displayMode === "SYMBOL" ? "symbol" : "code",
+    currencyDisplay: displayMode === "SYMBOL" ? "narrowSymbol" : "code",
     maximumFractionDigits: 0,
   }).format(value);
 }

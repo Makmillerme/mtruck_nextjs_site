@@ -133,6 +133,15 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     currencyDisplayMode
   );
   const vatLineKinds = new Set(["net", "gross", "vat"]);
+  const moneyKey = (currencyCode: string, amount: number) =>
+    `${currencyCode.toUpperCase()}:${amount}`;
+  // Left column already shows main + STACKED extras — hide the same
+  // currency+amount from the VAT column (not only when main === VAT currency).
+  const leftMoneyKeys = new Set(
+    storefrontPrice.lines
+      .filter((line) => line.kind === "main" || line.kind === "extra")
+      .map((line) => moneyKey(line.currencyCode, line.amount))
+  );
   const extraPriceLines = storefrontPrice.lines
     .filter((line) => line.kind === "extra")
     .map((line) =>
@@ -143,8 +152,10 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         currencyDisplayMode
       )
     );
-  const vatLines = storefrontPrice.lines.filter((line) =>
-    vatLineKinds.has(line.kind)
+  const vatLines = storefrontPrice.lines.filter(
+    (line) =>
+      vatLineKinds.has(line.kind) &&
+      !leftMoneyKeys.has(moneyKey(line.currencyCode, line.amount))
   );
   const priceLines = vatLines.map((line, index, all) => {
     const amount = formatProductPrice(

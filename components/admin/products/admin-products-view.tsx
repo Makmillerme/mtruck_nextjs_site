@@ -510,7 +510,11 @@ function ProductSheetFields({
         <PriceInput
           key={`${product?.id ?? "new"}-${entryMode}-${vatConfig.vatEnabled}-${selectedNodeId ?? ""}`}
           defaultValue={product?.price}
-          defaultCurrency={product?.currency ?? siteCurrencyCode}
+          defaultCurrency={
+            product?.currency ??
+            vatConfig.mainCurrencyCode ??
+            siteCurrencyCode
+          }
           defaultPromo={formatPromoInput(
             product?.promoKind,
             product?.promoValue
