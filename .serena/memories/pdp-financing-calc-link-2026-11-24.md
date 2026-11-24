@@ -1,0 +1,3 @@
+PDP buy-box financing row (split with Розрахувати): left cell is `flex sm:justify-end sm:pr-5`, body(true) is `sm:w-fit` + `sm:text-right`. Right edge of «Фінансування від» and the monthly amount matches the hero price and extra currency (MAN TGX: all right=894). Icon stays left of the text. Mobile stays start-aligned.
+
+Calc arrow: one SVG path, viewBox 0 0 160 12, preserveAspectRatio none, vectorEffect non-scaling-stroke, stroke 1.15, class h-2.5 w-[11rem], hover scale 1.06 on the button and scale-x-110 on the SVG. Wider than the word РОЗРАХУВАТИ.

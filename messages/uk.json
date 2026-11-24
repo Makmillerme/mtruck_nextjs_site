@@ -461,6 +461,7 @@
     "financingFrom": "Фінансування від",
     "financingPerMonth": "≈ {amount}/міс",
     "financingHint": "Лізинг або кредит · орієнтовний розрахунок",
+    "financingCalculate": "Розрахувати",
     "trustDelivery": "Доставка по Україні",
     "trustService": "Сервісне обслуговування",
     "trustPrep": "Передпродажна підготовка",

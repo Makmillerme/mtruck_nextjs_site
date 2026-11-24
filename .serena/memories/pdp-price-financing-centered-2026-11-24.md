@@ -1,0 +1,1 @@
+PDP price card, left column: hero price wrapper is `flex justify-center sm:pr-5` (inner lines stay `text-right` so the extra currency still lines up with the main price). Split financing body sits in the same column via `flex justify-center sm:pr-5`. The 10px left shift is half of `pr-5`, matching the VAT column's `pl-5`.

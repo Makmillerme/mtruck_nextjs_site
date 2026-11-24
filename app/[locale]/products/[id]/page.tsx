@@ -168,7 +168,8 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     const emphasize =
       index === all.length - 1 && storefrontPrice.vatCurrenciesDiffer;
     return {
-      label: prefix ? `${prefix}: ${amount}` : amount,
+      title: prefix ?? "",
+      amount,
       // Same currencies: all VAT lines muted. Differ: last (З ПДВ) stays strong.
       muted: !emphasize,
       emphasize,
@@ -373,6 +374,9 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
               financingEnabled
                 ? t("financingPerMonth", { amount: leasingAmountLabel })
                 : null
+            }
+            financingCalcLabel={
+              financingEnabled ? t("financingCalculate") : null
             }
             trustItems={trustItems}
             actions={

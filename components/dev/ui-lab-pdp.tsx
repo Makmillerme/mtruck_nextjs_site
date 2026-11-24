@@ -166,10 +166,9 @@ export default function UiLabPdp() {
       <div className="grid gap-2">
         <p className="text-sm text-muted-foreground">
           Канон PDP hero. Buy-box без sticky; price+CTA+trust одразу під
-          key facts. Панель вартості — одна картка: зліва сума, справа ПДВ,
-          фінансування врізаною рискою внизу (той самий фон). Без ПДВ —
-          фінансування
-          справа як раніше. 2 CTA. Mobile sticky CTA — нижче.
+          key facts. Панель вартості — герой по центру лівої колонки | ПДВ (підпис: сума впритул, блок по центру колонки, текст по лівому краю); фінансування знизу по центру тієї ж колонки з
+          text-link «Розрахувати» + стрілка (без рамки). Без ПДВ — герой |
+          фінансування. 2 CTA. Mobile sticky CTA — нижче.
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">z-40 sticky CTA</Badge>
@@ -196,8 +195,8 @@ export default function UiLabPdp() {
           priceLabel="2 677 200 ₴"
           extraPriceLines={["68 500 USD", "63 200 EUR"]}
           priceLines={[
-            { label: "З ПДВ: 3 212 640 ₴", muted: true },
-            { label: "ПДВ: 535 440 ₴", muted: true },
+            { title: "З ПДВ", amount: "3 212 640 ₴", emphasize: true },
+            { title: "ПДВ", amount: "535 440 ₴", muted: true },
           ]}
           availabilityLabel="В наявності"
           availabilityInStock
@@ -205,6 +204,7 @@ export default function UiLabPdp() {
           articleLabel="Артикул DEMO-TGX-18440"
           financingLabel="Фінансування від"
           financingAmount="≈ 52 494 ₴/міс"
+          financingCalcLabel="Розрахувати"
           trustItems={[
             { id: "delivery", label: "Доставка по Україні" },
             { id: "service", label: "Сервісне обслуговування" },

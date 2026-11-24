@@ -1,0 +1,1 @@
+PDP VatBreakdown: colon stays on the label (`ПДВ:` / `З ПДВ:`). Inner grid is two max-content columns, both `text-left`, so labels share a left edge and amounts share a left edge. Outer cell is `justify-items-center` (padding `sm:pl-5` included), so the pair sits in the middle of the VAT column on every breakpoint.
