@@ -11,8 +11,10 @@ export const dynamic = "force-dynamic";
 
 function FinanceTabCard({ children }: { children: ReactNode }) {
   return (
-    <Card className="shadow-sm">
-      <CardContent className="grid gap-6 pt-6">{children}</CardContent>
+    <Card className="min-w-0 shadow-sm">
+      <CardContent className="grid min-w-0 gap-4 p-4 pt-4 sm:gap-6 sm:p-6 sm:pt-6">
+        {children}
+      </CardContent>
     </Card>
   );
 }

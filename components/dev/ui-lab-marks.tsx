@@ -27,9 +27,9 @@ const chipClass = (active: boolean) =>
   );
 
 const STATUS = [
-  { key: "PUBLISHED", label: "В наявності", dot: "bg-emerald-500" },
-  { key: "RESERVED", label: "Резерв", dot: "bg-amber-500" },
-  { key: "PREPARING", label: "Підготовка", dot: "bg-sky-500" },
+  { key: "PUBLISHED", label: "Опубліковано", dot: "bg-emerald-500" },
+  { key: "RESERVED", label: "Заброньовано", dot: "bg-amber-500" },
+  { key: "DRAFT", label: "Чернетка", dot: "bg-slate-400" },
   { key: "SOLD", label: "Продано", dot: "bg-red-500" },
 ] as const;
 

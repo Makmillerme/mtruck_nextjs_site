@@ -26,7 +26,6 @@ export type ProductCardStatus =
   | "PUBLISHED"
   | "RESERVED"
   | "DRAFT"
-  | "PREPARING"
   | "SOLD";
 
 export type ProductCardSpecItem = {
@@ -47,6 +46,7 @@ export type ProductCardModel = {
   currencyDisplayMode?: "CODE" | "SYMBOL";
   financingLabel?: string | null;
   financingAmountLabel?: string | null;
+  financingExtraLabels?: string[];
   priceLines?: {
     kind: string;
     amount: number;
@@ -58,6 +58,14 @@ export type ProductCardModel = {
   images?: string[];
   href: string;
   status?: ProductCardStatus;
+  /** Resolved storefront badge; null = no badge. */
+  publicBadge?: {
+    kind: string;
+    labelKey: string;
+    tone: "default" | "secondary" | "outline";
+    dotClassName: string;
+    chipClassName?: string;
+  } | null;
   year?: number | null;
   location?: string | null;
   categoryLabel?: string | null;
@@ -105,7 +113,6 @@ const STATUS_DOT: Record<ProductCardStatus, string> = {
   PUBLISHED: "bg-emerald-500",
   RESERVED: "bg-amber-500",
   DRAFT: "bg-slate-400",
-  PREPARING: "bg-sky-500",
   SOLD: "bg-red-500",
 };
 
@@ -124,6 +131,7 @@ function CardPriceBlock({
   currencyDisplayMode,
   financingLabel,
   financingAmountLabel,
+  financingExtraLabels = [],
   layout = "grid",
 }: {
   price: string;
@@ -134,6 +142,7 @@ function CardPriceBlock({
   currencyDisplayMode: "CODE" | "SYMBOL";
   financingLabel?: string | null;
   financingAmountLabel?: string | null;
+  financingExtraLabels?: string[];
   layout?: "grid" | "list";
 }) {
   const extras = (priceLines ?? []).filter((line) => line.kind === "extra");
@@ -212,6 +221,14 @@ function CardPriceBlock({
             {financingAmountLabel}
           </p>
         ) : null}
+        {financingExtraLabels.map((label) => (
+          <p
+            key={label}
+            className="text-xs tabular-nums tracking-tight text-muted-foreground [overflow-wrap:anywhere]"
+          >
+            {label}
+          </p>
+        ))}
       </div>
       {priceCol}
     </div>
@@ -304,6 +321,7 @@ export default function ProductCard({
   const t = useTranslations("ProductCard");
   const tProduct = useTranslations("Product");
   const status = product.status ?? "PUBLISHED";
+  const publicBadge = product.publicBadge;
   const currencyDisplayMode = product.currencyDisplayMode ?? "CODE";
   const price =
     product.priceLabel ??
@@ -360,7 +378,23 @@ export default function ProductCard({
             const mediaOverlay =
               showStatus || showFavorite ? (
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5 sm:p-3">
-                  {showStatus ? (
+                  {showStatus && publicBadge ? (
+                    <Badge
+                      variant="secondary"
+                      className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-card/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-card/90 sm:px-3 sm:py-1.5 sm:text-xs"
+                    >
+                      <span
+                        className={cn(
+                          "size-1.5 shrink-0 rounded-full",
+                          publicBadge.dotClassName
+                        )}
+                        aria-hidden
+                      />
+                      <span className="whitespace-nowrap">
+                        {tProduct(publicBadge.labelKey)}
+                      </span>
+                    </Badge>
+                  ) : showStatus ? (
                     <Badge
                       variant="secondary"
                       className="pointer-events-none shrink gap-1.5 rounded-full border-0 bg-card/90 px-2.5 py-1 text-[11px] font-semibold leading-none text-foreground backdrop-blur-sm hover:bg-card/90 sm:px-3 sm:py-1.5 sm:text-xs"
@@ -495,6 +529,7 @@ export default function ProductCard({
                 currencyDisplayMode={currencyDisplayMode}
                 financingLabel={product.financingLabel}
                 financingAmountLabel={product.financingAmountLabel}
+                financingExtraLabels={product.financingExtraLabels}
                 layout={layout}
               />
             ) : null}

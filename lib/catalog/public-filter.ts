@@ -17,6 +17,9 @@ import type {
   CatalogAttribute,
   TaxonomyTreeNode,
 } from "./types";
+import { storefrontStatusWhere } from "./product-availability-badge";
+
+const storefrontStatusFilter = storefrontStatusWhere();
 
 export type PublicFilterOption = {
   slug: string;
@@ -88,7 +91,7 @@ export async function numberBoundsForAttribute(
     attribute: { key: attributeKey },
     numberValue: { not: null },
     product: {
-      status: "PUBLISHED",
+      status: storefrontStatusFilter,
       archivedAt: null,
       ...(taxonomyNodeIds?.length
         ? { taxonomyNodeId: { in: taxonomyNodeIds } }
@@ -115,7 +118,7 @@ export async function numberBoundsForAttribute(
       where: {
         attribute: { key: attributeKey },
         numberValue: { not: null },
-        product: { status: "PUBLISHED", archivedAt: null },
+        product: { status: storefrontStatusFilter, archivedAt: null },
       },
       _min: { numberValue: true },
       _max: { numberValue: true },
@@ -247,7 +250,7 @@ async function loadNumericFacetBoundsIndex(): Promise<NumericBoundsIndex> {
         type: { in: ["NUMBER", "YEAR"] },
         isFacet: true,
       },
-      product: { status: "PUBLISHED", archivedAt: null },
+      product: { status: storefrontStatusFilter, archivedAt: null },
     },
     select: {
       numberValue: true,
@@ -436,7 +439,7 @@ async function productWhereForLeaf(
   if (omitRangeKey) delete scopedRanges[omitRangeKey];
 
   const and: Prisma.ProductWhereInput[] = [
-    { status: "PUBLISHED" },
+    { status: storefrontStatusFilter },
     { archivedAt: null },
     { taxonomyNodeId: { in: subtreeIds } },
   ];
@@ -701,7 +704,9 @@ export async function catalogQueryToWhere(
 ): Promise<Prisma.ProductWhereInput[]> {
   const requirePublished = options?.requirePublished !== false;
   const clauses: Prisma.ProductWhereInput[] = [
-    ...(requirePublished ? [{ status: "PUBLISHED" as const }] : []),
+    ...(requirePublished
+      ? [{ status: storefrontStatusFilter }]
+      : []),
     { archivedAt: null },
   ];
   if (options?.taxonomyNodeIds?.length) {

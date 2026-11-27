@@ -92,7 +92,10 @@ async function loadFilterAvailabilityIndex(options?: {
     db.product.findMany({
       where: includeAllStatuses
         ? { archivedAt: null }
-        : { status: "PUBLISHED", archivedAt: null },
+        : {
+            status: { in: ["PUBLISHED", "RESERVED"] },
+            archivedAt: null,
+          },
       select: {
         taxonomyNodeId: true,
         specs: {

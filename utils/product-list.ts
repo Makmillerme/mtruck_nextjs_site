@@ -31,6 +31,7 @@ export function buildProductListSelect(specKeys: string[] = []) {
     promoValue: true,
     createdAt: true,
     status: true,
+    availability: true,
     taxonomyNodeId: true,
     taxonomyNode: { select: { name: true, slug: true } },
     specs: {
@@ -60,6 +61,7 @@ export type ProductListItem = {
   promoValue: import("@prisma/client/runtime/library").Decimal | null;
   createdAt: Date;
   status: string;
+  availability: string;
   taxonomyNodeId: string | null;
   taxonomyNode: { name: string; slug: string } | null;
   specs: {

@@ -181,6 +181,7 @@ const PRICE_SUB_SET = new Set<string>(PRICE_SUB_COLUMN_IDS);
 const AVAILABILITY_LABEL: Record<string, string> = {
   IN_STOCK: "availabilityStock",
   TRANSIT: "availabilityTransit",
+  ON_ORDER: "availabilityOnOrder",
 };
 
 function orderedVisibleSystemColumns(
@@ -228,30 +229,32 @@ function rootIdForNode(
 export type AdminProductSpec = AdminProductRowDTO["specs"][number];
 export type AdminProductRow = AdminProductRowDTO;
 
-const STATUS_KEYS = [
-  "DRAFT",
-  "PUBLISHED",
-  "RESERVED",
-  "PREPARING",
-  "SOLD",
-] as const;
+const STATUS_KEYS = ["DRAFT", "PUBLISHED", "RESERVED", "SOLD"] as const;
 
 const STATUS_LABEL = {
   DRAFT: "statusDraft",
   PUBLISHED: "statusPublished",
   RESERVED: "statusReserved",
-  PREPARING: "statusPreparing",
   SOLD: "statusSold",
 } as const;
 
 const STATUS_BADGE_CLASS: Record<(typeof STATUS_KEYS)[number], string> = {
-  DRAFT: "border-transparent bg-muted text-muted-foreground",
-  PUBLISHED: "border-transparent bg-primary/15 text-primary",
+  DRAFT:
+    "border-transparent bg-slate-500/15 text-slate-700 dark:text-slate-200",
+  PUBLISHED:
+    "border-transparent bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
   RESERVED:
-    "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-200",
-  PREPARING:
-    "border-transparent bg-sky-500/15 text-sky-800 dark:text-sky-200",
+    "border-transparent bg-amber-400/25 text-amber-900 dark:text-amber-100",
   SOLD: "border-transparent bg-destructive/15 text-destructive",
+};
+
+const AVAILABILITY_BADGE_CLASS: Record<string, string> = {
+  IN_STOCK:
+    "border-transparent bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
+  TRANSIT:
+    "border-transparent bg-sky-500/15 text-sky-800 dark:text-sky-200",
+  ON_ORDER:
+    "border-transparent bg-violet-500/15 text-violet-800 dark:text-violet-200",
 };
 
 function ProductStatusBadge({ status }: { status: string }) {
@@ -263,9 +266,29 @@ function ProductStatusBadge({ status }: { status: string }) {
   return (
     <Badge
       variant="outline"
-      className={key ? STATUS_BADGE_CLASS[key] : undefined}
+      className={cn(
+        "w-fit shrink-0 whitespace-nowrap font-semibold",
+        key ? STATUS_BADGE_CLASS[key] : undefined
+      )}
     >
       {label}
+    </Badge>
+  );
+}
+
+function ProductAvailabilityBadge({ availability }: { availability: string }) {
+  const t = useTranslations("Admin");
+  const key = AVAILABILITY_LABEL[availability];
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "w-fit shrink-0 whitespace-nowrap font-semibold",
+        AVAILABILITY_BADGE_CLASS[availability] ??
+          "bg-muted text-muted-foreground"
+      )}
+    >
+      {key ? t(key) : availability}
     </Badge>
   );
 }
@@ -462,26 +485,35 @@ function ProductSheetFields({
           selectedId={selectedNodeId}
           onNodeChange={onFolderChange}
         />
-        <CatalogMenuSelect
-          name="status"
-          label={t("status")}
-          searchable={false}
-          defaultValue={product?.status ?? "DRAFT"}
-          options={STATUS_KEYS.map((status) => ({
-            value: status,
-            label: t(STATUS_LABEL[status]),
-          }))}
-        />
-        <CatalogMenuSelect
-          name="availability"
-          label={t("availability")}
-          searchable={false}
-          defaultValue={product?.availability ?? "IN_STOCK"}
-          options={[
-            { value: "IN_STOCK", label: t("availabilityStock") },
-            { value: "TRANSIT", label: t("availabilityTransit") },
-          ]}
-        />
+        <div className="grid gap-1.5">
+          <CatalogMenuSelect
+            name="status"
+            label={t("status")}
+            searchable={false}
+            defaultValue={product?.status ?? "DRAFT"}
+            options={STATUS_KEYS.map((status) => ({
+              value: status,
+              label: t(STATUS_LABEL[status]),
+            }))}
+          />
+          <p className="text-xs text-muted-foreground">{t("statusFieldHint")}</p>
+        </div>
+        <div className="grid gap-1.5">
+          <CatalogMenuSelect
+            name="availability"
+            label={t("availability")}
+            searchable={false}
+            defaultValue={product?.availability ?? "IN_STOCK"}
+            options={[
+              { value: "IN_STOCK", label: t("availabilityStock") },
+              { value: "TRANSIT", label: t("availabilityTransit") },
+              { value: "ON_ORDER", label: t("availabilityOnOrder") },
+            ]}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("availabilityFieldHint")}
+          </p>
+        </div>
         <ProductImageGalleryField
           existing={
             product?.images?.length
@@ -1098,10 +1130,10 @@ export default function AdminProductsView({
     switch (id) {
       case "status":
         return <ProductStatusBadge status={item.status} />;
-      case "availability": {
-        const key = AVAILABILITY_LABEL[item.availability];
-        return key ? t(key) : item.availability;
-      }
+      case "availability":
+        return (
+          <ProductAvailabilityBadge availability={item.availability} />
+        );
       case "price": {
         return formatCurrency(item.price, locale, item.currency || "USD");
       }
@@ -1324,6 +1356,11 @@ export default function AdminProductsView({
             return (
               <AdminListMobileCard
                 key={item.id}
+                className={
+                  item.status === "DRAFT"
+                    ? "border-slate-300/80 bg-slate-500/5"
+                    : undefined
+                }
                 title={
                   <Link
                     href={`/products/${item.id}`}
@@ -1414,7 +1451,14 @@ export default function AdminProductsView({
               </TableHeader>
               <TableBody>
                 {pagedItems.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow
+                    key={item.id}
+                    className={
+                      item.status === "DRAFT"
+                        ? "bg-slate-500/5 hover:bg-slate-500/10"
+                        : undefined
+                    }
+                  >
                     <TableCell>
                       <Button
                         variant="link"

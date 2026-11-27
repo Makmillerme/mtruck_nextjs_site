@@ -110,9 +110,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "tabs",
     category: "fields",
     title: "Tabs",
-    hint: "Сегменти в спільній navy-рамці: не окремі outline-кнопки. Активний — заливка primary.",
+    hint: "Адмінка — рамка primary. Клієнтський сегмент — тиха рамка, тригери на ширину. Контент — підкреслення.",
     keywords:
-      "tabs таби сегмент cms folders fields папки поля",
+      "tabs таби сегмент cms folders fields папки поля кредит лізинг опис підкреслення",
   },
   {
     id: "table",
@@ -196,9 +196,9 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     id: "pdp",
     category: "cards",
     title: "Сторінка товару (PDP)",
-    hint: "Галерея + lightbox; buy-box: вартість|ПДВ, фінансування під сумою (або справа якщо ПДВ вимкнено); sticky CTA; related.",
+    hint: "Галерея + lightbox; buy-box: на телефоні сума зліва і ПДВ справа, фінансування одним рядом; від sm дві колонки. Калькулятор — одна картка, зліва повзунки, справа розрахунок. Кнопка скролить до калькулятора; sticky CTA; related.",
     keywords:
-      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing financing фінансування vat пдв trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність",
+      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing financing фінансування калькулятор кредит лізинг calculator vat пдв trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність статус бейдж reserved sold transit on order під замовлення заброньовано продано в дорозі",
   },
   {
     id: "order-added-sheet",

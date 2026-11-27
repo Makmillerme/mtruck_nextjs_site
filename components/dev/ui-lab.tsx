@@ -60,7 +60,18 @@ import {
 } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  segmentTabsListClassName,
+  segmentTabsTriggerClassName,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  contentTabsListClassName,
+  contentTabsTriggerClassName,
+} from "@/components/single-product/product-details-tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -680,30 +691,87 @@ export default function UiLab({ children }: { children?: ReactNode }) {
             <Section
               id="tabs"
               title="Tabs"
-              hint="Сегменти в спільній navy-рамці: не окремі outline-кнопки. Активний — заливка primary."
+              hint="Три вигляди. Адмінка — дефолт: спільна рамка primary, активний із заливкою primary. Клієнтський сегмент — тиха рамка border, активний чорний, тригери ділять ширину. Контент — підкреслення під текстом."
             >
-              <Tabs defaultValue="folders" className="max-w-xl">
-                <TabsList>
-                  <TabsTrigger value="folders">Папки</TabsTrigger>
-                  <TabsTrigger value="fields">Поля</TabsTrigger>
-                  <TabsTrigger value="preview">Перегляд</TabsTrigger>
-                </TabsList>
-                <TabsContent value="folders" className="mt-6">
+              <div className="grid gap-8">
+                <div className="grid max-w-xl gap-2">
+                  <p className="text-sm font-medium">Адмінка</p>
+                  <Tabs defaultValue="folders">
+                    <TabsList>
+                      <TabsTrigger value="folders">Папки</TabsTrigger>
+                      <TabsTrigger value="fields">Поля</TabsTrigger>
+                      <TabsTrigger value="preview">Перегляд</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="folders" className="mt-6">
+                      <p className="text-sm text-muted-foreground">
+                        Структура каталогу — дерево папок у CMS.
+                      </p>
+                    </TabsContent>
+                    <TabsContent value="fields" className="mt-6">
+                      <p className="text-sm text-muted-foreground">
+                        Шаблон полів для обраної папки.
+                      </p>
+                    </TabsContent>
+                    <TabsContent value="preview" className="mt-6">
+                      <p className="text-sm text-muted-foreground">
+                        Третій тригер — лише для лабу.
+                      </p>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                <div className="grid max-w-xl gap-2">
+                  <p className="text-sm font-medium">Клієнт — сегмент</p>
                   <p className="text-sm text-muted-foreground">
-                    Структура каталогу — дерево папок у CMS.
+                    Калькулятор фінансування. Тригери на всю ширину колонки.
                   </p>
-                </TabsContent>
-                <TabsContent value="fields" className="mt-6">
+                  <Tabs defaultValue="credit">
+                    <TabsList className={segmentTabsListClassName}>
+                      <TabsTrigger
+                        value="credit"
+                        className={segmentTabsTriggerClassName}
+                      >
+                        Кредит
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="lease"
+                        className={segmentTabsTriggerClassName}
+                      >
+                        Лізинг
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Контент — підкреслення</p>
                   <p className="text-sm text-muted-foreground">
-                    Шаблон полів для обраної папки.
+                    Опис, характеристики, комплектація на картці товару.
                   </p>
-                </TabsContent>
-                <TabsContent value="preview" className="mt-6">
-                  <p className="text-sm text-muted-foreground">
-                    Третій тригер — лише для лабу.
-                  </p>
-                </TabsContent>
-              </Tabs>
+                  <Tabs defaultValue="about">
+                    <TabsList className={contentTabsListClassName}>
+                      <TabsTrigger
+                        value="about"
+                        className={contentTabsTriggerClassName}
+                      >
+                        Опис
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="specs"
+                        className={contentTabsTriggerClassName}
+                      >
+                        Характеристики
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="equipment"
+                        className={contentTabsTriggerClassName}
+                      >
+                        Комплектація
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </div>
             </Section>
           </LabGate>
 

@@ -59,7 +59,7 @@ export type ArchiveProductRow = {
   name: string;
   price: number;
   productCode: string;
-  status: "DRAFT" | "PUBLISHED" | "RESERVED" | "PREPARING" | "SOLD";
+  status: "DRAFT" | "PUBLISHED" | "RESERVED" | "SOLD";
   archivedAt: string | null;
 };
 
@@ -76,7 +76,6 @@ const STATUS_KEY = {
   DRAFT: "statusDraft",
   PUBLISHED: "statusPublished",
   RESERVED: "statusReserved",
-  PREPARING: "statusPreparing",
   SOLD: "statusSold",
 } as const;
 

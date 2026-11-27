@@ -33,8 +33,7 @@ import {
   formatProductPrice,
 } from "@/lib/catalog/product-page";
 import { getBuyerCurrencyCookie } from "@/lib/finance/buyer-currency";
-import { estimateMonthlyFinancing } from "@/lib/finance/financing-estimate";
-import { getRootPricingForProductNode } from "@/lib/finance/root-pricing";
+import FinancingCalculator from "@/components/single-product/financing-calculator";
 import { resolveStorefrontPriceDisplay } from "@/lib/finance/storefront-card-price";
 import { fetchCardPreviewLayoutsByNodeIds } from "@/lib/catalog/card-preview";
 import {
@@ -46,6 +45,10 @@ import {
   resolveProductsAreUnique,
 } from "@/lib/catalog/taxonomy";
 import { productWithSpecsToCardModel } from "@/lib/catalog/product-to-card";
+import {
+  canPlaceProductOrder,
+  resolvePublicAvailabilityBadge,
+} from "@/lib/catalog/product-availability-badge";
 import db from "@/utils/db";
 import { buildCatalogHref } from "@/utils/catalog-query";
 import { LuFileText } from "react-icons/lu";
@@ -118,20 +121,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   );
   const priceLabel = storefrontPrice.priceLabel;
   const currencyDisplayMode = storefrontPrice.currencyDisplayMode;
-  const rootPricing = await getRootPricingForProductNode(
-    product.taxonomyNodeId
-  );
-  const financingEnabled = rootPricing?.financingEnabled !== false;
-  const mainLine = storefrontPrice.lines.find((line) => line.kind === "main");
-  const leasingEstimate = estimateMonthlyFinancing(
-    mainLine?.amount || price || 0
-  );
-  const leasingAmountLabel = formatProductPrice(
-    leasingEstimate,
-    locale,
-    mainLine?.currencyCode ?? currency,
-    currencyDisplayMode
-  );
+  const financingOffer = storefrontPrice.financingOffer;
   const vatLineKinds = new Set(["net", "gross", "vat"]);
   const moneyKey = (currencyCode: string, amount: number) =>
     `${currencyCode.toUpperCase()}:${amount}`;
@@ -272,7 +262,13 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const relatedDisplays = await Promise.all(
     related.map((item) =>
       resolveStorefrontPriceDisplay(
-        { price: item.price, currency: item.currency },
+        {
+          price: item.price,
+          currency: item.currency,
+          taxonomyNodeId: item.taxonomyNodeId,
+          promoKind: item.promoKind,
+          promoValue: item.promoValue,
+        },
         locale,
         buyerCurrency
       )
@@ -288,10 +284,12 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       relatedDisplays[index]
     )
   );
-  const availabilityInStock = product.availability === "IN_STOCK";
-  const availabilityLabel = availabilityInStock
-    ? t("availabilityStock")
-    : t("availabilityTransit");
+  const publicBadge = resolvePublicAvailabilityBadge({
+    status: product.status,
+    availability: product.availability,
+  });
+  const availabilityLabel = publicBadge ? t(publicBadge.labelKey) : null;
+  const canOrder = canPlaceProductOrder(product.status);
 
   const offerCta = (
     <CtaInquiryTrigger
@@ -362,21 +360,17 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             extraPriceLines={extraPriceLines}
             priceLines={priceLines}
             availabilityLabel={availabilityLabel}
-            availabilityInStock={availabilityInStock}
+            availabilityTone={publicBadge?.tone ?? "default"}
+            availabilityClassName={publicBadge?.chipClassName ?? null}
             facts={keyFacts}
             articleLabel={
               productCode ? t("articleCode", { code: productCode }) : null
             }
-            financingLabel={
-              financingEnabled ? t("financingFrom") : null
-            }
-            financingAmount={
-              financingEnabled
-                ? t("financingPerMonth", { amount: leasingAmountLabel })
-                : null
-            }
+            financingLabel={storefrontPrice.financingLabel}
+            financingAmount={storefrontPrice.financingAmountLabel}
+            financingExtraLabels={storefrontPrice.financingExtraLabels}
             financingCalcLabel={
-              financingEnabled ? t("financingCalculate") : null
+              financingOffer ? t("financingCalculate") : null
             }
             trustItems={trustItems}
             actions={
@@ -390,12 +384,24 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
                 <ShareButton name={product.name} productId={params.id} />
               </>
             }
-            cta={<CatalogOrderTrigger />}
+            cta={canOrder ? <CatalogOrderTrigger /> : null}
             secondaryCta={offerCta}
           />
         </div>
 
         <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
+
+        {financingOffer ? (
+          <FinancingCalculator
+            offer={financingOffer}
+            currencyDisplayMode={currencyDisplayMode}
+            inquiry={{
+              productId: params.id,
+              productName: name,
+              productCode: productCode ?? null,
+            }}
+          />
+        ) : null}
 
         <ProductRelated
           title={t("relatedTitle")}
@@ -424,7 +430,7 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
 
         <ProductStickyCta
           priceLabel={priceLabel}
-          cta={<CatalogOrderTrigger />}
+          cta={canOrder ? <CatalogOrderTrigger /> : offerCta}
         />
       </section>
     </CatalogOrderProvider>

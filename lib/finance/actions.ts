@@ -10,6 +10,7 @@ import {
   updateFinanceSettings,
 } from "@/lib/finance/currencies";
 import {
+  saveRootFinancing,
   setRootFinancingEnabled,
   upsertRootPricing,
 } from "@/lib/finance/root-pricing";
@@ -177,6 +178,7 @@ export async function updateFinanceSettingsAction(
 const rootPricingFormSchema = z.object({
   taxonomyNodeId: z.string().trim().min(1),
   vatEnabled: z.boolean(),
+  vatSumsEnabled: z.boolean(),
   entryMode: z.enum(["INCL_VAT", "EXCL_VAT"]),
   storefrontPriceMode: z.enum(["INCL_VAT", "EXCL_VAT"]),
   vatPercent: z.coerce.number().min(0).max(100),
@@ -213,6 +215,7 @@ export async function upsertRootPricingAction(
   const parsed = rootPricingFormSchema.safeParse({
     taxonomyNodeId: formData.get("taxonomyNodeId"),
     vatEnabled: formBool(formData, "vatEnabled"),
+    vatSumsEnabled: formBool(formData, "vatSumsEnabled"),
     entryMode: formData.get("entryMode"),
     storefrontPriceMode: formData.get("storefrontPriceMode"),
     vatPercent: formData.get("vatPercent"),
@@ -233,6 +236,68 @@ export async function upsertRootPricingAction(
       ...parsed.data,
       taxonomyNodeId: parsed.data.taxonomyNodeId as string | "ALL",
       vatDisplayCurrencyCode: parsed.data.vatDisplayCurrencyCode ?? null,
+    });
+    revalidatePath("/admin/finance");
+    revalidatePath("/");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: mapFinanceError(error) };
+  }
+}
+
+const presetSchema = z.object({
+  annualRatePercent: z.coerce.number().min(0).max(100),
+  termMonthsMin: z.coerce.number().int().min(1).max(120),
+  termMonthsMax: z.coerce.number().int().min(1).max(120),
+  termMonthsDefault: z.coerce.number().int().min(1).max(120),
+  termMonthsStep: z.coerce.number().min(1).max(120),
+  downPaymentPercentMin: z.coerce.number().min(0).max(100),
+  downPaymentPercentMax: z.coerce.number().min(0).max(100),
+  downPaymentPercentDefault: z.coerce.number().min(0).max(100),
+  downPaymentPercentStep: z.coerce.number().gt(0).max(100),
+  residualPercent: z.coerce.number().min(0).max(100).nullable(),
+});
+
+export async function saveRootFinancingAction(
+  _prev: { ok: boolean; error?: string } | null,
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
+  await getAdminUser();
+  const readPreset = (prefix: string, withResidual: boolean) =>
+    presetSchema.safeParse({
+      annualRatePercent: formData.get(`${prefix}AnnualRatePercent`),
+      termMonthsMin: formData.get(`${prefix}TermMonthsMin`),
+      termMonthsMax: formData.get(`${prefix}TermMonthsMax`),
+      termMonthsDefault: formData.get(`${prefix}TermMonthsDefault`),
+      termMonthsStep: formData.get(`${prefix}TermMonthsStep`),
+      downPaymentPercentMin: formData.get(`${prefix}DownPaymentPercentMin`),
+      downPaymentPercentMax: formData.get(`${prefix}DownPaymentPercentMax`),
+      downPaymentPercentDefault: formData.get(
+        `${prefix}DownPaymentPercentDefault`
+      ),
+      downPaymentPercentStep: formData.get(`${prefix}DownPaymentPercentStep`),
+      residualPercent: withResidual
+        ? formData.get(`${prefix}ResidualPercent`)
+        : null,
+    });
+  const credit = readPreset("credit", false);
+  const lease = readPreset("lease", true);
+  const taxonomyNodeId = String(formData.get("taxonomyNodeId") ?? "").trim();
+  if (!credit.success || !lease.success || !taxonomyNodeId) {
+    return { ok: false, error: "VALIDATION" };
+  }
+  try {
+    await saveRootFinancing({
+      taxonomyNodeId: taxonomyNodeId as string | "ALL",
+      financingEnabled: formBool(formData, "financingEnabled"),
+      financingFacts: {
+        down: formBool(formData, "financingShowDown"),
+        residual: formBool(formData, "financingShowResidual"),
+        total: formBool(formData, "financingShowTotal"),
+        rate: formBool(formData, "financingShowRate"),
+      },
+      credit: credit.data,
+      lease: lease.data,
     });
     revalidatePath("/admin/finance");
     revalidatePath("/");

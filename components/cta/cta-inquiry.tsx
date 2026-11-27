@@ -23,6 +23,8 @@ export type CtaInquiryContextValue = {
   productId?: string | null;
   productName?: string | null;
   productCode?: string | null;
+  /** Prefills the message, for example the financing quote the buyer just set. */
+  note?: string | null;
 };
 
 type CtaInquiryApi = {
@@ -80,6 +82,7 @@ function CtaInquiryDialog({
           productId={context?.productId}
           productName={context?.productName}
           productCode={context?.productCode}
+          defaultNote={context?.note}
           knownPhone={knownPhone}
           onSuccess={() => onOpenChange(false)}
         />

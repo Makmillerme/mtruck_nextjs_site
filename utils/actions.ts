@@ -140,7 +140,7 @@ export const fetchFeaturedProducts = async (take = 6) => {
       const select = await productListSelectCached();
       return db.product.findMany({
         where: {
-          status: 'PUBLISHED',
+          status: { in: ['PUBLISHED', 'RESERVED'] },
           archivedAt: null,
         },
         select,
@@ -340,7 +340,7 @@ export const fetchRelatedProducts = async ({
       return db.product.findMany({
         where: {
           archivedAt: null,
-          status: 'PUBLISHED',
+          status: { in: ['PUBLISHED', 'RESERVED'] },
           taxonomyNodeId,
           id: { not: productId },
         },
@@ -361,10 +361,13 @@ const PRODUCT_STATUSES: ProductStatus[] = [
   'DRAFT',
   'PUBLISHED',
   'RESERVED',
-  'PREPARING',
   'SOLD',
 ];
-const PRODUCT_AVAILABILITIES: ProductAvailability[] = ['IN_STOCK', 'TRANSIT'];
+const PRODUCT_AVAILABILITIES: ProductAvailability[] = [
+  'IN_STOCK',
+  'TRANSIT',
+  'ON_ORDER',
+];
 
 export const createProductAction = async (
   _prevState: ActionState,

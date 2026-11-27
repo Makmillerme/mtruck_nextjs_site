@@ -2,6 +2,11 @@ import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import prisma from "@/utils/db";
 import { getFinanceSettings } from "@/lib/finance/settings";
+import {
+  DEFAULT_CREDIT_PRESET,
+  DEFAULT_LEASE_PRESET,
+  normalizePreset,
+} from "@/lib/finance/financing-quote";
 import type {
   PriceDisplayMode,
   PriceEntryMode,
@@ -22,6 +27,30 @@ function mapRootPricing(row: {
   vatDisplayCurrencyCode: string | null;
   allowBuyerCurrencySwitch: boolean;
   financingEnabled: boolean;
+  vatSumsEnabled: boolean;
+  financingShowDown: boolean;
+  financingShowResidual: boolean;
+  financingShowTotal: boolean;
+  financingShowRate: boolean;
+  creditAnnualRatePercent: Prisma.Decimal;
+  creditTermMonthsMin: number;
+  creditTermMonthsMax: number;
+  creditTermMonthsDefault: number;
+  creditTermMonthsStep: number;
+  creditDownPaymentPercentMin: Prisma.Decimal;
+  creditDownPaymentPercentMax: Prisma.Decimal;
+  creditDownPaymentPercentDefault: Prisma.Decimal;
+  creditDownPaymentPercentStep: Prisma.Decimal;
+  leaseAnnualRatePercent: Prisma.Decimal;
+  leaseTermMonthsMin: number;
+  leaseTermMonthsMax: number;
+  leaseTermMonthsDefault: number;
+  leaseTermMonthsStep: number;
+  leaseDownPaymentPercentMin: Prisma.Decimal;
+  leaseDownPaymentPercentMax: Prisma.Decimal;
+  leaseDownPaymentPercentDefault: Prisma.Decimal;
+  leaseDownPaymentPercentStep: Prisma.Decimal;
+  leaseResidualPercent: Prisma.Decimal;
   extraCurrencies: { currencyCode: string; sortOrder: number }[];
 }): RootPricingDto {
   return {
@@ -38,6 +67,43 @@ function mapRootPricing(row: {
     vatDisplayCurrencyCode: row.vatDisplayCurrencyCode,
     allowBuyerCurrencySwitch: row.allowBuyerCurrencySwitch,
     financingEnabled: row.financingEnabled,
+    vatSumsEnabled: row.vatSumsEnabled,
+    financingFacts: {
+      down: row.financingShowDown !== false,
+      residual: row.financingShowResidual !== false,
+      total: row.financingShowTotal !== false,
+      rate: row.financingShowRate !== false,
+    },
+    credit: normalizePreset(
+      {
+        annualRatePercent: Number(row.creditAnnualRatePercent),
+        termMonthsMin: row.creditTermMonthsMin,
+        termMonthsMax: row.creditTermMonthsMax,
+        termMonthsDefault: row.creditTermMonthsDefault,
+        termMonthsStep: row.creditTermMonthsStep,
+        downPaymentPercentMin: Number(row.creditDownPaymentPercentMin),
+        downPaymentPercentMax: Number(row.creditDownPaymentPercentMax),
+        downPaymentPercentDefault: Number(row.creditDownPaymentPercentDefault),
+        downPaymentPercentStep: Number(row.creditDownPaymentPercentStep),
+        residualPercent: null,
+      },
+      "credit"
+    ),
+    lease: normalizePreset(
+      {
+        annualRatePercent: Number(row.leaseAnnualRatePercent),
+        termMonthsMin: row.leaseTermMonthsMin,
+        termMonthsMax: row.leaseTermMonthsMax,
+        termMonthsDefault: row.leaseTermMonthsDefault,
+        termMonthsStep: row.leaseTermMonthsStep,
+        downPaymentPercentMin: Number(row.leaseDownPaymentPercentMin),
+        downPaymentPercentMax: Number(row.leaseDownPaymentPercentMax),
+        downPaymentPercentDefault: Number(row.leaseDownPaymentPercentDefault),
+        downPaymentPercentStep: Number(row.leaseDownPaymentPercentStep),
+        residualPercent: Number(row.leaseResidualPercent),
+      },
+      "lease"
+    ),
     extraCurrencyCodes: [...row.extraCurrencies]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((item) => item.currencyCode),
@@ -135,6 +201,15 @@ export async function defaultRootPricingDraft(
     vatDisplayCurrencyCode: main,
     allowBuyerCurrencySwitch: false,
     financingEnabled: true,
+    vatSumsEnabled: true,
+    financingFacts: {
+      down: true,
+      residual: true,
+      total: true,
+      rate: true,
+    },
+    credit: DEFAULT_CREDIT_PRESET,
+    lease: DEFAULT_LEASE_PRESET,
     extraCurrencyCodes: [],
   };
 }
@@ -142,6 +217,7 @@ export async function defaultRootPricingDraft(
 export type UpsertRootPricingInput = {
   taxonomyNodeId: string | "ALL";
   vatEnabled: boolean;
+  vatSumsEnabled: boolean;
   entryMode: PriceEntryMode;
   storefrontPriceMode: PriceEntryMode;
   vatPercent: number;
@@ -201,6 +277,7 @@ async function upsertOne(
       create: {
         taxonomyNodeId,
         vatEnabled: input.vatEnabled,
+        vatSumsEnabled: input.vatSumsEnabled,
         entryMode: input.entryMode,
         storefrontPriceMode: input.storefrontPriceMode,
         vatPercent: new Prisma.Decimal(input.vatPercent),
@@ -214,6 +291,7 @@ async function upsertOne(
       },
       update: {
         vatEnabled: input.vatEnabled,
+        vatSumsEnabled: input.vatSumsEnabled,
         entryMode: input.entryMode,
         storefrontPriceMode: input.storefrontPriceMode,
         vatPercent: new Prisma.Decimal(input.vatPercent),
@@ -247,6 +325,7 @@ async function upsertOne(
 export async function upsertRootPricing(input: UpsertRootPricingInput) {
   const payload = {
     vatEnabled: input.vatEnabled,
+    vatSumsEnabled: input.vatSumsEnabled,
     entryMode: input.entryMode,
     storefrontPriceMode: input.storefrontPriceMode,
     vatPercent: input.vatPercent,
@@ -314,6 +393,7 @@ async function setRootFinancingEnabledOne(
   const draft = await defaultRootPricingDraft(taxonomyNodeId);
   await upsertOne(taxonomyNodeId, {
     vatEnabled: draft.vatEnabled,
+    vatSumsEnabled: draft.vatSumsEnabled,
     entryMode: draft.entryMode,
     storefrontPriceMode: draft.storefrontPriceMode,
     vatPercent: draft.vatPercent,
@@ -330,6 +410,82 @@ async function setRootFinancingEnabledOne(
     where: { taxonomyNodeId },
     data: { financingEnabled },
   });
+}
+
+export async function saveRootFinancing(input: {
+  taxonomyNodeId: string | "ALL";
+  financingEnabled: boolean;
+  financingFacts: RootPricingDto["financingFacts"];
+  credit: RootPricingDto["credit"];
+  lease: RootPricingDto["lease"];
+}) {
+  const credit = normalizePreset(input.credit, "credit");
+  const lease = normalizePreset(input.lease, "lease");
+  const data = {
+    financingEnabled: input.financingEnabled,
+    creditAnnualRatePercent: new Prisma.Decimal(credit.annualRatePercent),
+    creditTermMonthsMin: credit.termMonthsMin,
+    creditTermMonthsMax: credit.termMonthsMax,
+    creditTermMonthsDefault: credit.termMonthsDefault,
+    creditTermMonthsStep: credit.termMonthsStep,
+    creditDownPaymentPercentMin: new Prisma.Decimal(credit.downPaymentPercentMin),
+    creditDownPaymentPercentMax: new Prisma.Decimal(credit.downPaymentPercentMax),
+    creditDownPaymentPercentDefault: new Prisma.Decimal(
+      credit.downPaymentPercentDefault
+    ),
+    creditDownPaymentPercentStep: new Prisma.Decimal(credit.downPaymentPercentStep),
+    leaseAnnualRatePercent: new Prisma.Decimal(lease.annualRatePercent),
+    leaseTermMonthsMin: lease.termMonthsMin,
+    leaseTermMonthsMax: lease.termMonthsMax,
+    leaseTermMonthsDefault: lease.termMonthsDefault,
+    leaseTermMonthsStep: lease.termMonthsStep,
+    leaseDownPaymentPercentMin: new Prisma.Decimal(lease.downPaymentPercentMin),
+    leaseDownPaymentPercentMax: new Prisma.Decimal(lease.downPaymentPercentMax),
+    leaseDownPaymentPercentDefault: new Prisma.Decimal(
+      lease.downPaymentPercentDefault
+    ),
+    leaseDownPaymentPercentStep: new Prisma.Decimal(lease.downPaymentPercentStep),
+    leaseResidualPercent: new Prisma.Decimal(lease.residualPercent ?? 0),
+    financingShowDown: input.financingFacts.down,
+    financingShowResidual: input.financingFacts.residual,
+    financingShowTotal: input.financingFacts.total,
+    financingShowRate: input.financingFacts.rate,
+  };
+
+  const ids =
+    input.taxonomyNodeId === "ALL"
+      ? (await listCatalogRoots()).map((root) => root.id)
+      : [input.taxonomyNodeId];
+  if (ids.length === 0) throw new Error("ROOT_REQUIRED");
+
+  for (const taxonomyNodeId of ids) {
+    const existing = await prisma.rootPricing.findUnique({
+      where: { taxonomyNodeId },
+      select: { id: true },
+    });
+    if (!existing) {
+      const draft = await defaultRootPricingDraft(taxonomyNodeId);
+      await upsertOne(taxonomyNodeId, {
+        vatEnabled: draft.vatEnabled,
+        vatSumsEnabled: draft.vatSumsEnabled,
+        entryMode: draft.entryMode,
+        storefrontPriceMode: draft.storefrontPriceMode,
+        vatPercent: draft.vatPercent,
+        showPriceWithVat: draft.showPriceWithVat,
+        showPriceWithoutVat: draft.showPriceWithoutVat,
+        showVatAmount: draft.showVatAmount,
+        displayMode: draft.displayMode,
+        mainCurrencyCode: draft.mainCurrencyCode,
+        vatDisplayCurrencyCode: draft.vatDisplayCurrencyCode,
+        allowBuyerCurrencySwitch: draft.allowBuyerCurrencySwitch,
+        extraCurrencyCodes: draft.extraCurrencyCodes,
+      });
+    }
+    await prisma.rootPricing.update({
+      where: { taxonomyNodeId },
+      data,
+    });
+  }
 }
 
 export const anyRootAllowsBuyerSwitch = cache(async (): Promise<boolean> => {

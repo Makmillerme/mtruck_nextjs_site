@@ -456,3 +456,18 @@ html:has(#partners) .site-header-glass:not([data-surface="light"]) {
 .site-header svg {
   color: inherit;
 }
+
+/*
+ * Click / tap focus ring.
+ * Tailwind `outline-none` is `outline: 2px solid transparent` with a 2px offset.
+ * On Windows that outline paints in the text color (near-black --foreground / --ring),
+ * and Radix tabs call element.focus() on mousedown, so :focus-visible matches on click.
+ * Pointer modality drops that frame. Keyboard Tab / arrows clear the flag, so the
+ * focus-visible ring stays. Text fields keep their ring: the caret alone is easy to miss.
+ */
+html[data-pointer-focus] :focus:not(input):not(textarea):not(select):not([contenteditable='true']) {
+  outline: none !important;
+  outline-offset: 0 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}

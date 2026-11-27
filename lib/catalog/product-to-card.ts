@@ -6,6 +6,7 @@ import {
   FALLBACK_CARD_PREVIEW_LAYOUT,
   type CardPreviewLayoutResolved,
 } from "@/lib/catalog/card-preview";
+import { resolvePublicAvailabilityBadge } from "@/lib/catalog/product-availability-badge";
 
 export type SpecForCard = {
   attribute: {
@@ -116,6 +117,7 @@ export function productWithSpecsToCardModel(
     currency?: string;
     image: string;
     status?: string;
+    availability?: string;
     taxonomyNode?: { name: string } | null;
     specs?: SpecForCard[];
     images?: { url: string }[];
@@ -130,6 +132,7 @@ export function productWithSpecsToCardModel(
     financingEnabled?: boolean;
     financingLabel?: string | null;
     financingAmountLabel?: string | null;
+    financingExtraLabels?: string[];
     lines?: {
       kind: string;
       amount: number;
@@ -161,6 +164,11 @@ export function productWithSpecsToCardModel(
     ...fieldParts.slice(0, 2),
   ];
 
+  const publicBadge = resolvePublicAvailabilityBadge({
+    status: product.status,
+    availability: product.availability,
+  });
+
   return {
     id: product.id,
     name: product.name,
@@ -176,6 +184,9 @@ export function productWithSpecsToCardModel(
     financingAmountLabel: display?.financingEnabled
       ? display.financingAmountLabel ?? null
       : null,
+    financingExtraLabels: display?.financingEnabled
+      ? display.financingExtraLabels ?? []
+      : [],
     priceLines: (display?.lines ?? [])
       .filter((line) => line.kind === "extra")
       .map((line) => ({
@@ -188,6 +199,7 @@ export function productWithSpecsToCardModel(
     images,
     href: `/products/${product.id}`,
     status: (product.status as ProductCardStatus | undefined) ?? "PUBLISHED",
+    publicBadge,
     year: numberValue(byKey, "year"),
     location: textValue(byKey, "location"),
     categoryLabel,
@@ -199,7 +211,7 @@ export function productWithSpecsToCardModel(
     specsGridCount: resolved.specsGridCount,
     showName: resolved.showName,
     showPrice: resolved.showPrice,
-    showStatus: resolved.showStatus,
+    showStatus: resolved.showStatus && publicBadge != null,
     showSubtitle: resolved.showSubtitle,
     showSpecs: resolved.showSpecs,
   };

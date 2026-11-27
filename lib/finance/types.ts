@@ -1,4 +1,9 @@
 import type { Decimal } from "@prisma/client/runtime/library";
+import type {
+  FinancePreset,
+  FinancingFactVisibility,
+  FinancingOffer,
+} from "@/lib/finance/financing-quote";
 
 export type MoneyAmount = {
   amount: number;
@@ -57,6 +62,12 @@ export type RootPricingDto = {
   vatDisplayCurrencyCode: string | null;
   allowBuyerCurrencySwitch: boolean;
   financingEnabled: boolean;
+  /** When taxes are on, whether the VAT amount rows are shown. */
+  vatSumsEnabled: boolean;
+  /** Which rows of the financing quote are visible. */
+  financingFacts: FinancingFactVisibility;
+  credit: FinancePreset;
+  lease: FinancePreset;
   extraCurrencyCodes: string[];
 };
 
@@ -96,6 +107,10 @@ export type StorefrontPriceDisplay = {
   /** Prefetched monthly estimate label (i18n), when financing is on. */
   financingLabel: string | null;
   financingAmountLabel: string | null;
+  /** Extra-currency monthly amounts under the main "from" figure. */
+  financingExtraLabels: string[];
+  /** Client calculator input. Null when financing is off or the base cannot be priced. */
+  financingOffer: FinancingOffer | null;
   lines: PriceLine[];
   struckLabel: string | null;
 };

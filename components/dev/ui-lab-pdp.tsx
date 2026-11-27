@@ -5,7 +5,13 @@ import { CardSignInButton } from "@/components/form/Buttons";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
 import ProductGallery from "@/components/single-product/product-gallery";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
+import FinancingCalculator from "@/components/single-product/financing-calculator";
 import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
+import {
+  DEFAULT_CREDIT_PRESET,
+  DEFAULT_LEASE_PRESET,
+  type FinancingOffer,
+} from "@/lib/finance/financing-quote";
 import ProductEquipmentList from "@/components/single-product/product-equipment-list";
 import ProductRelated from "@/components/single-product/product-related";
 import ProductSpecs from "@/components/single-product/product-specs";
@@ -21,6 +27,24 @@ const DEMO_IMAGES = [
   { src: "/images/hero.png", alt: "MAN TGX — alternate" },
   { src: "/images/hero.webp", alt: "MAN TGX — detail" },
 ];
+
+const DEMO_FINANCING_OFFER: FinancingOffer = {
+  baseAmount: 56400,
+  includesVat: true,
+  credit: DEFAULT_CREDIT_PRESET,
+  lease: DEFAULT_LEASE_PRESET,
+  lines: [
+    { currencyCode: "USD", perMain: 1 },
+    { currencyCode: "UAH", perMain: 46 },
+    { currencyCode: "EUR", perMain: 0.92 },
+  ],
+  facts: {
+    down: true,
+    residual: true,
+    total: true,
+    rate: true,
+  },
+};
 
 const DEMO_FACTS = [
   { key: "make", label: "Марка", value: "MAN" },
@@ -65,6 +89,14 @@ const DEMO_RELATED: ProductCardModel[] = [
     images: ["/images/hero.webp"],
     href: "/products",
     status: "PUBLISHED",
+    publicBadge: {
+      kind: "in_stock",
+      labelKey: "availabilityStock",
+      tone: "default",
+      dotClassName: "bg-emerald-500",
+      chipClassName:
+        "border-transparent bg-emerald-500/15 text-emerald-800",
+    },
     year: 2018,
     categoryLabel: "Сідельні тягачі",
     specItems: [
@@ -79,7 +111,15 @@ const DEMO_RELATED: ProductCardModel[] = [
     image: "/images/hero.webp",
     images: ["/images/hero.webp"],
     href: "/products",
-    status: "PUBLISHED",
+    status: "RESERVED",
+    publicBadge: {
+      kind: "reserved",
+      labelKey: "availabilityReserved",
+      tone: "secondary",
+      dotClassName: "bg-amber-500",
+      chipClassName:
+        "border-transparent bg-amber-400/25 text-amber-900",
+    },
     year: 2020,
     categoryLabel: "Сідельні тягачі",
     specItems: [
@@ -95,6 +135,14 @@ const DEMO_RELATED: ProductCardModel[] = [
     images: ["/images/hero.webp"],
     href: "/products",
     status: "PUBLISHED",
+    publicBadge: {
+      kind: "transit",
+      labelKey: "availabilityTransit",
+      tone: "secondary",
+      dotClassName: "bg-sky-500",
+      chipClassName:
+        "border-transparent bg-sky-500/15 text-sky-800",
+    },
     year: 2017,
     categoryLabel: "Сідельні тягачі",
     specItems: [
@@ -110,6 +158,14 @@ const DEMO_RELATED: ProductCardModel[] = [
     images: ["/images/hero.webp"],
     href: "/products",
     status: "PUBLISHED",
+    publicBadge: {
+      kind: "on_order",
+      labelKey: "availabilityOnOrder",
+      tone: "outline",
+      dotClassName: "bg-violet-500",
+      chipClassName:
+        "border-transparent bg-violet-500/15 text-violet-800",
+    },
     year: 2019,
     categoryLabel: "Сідельні тягачі",
     specItems: [
@@ -166,8 +222,8 @@ export default function UiLabPdp() {
       <div className="grid gap-2">
         <p className="text-sm text-muted-foreground">
           Канон PDP hero. Buy-box без sticky; price+CTA+trust одразу під
-          key facts. Панель вартості — герой по центру лівої колонки | ПДВ (підпис: сума впритул, блок по центру колонки, текст по лівому краю); фінансування знизу по центру тієї ж колонки з
-          text-link «Розрахувати» + стрілка (без рамки). Без ПДВ — герой |
+          key facts. Панель вартості — на телефоні сума зліва, ПДВ справа в один ряд; від sm герой по центру лівої колонки | ПДВ (підпис: сума впритул, блок по центру колонки, текст по лівому краю). Фінансування — одна кнопка: на телефоні сума зліва і коротша стрілка справа, від sm дві колонки (наведення масштабує «Розрахувати» і подовжує стрілку) з
+          text-link «Розрахувати» + стрілка (без рамки), клік скролить до калькулятора під вкладками опису. Без ПДВ — герой |
           фінансування. 2 CTA. Mobile sticky CTA — нижче.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -199,11 +255,13 @@ export default function UiLabPdp() {
             { title: "ПДВ", amount: "535 440 ₴", muted: true },
           ]}
           availabilityLabel="В наявності"
-          availabilityInStock
+          availabilityTone="default"
+          availabilityClassName="border-transparent bg-emerald-500/15 text-emerald-800 hover:bg-emerald-500/15"
           facts={DEMO_FACTS}
           articleLabel="Артикул DEMO-TGX-18440"
           financingLabel="Фінансування від"
-          financingAmount="≈ 52 494 ₴/міс"
+          financingAmount="≈ 1 106 $/міс"
+          financingExtraLabels={["≈ 50 871 ₴/міс", "≈ 1 018 €/міс"]}
           financingCalcLabel="Розрахувати"
           trustItems={[
             { id: "delivery", label: "Доставка по Україні" },
@@ -225,6 +283,48 @@ export default function UiLabPdp() {
             </Button>
           }
         />
+      </div>
+
+      <div className="grid gap-3">
+        <h3 className="text-sm font-semibold tracking-tight">
+          Публічні бейджі статусу
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Канон кольорів: зелений наявність, блакитний дорога, фіолетовий під
+          замовлення, жовтий заброньовано, сірий продано.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
+            className="border-transparent bg-emerald-500/15 font-semibold text-emerald-800"
+          >
+            В наявності
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-transparent bg-sky-500/15 font-semibold text-sky-800"
+          >
+            В дорозі
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-transparent bg-violet-500/15 font-semibold text-violet-800"
+          >
+            Під замовлення
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-transparent bg-amber-400/25 font-semibold text-amber-900"
+          >
+            Заброньовано
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-transparent bg-muted font-semibold text-muted-foreground"
+          >
+            Продано
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-2">
@@ -264,6 +364,16 @@ export default function UiLabPdp() {
           },
         ]}
       />
+
+      <div className="grid gap-2">
+        <p className="text-sm text-muted-foreground">
+          Калькулятор — одна картка. Зліва вкладки і повзунки стоять разом, під ними блок «Отримати рішення». Справа розрахунок.
+        </p>
+        <FinancingCalculator
+          offer={DEMO_FINANCING_OFFER}
+          currencyDisplayMode="CODE"
+        />
+      </div>
 
       <div className="grid gap-3">
         <h3 className="text-sm font-semibold tracking-tight">

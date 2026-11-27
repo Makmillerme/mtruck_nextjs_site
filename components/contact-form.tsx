@@ -30,6 +30,7 @@ export default function ContactForm({
   productId,
   productName,
   productCode,
+  defaultNote = null,
   knownPhone = null,
 }: {
   inputId?: string;
@@ -38,6 +39,8 @@ export default function ContactForm({
   productId?: string | null;
   productName?: string | null;
   productCode?: string | null;
+  /** Shown in the message field so the buyer can edit it before sending. */
+  defaultNote?: string | null;
   /** Logged-in primary phone — hide tel field and submit this value. */
   knownPhone?: string | null;
 } = {}) {
@@ -75,10 +78,12 @@ export default function ContactForm({
         />
       )}
       <Textarea
+        key={defaultNote ?? "empty"}
         id={messageId}
         name="note"
         rows={4}
         maxLength={2000}
+        defaultValue={defaultNote ?? ""}
         placeholder={t("messagePlaceholder")}
         aria-label={t("messageLabel")}
         className="min-h-[6rem] resize-y"

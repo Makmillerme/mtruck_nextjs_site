@@ -27,13 +27,13 @@ enum ProductStatus {
   DRAFT
   PUBLISHED
   RESERVED
-  PREPARING
   SOLD
 }
 
 enum ProductAvailability {
   IN_STOCK
   TRANSIT
+  ON_ORDER
 }
 
 enum PriceEntryMode {
@@ -309,6 +309,32 @@ model RootPricing {
   allowBuyerCurrencySwitch Boolean          @default(false)
   /// Show financing estimate on PDP for products under this root.
   financingEnabled         Boolean          @default(true)
+  /// Buyer-facing VAT amount rows. Taxes can stay on while this is off.
+  vatSumsEnabled           Boolean          @default(true)
+  creditAnnualRatePercent  Decimal          @default(14) @db.Decimal(8, 4)
+  creditTermMonthsMin      Int              @default(12)
+  creditTermMonthsMax      Int              @default(60)
+  creditTermMonthsDefault  Int              @default(36)
+  creditTermMonthsStep     Int              @default(1)
+  creditDownPaymentPercentMin Decimal       @default(0) @db.Decimal(8, 4)
+  creditDownPaymentPercentMax Decimal       @default(50) @db.Decimal(8, 4)
+  creditDownPaymentPercentDefault Decimal   @default(20) @db.Decimal(8, 4)
+  creditDownPaymentPercentStep Decimal      @default(1) @db.Decimal(8, 4)
+  leaseAnnualRatePercent   Decimal          @default(12) @db.Decimal(8, 4)
+  leaseTermMonthsMin       Int              @default(12)
+  leaseTermMonthsMax       Int              @default(48)
+  leaseTermMonthsDefault   Int              @default(36)
+  leaseTermMonthsStep      Int              @default(1)
+  leaseDownPaymentPercentMin Decimal        @default(0) @db.Decimal(8, 4)
+  leaseDownPaymentPercentMax Decimal        @default(40) @db.Decimal(8, 4)
+  leaseDownPaymentPercentDefault Decimal    @default(10) @db.Decimal(8, 4)
+  leaseDownPaymentPercentStep Decimal       @default(1) @db.Decimal(8, 4)
+  leaseResidualPercent     Decimal          @default(45) @db.Decimal(8, 4)
+  /// Which quote rows buyers see under the monthly figure.
+  financingShowDown        Boolean          @default(true)
+  financingShowResidual    Boolean          @default(true)
+  financingShowTotal       Boolean          @default(true)
+  financingShowRate        Boolean          @default(true)
   extraCurrencies          RootPricingCurrency[]
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt

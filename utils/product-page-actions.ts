@@ -140,8 +140,16 @@ export async function saveProductPageLayoutAction(
       await tx.productPageTab.deleteMany({ where: { layoutId: layout.id } });
 
       for (const [tabIndex, tab] of tabs.entries()) {
+        const tabId =
+          tab.id &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            tab.id
+          )
+            ? tab.id
+            : undefined;
         const created = await tx.productPageTab.create({
           data: {
+            ...(tabId ? { id: tabId } : {}),
             layoutId: layout.id,
             name: tab.name,
             kind: tab.kind,

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { formatProductPrice } from "@/lib/catalog/product-page";
-import { estimateMonthlyFinancing } from "@/lib/finance/financing-estimate";
+import { lowerDefaultMonthly } from "@/lib/finance/financing-quote";
 import { buildStorefrontPriceDisplay } from "@/lib/finance/resolve-storefront-price";
 import type { PromoKind, StorefrontPriceDisplay } from "@/lib/finance/types";
 import type { Decimal } from "@prisma/client/runtime/library";
@@ -26,10 +26,16 @@ export async function resolveStorefrontPriceDisplay(
 
   let financingLabel: string | null = null;
   let financingAmountLabel: string | null = null;
-  if (display.financingEnabled) {
-    const main = display.lines.find((line) => line.kind === "main");
-    if (main) {
-      const monthly = estimateMonthlyFinancing(main.amount);
+  let financingExtraLabels: string[] = [];
+  const offer = display.financingOffer;
+  if (display.financingEnabled && offer) {
+    const monthly = lowerDefaultMonthly(
+      offer.baseAmount,
+      offer.credit,
+      offer.lease
+    );
+    const main = offer.lines[0];
+    if (main && monthly > 0) {
       const amount = formatProductPrice(
         monthly,
         locale,
@@ -38,6 +44,14 @@ export async function resolveStorefrontPriceDisplay(
       );
       financingLabel = tProduct("financingFrom");
       financingAmountLabel = tProduct("financingPerMonth", { amount });
+      financingExtraLabels = offer.lines.slice(1).map((line) =>
+        formatProductPrice(
+          monthly * line.perMain,
+          locale,
+          line.currencyCode,
+          display.currencyDisplayMode
+        )
+      );
     }
   }
 
@@ -47,13 +61,14 @@ export async function resolveStorefrontPriceDisplay(
       priceHint: tFinance("rateMissingHint"),
       financingLabel,
       financingAmountLabel,
+      financingExtraLabels,
     };
   }
-  // Mode captions (Вартість / з ПДВ / без ПДВ) removed from storefront canon.
   return {
     ...display,
     priceHint: null,
     financingLabel,
     financingAmountLabel,
+    financingExtraLabels,
   };
 }

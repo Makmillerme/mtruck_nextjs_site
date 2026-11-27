@@ -52,4 +52,11 @@ const TabsContent = React.forwardRef<
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
+/** Storefront segment. Quiet border, active ink fill, triggers share the row width. */
+export const segmentTabsListClassName =
+  "h-10 w-full gap-1 border border-border bg-transparent p-1 sm:w-full";
+
+export const segmentTabsTriggerClassName =
+  "h-8 min-w-0 flex-1 px-4 text-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-foreground data-[state=active]:text-background sm:flex-1";
+
 export { Tabs, TabsList, TabsTrigger, TabsContent }

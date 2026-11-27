@@ -1,3 +1,5 @@
+"use client";
+
 import { Fragment, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
@@ -28,106 +30,164 @@ export type BuyBoxPriceLine = {
 /** Order matches PDP trustItems: delivery → service → prep → documents. */
 const TRUST_ICONS = [LuTruck, LuWrench, LuSparkles, LuFileCheck] as const;
 
-function FinancingCalcLink({ label }: { label: string }) {
+function FinancingCalcLink({
+  label,
+  grouped = false,
+}: {
+  label: string;
+  /** Parent is already the hit target; this node only draws the label and arrow. */
+  grouped?: boolean;
+}) {
+  const motion =
+    "inline-flex flex-col items-center gap-1.5 text-foreground outline-none transition-transform duration-300 ease-out group-hover:scale-[1.06] group-focus-visible:scale-[1.06] sm:gap-2";
+  const arrow = (
+    <svg
+      viewBox="0 0 160 12"
+      preserveAspectRatio="none"
+      className="h-2 w-[5.75rem] origin-center text-foreground transition-transform duration-300 ease-out group-hover:scale-x-110 group-focus-visible:scale-x-110 sm:h-2.5 sm:w-[11rem]"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M1 6H152M152 6L144.5 1.75M152 6L144.5 10.25"
+        stroke="currentColor"
+        strokeWidth="1.15"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+  const caption = (
+    <span className="font-mono text-[10px] font-semibold uppercase leading-none tracking-[0.14em] sm:text-[11px] sm:tracking-[0.22em]">
+      {label}
+    </span>
+  );
+
+  if (grouped) {
+    return (
+      <span className={motion}>
+        {caption}
+        {arrow}
+      </span>
+    );
+  }
+
   return (
     <button
       type="button"
-      className="group inline-flex flex-col items-center gap-2 text-foreground outline-none transition-transform duration-300 ease-out hover:scale-[1.06] focus-visible:scale-[1.06]"
+      onClick={scrollToFinancing}
+      className={cn("group", motion, "hover:scale-[1.06] focus-visible:scale-[1.06]")}
     >
-      <span className="font-mono text-[11px] font-semibold uppercase leading-none tracking-[0.22em]">
-        {label}
-      </span>
-      <svg
-        viewBox="0 0 160 12"
-        preserveAspectRatio="none"
-        className="h-2.5 w-[11rem] origin-center text-foreground transition-transform duration-300 ease-out group-hover:scale-x-110 group-focus-visible:scale-x-110"
-        fill="none"
-        aria-hidden
-      >
-        <path
-          d="M1 6H152M152 6L144.5 1.75M152 6L144.5 10.25"
-          stroke="currentColor"
-          strokeWidth="1.15"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      {caption}
+      {arrow}
     </button>
   );
+}
+
+function scrollToFinancing() {
+  document.getElementById("financing")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
 }
 
 function FinancingPanel({
   financingLabel,
   financingAmount,
+  financingExtraLabels = [],
   financingCalcLabel,
   split = false,
   className,
 }: {
   financingLabel?: string | null;
   financingAmount?: string | null;
+  financingExtraLabels?: string[];
   financingCalcLabel?: string | null;
   /** Match price|VAT columns without a divider strip. */
   split?: boolean;
   className?: string;
 }) {
   const body = (alignEnd = false) => (
-    <div
+    <span
       className={cn(
-        "flex min-w-0 items-center gap-3",
-        alignEnd && "sm:w-fit sm:justify-end"
+        "flex min-w-0 items-center gap-2.5 sm:gap-3",
+        alignEnd && "w-fit"
       )}
     >
       <span
-        className="flex size-10 shrink-0 items-center justify-center rounded-sm border border-border/80 bg-background text-foreground sm:size-11"
+        className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/80 bg-background text-foreground sm:size-11"
         aria-hidden
       >
         <LuBanknote className="size-4 sm:size-[1.125rem]" strokeWidth={1.75} />
       </span>
-      <div
+      <span
         className={cn(
-          "grid min-w-0 gap-1",
-          alignEnd ? "sm:text-right" : "flex-1"
+          "grid min-w-0 gap-0.5 sm:gap-1",
+          alignEnd ? "text-left" : "flex-1"
         )}
       >
         {financingLabel ? (
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:text-[11px]">
+          <span className="whitespace-nowrap font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted-foreground sm:text-[11px] sm:tracking-[0.16em]">
             {financingLabel}
-          </p>
+          </span>
         ) : null}
         {financingAmount ? (
-          <p className="text-xl font-bold leading-tight tabular-nums tracking-tight text-foreground sm:text-2xl">
+          <span className="whitespace-nowrap text-base font-bold leading-tight tabular-nums tracking-tight text-foreground sm:text-2xl">
             {financingAmount}
-          </p>
+          </span>
         ) : null}
-      </div>
-    </div>
+        {financingExtraLabels.map((label) => (
+          <span
+            key={label}
+            className="whitespace-nowrap text-xs tabular-nums tracking-tight text-muted-foreground sm:text-sm"
+          >
+            {label}
+          </span>
+        ))}
+      </span>
+    </span>
   );
 
   if (split && financingCalcLabel) {
     return (
-      <div
+      <button
+        type="button"
         className={cn(
-          "grid gap-5 sm:grid-cols-2 sm:items-center sm:gap-0",
+          "group grid w-full cursor-pointer grid-cols-2 items-center gap-0 border-0 bg-transparent p-0 text-left",
           className
         )}
+        onClick={scrollToFinancing}
       >
-        <div className="flex justify-center sm:pr-5">{body(true)}</div>
-        <div className="flex min-w-0 items-center justify-center sm:pl-5">
-          <FinancingCalcLink label={financingCalcLabel} />
-        </div>
-      </div>
+        <span className="flex min-w-0 justify-center pr-3 sm:pr-5">
+          {body(true)}
+        </span>
+        <span className="flex min-w-0 items-center justify-center pl-3 sm:pl-5">
+          <FinancingCalcLink label={financingCalcLabel} grouped />
+        </span>
+      </button>
     );
   }
 
-  return (
-    <div className={cn("grid min-w-0 gap-3", className)}>
-      {body()}
-      {financingCalcLabel ? (
-        <FinancingCalcLink label={financingCalcLabel} />
-      ) : null}
-    </div>
-  );
+  if (financingCalcLabel) {
+    return (
+      <button
+        type="button"
+        onClick={scrollToFinancing}
+        className={cn(
+          "group grid min-w-0 w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-0 bg-transparent p-0 text-left",
+          className
+        )}
+      >
+        {body()}
+        <span className="flex shrink-0 items-center justify-end">
+          <FinancingCalcLink label={financingCalcLabel} grouped />
+        </span>
+      </button>
+    );
+  }
+
+  return <div className={cn("grid min-w-0 gap-3", className)}>{body()}</div>;
 }
 
 function VatBreakdown({
@@ -144,7 +204,7 @@ function VatBreakdown({
         className
       )}
     >
-      <div className="grid w-max grid-cols-[max-content_max-content] items-baseline gap-x-1.5 gap-y-2.5">
+      <div className="grid w-max max-w-full grid-cols-[max-content_max-content] items-baseline gap-x-1 gap-y-1 sm:gap-x-1.5 sm:gap-y-2.5">
         {priceLines.map((line) => {
           const title = line.title
             ? line.title.endsWith(":")
@@ -156,7 +216,7 @@ function VatBreakdown({
               {title ? (
                 <p
                   className={cn(
-                    "text-left text-sm",
+                    "text-left text-xs sm:text-sm",
                     line.emphasize
                       ? "font-medium text-foreground"
                       : "text-muted-foreground"
@@ -171,10 +231,10 @@ function VatBreakdown({
                 className={cn(
                   "text-left tabular-nums tracking-tight",
                   line.emphasize
-                    ? "text-base font-semibold text-foreground sm:text-lg"
+                    ? "text-sm font-semibold text-foreground sm:text-lg"
                     : line.muted
-                      ? "text-base text-muted-foreground sm:text-lg"
-                      : "text-base font-medium text-foreground sm:text-lg"
+                      ? "text-sm text-muted-foreground sm:text-lg"
+                      : "text-sm font-medium text-foreground sm:text-lg"
                 )}
               >
                 {line.amount}
@@ -195,11 +255,13 @@ export default function ProductBuyBox({
   extraPriceLines = [],
   priceLines = [],
   availabilityLabel,
-  availabilityInStock,
+  availabilityTone = "default",
+  availabilityClassName,
   facts = [],
   articleLabel,
   financingLabel,
   financingAmount,
+  financingExtraLabels = [],
   financingCalcLabel,
   trustItems = [],
   actions,
@@ -214,15 +276,20 @@ export default function ProductBuyBox({
   /** Converted amounts under the main price (STACKED extras) — not the VAT column. */
   extraPriceLines?: string[];
   priceLines?: BuyBoxPriceLine[];
-  availabilityLabel: string;
-  availabilityInStock: boolean;
+  /** When omitted or empty — no status badge (quiet in-stock). */
+  availabilityLabel?: string | null;
+  availabilityTone?: "default" | "secondary" | "outline";
+  /** Soft colored chip (PDP canon — matches card dot palette). */
+  availabilityClassName?: string | null;
   facts?: ProductKeyFact[];
   articleLabel?: string | null;
   /** Static financing eyebrow, e.g. "Фінансування від". */
   financingLabel?: string | null;
   /** Static monthly amount, e.g. "≈ 1 420 USD/міс". */
   financingAmount?: string | null;
-  /** Outline CTA next to financing, e.g. "Розрахувати". */
+  /** Extra-currency monthly amounts under the main figure. */
+  financingExtraLabels?: string[];
+  /** Label that scrolls to the on-page calculator. */
   financingCalcLabel?: string | null;
   trustItems?: { id: string; label: string; hint?: string }[];
   actions?: ReactNode;
@@ -241,21 +308,22 @@ export default function ProductBuyBox({
   const heroPrice = (
     <div
       className={cn(
-        "grid w-fit max-w-full gap-1",
-        (hasVatBreakdown || hasExtras) && "justify-items-end text-right"
+        "grid w-fit max-w-full gap-0.5 sm:gap-1",
+        (hasVatBreakdown || hasExtras) &&
+          "justify-items-end text-right"
       )}
     >
       {struckLabel ? (
         <p className="text-sm text-muted-foreground line-through">{struckLabel}</p>
       ) : null}
-      <p className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl sm:leading-none">
+      <p className="text-2xl font-extrabold leading-none tracking-tight text-foreground sm:text-4xl">
         {priceLabel}
       </p>
       {hasExtras
         ? extraPriceLines.map((line) => (
             <p
               key={line}
-              className="text-lg font-bold tabular-nums tracking-tight text-foreground sm:text-xl"
+              className="text-base font-bold tabular-nums tracking-tight text-foreground sm:text-xl"
             >
               {line}
             </p>
@@ -278,12 +346,14 @@ export default function ProductBuyBox({
             <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-[2rem] lg:leading-tight">
               {name}
             </h1>
-            <Badge
-              variant={availabilityInStock ? "default" : "secondary"}
-              className="shrink-0"
-            >
-              {availabilityLabel}
-            </Badge>
+            {availabilityLabel ? (
+              <Badge
+                variant={availabilityClassName ? "outline" : availabilityTone}
+                className={cn("shrink-0 font-semibold", availabilityClassName)}
+              >
+                {availabilityLabel}
+              </Badge>
+            ) : null}
           </div>
           {(articleLabel || actions) && (
             <div className="flex shrink-0 items-center gap-2 pt-1">
@@ -311,18 +381,18 @@ export default function ProductBuyBox({
 
       <div className="grid shrink-0 gap-5">
         {hasVatBreakdown ? (
-          <div className="grid gap-5 rounded-sm border border-border bg-card p-5 sm:p-6">
-            <div className="grid gap-5 sm:grid-cols-2 sm:items-center sm:gap-0 sm:divide-x sm:divide-border">
-              <div className="flex justify-center sm:pr-5">{heroPrice}</div>
-              <VatBreakdown
-                priceLines={priceLines}
-                className="border-t border-border pt-5 sm:border-t-0 sm:pt-0 sm:pl-5"
-              />
+          <div className="grid gap-4 rounded-sm border border-border bg-card p-4 sm:gap-5 sm:p-6">
+            <div className="grid grid-cols-2 items-center gap-0 divide-x divide-border">
+              <div className="flex min-w-0 justify-center pr-3 sm:pr-5">
+                {heroPrice}
+              </div>
+              <VatBreakdown priceLines={priceLines} className="pl-3 sm:pl-5" />
             </div>
             {showFinancing ? (
               <FinancingPanel
                 financingLabel={financingLabel}
                 financingAmount={financingAmount}
+                financingExtraLabels={financingExtraLabels}
                 financingCalcLabel={financingCalcLabel}
                 split
                 className="border-t border-border pt-5"
@@ -332,7 +402,7 @@ export default function ProductBuyBox({
         ) : (
           <div
             className={cn(
-              "grid gap-5 rounded-sm border border-border bg-card p-5 sm:p-6",
+              "grid gap-4 rounded-sm border border-border bg-card p-4 sm:gap-5 sm:p-6",
               showFinancing &&
                 "sm:grid-cols-2 sm:items-center sm:gap-0 sm:divide-x sm:divide-border"
             )}
@@ -342,6 +412,7 @@ export default function ProductBuyBox({
               <FinancingPanel
                 financingLabel={financingLabel}
                 financingAmount={financingAmount}
+                financingExtraLabels={financingExtraLabels}
                 financingCalcLabel={financingCalcLabel}
                 className="border-t border-border pt-5 sm:border-t-0 sm:pt-0 sm:pl-5"
               />

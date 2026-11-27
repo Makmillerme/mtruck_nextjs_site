@@ -39,14 +39,14 @@ export default function FinanceTabs({
 
   return (
     <Tabs value={tab} onValueChange={openTab}>
-      <TabsList className="w-full sm:w-full">
-        <TabsTrigger value="currencies" className="sm:flex-1">
+      <TabsList className="h-auto w-full max-w-full justify-start overflow-x-auto sm:w-full">
+        <TabsTrigger value="currencies" className="shrink-0 sm:flex-1">
           {t("tabCurrencies")}
         </TabsTrigger>
-        <TabsTrigger value="pricing" className="sm:flex-1">
+        <TabsTrigger value="pricing" className="shrink-0 sm:flex-1">
           {t("tabPricing")}
         </TabsTrigger>
-        <TabsTrigger value="financing" className="sm:flex-1">
+        <TabsTrigger value="financing" className="shrink-0 sm:flex-1">
           {t("tabFinancing")}
         </TabsTrigger>
       </TabsList>

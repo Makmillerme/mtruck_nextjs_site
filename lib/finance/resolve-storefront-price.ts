@@ -109,6 +109,37 @@ export async function buildStorefrontPriceDisplay(
     vatDisplayCurrencyCode: settings?.baseCurrencyCode ?? sourceCode,
     allowBuyerCurrencySwitch: false,
     financingEnabled: true,
+    vatSumsEnabled: true,
+    financingFacts: {
+      down: true,
+      residual: true,
+      total: true,
+      rate: true,
+    },
+    credit: {
+      annualRatePercent: 14,
+      termMonthsMin: 12,
+      termMonthsMax: 60,
+      termMonthsDefault: 36,
+      termMonthsStep: 1,
+      downPaymentPercentMin: 0,
+      downPaymentPercentMax: 50,
+      downPaymentPercentDefault: 20,
+      downPaymentPercentStep: 1,
+      residualPercent: null,
+    },
+    lease: {
+      annualRatePercent: 12,
+      termMonthsMin: 12,
+      termMonthsMax: 48,
+      termMonthsDefault: 36,
+      termMonthsStep: 1,
+      downPaymentPercentMin: 0,
+      downPaymentPercentMax: 40,
+      downPaymentPercentDefault: 10,
+      downPaymentPercentStep: 1,
+      residualPercent: 45,
+    },
     extraCurrencyCodes: [],
   };
   const config = pricing ?? defaults;
@@ -164,10 +195,11 @@ export async function buildStorefrontPriceDisplay(
 
   // Compare the currency of the on-screen main amount with VAT sums currency
   // (not the product's stored currency — after FX they can diverge).
+  const showVatSums = config.vatEnabled && config.vatSumsEnabled;
   const vatCurrenciesDiffer =
-    config.vatEnabled && displayMainCode.toUpperCase() !== vatCurrency;
+    showVatSums && displayMainCode.toUpperCase() !== vatCurrency;
 
-  if (config.vatEnabled) {
+  if (showVatSums) {
     const wantNet = config.showPriceWithoutVat;
     const wantVat = config.showVatAmount;
     const wantGross = config.showPriceWithVat;
@@ -321,6 +353,51 @@ export async function buildStorefrontPriceDisplay(
     }
   }
 
+  const financeSource =
+    !config.vatEnabled || config.vatPercent <= 0 ? saleAmount : vat.gross;
+  const financeMain = await convertAmount(
+    financeSource,
+    sourceCode,
+    displayMainCode,
+    rates,
+    minorByCode.get(displayMainCode) ?? 0
+  );
+  const financingLines: { currencyCode: string; perMain: number }[] = [
+    { currencyCode: displayMainCode, perMain: 1 },
+  ];
+  if (
+    config.displayMode === "STACKED" &&
+    financeMain != null &&
+    financeMain > 0
+  ) {
+    for (const code of config.extraCurrencyCodes) {
+      if (code.toUpperCase() === displayMainCode.toUpperCase()) continue;
+      const extra = await convertAmount(
+        financeSource,
+        sourceCode,
+        code,
+        rates,
+        minorByCode.get(code) ?? 0
+      );
+      if (extra == null) continue;
+      financingLines.push({
+        currencyCode: code,
+        perMain: extra / financeMain,
+      });
+    }
+  }
+  const financingOffer =
+    config.financingEnabled && financeMain != null && financeMain > 0
+      ? {
+          baseAmount: financeMain,
+          includesVat: config.vatEnabled && config.vatPercent > 0,
+          credit: config.credit,
+          lease: config.lease,
+          lines: financingLines,
+          facts: config.financingFacts,
+        }
+      : null;
+
   const main = lines.find((line) => line.kind === "main")!;
   return {
     priceLabel: formatDisplayMoneyLabel(
@@ -341,6 +418,8 @@ export async function buildStorefrontPriceDisplay(
     financingEnabled: config.financingEnabled,
     financingLabel: null,
     financingAmountLabel: null,
+    financingExtraLabels: [],
+    financingOffer,
     lines,
     struckLabel,
   };

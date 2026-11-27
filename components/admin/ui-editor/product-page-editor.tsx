@@ -164,8 +164,10 @@ export default function ProductPageEditor({
     "create"
   );
   const [tabDialogName, setTabDialogName] = useState("");
-  const hydrating = useRef(true);
+  /** True while server props are being copied into state. The save effect must ignore that frame. */
+  const syncing = useRef(true);
   const lastSaved = useRef("");
+  const appliedServer = useRef("");
   const saveChain = useRef(Promise.resolve());
 
   const hasFolder = Boolean(selectedNodeId);
@@ -188,16 +190,29 @@ export default function ProductPageEditor({
   );
 
   useEffect(() => {
-    hydrating.current = true;
-    setKeyFactsMax(clampKeyFactsMax(initialKeyFactsMax));
-    setKeyFactIds(
-      initialKeyFactSlots
-        .filter((slot) => slot.visible)
-        .map((slot) => slot.attributeId)
-    );
+    const nextMax = clampKeyFactsMax(initialKeyFactsMax);
+    const nextIds = initialKeyFactSlots
+      .filter((slot) => slot.visible)
+      .map((slot) => slot.attributeId);
     const nextTabs = sanitizeTabsForAreaOnly(initialTabs, attributes);
+    const snapshot = JSON.stringify({
+      selectedNodeId,
+      keyFactsMax: nextMax,
+      keyFactIds: nextIds,
+      tabs: nextTabs,
+    });
+    if (snapshot === appliedServer.current) return;
+    appliedServer.current = snapshot;
+    syncing.current = true;
+    lastSaved.current = snapshot;
+    setKeyFactsMax(nextMax);
+    setKeyFactIds(nextIds);
     setTabs(nextTabs);
-    setActiveTabId(nextTabs[0]?.id ?? "");
+    setActiveTabId((current) =>
+      nextTabs.some((tab) => tab.id === current)
+        ? current
+        : (nextTabs[0]?.id ?? "")
+    );
   }, [
     selectedNodeId,
     initialKeyFactsMax,
@@ -425,23 +440,17 @@ export default function ProductPageEditor({
   );
 
   useEffect(() => {
-    if (hydrating.current) {
-      hydrating.current = false;
-      lastSaved.current = JSON.stringify({
-        selectedNodeId,
-        keyFactsMax,
-        keyFactIds,
-        tabs,
-      });
-      return;
-    }
-    if (!selectedNodeId) return;
     const snapshot = JSON.stringify({
       selectedNodeId,
       keyFactsMax,
       keyFactIds,
       tabs,
     });
+    if (syncing.current) {
+      if (snapshot === lastSaved.current) syncing.current = false;
+      return;
+    }
+    if (!selectedNodeId) return;
     if (snapshot === lastSaved.current) return;
 
     const handle = window.setTimeout(() => {
@@ -473,6 +482,7 @@ export default function ProductPageEditor({
             });
             if (result.ok) {
               lastSaved.current = snapshot;
+              appliedServer.current = snapshot;
             }
             notify.fromAction(result);
           } catch {

@@ -40,7 +40,7 @@ async function publishedCountByNodeId(): Promise<Map<string, number>> {
     by: ["taxonomyNodeId"],
     where: {
       taxonomyNodeId: { not: null },
-      status: "PUBLISHED",
+      status: { in: ["PUBLISHED", "RESERVED"] },
       archivedAt: null,
     },
     _count: { _all: true },
