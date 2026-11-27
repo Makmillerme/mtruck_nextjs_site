@@ -267,12 +267,6 @@ export default function UiLabPdp() {
           financingAmount="≈ 1 106 $/міс"
           financingExtraLabels={["≈ 50 871 ₴/міс", "≈ 1 018 €/міс"]}
           financingCalcLabel="Розрахувати"
-          trustItems={[
-            { id: "delivery", label: "Доставка по Україні" },
-            { id: "service", label: "Сервісне обслуговування" },
-            { id: "prep", label: "Передпродажна підготовка" },
-            { id: "documents", label: "Повний комплект документів" },
-          ]}
           actions={
             <>
               <CardSignInButton appearance="outline" />
@@ -337,6 +331,48 @@ export default function UiLabPdp() {
           Key facts (strip variant)
         </h3>
         <ProductKeyFacts facts={DEMO_FACTS} title="Ключові параметри" />
+      </div>
+
+      <ProductDetailsTabs
+        textHeading="Про автомобіль"
+        tabs={[
+          {
+            id: "description",
+            name: "Опис",
+            kind: "TEXT",
+            body: "Демо-опис: перевірена техніка з Європи, підготовка на власному СТО, супровід угоди.\n\nТекст іде після buy-box — не між ціною й CTA.",
+          },
+          {
+            id: "specs",
+            name: "Детальні характеристики",
+            kind: "TABLE",
+            groups: DEMO_SPEC_GROUPS,
+          },
+          {
+            id: "equipment",
+            name: "Комплектація",
+            kind: "LIST",
+            items: [
+              "ABS",
+              "Клімат-контроль",
+              "Тахограф",
+              "Підігрів дзеркал",
+              "Круїз-контроль",
+              "Ел. склопідйомники",
+            ],
+          },
+        ]}
+      />
+
+      <div className="grid gap-2">
+        <p className="text-sm text-muted-foreground">
+          Калькулятор одразу після табів. Зліва вкладки і повзунки, під ними
+          «Отримати рішення»; справа розрахунок.
+        </p>
+        <FinancingCalculator
+          offer={DEMO_FINANCING_OFFER}
+          currencyDisplayMode="CODE"
+        />
       </div>
 
       <ProductTermsSection
@@ -405,47 +441,6 @@ export default function UiLabPdp() {
           </Button>
         }
       />
-
-      <ProductDetailsTabs
-        textHeading="Про автомобіль"
-        tabs={[
-          {
-            id: "description",
-            name: "Опис",
-            kind: "TEXT",
-            body: "Демо-опис: перевірена техніка з Європи, підготовка на власному СТО, супровід угоди.\n\nТекст іде після buy-box — не між ціною й CTA.",
-          },
-          {
-            id: "specs",
-            name: "Детальні характеристики",
-            kind: "TABLE",
-            groups: DEMO_SPEC_GROUPS,
-          },
-          {
-            id: "equipment",
-            name: "Комплектація",
-            kind: "LIST",
-            items: [
-              "ABS",
-              "Клімат-контроль",
-              "Тахограф",
-              "Підігрів дзеркал",
-              "Круїз-контроль",
-              "Ел. склопідйомники",
-            ],
-          },
-        ]}
-      />
-
-      <div className="grid gap-2">
-        <p className="text-sm text-muted-foreground">
-          Калькулятор — одна картка. Зліва вкладки і повзунки стоять разом, під ними блок «Отримати рішення». Справа розрахунок.
-        </p>
-        <FinancingCalculator
-          offer={DEMO_FINANCING_OFFER}
-          currencyDisplayMode="CODE"
-        />
-      </div>
 
       <div className="grid gap-3">
         <h3 className="text-sm font-semibold tracking-tight">

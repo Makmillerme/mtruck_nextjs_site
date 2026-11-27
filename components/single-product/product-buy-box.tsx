@@ -5,20 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
 import type { ProductKeyFact } from "@/lib/catalog/product-page";
 import { cn } from "@/lib/utils";
-import {
-  LuBanknote,
-  LuFileCheck,
-  LuSparkles,
-  LuTruck,
-  LuWrench,
-} from "react-icons/lu";
-
-type TrustItem = {
-  id: string;
-  label: string;
-  hint?: string;
-  Icon: typeof LuTruck;
-};
+import { LuBanknote } from "react-icons/lu";
 
 export type BuyBoxPriceLine = {
   title: string;
@@ -26,9 +13,6 @@ export type BuyBoxPriceLine = {
   muted?: boolean;
   emphasize?: boolean;
 };
-
-/** Order matches PDP trustItems: delivery → service → prep → documents. */
-const TRUST_ICONS = [LuTruck, LuWrench, LuSparkles, LuFileCheck] as const;
 
 function FinancingCalcLink({
   label,
@@ -263,7 +247,6 @@ export default function ProductBuyBox({
   financingAmount,
   financingExtraLabels = [],
   financingCalcLabel,
-  trustItems = [],
   actions,
   cta,
   secondaryCta,
@@ -292,7 +275,6 @@ export default function ProductBuyBox({
   financingExtraLabels?: string[];
   /** Label that scrolls to the on-page calculator. */
   financingCalcLabel?: string | null;
-  trustItems?: { id: string; label: string; hint?: string }[];
   actions?: ReactNode;
   cta?: ReactNode;
   secondaryCta?: ReactNode;
@@ -303,10 +285,6 @@ export default function ProductBuyBox({
   const showFinancing = Boolean(financingLabel || financingAmount);
   const hasVatBreakdown = priceLines.length > 0;
   const hasExtras = extraPriceLines.length > 0;
-  const trust: TrustItem[] = trustItems.map((item, index) => ({
-    ...item,
-    Icon: TRUST_ICONS[index % TRUST_ICONS.length]!,
-  }));
 
   const heroPrice = (
     <div
@@ -433,34 +411,6 @@ export default function ProductBuyBox({
         ) : null}
 
         {contact}
-
-        {trust.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-border pt-4 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-border">
-            {trust.map((item) => (
-              <li
-                key={item.id}
-                className="flex min-w-0 items-start gap-2 sm:px-2.5 first:sm:pl-0 last:sm:pr-0"
-              >
-                <item.Icon
-                  className="mt-0.5 size-3.5 shrink-0 text-foreground"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                <a
-                  href="#product-terms"
-                  className="min-w-0 text-[11px] font-medium leading-snug text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  {item.label}
-                  {item.hint ? (
-                    <span className="block text-[10px] font-normal text-muted-foreground/80 no-underline">
-                      {item.hint}
-                    </span>
-                  ) : null}
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </div>
     </div>
   );

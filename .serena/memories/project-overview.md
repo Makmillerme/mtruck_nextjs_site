@@ -23,8 +23,12 @@ Assessment for Rust (vanilla + Carbon, no plugins yet): RAM and disk are adequat
 
 Panel extras: WebSSH, firewall rules, backups every 4 days — use manual backup before first Rust install.
 
+## GitHub
+- Public repo: https://github.com/Makmillerme/rustkibitka
+- Local `origin` → HTTPS; `main` pushed and tracking.
+- SSH push failed (local ed25519 not authorized on GitHub). Prefer HTTPS + PAT from Cursor GitHub MCP, or add the SSH pubkey / `gh auth login`.
+
 ## Still open
-- GitHub remote: public vs private; `gh auth login` needed for push (MCP can create the empty repo).
 - Seed / wipe schedule.
 - Approve first install on VPS under `/opt/rustkibitka` (do not touch site/bot).
 

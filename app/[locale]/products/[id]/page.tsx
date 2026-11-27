@@ -312,13 +312,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
     </CtaInquiryTrigger>
   );
 
-  const trustItems = [
-    { id: "delivery", label: t("trustDelivery") },
-    { id: "service", label: t("trustService") },
-    { id: "prep", label: t("trustPrep") },
-    { id: "documents", label: t("trustDocuments") },
-  ];
-
   const orderAddedFlash =
     (await cookies()).get("mtruck-order-added")?.value === params.id;
 
@@ -408,7 +401,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             financingCalcLabel={
               financingOffer ? t("financingCalculate") : null
             }
-            trustItems={trustItems}
             actions={
               <>
                 <FavoriteToggleButton
@@ -427,6 +419,18 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
         </div>
 
         <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
+
+        {financingOffer ? (
+          <FinancingCalculator
+            offer={financingOffer}
+            currencyDisplayMode={currencyDisplayMode}
+            inquiry={{
+              productId: params.id,
+              productName: name,
+              productCode: productCode ?? null,
+            }}
+          />
+        ) : null}
 
         <ProductTermsSection
           title={t("termsTitle")}
@@ -503,18 +507,6 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             </CtaInquiryTrigger>
           }
         />
-
-        {financingOffer ? (
-          <FinancingCalculator
-            offer={financingOffer}
-            currencyDisplayMode={currencyDisplayMode}
-            inquiry={{
-              productId: params.id,
-              productName: name,
-              productCode: productCode ?? null,
-            }}
-          />
-        ) : null}
 
         <ProductRelated
           title={t("relatedTitle")}
