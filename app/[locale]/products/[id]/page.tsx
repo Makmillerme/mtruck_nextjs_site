@@ -16,9 +16,13 @@ import FavoriteToggleButton from "@/components/products/FavoriteToggleButton";
 import ShareButton from "@/components/single-product/ShareButton";
 import ProductGallery from "@/components/single-product/product-gallery";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
+import ProductBuyBoxContact from "@/components/single-product/product-buy-box-contact";
+import ProductDealerCard from "@/components/single-product/product-dealer-card";
 import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
+import ProductHowtoSection from "@/components/single-product/product-howto-section";
 import ProductRelated from "@/components/single-product/product-related";
 import ProductStickyCta from "@/components/single-product/product-sticky-cta";
+import ProductTermsSection from "@/components/single-product/product-terms-section";
 import { CtaInquiryTrigger } from "@/components/cta/cta-inquiry";
 import {
   CatalogOrderProvider,
@@ -98,12 +102,13 @@ export async function generateMetadata(props: {
 
 async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const [product, locale, t, tFinance, session, buyerCurrency] =
+  const [product, locale, t, tFinance, tFooter, session, buyerCurrency] =
     await Promise.all([
       fetchSingleProduct(params.id),
       getLocale(),
       getTranslations("Product"),
       getTranslations("FinanceAdmin"),
+      getTranslations("Footer"),
       getSession(),
       getBuyerCurrencyCookie(),
     ]);
@@ -317,6 +322,33 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
   const orderAddedFlash =
     (await cookies()).get("mtruck-order-added")?.value === params.id;
 
+  const schemaAvailability =
+    product.status === "SOLD"
+      ? "https://schema.org/SoldOut"
+      : product.status === "RESERVED"
+        ? "https://schema.org/PreOrder"
+        : product.availability === "TRANSIT" ||
+            product.availability === "ON_ORDER"
+          ? "https://schema.org/PreOrder"
+          : "https://schema.org/InStock";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Vehicle",
+    name,
+    description: description?.trim() || undefined,
+    image: gallery.map((item) => item.src).filter(Boolean),
+    sku: productCode ?? undefined,
+    brand: categoryLabel || undefined,
+    offers: {
+      "@type": "Offer",
+      url: `https://m-truck.ua/products/${params.id}`,
+      priceCurrency: currency || "USD",
+      price: price,
+      availability: schemaAvailability,
+    },
+  };
+
   return (
     <CatalogOrderProvider
       productId={params.id}
@@ -332,6 +364,10 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
       favoriteId={favoriteId}
       initialSheetOpen={orderAddedFlash}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section
         data-page-shell="product"
         className="grid min-w-0 grid-cols-1 gap-8 pb-24 lg:pb-8"
@@ -386,10 +422,87 @@ async function SingleProductPage(props: { params: Promise<{ id: string }> }) {
             }
             cta={canOrder ? <CatalogOrderTrigger /> : null}
             secondaryCta={offerCta}
+            contact={<ProductBuyBoxContact />}
           />
         </div>
 
         <ProductDetailsTabs tabs={detailsTabs} textHeading={t("aboutTitle")} />
+
+        <ProductTermsSection
+          title={t("termsTitle")}
+          items={[
+            {
+              id: "delivery",
+              title: t("termsDeliveryTitle"),
+              body: t("termsDeliveryBody"),
+            },
+            {
+              id: "service",
+              title: t("termsServiceTitle"),
+              body: t("termsServiceBody"),
+            },
+            {
+              id: "prep",
+              title: t("termsPrepTitle"),
+              body: t("termsPrepBody"),
+            },
+            {
+              id: "documents",
+              title: t("termsDocumentsTitle"),
+              body: t("termsDocumentsBody"),
+            },
+          ]}
+        />
+
+        <ProductHowtoSection
+          title={t("howtoTitle")}
+          steps={[
+            {
+              id: "inspect",
+              title: t("howtoStep1Title"),
+              body: t("howtoStep1Body"),
+            },
+            {
+              id: "reserve",
+              title: t("howtoStep2Title"),
+              body: t("howtoStep2Body"),
+            },
+            {
+              id: "deal",
+              title: t("howtoStep3Title"),
+              body: t("howtoStep3Body"),
+            },
+            {
+              id: "handover",
+              title: t("howtoStep4Title"),
+              body: t("howtoStep4Body"),
+            },
+          ]}
+        />
+
+        <ProductDealerCard
+          title={t("dealerTitle")}
+          address={tFooter("address")}
+          hours={tFooter("hours")}
+          phoneValue={tFooter("phone.value")}
+          phoneHref={tFooter("phone.href")}
+          telegramLabel={t("contactTelegram")}
+          visitHint={t("dealerVisitHint")}
+          inquiryCta={
+            <CtaInquiryTrigger
+              size="lg"
+              variant="default"
+              className="w-full sm:w-auto"
+              context={{
+                productId: params.id,
+                productName: name,
+                productCode: productCode ?? null,
+              }}
+            >
+              {t("dealerInquiry")}
+            </CtaInquiryTrigger>
+          }
+        />
 
         {financingOffer ? (
           <FinancingCalculator

@@ -267,6 +267,7 @@ export default function ProductBuyBox({
   actions,
   cta,
   secondaryCta,
+  contact,
   className,
 }: {
   categoryLabel?: string | null;
@@ -295,6 +296,8 @@ export default function ProductBuyBox({
   actions?: ReactNode;
   cta?: ReactNode;
   secondaryCta?: ReactNode;
+  /** Phone / Telegram / hours under CTAs. */
+  contact?: ReactNode;
   className?: string;
 }) {
   const showFinancing = Boolean(financingLabel || financingAmount);
@@ -429,6 +432,8 @@ export default function ProductBuyBox({
           </div>
         ) : null}
 
+        {contact}
+
         {trust.length > 0 ? (
           <ul className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-border pt-4 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-border">
             {trust.map((item) => (
@@ -441,14 +446,17 @@ export default function ProductBuyBox({
                   strokeWidth={2}
                   aria-hidden
                 />
-                <span className="min-w-0 text-[11px] font-medium leading-snug text-muted-foreground">
+                <a
+                  href="#product-terms"
+                  className="min-w-0 text-[11px] font-medium leading-snug text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
                   {item.label}
                   {item.hint ? (
-                    <span className="block text-[10px] font-normal text-muted-foreground/80">
+                    <span className="block text-[10px] font-normal text-muted-foreground/80 no-underline">
                       {item.hint}
                     </span>
                   ) : null}
-                </span>
+                </a>
               </li>
             ))}
           </ul>

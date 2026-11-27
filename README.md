@@ -1,49 +1,41 @@
-# MTruck
+# FarmKibitka
 
-Сайт продажу комерційного транспорту (імпорт з Європи).
+Dedicated **Rust** server configs, deploy scripts, and Carbon plugins.
 
-**Репозиторій:** [Makmillerme/mtruck_nextjs_site](https://github.com/Makmillerme/mtruck_nextjs_site)
-
-## Стек
-
-| Технологія | Версія / примітка |
+| | |
 |---|---|
-| Next.js | 16.3 (App Router, `proxy.ts`) |
-| React | 19 |
-| TypeScript | 5 |
-| Tailwind CSS | v3 |
-| UI | shadcn/ui, react-icons / lucide у маркетингових секціях |
-| Auth | Better-Auth (email/password + Google) |
-| ORM / DB | Prisma 5 + PostgreSQL (PostgressOps / PgBouncer) |
-| i18n | next-intl (`uk` / `en` / `de`) |
+| **Hostname (browser name)** | `FarmKibitka` |
+| **Description** | Farm Kibitka — a house for farming |
+| **Mod framework** | Carbon (vanilla first — no plugins yet) |
+| **VPS** | Hosting Ukraine Shared CPU VPS 12G (`173.242.62.135`) — coexists with site + Telegram bot |
+| **Install path (planned)** | `/opt/rustkibitka` |
 
-Не використовуємо: Clerk, Stripe checkout, Vercel Blob, Payload CMS.
+> **Hostname** in Rust = the name shown in the server browser / friends list. Not the Linux machine hostname (`vps-60014`).
 
-## Локальний запуск
+## Repo layout
 
-```powershell
-npm install
-copy .env.example .env
-# заповніть DATABASE_URL, DIRECT_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL
-npx prisma generate
-npx prisma db push
-npm run db:seed
-npm run dev
+```
+deploy/          # install / update / Carbon helpers (run on the VPS)
+systemd/         # unit templates
+server/          # example cfg + placeholders (no game binaries)
+plugins/         # Carbon C# plugins (later)
+docs/            # ops notes
 ```
 
-Відкрийте [http://localhost:3000](http://localhost:3000).
+## Safety
 
-Деталі змінних — у [`.env.example`](.env.example).
+This VPS already runs production site + bot + Postgres. Do **not** delete Docker containers, `/srv/mtruck/**`, or databases. Rust must live under `/opt/rustkibitka`.
 
-## Структура (коротко)
+See `.cursor/rules/vps-cohabitation-safety.mdc`.
 
-- `app/[locale]/` — сторінки з локаллю
-- `components/` — UI та маркетингові секції
-- `messages/` — переклади uk/en/de
-- `prisma/` — схема та seed
-- `lib/auth.ts` — Better-Auth
-- `.cursor/rules/` — правила для агентів у Cursor
+## Local workflow
 
-## Ліцензія
+1. Edit configs / plugins here.
+2. Commit to git.
+3. Deploy to the VPS when ready (scripts under `deploy/` — not run until you approve).
 
-MIT — див. [LICENSE](LICENSE).
+Secrets: copy `.env.example` → `.env` on the server only.
+
+## Status
+
+Local scaffold. Game files **not** installed on the VPS yet.

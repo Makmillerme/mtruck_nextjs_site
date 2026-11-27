@@ -1,62 +1,48 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# environment variables
-.env.local
+# Secrets
 .env
+.env.*
+!.env.example
+**/*.pem
+**/rcon.password
 
-# testing
-/coverage
-
-# next.js
-/.next/
-out/
-
-# production
-/build
-
-# misc
+# OS / editor
 .DS_Store
-*.pem
+Thumbs.db
+*.swp
+.idea/
+.vscode/
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-.env
-
-# local product uploads
-/public/uploads/products/*
-!/public/uploads/products/.gitkeep
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-.next
-.vscode
-.cursorignore
-
-# Documentation
-HETZNER_VPS_MIGRATION_GUIDE.md
-DROPDOWN_TEST_CREDENTIALS_DOCS.md
-AUTH_UI_IMPLEMENTATION_GUIDE.md
-CLERK_AUTH_COMPLETE_IMPLEMENTATION_GUIDE.md
-CLERK_ENV_TEMPLATE.md
-
-# Cursor / Serena local noise
+# Logs
+*.log
 .cursor/debug-*.log
+
+# Accidental leftovers from MTruck copy
+components/
+lib/
+app/
+src/
+node_modules/
+.next/
+public/
+
+# Rust / Steam runtime (never commit game binaries)
+server/steam/
+server/steamcmd/
+server/RustDedicated*
+server/RustDedicated_Data/
+server/carbon/
+server/libdoorstop*
+server/Bundles/
+server/logs/
+
+# Keep example cfg tracked
+!server/cfg/
+!server/cfg/.gitkeep
+!server/cfg/*.example
+
+# Heavy / local Cursor tooling from the other project
 .cursor/tools/
+.cursor/skills/
+.cursor/scripts/
 .serena/cache/
 .serena/project.local.yml

@@ -1,6 +1,7 @@
 import Logo from "@/components/navbar/Logo";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { SITE_TELEGRAM_URL } from "@/lib/site-contact";
 import { siteNav } from "@/utils/links";
 import { getTranslations } from "next-intl/server";
 import { FaTelegram } from "react-icons/fa";
@@ -10,8 +11,6 @@ const LEGAL_LINKS = [
   { key: "privacy", href: "/privacy" },
   { key: "terms", href: "/terms" },
 ] as const;
-
-const TELEGRAM_URL = "https://t.me/mtruck_sales";
 
 const footerNavClass =
   "rounded-md px-3 py-2 text-sm font-medium tracking-wide text-background/80 hover:bg-background/10 hover:text-background";
@@ -66,7 +65,7 @@ export default async function Footer() {
             </ul>
 
             <Button asChild variant="inverse" size="sm">
-              <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+              <a href={SITE_TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
                 <FaTelegram className="size-4" aria-hidden />
                 {t("telegramCta")}
               </a>

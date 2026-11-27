@@ -198,7 +198,7 @@ export const LAB_SECTION_META: LabSectionMeta[] = [
     title: "Сторінка товару (PDP)",
     hint: "Галерея + lightbox; buy-box: на телефоні сума зліва і ПДВ справа, фінансування одним рядом; від sm дві колонки. Калькулятор — одна картка, зліва повзунки, справа розрахунок. Кнопка скролить до калькулятора; sticky CTA; related.",
     keywords:
-      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing financing фінансування калькулятор кредит лізинг calculator vat пдв trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність статус бейдж reserved sold transit on order під замовлення заброньовано продано в дорозі",
+      "pdp product page сторінка товару gallery lightbox sticky cta key facts leasing financing фінансування калькулятор кредит лізинг calculator vat пдв trust trade-in specs tabs опис характеристики комплектація equipment list checklist related buy-box наявність статус бейдж reserved sold transit on order під замовлення заброньовано продано в дорозі умови сервіс як купити дилер майданчик контакт telegram",
   },
   {
     id: "order-added-sheet",

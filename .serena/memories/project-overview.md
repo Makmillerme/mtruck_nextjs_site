@@ -24,12 +24,16 @@ Assessment for Rust (vanilla + Carbon, no plugins yet): RAM and disk are adequat
 Panel extras: WebSSH, firewall rules, backups every 4 days — use manual backup before first Rust install.
 
 ## Still open
-- Which plan the user buys.
-- Hostname, max players, map size, seed, wipe schedule.
-- SSH access for deploy. Do not store passwords in the repo or in memories.
+- GitHub remote: public vs private; `gh auth login` needed for push (MCP can create the empty repo).
+- Seed / wipe schedule.
+- Approve first install on VPS under `/opt/rustkibitka` (do not touch site/bot).
 
 ## Hardware note
 Practical floor is about 4 vCPU and 8 GB RAM for a small vanilla population. A modded server with a busy map wants about 6–8 vCPU and 16 GB RAM, and 40 GB SSD.
 
+## Naming
+- Rust browser hostname: **FarmKibitka**
+- Description: **Farm Kibitka — a house for farming**
+
 ## Status
-Decisions locked. Waiting for VPS specs before writing install scripts, server.cfg, and the systemd unit.
+Local git initialized (`main`, commit `feat: scaffold FarmKibitka Rust server repo`). Scaffold: deploy scripts, systemd, .env.example, docs. VPS not installed yet. GitHub remote pending (gh not logged in).

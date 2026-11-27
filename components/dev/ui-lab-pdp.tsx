@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { CardSignInButton } from "@/components/form/Buttons";
 import ProductBuyBox from "@/components/single-product/product-buy-box";
+import ProductBuyBoxContact from "@/components/single-product/product-buy-box-contact";
+import ProductDealerCard from "@/components/single-product/product-dealer-card";
 import ProductGallery from "@/components/single-product/product-gallery";
+import ProductHowtoSection from "@/components/single-product/product-howto-section";
 import ProductKeyFacts from "@/components/single-product/product-key-facts";
 import FinancingCalculator from "@/components/single-product/financing-calculator";
 import ProductDetailsTabs from "@/components/single-product/product-details-tabs";
+import ProductTermsSection from "@/components/single-product/product-terms-section";
 import {
   DEFAULT_CREDIT_PRESET,
   DEFAULT_LEASE_PRESET,
@@ -282,6 +286,7 @@ export default function UiLabPdp() {
               Залишити заявку
             </Button>
           }
+          contact={<ProductBuyBoxContact />}
         />
       </div>
 
@@ -333,6 +338,73 @@ export default function UiLabPdp() {
         </h3>
         <ProductKeyFacts facts={DEMO_FACTS} title="Ключові параметри" />
       </div>
+
+      <ProductTermsSection
+        title="Умови та сервіс"
+        items={[
+          {
+            id: "delivery",
+            title: "Доставка по Україні",
+            body: "Організовуємо доставку або самовивіз з майданчика.",
+          },
+          {
+            id: "service",
+            title: "Сервісне обслуговування",
+            body: "Діагностика та базовий сервіс після покупки.",
+          },
+          {
+            id: "prep",
+            title: "Передпродажна підготовка",
+            body: "Перевірка вузлів і супровід огляду перед угодою.",
+          },
+          {
+            id: "documents",
+            title: "Повний комплект документів",
+            body: "Супровід документів для реєстрації та бухгалтерії.",
+          },
+        ]}
+      />
+
+      <ProductHowtoSection
+        title="Як купити"
+        steps={[
+          {
+            id: "inspect",
+            title: "Огляд",
+            body: "Запишіться на огляд або уточніть деталі онлайн.",
+          },
+          {
+            id: "reserve",
+            title: "Бронь",
+            body: "За потреби забронюємо одиницю на час узгодження.",
+          },
+          {
+            id: "deal",
+            title: "Угода",
+            body: "Договір, рахунок або фінансування.",
+          },
+          {
+            id: "handover",
+            title: "Видача",
+            body: "Самовивіз або доставка разом з документами.",
+          },
+        ]}
+      />
+
+      <ProductDealerCard
+        title="Майданчик і контакти"
+        address="Київ, Проспект Перемоги, 1"
+        hours="Пн–Пт: 9:00–18:00"
+        phoneValue="+380 44 123 45 67"
+        phoneHref="tel:+380441234567"
+        telegramLabel="Telegram"
+        visitHint="Приїзд за попередньою домовленістю."
+        inquiryCta={
+          <Button type="button" size="lg">
+            Записатись на огляд
+          </Button>
+        }
+      />
 
       <ProductDetailsTabs
         textHeading="Про автомобіль"
